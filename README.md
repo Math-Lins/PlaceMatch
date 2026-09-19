@@ -156,4 +156,4 @@ Abre em `http://localhost:5173`.
 
 ## Status do projeto
 
-✅ Sprint 2 concluída — banco conectado, autenticação JWT, cadastro de usuários, controle de perfis e CRUD funcionando com deploy local.
+✅ Sprint 2 e 3 concluída — banco conectado, autenticação JWT, cadastro de usuários, controle de perfis e CRUD funcionando com deploy local.
