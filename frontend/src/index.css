@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme inline {
+  --color-primary: #E06B45;
+  --color-primary-light: #F0896A;
+  --color-primary-dark: #C4512E;
+  --color-mint: #5DBF96;
+  --color-mint-light: #80D4B0;
+  --color-mint-dark: #3EA87A;
+  --color-bg: #FBF8F5;
+  --color-card: #FFFFFF;
+  --color-text: #2A2420;
+  --color-muted: #8A7E78;
+  --color-border: #EDE8E3;
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #F0EDE8;
+  font-family: 'Nunito', sans-serif;
+}
+
+.font-display {
+  font-family: 'Outfit', sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+}
