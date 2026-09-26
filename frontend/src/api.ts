@@ -14,23 +14,56 @@ export function logout(): void {
   localStorage.removeItem('pm_refresh');
 }
 
+export class ApiError extends Error {
+  fieldErrors: Record<string, string>;
+  constructor(message: string, fieldErrors: Record<string, string> = {}) {
+    super(message);
+    this.name = 'ApiError';
+    this.fieldErrors = fieldErrors;
+  }
+}
+
 async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
-  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, { ...options, headers });
+  } catch {
+    throw new ApiError(
+      'Não foi possível conectar ao servidor. Verifique se o backend está rodando.'
+    );
+  }
+
   if (res.status === 204) return {} as T;
   const body = await res.json().catch(() => ({}));
+
   if (!res.ok) {
+    const fieldErrors: Record<string, string> = {};
+    let firstMsg = '';
+
+    if (body && typeof body === 'object') {
+      for (const [key, val] of Object.entries(body as Record<string, unknown>)) {
+        const msg = Array.isArray(val) ? String(val[0]) : String(val);
+        if (!firstMsg) firstMsg = msg;
+        if (key !== 'detail' && key !== 'non_field_errors') {
+          fieldErrors[key] = msg;
+        }
+      }
+    }
+
     const msg =
-      body?.detail ||
-      body?.non_field_errors?.[0] ||
-      (Object.values(body as Record<string, string[]>)[0] as string[] | undefined)?.[0] ||
+      (body as Record<string, string>)?.detail ||
+      (body as Record<string, string[]>)?.non_field_errors?.[0] ||
+      firstMsg ||
       `Erro ${res.status}`;
-    throw new Error(String(msg));
+    throw new ApiError(String(msg), fieldErrors);
   }
+
   return body as T;
 }
 

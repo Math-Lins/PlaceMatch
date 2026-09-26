@@ -7,6 +7,7 @@ import {
   criarPerfil as apiCriarPerfil,
   atualizarPerfil as apiAtualizarPerfil,
   logout,
+  ApiError,
 } from './api';
 import type { Perfil as PerfilAPI } from './api';
 
@@ -199,8 +200,8 @@ function Btn({ label, onClick, outline = false, danger = false, small = false, s
   );
 }
 
-function Input({ label, type = 'text', placeholder, value, onChange }: {
-  label: string; type?: string; placeholder?: string; value?: string; onChange?: (v: string) => void;
+function Input({ label, type = 'text', placeholder, value, onChange, error }: {
+  label: string; type?: string; placeholder?: string; value?: string; onChange?: (v: string) => void; error?: string;
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -211,13 +212,14 @@ function Input({ label, type = 'text', placeholder, value, onChange }: {
         value={value}
         onChange={e => onChange?.(e.target.value)}
         style={{
-          padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${C.border}`,
+          padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${error ? C.danger : C.border}`,
           background: C.card, fontSize: '15px', fontFamily: 'Nunito,sans-serif', color: C.text,
           outline: 'none',
         }}
         onFocus={e => (e.currentTarget.style.borderColor = C.primary)}
-        onBlur={e => (e.currentTarget.style.borderColor = C.border)}
+        onBlur={e => (e.currentTarget.style.borderColor = error ? C.danger : C.border)}
       />
+      {error && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif' }}>{error}</span>}
     </div>
   );
 }
@@ -366,16 +368,28 @@ function LoginScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onLogi
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleEntrar = async () => {
     setErro('');
-    if (!email.trim() || !senha) { setErro('Preencha e-mail e senha.'); return; }
+    const erros: Record<string, string> = {};
+    if (!email.trim()) erros.email = 'Informe seu e-mail.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) erros.email = 'Informe um e-mail válido.';
+    if (!senha) erros.senha = 'Informe sua senha.';
+    setFieldErrors(erros);
+    if (Object.keys(erros).length > 0) return;
+
     setLoading(true);
     try {
       await apiLogin(email.trim(), senha);
       await onLoginSuccess();
     } catch (e: unknown) {
-      setErro(e instanceof Error ? e.message : 'E-mail ou senha incorretos.');
+      if (e instanceof ApiError) {
+        setFieldErrors(e.fieldErrors);
+        setErro(e.message);
+      } else {
+        setErro(e instanceof Error ? e.message : 'E-mail ou senha incorretos.');
+      }
     } finally {
       setLoading(false);
     }
@@ -393,8 +407,8 @@ function LoginScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onLogi
         <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted, margin: '0 0 32px' }}>Entre com sua conta para continuar</p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={setEmail} />
-          <Input label="Senha" type="password" placeholder="••••••••" value={senha} onChange={setSenha} />
+          <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={setEmail} error={fieldErrors.email} />
+          <Input label="Senha" type="password" placeholder="••••••••" value={senha} onChange={setSenha} error={fieldErrors.senha} />
         </div>
 
         <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '14px', fontWeight: 600, fontFamily: 'Nunito,sans-serif', padding: '16px 0 0', display: 'block' }}>
@@ -428,14 +442,21 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
   const [confirmSenha, setConfirmSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleContinuar = async () => {
     setErro('');
-    if (!nome.trim() || !email.trim() || !senha || !role) {
-      setErro('Preencha todos os campos e selecione seu perfil.');
-      return;
-    }
-    if (senha !== confirmSenha) { setErro('As senhas não coincidem.'); return; }
+    const erros: Record<string, string> = {};
+    if (!nome.trim() || nome.trim().length < 2) erros.username = 'Nome deve ter pelo menos 2 caracteres.';
+    if (!email.trim()) erros.email = 'Informe seu e-mail.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) erros.email = 'Informe um e-mail válido.';
+    if (!senha) erros.password = 'Informe uma senha.';
+    else if (senha.length < 8) erros.password = 'A senha deve ter no mínimo 8 caracteres.';
+    if (senha && confirmSenha && senha !== confirmSenha) erros.confirmSenha = 'As senhas não coincidem.';
+    if (!role) erros.role = 'Selecione se você está procurando ou oferecendo um lugar.';
+    setFieldErrors(erros);
+    if (Object.keys(erros).length > 0) return;
+
     setLoading(true);
     try {
       await apiRegistrar({
@@ -447,7 +468,12 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
       await apiLogin(email.trim(), senha);
       await onLoginSuccess();
     } catch (e: unknown) {
-      setErro(e instanceof Error ? e.message : 'Erro ao criar conta.');
+      if (e instanceof ApiError) {
+        setFieldErrors(e.fieldErrors);
+        if (Object.keys(e.fieldErrors).length === 0) setErro(e.message);
+      } else {
+        setErro(e instanceof Error ? e.message : 'Erro ao criar conta.');
+      }
     } finally {
       setLoading(false);
     }
@@ -465,10 +491,10 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
         <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted, margin: '0 0 28px' }}>Vamos te conectar ao lugar certo</p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <Input label="Nome completo" placeholder="Seu nome" value={nome} onChange={setNome} />
-          <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={setEmail} />
-          <Input label="Senha" type="password" placeholder="Mínimo 8 caracteres" value={senha} onChange={setSenha} />
-          <Input label="Confirmar senha" type="password" placeholder="Repita a senha" value={confirmSenha} onChange={setConfirmSenha} />
+          <Input label="Nome completo" placeholder="Seu nome" value={nome} onChange={setNome} error={fieldErrors.username} />
+          <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={setEmail} error={fieldErrors.email} />
+          <Input label="Senha" type="password" placeholder="Mínimo 8 caracteres" value={senha} onChange={setSenha} error={fieldErrors.password} />
+          <Input label="Confirmar senha" type="password" placeholder="Repita a senha" value={confirmSenha} onChange={setConfirmSenha} error={fieldErrors.confirmSenha} />
         </div>
 
         <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, marginTop: '20px', marginBottom: '10px' }}>Você está:</p>
@@ -476,7 +502,7 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
           {(['looking', 'has'] as const).map(r => (
             <button key={r} onClick={() => setRole(r)} style={{
               flex: 1, padding: '13px', borderRadius: '14px', cursor: 'pointer',
-              border: `2px solid ${role === r ? C.primary : C.border}`,
+              border: `2px solid ${role === r ? C.primary : fieldErrors.role ? C.danger : C.border}`,
               background: role === r ? `${C.primary}12` : C.card,
               color: role === r ? C.primary : C.muted,
               fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 700, lineHeight: 1.3,
@@ -485,6 +511,7 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
             </button>
           ))}
         </div>
+        {fieldErrors.role && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '6px' }}>{fieldErrors.role}</span>}
 
         {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginTop: '12px', textAlign: 'center' }}>{erro}</p>}
 
@@ -519,8 +546,36 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
   const [messy, setMessy] = useState(0);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validarStep = (): boolean => {
+    const erros: Record<string, string> = {};
+    if (step === 1) {
+      if (!nome.trim() || nome.trim().length < 2) erros.nome = 'Nome deve ter pelo menos 2 caracteres.';
+      const idadeN = Number(idade);
+      if (!idade || isNaN(idadeN) || idadeN < 18 || idadeN > 100) erros.idade = 'Idade deve estar entre 18 e 100 anos.';
+      if (!regiao.trim() || regiao.trim().length < 2) erros.regiao = 'Região deve ter pelo menos 2 caracteres.';
+      if (bio.length > 500) erros.bio = `Bio deve ter no máximo 500 caracteres (${bio.length}/500).`;
+    } else if (step === 2) {
+      const min = Number(orcamentoMin);
+      const max = Number(orcamentoMax);
+      if (!orcamentoMin || isNaN(min) || min <= 0) erros.orcamento_min = 'Informe um valor maior que zero.';
+      if (!orcamentoMax || isNaN(max) || max <= 0) erros.orcamento_max = 'Informe um valor maior que zero.';
+      if (!erros.orcamento_min && !erros.orcamento_max && min > max) erros.orcamento_max = 'O máximo deve ser maior ou igual ao mínimo.';
+    } else if (step === 3) {
+      if (messy === 0) erros.tolerancia_bagunca = 'Selecione sua tolerância à bagunça.';
+      if (organized === 0) erros.nivel_organizacao = 'Selecione seu nível de organização.';
+    }
+    setFieldErrors(erros);
+    return Object.keys(erros).length === 0;
+  };
+
+  const handleProximo = () => {
+    if (validarStep()) setStep(s => s + 1);
+  };
 
   const handleConcluir = async () => {
+    if (!validarStep()) return;
     setErro('');
     setLoading(true);
     try {
@@ -539,7 +594,12 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
       onPerfilCriado(perfil);
       nav('discovery');
     } catch (e: unknown) {
-      setErro(e instanceof Error ? e.message : 'Erro ao criar perfil.');
+      if (e instanceof ApiError) {
+        setFieldErrors(e.fieldErrors);
+        setErro(Object.keys(e.fieldErrors).length > 0 ? 'Corrija os erros acima e tente novamente.' : e.message);
+      } else {
+        setErro(e instanceof Error ? e.message : 'Erro ao criar perfil.');
+      }
     } finally {
       setLoading(false);
     }
@@ -577,20 +637,21 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
     </div>
   );
 
-  const ScaleInput = ({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) => (
+  const ScaleInput = ({ label, value, onChange, errorKey }: { label: string; value: number; onChange: (v: number) => void; errorKey: string }) => (
     <div>
       <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{label}</p>
       <div style={{ display: 'flex', gap: '8px' }}>
         {[1,2,3,4,5].map(i => (
           <button key={i} onClick={() => onChange(i)} style={{
             flex: 1, height: '40px', borderRadius: '10px', cursor: 'pointer',
-            border: `2px solid ${value >= i ? C.primary : C.border}`,
+            border: `2px solid ${value >= i ? C.primary : fieldErrors[errorKey] ? C.danger : C.border}`,
             background: value >= i ? C.primary : C.card,
             color: value >= i ? '#fff' : C.muted,
             fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
           }}>{i}</button>
         ))}
       </div>
+      {fieldErrors[errorKey] && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '4px' }}>{fieldErrors[errorKey]}</span>}
     </div>
   );
 
@@ -610,17 +671,18 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <Input label="Nome" placeholder="Seu nome completo" value={nome} onChange={setNome} />
-              <Input label="Idade" type="number" placeholder="Sua idade" value={idade} onChange={setIdade} />
-              <Input label="Região ou bairro" placeholder="Ex: Vila Madalena, SP" value={regiao} onChange={setRegiao} />
+              <Input label="Nome" placeholder="Seu nome completo" value={nome} onChange={setNome} error={fieldErrors.nome} />
+              <Input label="Idade" type="number" placeholder="Sua idade" value={idade} onChange={setIdade} error={fieldErrors.idade} />
+              <Input label="Região ou bairro" placeholder="Ex: Vila Madalena, SP" value={regiao} onChange={setRegiao} error={fieldErrors.regiao} />
               <div>
                 <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif', display: 'block', marginBottom: '6px' }}>Sobre você</label>
                 <textarea
                   placeholder="Conte um pouco sobre você e o que procura em um colega de moradia..."
                   value={bio}
                   onChange={e => setBio(e.target.value)}
-                  style={{ width: '100%', padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${C.border}`, background: C.card, fontSize: '15px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none', resize: 'none', height: '100px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${fieldErrors.bio ? C.danger : C.border}`, background: C.card, fontSize: '15px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none', resize: 'none', height: '100px', boxSizing: 'border-box' }}
                 />
+                {fieldErrors.bio && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '4px' }}>{fieldErrors.bio}</span>}
               </div>
             </div>
           </>
@@ -633,8 +695,8 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
               <div>
                 <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Faixa de orçamento mensal</p>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <Input label="Mínimo (R$)" placeholder="700" value={orcamentoMin} onChange={setOrcamentoMin} />
-                  <Input label="Máximo (R$)" placeholder="1500" value={orcamentoMax} onChange={setOrcamentoMax} />
+                  <Input label="Mínimo (R$)" placeholder="700" value={orcamentoMin} onChange={setOrcamentoMin} error={fieldErrors.orcamento_min} />
+                  <Input label="Máximo (R$)" placeholder="1500" value={orcamentoMax} onChange={setOrcamentoMax} error={fieldErrors.orcamento_max} />
                 </div>
               </div>
               <YesNo label="Você fuma?" value={smoker} onChange={setSmoker} />
@@ -647,8 +709,8 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
           <>
             <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: '0 0 24px' }}>Seus hábitos</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <ScaleInput label="Tolerância à bagunça (1 = mínima, 5 = máxima)" value={messy} onChange={setMessy} />
-              <ScaleInput label="Nível de organização (1 = mínimo, 5 = máximo)" value={organized} onChange={setOrganized} />
+              <ScaleInput label="Tolerância à bagunça (1 = mínima, 5 = máxima)" value={messy} onChange={setMessy} errorKey="tolerancia_bagunca" />
+              <ScaleInput label="Nível de organização (1 = mínimo, 5 = máximo)" value={organized} onChange={setOrganized} errorKey="nivel_organizacao" />
             </div>
           </>
         )}
@@ -656,10 +718,10 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
         {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginTop: '12px', textAlign: 'center' }}>{erro}</p>}
 
         <div style={{ marginTop: 'auto', paddingTop: '32px', display: 'flex', gap: '12px' }}>
-          {step > 1 && <Btn label="Voltar" outline onClick={() => setStep(s => s - 1)} />}
+          {step > 1 && <Btn label="Voltar" outline onClick={() => { setFieldErrors({}); setStep(s => s - 1); }} />}
           <Btn
             label={step === 3 ? (loading ? 'Aguarde...' : 'Concluir perfil') : 'Próxima etapa'}
-            onClick={() => step < 3 ? setStep(s => s + 1) : handleConcluir()}
+            onClick={step < 3 ? handleProximo : handleConcluir}
           />
         </div>
       </div>
