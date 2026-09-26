@@ -156,4 +156,15 @@ Abre em `http://localhost:5173`.
 
 ## Status do projeto
 
-✅ Sprint 2 e 3 concluída — banco conectado, autenticação JWT, cadastro de usuários, controle de perfis e CRUD funcionando com deploy local.
+✅ Sprint 2 e 3 concluídas — banco conectado, autenticação JWT, cadastro de usuários, controle de perfis e CRUD funcionando com deploy local.
+
+✅ Sprint 4 concluída — validações de regra de negócio no backend e frontend:
+
+**Backend:**
+- Perfil: nome (mín. 2 chars), idade (18–100 anos), região (mín. 2 chars), bio (máx. 500 chars), orçamento mínimo e máximo maiores que zero, orçamento mínimo ≤ máximo (validação cruzada), tolerância à bagunça e nível de organização entre 1 e 5
+- Usuário: `AUTH_PASSWORD_VALIDATORS` do Django efetivamente aplicados no cadastro (senha numérica, senha comum, comprimento mínimo), mensagem específica para e-mail duplicado
+
+**Frontend:**
+- Validação por campo antes do envio (formato de e-mail, comprimento mínimo de senha, orçamento, etc.)
+- Erros da API (400) exibidos embaixo do campo correspondente, não como alerta genérico
+- Tratamento de erro de rede com mensagem amigável ("Não foi possível conectar ao servidor...")
