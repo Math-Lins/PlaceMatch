@@ -45,13 +45,17 @@ PlaceMatch/
 │   ├── usuarios/              # app: autenticação e controle de usuários
 │   ├── perfis/                # app: perfis, CRUD principal
 │   ├── manage.py
-│   └── requirements.txt
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   ├── docker-compose.yml     # banco PostgreSQL + backend via Docker
+│   └── .env.example           # variáveis de ambiente do backend
 ├── frontend/                  # aplicação React (SPA)
 │   ├── src/
-│   └── package.json
+│   ├── package.json
+│   ├── Dockerfile
+│   ├── docker-compose.yml     # servidor Vite via Docker
+│   └── .env.example           # variáveis de ambiente do frontend
 ├── docs/                      # documentação técnica (diagramas, MER)
-├── docker-compose.yml         # banco PostgreSQL local via Docker
-├── .env.example               # variáveis de ambiente (copiar para .env)
 ├── .gitignore
 └── README.md
 ```
@@ -60,9 +64,12 @@ PlaceMatch/
 
 ### Pré-requisitos
 
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+
+Para rodar sem Docker (modo manual), também é necessário:
+
 - [Node.js](https://nodejs.org/) (v18+)
 - [Python](https://www.python.org/) (v3.11+)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
 ---
 
@@ -75,34 +82,52 @@ cd PlaceMatch
 
 ---
 
-### 2. Variáveis de ambiente
+### 2. Backend (Django + PostgreSQL via Docker)
 
 ```bash
+cd backend
+
 # Windows (PowerShell)
 Copy-Item .env.example .env
-
 # Linux / Mac
-cp .env.example .env
+# cp .env.example .env
+
+docker compose up --build
 ```
 
-Abra o `.env` e ajuste a senha do banco se quiser.
+Isso sobe o PostgreSQL 16 e a API Django (migrações aplicadas automaticamente).
+API disponível em `http://localhost:8000`.
 
 ---
 
-### 3. Banco de dados (PostgreSQL via Docker)
+### 3. Frontend (React via Docker)
+
+Em outro terminal:
 
 ```bash
-docker compose up -d
+cd frontend
+
+# Windows (PowerShell)
+Copy-Item .env.example .env
+# Linux / Mac
+# cp .env.example .env
+
+docker compose up --build
 ```
 
-Isso sobe um PostgreSQL 16 local em container. Só precisa rodar uma vez — nas próximas vezes o Docker já sobe automaticamente.
+Abre em `http://localhost:5173`. O dev server do Vite roda com hot-reload.
 
 ---
 
-### 4. Backend (Django)
+### Alternativa: rodar sem Docker
+
+Com o banco subindo via Docker (`cd backend && docker compose up db`), rode o backend e o frontend manualmente:
+
+**Backend:**
 
 ```powershell
 cd backend
+Copy-Item .env.example .env
 python -m venv venv
 venv\Scripts\activate        # Windows
 # source venv/bin/activate   # Linux / Mac
@@ -112,19 +137,14 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-API disponível em `http://localhost:8000`.
-
----
-
-### 5. Frontend (React)
+**Frontend:**
 
 ```powershell
 cd frontend
+Copy-Item .env.example .env
 npm install
 npm run dev
 ```
-
-Abre em `http://localhost:5173`.
 
 ---
 

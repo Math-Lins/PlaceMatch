@@ -17,5 +17,21 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    build: .
+    container_name: placematch_backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   postgres_data:
