@@ -62,6 +62,8 @@ PlaceMatch/
 
 ## Como rodar o projeto localmente
 
+> Runbook completo de operação com Docker (comandos, variáveis e troubleshooting): [`/docs/runbook-docker.md`](./docs/runbook-docker.md)
+
 ### Pré-requisitos
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
