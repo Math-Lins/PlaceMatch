@@ -8,8 +8,11 @@ import {
   atualizarPerfil as apiAtualizarPerfil,
   logout,
   ApiError,
+  listarDescoberta,
+  enviarCurtida,
+  listarMatches,
 } from './api';
-import type { Perfil as PerfilAPI } from './api';
+import type { Perfil as PerfilAPI, PerfilDescoberto, PerfilBasico, MatchData } from './api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -117,6 +120,61 @@ const MY_PROFILE: Profile = {
   organized: 4,
   messy: 2,
 };
+
+// Fotos usadas enquanto o backend não tem campo de foto no perfil
+const PLACEHOLDER_PHOTOS = [
+  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop&auto=format',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&auto=format',
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop&auto=format',
+  'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=500&fit=crop&auto=format',
+  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=500&fit=crop&auto=format',
+];
+
+function perfilDescobertoParaProfile(p: PerfilDescoberto): Profile {
+  const tags: string[] = [];
+  tags.push(p.fumante ? 'Fumante' : 'Não fumante');
+  tags.push(p.aceita_pets ? 'Aceita pets' : 'Sem pets');
+  if (p.nivel_organizacao >= 4) tags.push('Organizado(a)');
+  else if (p.tolerancia_bagunca >= 4) tags.push('Flexível');
+
+  return {
+    id: p.id,
+    name: p.nome,
+    age: p.idade,
+    region: p.regiao,
+    bio: p.bio,
+    compat: Math.round(p.score * 100),
+    photo: PLACEHOLDER_PHOTOS[p.id % PLACEHOLDER_PHOTOS.length],
+    tags,
+    budget: `R$ ${Number(p.orcamento_min).toLocaleString('pt-BR')} – R$ ${Number(p.orcamento_max).toLocaleString('pt-BR')}`,
+    smoker: p.fumante,
+    pets: p.aceita_pets,
+    organized: p.nivel_organizacao,
+    messy: p.tolerancia_bagunca,
+  };
+}
+
+function perfilBasicoParaProfile(p: PerfilBasico | undefined, score: number): Profile {
+  if (!p) return PROFILES[0];
+  const tags: string[] = [];
+  tags.push(p.fumante ? 'Fumante' : 'Não fumante');
+  tags.push(p.aceita_pets ? 'Aceita pets' : 'Sem pets');
+  return {
+    id: p.id,
+    name: p.nome,
+    age: p.idade,
+    region: p.regiao,
+    bio: p.bio,
+    compat: Math.round(score * 100),
+    photo: PLACEHOLDER_PHOTOS[p.id % PLACEHOLDER_PHOTOS.length],
+    tags,
+    budget: `R$ ${Number(p.orcamento_min).toLocaleString('pt-BR')} – R$ ${Number(p.orcamento_max).toLocaleString('pt-BR')}`,
+    smoker: p.fumante,
+    pets: p.aceita_pets,
+    organized: p.nivel_organizacao,
+    messy: p.tolerancia_bagunca,
+  };
+}
 
 const CHAT_MESSAGES = [
   { from: 'them', text: 'Oi! Vi que você também está procurando na Vila Madalena 😊', time: '14:30' },
@@ -739,14 +797,57 @@ function DiscoveryScreen({ nav, setMatchProfile, showFilters, setShowFilters, ta
   tab: Tab;
   setTab: (t: Tab) => void;
 }) {
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [index, setIndex] = useState(0);
-  const profile = PROFILES[index % PROFILES.length];
+  const [loadingAction, setLoadingAction] = useState(false);
+  const [apiError, setApiError] = useState('');
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
 
-  const handleLike = () => {
-    setMatchProfile(profile);
-    nav('match');
+  useEffect(() => {
+    setLoadingProfiles(true);
+    listarDescoberta()
+      .then(data => {
+        setProfiles(data.map(perfilDescobertoParaProfile));
+        setLoadingProfiles(false);
+      })
+      .catch(err => {
+        setApiError(err instanceof ApiError ? err.message : 'Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
+        setLoadingProfiles(false);
+      });
+  }, []);
+
+  const profile = profiles[index];
+
+  const handleLike = async () => {
+    if (!profile || loadingAction) return;
+    setLoadingAction(true);
+    try {
+      const res = await enviarCurtida(profile.id, 'curtir');
+      if (res.match) {
+        setMatchProfile(profile);
+        nav('match');
+        return;
+      }
+    } catch {
+      // Remove o card mesmo em caso de erro de rede
+    } finally {
+      setLoadingAction(false);
+    }
+    setIndex(i => i + 1);
   };
-  const handleDislike = () => setIndex(i => i + 1);
+
+  const handleDislike = async () => {
+    if (!profile || loadingAction) return;
+    setLoadingAction(true);
+    try {
+      await enviarCurtida(profile.id, 'recusar');
+    } catch {
+      // Remove o card mesmo em caso de erro de rede
+    } finally {
+      setLoadingAction(false);
+    }
+    setIndex(i => i + 1);
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '844px', background: C.bg, paddingTop: '44px' }}>
@@ -768,6 +869,22 @@ function DiscoveryScreen({ nav, setMatchProfile, showFilters, setShowFilters, ta
 
       {/* Card */}
       <div style={{ padding: '0 20px', flex: 1 }}>
+        {loadingProfiles && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '480px', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '15px' }}>
+            Carregando perfis...
+          </div>
+        )}
+        {!loadingProfiles && apiError && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '480px', padding: '24px', textAlign: 'center', color: C.danger, fontFamily: 'Nunito,sans-serif', fontSize: '14px' }}>
+            {apiError}
+          </div>
+        )}
+        {!loadingProfiles && !apiError && !profile && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '480px', padding: '24px', textAlign: 'center', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '15px' }}>
+            Nenhum perfil compatível no momento. Volte mais tarde!
+          </div>
+        )}
+        {!loadingProfiles && !apiError && profile && (
         <div
           onClick={() => nav('profile-detail')}
           style={{
@@ -796,21 +913,23 @@ function DiscoveryScreen({ nav, setMatchProfile, showFilters, setShowFilters, ta
             </p>
           </div>
         </div>
+        )}
 
         {/* Action buttons */}
+        {!loadingProfiles && !apiError && profile && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '24px' }}>
-          <button onClick={handleDislike} style={{
+          <button onClick={handleDislike} disabled={loadingAction} style={{
             width: '64px', height: '64px', borderRadius: '50%', border: `2px solid ${C.border}`,
-            background: C.card, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+            background: C.card, cursor: loadingAction ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.08)', opacity: loadingAction ? 0.6 : 1,
           }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={C.danger} strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
-          <button onClick={handleLike} style={{
+          <button onClick={handleLike} disabled={loadingAction} style={{
             width: '72px', height: '72px', borderRadius: '50%', border: 'none',
             background: `linear-gradient(135deg, ${C.primary}, ${C.primaryLight})`,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 8px 24px rgba(224,107,69,0.4)`,
+            cursor: loadingAction ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: `0 8px 24px rgba(224,107,69,0.4)`, opacity: loadingAction ? 0.6 : 1,
           }}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
           </button>
@@ -822,6 +941,7 @@ function DiscoveryScreen({ nav, setMatchProfile, showFilters, setShowFilters, ta
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.mint} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
           </button>
         </div>
+        )}
       </div>
 
       <BottomNav tab={tab} setTab={(t) => { setTab(t); nav(t as Screen); }} />
@@ -1010,18 +1130,34 @@ function MatchScreen({ nav, profile }: { nav: (s: Screen) => void; profile: Prof
 
 // ─── Screen: Matches List ─────────────────────────────────────────────────────
 
-function MatchesScreen({ nav, setCurrentChat, tab, setTab }: {
+function MatchesScreen({ nav, setCurrentChat, meuPerfilId, tab, setTab }: {
   nav: (s: Screen) => void;
   setCurrentChat: (p: Profile) => void;
+  meuPerfilId: number | null;
   tab: Tab;
   setTab: (t: Tab) => void;
 }) {
-  const matched = PROFILES;
+  const [matched, setMatched] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    listarMatches()
+      .then((data: MatchData[]) => {
+        const profiles = data.map((m: MatchData) => {
+          const outro = m.perfil_a.id === meuPerfilId ? m.perfil_b : m.perfil_a;
+          return perfilBasicoParaProfile(outro, m.score);
+        });
+        setMatched(profiles);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [meuPerfilId]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '844px', background: C.bg, paddingTop: '44px' }}>
       <div style={{ padding: '20px 24px 12px' }}>
         <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: '0 0 4px' }}>Seus Matches</h1>
-        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>{matched.length} conexões ativas</p>
+        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>{loading ? 'Carregando...' : `${matched.length} conexões ativas`}</p>
       </div>
 
       <div style={{ padding: '8px 0', flex: 1, overflowY: 'auto' }}>
@@ -1393,7 +1529,7 @@ export default function App() {
       {screen === 'profile-detail' && <ProfileDetailScreen nav={nav} profile={matchProfile || PROFILES[0]} />}
       {screen === 'match' && <MatchScreen nav={nav} profile={matchProfile} />}
       {screen === 'matches' && (
-        <MatchesScreen nav={nav} setCurrentChat={setCurrentChat} tab={tab} setTab={setTab} />
+        <MatchesScreen nav={nav} setCurrentChat={setCurrentChat} meuPerfilId={meuPerfil?.id ?? null} tab={tab} setTab={setTab} />
       )}
       {screen === 'chat' && (
         <ChatScreen nav={nav} profile={currentChat} showReport={showReport} setShowReport={setShowReport} />

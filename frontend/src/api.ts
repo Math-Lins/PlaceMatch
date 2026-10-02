@@ -134,3 +134,65 @@ export async function atualizarPerfil(id: number, dados: Partial<PerfilPayload>)
 export async function excluirPerfil(id: number): Promise<void> {
   await req<void>(`/api/perfis/${id}/`, { method: 'DELETE' });
 }
+
+// ─── Descoberta / Matches ──────────────────────────────────────────────────────
+
+export interface PerfilDescoberto {
+  id: number;
+  nome: string;
+  idade: number;
+  regiao: string;
+  bio: string;
+  orcamento_min: string;
+  orcamento_max: string;
+  fumante: boolean;
+  aceita_pets: boolean;
+  tolerancia_bagunca: number;
+  nivel_organizacao: number;
+  score: number;
+}
+
+export interface PerfilBasico {
+  id: number;
+  nome: string;
+  idade: number;
+  regiao: string;
+  bio: string;
+  fumante: boolean;
+  aceita_pets: boolean;
+  tolerancia_bagunca: number;
+  nivel_organizacao: number;
+  orcamento_min: string;
+  orcamento_max: string;
+}
+
+export interface MatchData {
+  id: number;
+  perfil_a: PerfilBasico;
+  perfil_b: PerfilBasico;
+  score: number;
+  data_match: string;
+}
+
+export interface CurtidaResponse {
+  match: boolean;
+  match_data?: MatchData;
+}
+
+export async function listarDescoberta(): Promise<PerfilDescoberto[]> {
+  return req<PerfilDescoberto[]>('/api/descoberta/');
+}
+
+export async function enviarCurtida(
+  perfil_destino: number,
+  tipo: 'curtir' | 'recusar',
+): Promise<CurtidaResponse> {
+  return req<CurtidaResponse>('/api/curtidas/', {
+    method: 'POST',
+    body: JSON.stringify({ perfil_destino, tipo }),
+  });
+}
+
+export async function listarMatches(): Promise<MatchData[]> {
+  return req<MatchData[]>('/api/matches/');
+}

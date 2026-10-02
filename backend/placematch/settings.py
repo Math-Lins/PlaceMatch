@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     # projeto
     'usuarios',
     'perfis',
+    'matches',
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
