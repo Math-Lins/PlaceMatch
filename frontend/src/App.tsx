@@ -6,6 +6,7 @@ import {
   listarPerfis,
   criarPerfil as apiCriarPerfil,
   atualizarPerfil as apiAtualizarPerfil,
+  excluirPerfil as apiExcluirPerfil,
   logout,
   ApiError,
   listarDescoberta,
@@ -1286,12 +1287,13 @@ function ChatScreen({ nav, profile, showReport, setShowReport }: {
 
 // ─── Screen: My Profile ───────────────────────────────────────────────────────
 
-function MyProfileScreen({ nav, tab, setTab, meuPerfil, onPerfilAtualizado }: {
+function MyProfileScreen({ nav, tab, setTab, meuPerfil, onPerfilAtualizado, onPerfilExcluido }: {
   nav: (s: Screen) => void;
   tab: Tab;
   setTab: (t: Tab) => void;
   meuPerfil: PerfilAPI | null;
   onPerfilAtualizado: (p: PerfilAPI) => void;
+  onPerfilExcluido: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [editNome, setEditNome] = useState('');
@@ -1300,6 +1302,7 @@ function MyProfileScreen({ nav, tab, setTab, meuPerfil, onPerfilAtualizado }: {
   const [editBio, setEditBio] = useState('');
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
+  const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (meuPerfil) {
@@ -1312,6 +1315,15 @@ function MyProfileScreen({ nav, tab, setTab, meuPerfil, onPerfilAtualizado }: {
 
   const salvar = async () => {
     if (!meuPerfil) return;
+    const idade = Number(editIdade);
+    const erros: Record<string, string> = {};
+    if (!editNome.trim() || editNome.trim().length < 2) erros.nome = 'Nome deve ter pelo menos 2 caracteres.';
+    if (!editIdade || isNaN(idade) || idade < 18 || idade > 100) erros.idade = 'Idade deve estar entre 18 e 100 anos.';
+    if (!editRegiao.trim() || editRegiao.trim().length < 2) erros.regiao = 'Região deve ter pelo menos 2 caracteres.';
+    if (editBio.length > 500) erros.bio = `Bio deve ter no máximo 500 caracteres (${editBio.length}/500).`;
+    setEditFieldErrors(erros);
+    if (Object.keys(erros).length > 0) return;
+
     setErro('');
     setLoading(true);
     try {
@@ -1324,7 +1336,26 @@ function MyProfileScreen({ nav, tab, setTab, meuPerfil, onPerfilAtualizado }: {
       onPerfilAtualizado(atualizado);
       setEditing(false);
     } catch (e: unknown) {
-      setErro(e instanceof Error ? e.message : 'Erro ao salvar.');
+      if (e instanceof ApiError) {
+        setEditFieldErrors(e.fieldErrors);
+        setErro(Object.keys(e.fieldErrors).length > 0 ? 'Corrija os erros acima e tente novamente.' : e.message);
+      } else {
+        setErro(e instanceof Error ? e.message : 'Erro ao salvar.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const excluir = async () => {
+    if (!meuPerfil || !confirm('Tem certeza que deseja excluir seu perfil?')) return;
+    setErro('');
+    setLoading(true);
+    try {
+      await apiExcluirPerfil(meuPerfil.id);
+      onPerfilExcluido();
+    } catch (e: unknown) {
+      setErro(e instanceof Error ? e.message : 'Erro ao excluir perfil.');
     } finally {
       setLoading(false);
     }
@@ -1361,12 +1392,13 @@ function MyProfileScreen({ nav, tab, setTab, meuPerfil, onPerfilAtualizado }: {
 
         {editing ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
-            <Input label="Nome" placeholder="Seu nome" value={editNome} onChange={setEditNome} />
-            <Input label="Idade" type="number" placeholder="Sua idade" value={editIdade} onChange={setEditIdade} />
-            <Input label="Região" placeholder="Bairro ou cidade" value={editRegiao} onChange={setEditRegiao} />
+            <Input label="Nome" placeholder="Seu nome" value={editNome} onChange={setEditNome} error={editFieldErrors.nome} />
+            <Input label="Idade" type="number" placeholder="Sua idade" value={editIdade} onChange={setEditIdade} error={editFieldErrors.idade} />
+            <Input label="Região" placeholder="Bairro ou cidade" value={editRegiao} onChange={setEditRegiao} error={editFieldErrors.regiao} />
             <div>
               <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif', display: 'block', marginBottom: '6px' }}>Biografia</label>
-              <textarea value={editBio} onChange={e => setEditBio(e.target.value)} style={{ width: '100%', padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${C.border}`, background: C.card, fontSize: '15px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none', resize: 'none', height: '90px', boxSizing: 'border-box' }} />
+              <textarea value={editBio} onChange={e => setEditBio(e.target.value)} style={{ width: '100%', padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${editFieldErrors.bio ? C.danger : C.border}`, background: C.card, fontSize: '15px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none', resize: 'none', height: '90px', boxSizing: 'border-box' }} />
+              {editFieldErrors.bio && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '4px' }}>{editFieldErrors.bio}</span>}
             </div>
           </div>
         ) : (
@@ -1421,6 +1453,13 @@ function MyProfileScreen({ nav, tab, setTab, meuPerfil, onPerfilAtualizado }: {
         }}>
           Sair da conta
         </button>
+        {meuPerfil && <button onClick={excluir} disabled={loading} style={{
+          width: '100%', padding: '15px', marginTop: '10px', background: 'none',
+          border: `1.5px solid ${C.danger}`, borderRadius: '16px',
+          fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.danger, cursor: loading ? 'wait' : 'pointer',
+        }}>
+          {loading ? 'Excluindo...' : 'Excluir perfil'}
+        </button>}
       </div>
 
       <BottomNav tab={tab} setTab={(t) => { setTab(t); nav(t as Screen); }} />
@@ -1541,6 +1580,7 @@ export default function App() {
           setTab={setTab}
           meuPerfil={meuPerfil}
           onPerfilAtualizado={(p) => setMeuPerfil(p)}
+          onPerfilExcluido={() => { setMeuPerfil(null); nav('profile-create'); }}
         />
       )}
     </PhoneShell>
