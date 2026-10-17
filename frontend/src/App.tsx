@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   login as apiLogin,
   registrar as apiRegistrar,
@@ -12,8 +12,11 @@ import {
   listarDescoberta,
   enviarCurtida,
   listarMatches,
+  listarConversas,
+  listarMensagens,
+  enviarMensagem,
 } from './api';
-import type { Perfil as PerfilAPI, PerfilDescoberto, PerfilBasico, MatchData } from './api';
+import type { Perfil as PerfilAPI, PerfilDescoberto, PerfilBasico, MatchData, Conversa, MensagemAPI } from './api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -244,15 +247,6 @@ function perfilBasicoParaProfile(p: PerfilBasico | undefined, score: number): Pr
   };
 }
 
-const CHAT_MESSAGES = [
-  { from: 'them', text: 'Oi! Vi que você também está procurando na Vila Madalena 😊', time: '14:30' },
-  { from: 'me', text: 'Oi Ana! Isso mesmo, estou procurando por lá já faz um tempo. O que você achou do nosso match?', time: '14:33' },
-  { from: 'them', text: 'Achei ótimo! A gente tem muita coisa em comum hehe. Você costuma cozinhar muito?', time: '14:35' },
-  { from: 'me', text: 'Adoro! Fim de semana especialmente. Seria incrível dividir uma cozinha com quem também curte.', time: '14:37' },
-  { from: 'them', text: 'Perfeito! Eu faço o mesmo 🍳 E em relação ao orçamento, você está procurando um quarto a partir de quanto?', time: '14:40' },
-  { from: 'me', text: 'Em torno de R$ 900 a R$ 1.300. Você tem algum lugar em mente?', time: '14:42' },
-  { from: 'them', text: 'Tenho uma indicação boa na Rua Harmonia, próximo ao metrô. Posso te mandar o contato da imobiliária!', time: '14:45' },
-];
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
 
@@ -1623,155 +1617,288 @@ function MatchScreen({ nav, profile, setCurrentChat }: {
 
 // ─── Screen: Matches List ─────────────────────────────────────────────────────
 
-function MatchesScreen({ nav, setCurrentChat, meuPerfilId }: {
+function conversaParaProfile(c: Conversa): Profile {
+  const p = c.outro_perfil;
+  return {
+    id: p.id,
+    name: p.nome,
+    age: p.idade,
+    region: p.regiao,
+    bio: '',
+    compat: Math.round(c.score * 100),
+    photo: PLACEHOLDER_PHOTOS[p.id % PLACEHOLDER_PHOTOS.length],
+    tags: [],
+    budget: '',
+    smoker: false, pets: false, organized: 3, messy: 3,
+    horario: 'flexivel', ruido: 3, social: 3,
+    visitas: 'as_vezes', tipoImovel: 'indiferente', qtdMoradores: 2,
+  };
+}
+
+function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId }: {
   nav: (s: Screen) => void;
   setCurrentChat: (p: Profile) => void;
+  setActiveChatMatchId: (id: number) => void;
   meuPerfilId: number | null;
 }) {
-  const [matched, setMatched] = useState<Profile[]>([]);
+  const [conversas, setConversas] = useState<Conversa[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState('');
 
-  useEffect(() => {
-    listarMatches()
-      .then((data: MatchData[]) => {
-        const profiles = data
-          .map((m: MatchData) => {
-            const outro = m.perfil_a.id === meuPerfilId ? m.perfil_b : m.perfil_a;
-            return perfilBasicoParaProfile(outro, m.score);
-          })
-          .sort((a, b) => b.compat - a.compat);
-        setMatched(profiles);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [meuPerfilId]);
+  const carregar = () => {
+    setLoading(true);
+    setErro('');
+    listarConversas()
+      .then(data => { setConversas(data); setLoading(false); })
+      .catch((e: Error) => { setErro(e.message); setLoading(false); });
+  };
+
+  useEffect(() => { carregar(); }, []);
+
+  const abrirChat = (c: Conversa) => {
+    setCurrentChat(conversaParaProfile(c));
+    setActiveChatMatchId(c.match_id);
+    nav('chat');
+  };
 
   return (
     <div className="flex flex-col flex-1 pb-20 lg:pb-0" style={{ background: C.bg }}>
       <div style={{ padding: '20px 24px 12px' }}>
         <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: '0 0 4px' }}>Seus Matches</h1>
         <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>
-          {loading ? 'Carregando...' : `${matched.length} conexão${matched.length !== 1 ? 'ões' : ''} · ordenado por compatibilidade`}
+          {loading ? 'Carregando...' : erro ? ' ' : `${conversas.length} conversa${conversas.length !== 1 ? 's' : ''}`}
         </p>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {!loading && matched.length === 0 && (
+        {loading && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 24px' }}>
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted }}>Carregando conversas...</p>
+          </div>
+        )}
+
+        {!loading && erro && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 24px', gap: '16px' }}>
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.danger, textAlign: 'center' }}>{erro}</p>
+            <Btn label="Tentar novamente" small onClick={carregar} style={{ maxWidth: '200px' }} />
+          </div>
+        )}
+
+        {!loading && !erro && conversas.length === 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', gap: '12px' }}>
             <div style={{ width: '72px', height: '72px', background: `${C.primary}18`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
               </svg>
             </div>
-            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '18px', fontWeight: 700, color: C.text, margin: 0 }}>Nenhum match ainda</p>
+            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '18px', fontWeight: 700, color: C.text, margin: 0 }}>Você ainda não tem matches</p>
             <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0, textAlign: 'center', maxWidth: '260px' }}>
               Curta perfis na tela de Descoberta. Quando alguém curtir você de volta, aparece aqui!
             </p>
           </div>
         )}
 
-        {/* Mobile: list */}
-        <div className="md:hidden" style={{ paddingTop: '8px' }}>
-          {matched.map(p => {
-            const level = getCompatLevel(p.compat);
-            return (
-              <button key={p.id} onClick={() => { setCurrentChat(p); nav('chat'); }} style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: '14px',
-                padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer',
-                textAlign: 'left',
-              }}>
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <div style={{ width: '62px', height: '62px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${level.color}` }}>
-                    <img src={p.photo} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                  <div style={{
-                    position: 'absolute', bottom: '-2px', right: '-2px',
-                    background: level.color, borderRadius: '10px', border: '2px solid white',
-                    padding: '1px 5px',
-                    fontSize: '10px', fontWeight: 800, fontFamily: 'Outfit,sans-serif', color: '#fff',
-                    lineHeight: '14px',
-                  }}>
-                    {p.compat}%
-                  </div>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                    <div>
-                      <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text }}>{p.name}</span>
-                      <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted, marginLeft: '6px' }}>{p.age} anos · {p.region}</span>
+        {/* Mobile: lista */}
+        {!loading && !erro && (
+          <div className="md:hidden" style={{ paddingTop: '8px' }}>
+            {conversas.map(c => {
+              const profile = conversaParaProfile(c);
+              const level = getCompatLevel(profile.compat);
+              const preview = c.ultima_mensagem?.conteudo ?? 'Diga olá! 👋';
+              return (
+                <button key={c.match_id} onClick={() => abrirChat(c)} style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: '14px',
+                  padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer',
+                  textAlign: 'left', borderBottom: `1px solid ${C.border}`,
+                }}>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <div style={{ width: '58px', height: '58px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${level.color}` }}>
+                      <img src={profile.photo} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute', bottom: '-2px', right: '-2px',
+                      background: level.color, borderRadius: '10px', border: '2px solid white',
+                      padding: '1px 5px', fontSize: '10px', fontWeight: 800,
+                      fontFamily: 'Outfit,sans-serif', color: '#fff', lineHeight: '14px',
+                    }}>
+                      {profile.compat}%
                     </div>
                   </div>
-                  <CompatMeter value={p.compat} />
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                      <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text }}>{profile.name}</span>
+                      {c.nao_lidas > 0 && (
+                        <span style={{
+                          background: C.primary, color: '#fff', borderRadius: '12px',
+                          padding: '1px 7px', fontSize: '11px', fontWeight: 800,
+                          fontFamily: 'Outfit,sans-serif', flexShrink: 0,
+                        }}>
+                          {c.nao_lidas}
+                        </span>
+                      )}
+                    </div>
+                    <p style={{
+                      fontFamily: 'Nunito,sans-serif', fontSize: '13px',
+                      color: c.nao_lidas > 0 ? C.text : C.muted,
+                      fontWeight: c.nao_lidas > 0 ? 700 : 400,
+                      margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {preview}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Tablet/Desktop: grid */}
-        <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
-          {matched.map(p => {
-            const level = getCompatLevel(p.compat);
-            return (
-              <button key={p.id} onClick={() => { setCurrentChat(p); nav('chat'); }} style={{
-                display: 'flex', flexDirection: 'column', background: C.card,
-                border: `2px solid ${level.color}30`, borderRadius: '20px', overflow: 'hidden',
-                cursor: 'pointer', textAlign: 'left', padding: 0,
-                boxShadow: `0 4px 20px ${level.color}18`,
-              }}>
-                <div style={{ position: 'relative', height: '180px', flexShrink: 0 }}>
-                  <img src={p.photo} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  {/* Level badge */}
-                  <div style={{
-                    position: 'absolute', top: '10px', left: '10px',
-                    background: `${level.color}EE`, borderRadius: '10px',
-                    padding: '3px 10px',
-                    fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 800, color: '#fff',
-                  }}>
-                    {level.label}
+        {!loading && !erro && (
+          <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
+            {conversas.map(c => {
+              const profile = conversaParaProfile(c);
+              const level = getCompatLevel(profile.compat);
+              const preview = c.ultima_mensagem?.conteudo ?? 'Diga olá! 👋';
+              return (
+                <button key={c.match_id} onClick={() => abrirChat(c)} style={{
+                  display: 'flex', flexDirection: 'column', background: C.card,
+                  border: `2px solid ${level.color}30`, borderRadius: '20px', overflow: 'hidden',
+                  cursor: 'pointer', textAlign: 'left', padding: 0,
+                  boxShadow: `0 4px 20px ${level.color}18`, position: 'relative',
+                }}>
+                  {c.nao_lidas > 0 && (
+                    <span style={{
+                      position: 'absolute', top: '10px', right: '10px', zIndex: 2,
+                      background: C.primary, color: '#fff', borderRadius: '12px',
+                      padding: '2px 8px', fontSize: '12px', fontWeight: 800,
+                      fontFamily: 'Outfit,sans-serif',
+                    }}>
+                      {c.nao_lidas} nova{c.nao_lidas !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  <div style={{ position: 'relative', height: '160px', flexShrink: 0 }}>
+                    <img src={profile.photo} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{
+                      position: 'absolute', top: '10px', left: '10px',
+                      background: `${level.color}EE`, borderRadius: '10px', padding: '3px 10px',
+                      fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 800, color: '#fff',
+                    }}>
+                      {level.label}
+                    </div>
                   </div>
-                </div>
-                <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div>
-                    <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text }}>{p.name}</span>
-                    <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted, marginLeft: '6px' }}>{p.age} anos · {p.region}</span>
+                  <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div>
+                      <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text }}>{profile.name}</span>
+                      <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted, marginLeft: '6px' }}>{profile.age} anos · {profile.region}</span>
+                    </div>
+                    <p style={{
+                      fontFamily: 'Nunito,sans-serif', fontSize: '13px',
+                      color: c.nao_lidas > 0 ? C.text : C.muted,
+                      fontWeight: c.nao_lidas > 0 ? 700 : 400,
+                      margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {preview}
+                    </p>
                   </div>
-                  <CompatMeter value={p.compat} />
-                  <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.bio}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
-
     </div>
   );
 }
 
 // ─── Screen: Chat ─────────────────────────────────────────────────────────────
 
-function ChatScreen({ nav, profile, showReport, setShowReport }: {
+function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowReport }: {
   nav: (s: Screen) => void;
   profile: Profile;
+  matchId: number;
+  meuPerfilId: number;
   showReport: boolean;
   setShowReport: (v: boolean) => void;
 }) {
+  const [messages, setMessages] = useState<MensagemAPI[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState('');
   const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
   const [showMenu, setShowMenu] = useState(false);
-  const [messages, setMessages] = useState(CHAT_MESSAGES);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const lastIdRef = useRef<number>(0);
+  const loadedRef = useRef(false);
 
-  const send = () => {
-    if (!input.trim()) return;
-    setMessages(m => [...m, { from: 'me', text: input.trim(), time: 'agora' }]);
-    setInput('');
+  const carregarMensagens = () => {
+    setLoading(true);
+    setErro('');
+    listarMensagens(matchId)
+      .then(msgs => {
+        setMessages(msgs);
+        lastIdRef.current = msgs.length > 0 ? msgs[msgs.length - 1].id : 0;
+        loadedRef.current = true;
+        setLoading(false);
+      })
+      .catch((e: Error) => { setErro(e.message); setLoading(false); });
   };
 
+  // Carga inicial
+  useEffect(() => {
+    loadedRef.current = false;
+    carregarMensagens();
+  }, [matchId]);
+
+  // Polling a cada 4 s — só mensagens novas, pausa quando aba está oculta
+  useEffect(() => {
+    const poll = async () => {
+      if (!loadedRef.current || document.hidden) return;
+      try {
+        const novas = await listarMensagens(matchId, lastIdRef.current);
+        if (novas.length > 0) {
+          setMessages(prev => [...prev, ...novas]);
+          lastIdRef.current = novas[novas.length - 1].id;
+        }
+      } catch { /* falha silenciosa no poll */ }
+    };
+    const timer = setInterval(poll, 4000);
+    return () => clearInterval(timer);
+  }, [matchId]);
+
+  // Rola para a última mensagem ao receber novas
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const send = async () => {
+    const texto = input.trim();
+    if (!texto || sending) return;
+    setSending(true);
+    setSendError('');
+    setInput('');
+    try {
+      const nova = await enviarMensagem(matchId, texto);
+      setMessages(prev => [...prev, nova]);
+      lastIdRef.current = nova.id;
+    } catch (e: unknown) {
+      setInput(texto);
+      setSendError(e instanceof Error ? e.message : 'Erro ao enviar mensagem.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  };
+
+  const formatTime = (dt: string) =>
+    new Date(dt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
   return (
-    <div className="flex flex-col flex-1" style={{ background: C.bg }}>
-      <div className="flex flex-col flex-1 w-full max-w-3xl mx-auto">
+    <div className="flex flex-col flex-1" style={{ background: C.bg, overflow: 'hidden' }}>
+      <div className="flex flex-col flex-1 w-full max-w-3xl mx-auto" style={{ overflow: 'hidden' }}>
         {/* Header */}
         <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px', background: C.card, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
           <button onClick={() => nav('matches')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: C.muted }}>
@@ -1796,47 +1923,93 @@ function ChatScreen({ nav, profile, showReport, setShowReport }: {
                     background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
                     fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 600,
                     color: opt === 'Denunciar' ? C.danger : C.text,
-                  }}>
-                    {opt}
-                  </button>
+                  }}>{opt}</button>
                 ))}
               </div>
             )}
           </div>
         </div>
 
-        {/* Messages */}
+        {/* Mensagens */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {messages.map((msg, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: msg.from === 'me' ? 'flex-end' : 'flex-start' }}>
-              <div style={{
-                maxWidth: '70%', padding: '11px 15px', borderRadius: msg.from === 'me' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                background: msg.from === 'me' ? C.primary : C.card,
-                color: msg.from === 'me' ? '#fff' : C.text,
-                border: msg.from === 'me' ? 'none' : `1px solid ${C.border}`,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              }}>
-                <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', lineHeight: 1.5, margin: '0 0 4px' }}>{msg.text}</p>
-                <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '11px', color: msg.from === 'me' ? 'rgba(255,255,255,0.7)' : C.muted, margin: 0, textAlign: 'right' }}>{msg.time}</p>
-              </div>
+          {loading && (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>Carregando mensagens...</p>
             </div>
-          ))}
+          )}
+          {!loading && erro && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '40px 0' }}>
+              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.danger, textAlign: 'center' }}>{erro}</p>
+              <Btn label="Tentar novamente" small onClick={carregarMensagens} style={{ maxWidth: '200px' }} />
+            </div>
+          )}
+          {!loading && !erro && messages.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>Nenhuma mensagem ainda. Envie a primeira! 👋</p>
+            </div>
+          )}
+          {messages.map(msg => {
+            const isMe = msg.remetente_id === meuPerfilId;
+            return (
+              <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                <div style={{
+                  maxWidth: '70%', padding: '11px 15px',
+                  borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                  background: isMe ? C.primary : C.card,
+                  color: isMe ? '#fff' : C.text,
+                  border: isMe ? 'none' : `1px solid ${C.border}`,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                }}>
+                  <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', lineHeight: 1.5, margin: '0 0 4px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg.conteudo}</p>
+                  <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '11px', color: isMe ? 'rgba(255,255,255,0.7)' : C.muted, margin: 0, textAlign: 'right' }}>
+                    {formatTime(msg.data_envio)}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
         </div>
 
+        {/* Erro de envio */}
+        {sendError && (
+          <div style={{ padding: '6px 16px 2px', background: `${C.danger}12`, borderTop: `1px solid ${C.danger}30` }}>
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.danger, margin: 0 }}>{sendError}</p>
+          </div>
+        )}
+
         {/* Input */}
-        <div style={{ padding: '12px 16px 28px', background: C.card, borderTop: `1px solid ${C.border}`, display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0 }}>
-          <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && send()}
-            placeholder="Digite uma mensagem..."
-            style={{ flex: 1, padding: '12px 16px', borderRadius: '22px', border: `1.5px solid ${C.border}`, background: C.bg, fontSize: '14px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none' }}
-          />
-          <button onClick={send} style={{
-            width: '46px', height: '46px', borderRadius: '50%', border: 'none',
-            background: C.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
+        <div style={{ padding: '10px 14px 24px', background: C.card, borderTop: `1px solid ${C.border}`, display: 'flex', gap: '10px', alignItems: 'flex-end', flexShrink: 0 }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Digite uma mensagem..."
+              maxLength={1000}
+              rows={1}
+              style={{
+                width: '100%', padding: '12px 16px', borderRadius: '22px',
+                border: `1.5px solid ${C.border}`, background: C.bg,
+                fontSize: '14px', fontFamily: 'Nunito,sans-serif', color: C.text,
+                outline: 'none', resize: 'none', boxSizing: 'border-box', display: 'block',
+              }}
+            />
+            {input.length > 900 && (
+              <span style={{ position: 'absolute', bottom: '-14px', right: '8px', fontSize: '10px', color: input.length >= 1000 ? C.danger : C.muted, fontFamily: 'Nunito,sans-serif' }}>
+                {input.length}/1000
+              </span>
+            )}
+          </div>
+          <button
+            onClick={send}
+            disabled={sending || !input.trim()}
+            style={{
+              width: '46px', height: '46px', borderRadius: '50%', border: 'none',
+              background: sending || !input.trim() ? C.border : C.primary,
+              cursor: sending || !input.trim() ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
@@ -2250,6 +2423,7 @@ export default function App() {
   const [matchProfile, setMatchProfile] = useState<Profile>(PROFILES[0]);
   const [selectedProfile, setSelectedProfile] = useState<Profile>(PROFILES[0]);
   const [currentChat, setCurrentChat] = useState<Profile>(PROFILES[0]);
+  const [activeChatMatchId, setActiveChatMatchId] = useState<number>(0);
   const [showFilters, setShowFilters] = useState(getParam('filters') === '1');
   const [showReport, setShowReport] = useState(getParam('report') === '1');
   const [meuPerfil, setMeuPerfil] = useState<PerfilAPI | null>(null);
@@ -2302,6 +2476,7 @@ export default function App() {
               const res = await enviarCurtida(p.id, 'curtir');
               if (res.match) {
                 setMatchProfile(p);
+                if (res.match_data) setActiveChatMatchId(res.match_data.id);
                 setMatchesKey(k => k + 1);
                 nav('match');
               } else {
@@ -2315,10 +2490,10 @@ export default function App() {
       )}
       {screen === 'match' && <MatchScreen nav={nav} profile={matchProfile} setCurrentChat={setCurrentChat} />}
       {screen === 'matches' && (
-        <MatchesScreen key={matchesKey} nav={nav} setCurrentChat={setCurrentChat} meuPerfilId={meuPerfil?.id ?? null} />
+        <MatchesScreen key={matchesKey} nav={nav} setCurrentChat={setCurrentChat} setActiveChatMatchId={setActiveChatMatchId} meuPerfilId={meuPerfil?.id ?? null} />
       )}
       {screen === 'chat' && (
-        <ChatScreen nav={nav} profile={currentChat} showReport={showReport} setShowReport={setShowReport} />
+        <ChatScreen nav={nav} profile={currentChat} matchId={activeChatMatchId} meuPerfilId={meuPerfil?.id ?? 0} showReport={showReport} setShowReport={setShowReport} />
       )}
       {screen === 'profile' && (
         <MyProfileScreen

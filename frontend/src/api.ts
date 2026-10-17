@@ -214,3 +214,44 @@ export async function enviarCurtida(
 export async function listarMatches(): Promise<MatchData[]> {
   return req<MatchData[]>('/api/matches/');
 }
+
+// ─── Chat ──────────────────────────────────────────────────────────────────────
+
+export interface UltimaMensagem {
+  conteudo: string;
+  data_envio: string;
+  remetente_id: number;
+}
+
+export interface Conversa {
+  match_id: number;
+  outro_perfil: { id: number; nome: string; idade: number; regiao: string };
+  score: number;
+  ultima_mensagem: UltimaMensagem | null;
+  nao_lidas: number;
+}
+
+export interface MensagemAPI {
+  id: number;
+  match_id: number;
+  remetente_id: number;
+  conteudo: string;
+  data_envio: string;
+  lida: boolean;
+}
+
+export async function listarConversas(): Promise<Conversa[]> {
+  return req<Conversa[]>('/api/conversas/');
+}
+
+export async function listarMensagens(matchId: number, apos?: number): Promise<MensagemAPI[]> {
+  const qs = apos !== undefined ? `?apos=${apos}` : '';
+  return req<MensagemAPI[]>(`/api/matches/${matchId}/mensagens/${qs}`);
+}
+
+export async function enviarMensagem(matchId: number, conteudo: string): Promise<MensagemAPI> {
+  return req<MensagemAPI>(`/api/matches/${matchId}/mensagens/`, {
+    method: 'POST',
+    body: JSON.stringify({ conteudo }),
+  });
+}
