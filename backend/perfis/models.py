@@ -4,6 +4,25 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Perfil(models.Model):
+    HORARIO_CHOICES = [
+        ('madrugador', 'Madrugador (acorda cedo)'),
+        ('noturno', 'Noturno (dorme/acorda tarde)'),
+        ('flexivel', 'Flexível'),
+    ]
+
+    VISITAS_CHOICES = [
+        ('raramente', 'Raramente'),
+        ('as_vezes', 'Às vezes'),
+        ('frequentemente', 'Frequentemente'),
+    ]
+
+    IMOVEL_CHOICES = [
+        ('apartamento', 'Apartamento'),
+        ('casa', 'Casa'),
+        ('republica', 'República'),
+        ('indiferente', 'Indiferente'),
+    ]
+
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -25,6 +44,29 @@ class Perfil(models.Model):
         default=3,
         validators=[MinValueValidator(1), MaxValueValidator(5)],
     )
+    # ── Novos campos (Sprint 6) ──────────────────────────────────────────────
+    perfil_horario = models.CharField(
+        max_length=20, choices=HORARIO_CHOICES, default='flexivel',
+    )
+    nivel_ruido = models.IntegerField(
+        default=3,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+    )
+    nivel_social = models.IntegerField(
+        default=3,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+    )
+    aceita_visitas = models.CharField(
+        max_length=20, choices=VISITAS_CHOICES, default='as_vezes',
+    )
+    tipo_imovel = models.CharField(
+        max_length=20, choices=IMOVEL_CHOICES, default='indiferente',
+    )
+    qtd_moradores = models.IntegerField(
+        default=2,
+        validators=[MinValueValidator(1), MaxValueValidator(4)],
+    )
+    # ────────────────────────────────────────────────────────────────────────
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 

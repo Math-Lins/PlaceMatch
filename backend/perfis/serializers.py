@@ -9,6 +9,8 @@ class PerfilSerializer(serializers.ModelSerializer):
             'id', 'usuario', 'nome', 'idade', 'regiao', 'bio',
             'orcamento_min', 'orcamento_max', 'fumante', 'aceita_pets',
             'tolerancia_bagunca', 'nivel_organizacao',
+            'perfil_horario', 'nivel_ruido', 'nivel_social',
+            'aceita_visitas', 'tipo_imovel', 'qtd_moradores',
         ]
         read_only_fields = ['id', 'usuario']
 
@@ -62,6 +64,39 @@ class PerfilSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'O nível de organização deve ser um valor entre 1 e 5.'
             )
+        return value
+
+    def validate_nivel_ruido(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError('O nível de ruído deve ser entre 1 e 5.')
+        return value
+
+    def validate_nivel_social(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError('O nível social deve ser entre 1 e 5.')
+        return value
+
+    def validate_qtd_moradores(self, value):
+        if value < 1 or value > 4:
+            raise serializers.ValidationError('A quantidade de moradores deve ser entre 1 e 4.')
+        return value
+
+    def validate_perfil_horario(self, value):
+        validos = [c[0] for c in Perfil.HORARIO_CHOICES]
+        if value not in validos:
+            raise serializers.ValidationError(f'Escolha um dos valores: {validos}.')
+        return value
+
+    def validate_aceita_visitas(self, value):
+        validos = [c[0] for c in Perfil.VISITAS_CHOICES]
+        if value not in validos:
+            raise serializers.ValidationError(f'Escolha um dos valores: {validos}.')
+        return value
+
+    def validate_tipo_imovel(self, value):
+        validos = [c[0] for c in Perfil.IMOVEL_CHOICES]
+        if value not in validos:
+            raise serializers.ValidationError(f'Escolha um dos valores: {validos}.')
         return value
 
     def validate(self, attrs):
