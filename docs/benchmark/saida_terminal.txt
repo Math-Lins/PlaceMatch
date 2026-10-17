@@ -1,0 +1,39 @@
+================================================================================
+  A) Cálculo em memória (sem banco)  —  rep=5
+================================================================================
+        N   Loop med(s)   Loop min(s)   NumPy med(s)   NumPy min(s)   Speedup     MaxDiff
+--------------------------------------------------------------------------------
+      100      0.002553      0.002086       0.003876       0.001899     0.66x    0.00e+00
+    1,000      0.022388      0.020827       0.016405       0.014727     1.36x    0.00e+00
+   10,000      0.305483      0.083443       0.266742       0.249375     1.15x    0.00e+00
+   50,000      0.610897      0.560300       0.412539       0.382172     1.48x    0.00e+00
+  100,000      1.193900      1.045544       0.958178       0.834313     1.25x    0.00e+00
+
+================================================================================
+  B) Ponta a ponta com banco  —  rep=5
+================================================================================
+ N req   N real   Loop med(s)   Loop min(s)   NumPy med(s)   NumPy min(s)   Speedup   Qry Loop  Qry NumPy
+--------------------------------------------------------------------------------
+   100      100      0.927090      0.807200       0.027188       0.023577    34.10x        601          2
+C:\dev\projeto\PlaceMatch\backend\venv\Lib\site-packages\django\utils\connection.py:15: UserWarning: Limit for query logging exceeded, only the last 9000 queries will be returned.
+  return getattr(self._connections[self._alias], item)
+ 1,000    1,000     11.506677      9.874515       0.253757       0.212910    45.35x          0          0
+  [aviso B N=5000] warmup=58.0s > 30.0s -> reps reduzidos de 5 para 2
+ 5,000    5,000     73.799701     66.026058       1.216901       1.135152    60.65x          0          0 (reps=2)
+
+================================================================================
+  C) Sensibilidade dos pesos  (20 bases × 1.000 outros, top-10 overlap médio)
+================================================================================
+    Critério  Peso atual    +5pp overlap    -5pp overlap
+--------------------------------------------------------------------------------
+   orcamento        0.25         0.8800         0.8750
+      regiao        0.15         0.9700         0.8700
+      rotina        0.15         0.8750         0.8800
+     habitos        0.25         0.9050         0.9050
+     moradia        0.10         0.8550         0.8650
+       idade        0.10         0.8500         0.8100
+  -> C:\dev\projeto\PlaceMatch\docs\benchmark\benchmark_compatibilidade.csv
+  -> C:\dev\projeto\PlaceMatch\docs\benchmark\sensibilidade_pesos.csv
+  -> C:\dev\projeto\PlaceMatch\docs\benchmark\ambiente.txt
+
+Arquivos salvos em: C:\dev\projeto\PlaceMatch\docs\benchmark

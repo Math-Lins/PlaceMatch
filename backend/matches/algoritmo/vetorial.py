@@ -25,9 +25,12 @@ _NP_VISITAS = np.array(VISITAS_MATRIX, dtype=np.float64)
 _NP_IMOVEL  = np.array(IMOVEL_MATRIX,  dtype=np.float64)
 
 
-def calcular_scores_lote(base, outros) -> tuple[np.ndarray, np.ndarray]:
+def calcular_scores_lote(base, outros, pesos=None) -> tuple[np.ndarray, np.ndarray]:
     """
     Calcula a compatibilidade de `base` contra cada perfil em `outros`.
+
+    pesos : dict opcional com as 6 chaves de PESOS.  Se None, usa PESOS de
+            config.py.  Útil para análise de sensibilidade sem alterar o config.
 
     Parâmetros
     ----------
@@ -39,6 +42,9 @@ def calcular_scores_lote(base, outros) -> tuple[np.ndarray, np.ndarray]:
     ids    : np.ndarray de int com os IDs dos perfis em `outros`
     scores : np.ndarray de float64 com os scores correspondentes (0-1)
     """
+    if pesos is None:
+        pesos = PESOS
+
     outros_list = list(outros)
     n = len(outros_list)
 
@@ -126,12 +132,12 @@ def calcular_scores_lote(base, outros) -> tuple[np.ndarray, np.ndarray]:
     # limite de arredondamento em 4 casas e produzindo um score divergente.
     scores = np.array([
         round(max(0.0, min(1.0,
-            PESOS['orcamento'] * float(sim_orc[i])
-            + PESOS['regiao']  * float(sim_reg[i])
-            + PESOS['rotina']  * float(sim_rot[i])
-            + PESOS['habitos'] * float(sim_hab[i])
-            + PESOS['moradia'] * float(sim_mor[i])
-            + PESOS['idade']   * float(sim_ida[i])
+            pesos['orcamento'] * float(sim_orc[i])
+            + pesos['regiao']  * float(sim_reg[i])
+            + pesos['rotina']  * float(sim_rot[i])
+            + pesos['habitos'] * float(sim_hab[i])
+            + pesos['moradia'] * float(sim_mor[i])
+            + pesos['idade']   * float(sim_ida[i])
         )), 4)
         for i in range(n)
     ], dtype=np.float64)

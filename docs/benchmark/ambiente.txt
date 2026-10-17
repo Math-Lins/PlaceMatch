@@ -1,0 +1,7 @@
+Data/hora    : 2026-10-17T17:58:30.778231
+Python       : 3.12.4 (tags/v3.12.4:8e8a4ba, Jun  6 2024, 19:30:16) [MSC v.1940 64 bit (AMD64)]
+NumPy        : 2.5.4
+Django       : 6.1.1
+Sistema      : Windows 10
+CPU          : Intel64 Family 6 Model 78 Stepping 3, GenuineIntel
+Banco        : django.db.backends.postgresql  db=placematch
