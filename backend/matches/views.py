@@ -146,6 +146,6 @@ class MatchListView(APIView):
             Match.objects
             .filter(Q(perfil_a=meu_perfil) | Q(perfil_b=meu_perfil))
             .select_related('perfil_a', 'perfil_b')
-            .order_by('-data_match')
+            .order_by('-score', '-data_match')
         )
         return Response(MatchSerializer(matches, many=True).data)

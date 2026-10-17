@@ -13,6 +13,8 @@ class PerfilDescobertoSerializer(serializers.ModelSerializer):
             'orcamento_min', 'orcamento_max',
             'fumante', 'aceita_pets',
             'tolerancia_bagunca', 'nivel_organizacao',
+            'perfil_horario', 'nivel_ruido', 'nivel_social',
+            'aceita_visitas', 'tipo_imovel', 'qtd_moradores',
             'score',
         ]
 
@@ -33,9 +35,13 @@ class CurtidaSerializer(serializers.ModelSerializer):
 class PerfilBasicoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Perfil
-        fields = ['id', 'nome', 'idade', 'regiao', 'bio',
-                  'fumante', 'aceita_pets', 'tolerancia_bagunca', 'nivel_organizacao',
-                  'orcamento_min', 'orcamento_max']
+        fields = [
+            'id', 'nome', 'idade', 'regiao', 'bio',
+            'fumante', 'aceita_pets', 'tolerancia_bagunca', 'nivel_organizacao',
+            'orcamento_min', 'orcamento_max',
+            'perfil_horario', 'nivel_ruido', 'nivel_social',
+            'aceita_visitas', 'tipo_imovel', 'qtd_moradores',
+        ]
 
 
 class MatchSerializer(serializers.ModelSerializer):
