@@ -11,6 +11,8 @@ from matches.compatibilidade import (
     _sim_visitas,
     _sim_imovel,
 )
+from matches.algoritmo import calcular_scores_lote
+from matches.servicos import recalcular_lote
 
 Usuario = get_user_model()
 
@@ -523,3 +525,96 @@ class CamposNovosRespostasTest(TestCase):
                           msg=f'Campo {campo!r} ausente em perfil_a de /matches/')
             self.assertIn(campo, match['perfil_b'],
                           msg=f'Campo {campo!r} ausente em perfil_b de /matches/')
+
+
+# =============================================================================
+# Testes da camada vetorial / servicos (Parte 2)
+# =============================================================================
+
+class EquivalenciaVetorialEscalarTest(TestCase):
+    """calcular_scores_lote deve coincidir com calcular_score escalar."""
+
+    def test_scores_lote_identicos_ao_escalar(self):
+        _, base = _criar_usuario_e_perfil('buscando_vaga', nome='Base',
+                                          regiao='SP', idade=25,
+                                          orcamento_min=1000, orcamento_max=2000,
+                                          perfil_horario='madrugador', nivel_ruido=2,
+                                          nivel_social=4, aceita_visitas='as_vezes',
+                                          tipo_imovel='apartamento', qtd_moradores=2)
+        outros_dados = [
+            dict(tipo='oferecendo_vaga', nome='O1', regiao='SP', idade=26,
+                 orcamento_min=1000, orcamento_max=2000,
+                 perfil_horario='madrugador', nivel_ruido=2, nivel_social=4,
+                 aceita_visitas='as_vezes', tipo_imovel='apartamento', qtd_moradores=2),
+            dict(tipo='oferecendo_vaga', nome='O2', regiao='RJ', idade=40,
+                 orcamento_min=500, orcamento_max=800,
+                 perfil_horario='noturno', nivel_ruido=5, nivel_social=1,
+                 aceita_visitas='raramente', tipo_imovel='casa', qtd_moradores=4),
+            dict(tipo='oferecendo_vaga', nome='O3', regiao='SP', idade=28,
+                 orcamento_min=1200, orcamento_max=1800,
+                 perfil_horario='flexivel', nivel_ruido=3, nivel_social=3,
+                 aceita_visitas='frequentemente', tipo_imovel='indiferente', qtd_moradores=2),
+        ]
+        outros_perfis = [_criar_usuario_e_perfil(**d)[1] for d in outros_dados]
+
+        _, scores_lote = calcular_scores_lote(base, outros_perfis)
+
+        for perfil, score_lote in zip(outros_perfis, scores_lote.tolist()):
+            score_escalar = calcular_score(base, perfil)
+            self.assertAlmostEqual(
+                score_lote, score_escalar, delta=1e-4,
+                msg=f'Divergência para {perfil.nome}: lote={score_lote} escalar={score_escalar}',
+            )
+
+
+class RecalcularLoteOrdemSignalTest(TestCase):
+    """recalcular_lote deve salvar Compatibilidade com pa_id < pb_id."""
+
+    def test_compatibilidade_salva_com_pa_menor_que_pb(self):
+        u_b, pb = _criar_usuario_e_perfil('buscando_vaga', nome='Buscador')
+        u_o, po = _criar_usuario_e_perfil('oferecendo_vaga', nome='Ofertante')
+
+        # Limpa compatibilidades geradas pelo signal no setUp
+        Compatibilidade.objects.all().delete()
+
+        recalcular_lote(pb)
+
+        compat = Compatibilidade.objects.get(
+            perfil_a_id=min(pb.id, po.id),
+            perfil_b_id=max(pb.id, po.id),
+        )
+        self.assertLessEqual(compat.perfil_a_id, compat.perfil_b_id)
+        self.assertGreaterEqual(compat.score, 0.0)
+        self.assertLessEqual(compat.score, 1.0)
+
+
+class UpsertSemDuplicataTest(TestCase):
+    """Chamar recalcular_lote duas vezes não deve criar registros duplicados."""
+
+    def test_dois_recalculos_nao_criam_duplicatas(self):
+        u_b, pb = _criar_usuario_e_perfil('buscando_vaga', nome='Buscador2')
+        _, _po = _criar_usuario_e_perfil('oferecendo_vaga', nome='Ofertante2')
+
+        Compatibilidade.objects.all().delete()
+
+        recalcular_lote(pb)
+        recalcular_lote(pb)
+
+        count = Compatibilidade.objects.filter(
+            **{f'perfil_{"a" if pb.id < _po.id else "b"}_id': pb.id}
+        ).count()
+        self.assertEqual(count, 1, 'Deveria existir exatamente 1 registro de compatibilidade')
+
+
+class RecalcularComandoTest(TestCase):
+    """management command recalcular_compatibilidades executa sem erros."""
+
+    def test_comando_executa_sem_excecao(self):
+        from django.core.management import call_command
+        from io import StringIO
+        _criar_usuario_e_perfil('buscando_vaga',  nome='CmdB')
+        _criar_usuario_e_perfil('oferecendo_vaga', nome='CmdO')
+        out = StringIO()
+        # deve concluir sem lançar exceção
+        call_command('recalcular_compatibilidades', stdout=out)
+        self.assertIn('Concluído', out.getvalue())
