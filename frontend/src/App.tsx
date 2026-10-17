@@ -1860,6 +1860,12 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
   const [editIdade, setEditIdade] = useState('');
   const [editRegiao, setEditRegiao] = useState('');
   const [editBio, setEditBio] = useState('');
+  const [editHorario, setEditHorario] = useState<'madrugador' | 'noturno' | 'flexivel'>('flexivel');
+  const [editVisitas, setEditVisitas] = useState<'raramente' | 'as_vezes' | 'frequentemente'>('as_vezes');
+  const [editTipoImovel, setEditTipoImovel] = useState<'apartamento' | 'casa' | 'republica' | 'indiferente'>('indiferente');
+  const [editQtdMoradores, setEditQtdMoradores] = useState(2);
+  const [editRuido, setEditRuido] = useState(3);
+  const [editSocial, setEditSocial] = useState(3);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
   const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string>>({});
@@ -1870,6 +1876,12 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
       setEditIdade(String(meuPerfil.idade));
       setEditRegiao(meuPerfil.regiao);
       setEditBio(meuPerfil.bio);
+      setEditHorario(meuPerfil.perfil_horario);
+      setEditVisitas(meuPerfil.aceita_visitas);
+      setEditTipoImovel(meuPerfil.tipo_imovel);
+      setEditQtdMoradores(meuPerfil.qtd_moradores);
+      setEditRuido(meuPerfil.nivel_ruido);
+      setEditSocial(meuPerfil.nivel_social);
     }
   }, [meuPerfil]);
 
@@ -1892,6 +1904,12 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
         idade: Number(editIdade),
         regiao: editRegiao.trim(),
         bio: editBio.trim(),
+        perfil_horario: editHorario,
+        aceita_visitas: editVisitas,
+        tipo_imovel: editTipoImovel,
+        qtd_moradores: editQtdMoradores,
+        nivel_ruido: editRuido,
+        nivel_social: editSocial,
       });
       onPerfilAtualizado(atualizado);
       setEditing(false);
@@ -1972,6 +1990,96 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
                   <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif', display: 'block', marginBottom: '6px' }}>Biografia</label>
                   <textarea value={editBio} onChange={e => setEditBio(e.target.value)} style={{ width: '100%', padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${editFieldErrors.bio ? C.danger : C.border}`, background: C.card, fontSize: '15px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none', resize: 'none', height: '90px', boxSizing: 'border-box' }} />
                   {editFieldErrors.bio && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '4px' }}>{editFieldErrors.bio}</span>}
+                </div>
+                <div>
+                  <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Perfil de horário</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {([
+                      { value: 'madrugador', label: '🌅 Madrugador(a)' },
+                      { value: 'noturno', label: '🌙 Noturno(a)' },
+                      { value: 'flexivel', label: '☀️ Flexível' },
+                    ] as { value: 'madrugador' | 'noturno' | 'flexivel'; label: string }[]).map(opt => (
+                      <button key={opt.value} onClick={() => setEditHorario(opt.value)} style={{
+                        flex: 1, minWidth: '100px', padding: '10px 12px', borderRadius: '12px', cursor: 'pointer',
+                        border: `2px solid ${editHorario === opt.value ? C.primary : C.border}`,
+                        background: editHorario === opt.value ? `${C.primary}12` : C.card,
+                        color: editHorario === opt.value ? C.primary : C.muted,
+                        fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
+                      }}>{opt.label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Com que frequência recebe visitas?</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {([
+                      { value: 'raramente', label: 'Raramente' },
+                      { value: 'as_vezes', label: 'Às vezes' },
+                      { value: 'frequentemente', label: 'Frequentemente' },
+                    ] as { value: 'raramente' | 'as_vezes' | 'frequentemente'; label: string }[]).map(opt => (
+                      <button key={opt.value} onClick={() => setEditVisitas(opt.value)} style={{
+                        flex: 1, minWidth: '100px', padding: '10px 12px', borderRadius: '12px', cursor: 'pointer',
+                        border: `2px solid ${editVisitas === opt.value ? C.primary : C.border}`,
+                        background: editVisitas === opt.value ? `${C.primary}12` : C.card,
+                        color: editVisitas === opt.value ? C.primary : C.muted,
+                        fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
+                      }}>{opt.label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Tipo de imóvel preferido</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {([
+                      { value: 'apartamento', label: 'Apartamento' },
+                      { value: 'casa', label: 'Casa' },
+                      { value: 'republica', label: 'República' },
+                      { value: 'indiferente', label: 'Indiferente' },
+                    ] as { value: 'apartamento' | 'casa' | 'republica' | 'indiferente'; label: string }[]).map(opt => (
+                      <button key={opt.value} onClick={() => setEditTipoImovel(opt.value)} style={{
+                        flex: 1, minWidth: '90px', padding: '10px 12px', borderRadius: '12px', cursor: 'pointer',
+                        border: `2px solid ${editTipoImovel === opt.value ? C.primary : C.border}`,
+                        background: editTipoImovel === opt.value ? `${C.primary}12` : C.card,
+                        color: editTipoImovel === opt.value ? C.primary : C.muted,
+                        fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
+                      }}>{opt.label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Quantas pessoas no imóvel?</p>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[1, 2, 3, 4].map(n => (
+                      <button key={n} onClick={() => setEditQtdMoradores(n)} style={{
+                        flex: 1, height: '44px', borderRadius: '12px', cursor: 'pointer',
+                        border: `2px solid ${editQtdMoradores === n ? C.primary : C.border}`,
+                        background: editQtdMoradores === n ? `${C.primary}12` : C.card,
+                        color: editQtdMoradores === n ? C.primary : C.muted,
+                        fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700,
+                      }}>{n}{n === 4 ? '+' : ''}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {([
+                    { label: 'Tolerância a barulho', value: editRuido, onChange: setEditRuido },
+                    { label: 'Perfil social', value: editSocial, onChange: setEditSocial },
+                  ] as { label: string; value: number; onChange: (v: number) => void }[]).map(({ label, value, onChange }) => (
+                    <div key={label}>
+                      <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{label}</p>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {[1, 2, 3, 4, 5].map(i => (
+                          <button key={i} onClick={() => onChange(i)} style={{
+                            flex: 1, height: '44px', borderRadius: '10px', cursor: 'pointer',
+                            border: `2px solid ${value >= i ? C.primary : C.border}`,
+                            background: value >= i ? C.primary : C.card,
+                            color: value >= i ? '#fff' : C.muted,
+                            fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
+                          }}>{i}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : (
