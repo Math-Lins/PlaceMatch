@@ -190,6 +190,22 @@ Exemplos de login para teste:
 | `fernanda@seed.pm` | buscando vaga | Clara 90% |
 | `beatriz@seed.pm` | oferecendo vaga | Ana 96%, Mariana 95% |
 
+## Desempenho
+
+O algoritmo de compatibilidade usa NumPy para calcular scores em lote, o que reduz as queries ao banco de N+1 para 2, independentemente do número de perfis. Em testes com 5.000 perfis, a versão em lote é **~61x mais rápida** do que a versão escalar em loop.
+
+Documentação completa do algoritmo, fórmulas, tabelas de similaridade e resultados do benchmark: [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md).
+
+Para rodar o benchmark localmente:
+
+```bash
+cd backend
+python manage.py benchmark_compatibilidade          # completo (banco + memória)
+python manage.py benchmark_compatibilidade --sem-banco  # só memória
+```
+
+---
+
 ## Equipe
 
 | Nome | Matrícula |
