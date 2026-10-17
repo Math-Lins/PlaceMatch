@@ -163,6 +163,32 @@ npm run dev
 | GET | `/api/perfis/{id}/` | Detalhe de um perfil |
 | PATCH | `/api/perfis/{id}/` | Atualizar perfil (só o dono) |
 | DELETE | `/api/perfis/{id}/` | Excluir perfil (só o dono) |
+| GET | `/api/descoberta/` | Perfis compatíveis ordenados por score |
+| POST | `/api/curtidas/` | Curtir ou recusar um perfil |
+| GET | `/api/matches/` | Listar matches do usuário logado |
+
+### Dados de teste (seed)
+
+Após rodar as migrações, popule o banco com perfis e matches de exemplo:
+
+```bash
+# Criar 21 perfis variados (15 buscando vaga + 6 oferecendo vaga)
+docker exec placematch_backend python manage.py seed_perfis
+
+# Criar 15 matches pré-populados entre pares de alta compatibilidade
+docker exec placematch_backend python manage.py seed_matches
+```
+
+Senha de todos os seeds: `Test@1234`
+
+Exemplos de login para teste:
+
+| E-mail | Tipo | Melhores matches |
+|---|---|---|
+| `ana@seed.pm` | buscando vaga | Beatriz 96%, João 67% |
+| `mariana@seed.pm` | buscando vaga | Beatriz 95%, Júlia 87% |
+| `fernanda@seed.pm` | buscando vaga | Clara 90% |
+| `beatriz@seed.pm` | oferecendo vaga | Ana 96%, Mariana 95% |
 
 ## Equipe
 
@@ -190,3 +216,23 @@ npm run dev
 - Validação por campo antes do envio (formato de e-mail, comprimento mínimo de senha, orçamento, etc.)
 - Erros da API (400) exibidos embaixo do campo correspondente, não como alerta genérico
 - Tratamento de erro de rede com mensagem amigável ("Não foi possível conectar ao servidor...")
+
+✅ Sprint 5 concluída — algoritmo de compatibilidade, descoberta e matches:
+
+- Algoritmo de score ponderado (orçamento, região, hábitos, rotina, faixa etária)
+- Tela de descoberta com curtir/recusar e match mútuo
+- Tela de matches e chat entre usuários
+
+✅ Sprint 6 concluída — matches funcionais, algoritmo expandido e UI de compatibilidade:
+
+**Backend:**
+- 6 novos campos no perfil: horário (madrugador/noturno/flexível), nível de ruído, nível social, frequência de visitas, tipo de imóvel e quantidade de moradores
+- Algoritmo reescrito com 6 dimensões e pesos calibrados: orçamento 20%, região 10%, rotina 15%, hábitos 25%, estilo de moradia 10%, faixa etária 20%
+- Matches ordenados por score decrescente na API
+- Comandos de seed: `seed_perfis` (21 perfis) e `seed_matches` (15 matches pré-populados)
+
+**Frontend:**
+- Métrica de compatibilidade em 5 níveis a cada 20% (Baixa → Combinação perfeita), com barras coloridas e label em cada card de match
+- Aba de matches atualiza automaticamente após novo match ou ao navegar para ela
+- Tela de celebração com atalhos: iniciar conversa, ver matches ou continuar procurando
+- Botão "Curtir perfil" no detalhe chama a API e redireciona corretamente
