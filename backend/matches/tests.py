@@ -1,3 +1,7 @@
+import itertools
+import random
+import sys
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
@@ -531,40 +535,161 @@ class CamposNovosRespostasTest(TestCase):
 # Testes da camada vetorial / servicos (Parte 2)
 # =============================================================================
 
-class EquivalenciaVetorialEscalarTest(TestCase):
-    """calcular_scores_lote deve coincidir com calcular_score escalar."""
+class EquivalenciaVetorialEscalarReforcoTest(TestCase):
+    """
+    ~318 perfis em memória (SimpleNamespace); cobre todas as 36 combinações
+    categóricas (perfil_horario × aceita_visitas × tipo_imovel), extremos e
+    intermediários de todos os campos numéricos, seis casos de sobreposição de
+    orçamento e oito variações de caixa/espaço na região.
 
-    def test_scores_lote_identicos_ao_escalar(self):
-        _, base = _criar_usuario_e_perfil('buscando_vaga', nome='Base',
-                                          regiao='SP', idade=25,
-                                          orcamento_min=1000, orcamento_max=2000,
-                                          perfil_horario='madrugador', nivel_ruido=2,
-                                          nivel_social=4, aceita_visitas='as_vezes',
-                                          tipo_imovel='apartamento', qtd_moradores=2)
-        outros_dados = [
-            dict(tipo='oferecendo_vaga', nome='O1', regiao='SP', idade=26,
-                 orcamento_min=1000, orcamento_max=2000,
-                 perfil_horario='madrugador', nivel_ruido=2, nivel_social=4,
-                 aceita_visitas='as_vezes', tipo_imovel='apartamento', qtd_moradores=2),
-            dict(tipo='oferecendo_vaga', nome='O2', regiao='RJ', idade=40,
-                 orcamento_min=500, orcamento_max=800,
-                 perfil_horario='noturno', nivel_ruido=5, nivel_social=1,
-                 aceita_visitas='raramente', tipo_imovel='casa', qtd_moradores=4),
-            dict(tipo='oferecendo_vaga', nome='O3', regiao='SP', idade=28,
-                 orcamento_min=1200, orcamento_max=1800,
-                 perfil_horario='flexivel', nivel_ruido=3, nivel_social=3,
-                 aceita_visitas='frequentemente', tipo_imovel='indiferente', qtd_moradores=2),
+    Compara TODOS os pares nos dois sentidos (grupo_a como base → grupo_b,
+    e grupo_b como base → grupo_a). Falha se |diff| > 1e-4.
+    Imprime sempre: total de pares comparados e maior diferença absoluta.
+    """
+
+    @staticmethod
+    def _make(pid, **kw):
+        defaults = dict(
+            id=pid, orcamento_min=800.0, orcamento_max=1500.0,
+            regiao='Boa Viagem', fumante=False, aceita_pets=True,
+            tolerancia_bagunca=3, nivel_organizacao=3, perfil_horario='flexivel',
+            nivel_ruido=3, nivel_social=3, aceita_visitas='as_vezes',
+            tipo_imovel='indiferente', qtd_moradores=2, idade=25,
+        )
+        defaults.update(kw)
+        return SimpleNamespace(**defaults)
+
+    def _montar_conjunto(self):
+        """Monta lista de ≈318 perfis cobrindo todos os casos críticos."""
+        random.seed(42)
+
+        HORARIOS = ['madrugador', 'noturno', 'flexivel']
+        VISITAS  = ['raramente', 'as_vezes', 'frequentemente']
+        IMOVEIS  = ['apartamento', 'casa', 'republica', 'indiferente']
+        REGIOES  = [
+            'Boa Viagem', ' boa viagem ', 'BOA VIAGEM', 'boa viagem',
+            'Recife', 'RECIFE', ' recife ', 'Olinda',
         ]
-        outros_perfis = [_criar_usuario_e_perfil(**d)[1] for d in outros_dados]
+        ORCAMENTOS = [
+            (800.0,  1500.0),  # sobreposição total com referência (800,1500)
+            (1000.0, 1800.0),  # sobreposição parcial superior
+            (2000.0, 3000.0),  # sem sobreposição
+            (500.0,   900.0),  # sobreposição parcial inferior
+            (1500.0, 2500.0),  # toca exatamente no limite superior
+            (0.0,  10000.0),   # contém completamente a referência
+        ]
+        # 6 configurações numéricas: mínimo, dois intermediários, máximo, misto
+        NUM = [
+            dict(nivel_ruido=1, nivel_social=1, qtd_moradores=1,
+                 tolerancia_bagunca=1, nivel_organizacao=1, idade=18),
+            dict(nivel_ruido=2, nivel_social=2, qtd_moradores=2,
+                 tolerancia_bagunca=2, nivel_organizacao=2, idade=25),
+            dict(nivel_ruido=3, nivel_social=3, qtd_moradores=2,
+                 tolerancia_bagunca=3, nivel_organizacao=3, idade=35),
+            dict(nivel_ruido=4, nivel_social=4, qtd_moradores=3,
+                 tolerancia_bagunca=4, nivel_organizacao=4, idade=50),
+            dict(nivel_ruido=5, nivel_social=5, qtd_moradores=4,
+                 tolerancia_bagunca=5, nivel_organizacao=5, idade=80),
+            dict(nivel_ruido=1, nivel_social=5, qtd_moradores=4,
+                 tolerancia_bagunca=5, nivel_organizacao=1, idade=45),
+        ]
 
-        _, scores_lote = calcular_scores_lote(base, outros_perfis)
+        perfis = []
+        pid = 1
 
-        for perfil, score_lote in zip(outros_perfis, scores_lote.tolist()):
-            score_escalar = calcular_score(base, perfil)
-            self.assertAlmostEqual(
-                score_lote, score_escalar, delta=1e-4,
-                msg=f'Divergência para {perfil.nome}: lote={score_lote} escalar={score_escalar}',
-            )
+        # Bloco 1 — todas as 36 combinações categóricas × 5 configurações (180 perfis)
+        for idx, (h, v, im) in enumerate(itertools.product(HORARIOS, VISITAS, IMOVEIS)):
+            for j, nc in enumerate(NUM[:5]):
+                o = ORCAMENTOS[(idx + j) % len(ORCAMENTOS)]
+                perfis.append(self._make(
+                    pid,
+                    perfil_horario=h, aceita_visitas=v, tipo_imovel=im,
+                    regiao=REGIOES[(idx + j) % len(REGIOES)],
+                    orcamento_min=o[0], orcamento_max=o[1],
+                    fumante=bool((idx + j) % 2),
+                    aceita_pets=bool((idx + j + 1) % 2),
+                    **nc,
+                ))
+                pid += 1
+
+        # Bloco 2 — pares de extremos em todos os campos numéricos (16 perfis)
+        for ruido in [1, 5]:
+            for social in [1, 5]:
+                for qtd in [1, 4]:
+                    for idade in [18, 80]:
+                        perfis.append(self._make(
+                            pid,
+                            nivel_ruido=ruido, nivel_social=social,
+                            qtd_moradores=qtd,
+                            tolerancia_bagunca=ruido,
+                            nivel_organizacao=6 - social,
+                            idade=idade,
+                        ))
+                        pid += 1
+
+        # Bloco 3 — todos os casos de orçamento × variações categóricas (54 perfis)
+        for idx, (o_min, o_max) in enumerate(ORCAMENTOS):
+            for h in HORARIOS:
+                for v in VISITAS:
+                    perfis.append(self._make(
+                        pid,
+                        orcamento_min=o_min, orcamento_max=o_max,
+                        perfil_horario=h, aceita_visitas=v,
+                        regiao=REGIOES[idx % len(REGIOES)],
+                    ))
+                    pid += 1
+
+        # Bloco 4 — cada variação de região isolada (8 perfis)
+        for r in REGIOES:
+            perfis.append(self._make(pid, regiao=r))
+            pid += 1
+
+        # Bloco 5 — gradiente de idade × gradiente de organização (60 perfis)
+        for idade in [18, 20, 25, 30, 35, 40, 45, 50, 60, 70, 75, 80]:
+            for org in [1, 2, 3, 4, 5]:
+                perfis.append(self._make(
+                    pid,
+                    idade=idade,
+                    nivel_organizacao=org,
+                    tolerancia_bagunca=6 - org,
+                ))
+                pid += 1
+
+        return perfis  # total ≈ 318
+
+    def test_scores_lote_equivalentes_ao_escalar(self):
+        todos = self._montar_conjunto()
+        metade = len(todos) // 2
+        grupo_a = todos[:metade]
+        grupo_b = todos[metade:]
+
+        total_pares = 0
+        max_diff = 0.0
+
+        # Dois sentidos: grupo_a como base e grupo_b como base
+        for base_grupo, outro_grupo in [(grupo_a, grupo_b), (grupo_b, grupo_a)]:
+            for base in base_grupo:
+                _, scores_lote = calcular_scores_lote(base, outro_grupo)
+                for outro, score_lote in zip(outro_grupo, scores_lote.tolist()):
+                    score_esc = calcular_score(base, outro)
+                    diff = abs(score_lote - score_esc)
+                    if diff > max_diff:
+                        max_diff = diff
+                    total_pares += 1
+                    self.assertLessEqual(
+                        diff, 1e-4,
+                        msg=(
+                            f'base.id={base.id} outro.id={outro.id}: '
+                            f'lote={score_lote:.6f} escalar={score_esc:.6f} '
+                            f'diff={diff:.2e}'
+                        ),
+                    )
+
+        print(
+            f'\n[EquivalenciaReforco] pares comparados: {total_pares:,} | '
+            f'maior diferença absoluta: {max_diff:.2e}',
+            file=sys.stderr,
+        )
 
 
 class RecalcularLoteOrdemSignalTest(TestCase):

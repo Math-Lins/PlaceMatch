@@ -120,14 +120,19 @@ def calcular_scores_lote(base, outros) -> tuple[np.ndarray, np.ndarray]:
     sim_ida = np.maximum(0.0, 1.0 - np.abs(id_a - id_b) / DIV_IDADE)
 
     # ── Score final ────────────────────────────────────────────────────────
-    raw = (
-        PESOS['orcamento'] * sim_orc
-        + PESOS['regiao']  * sim_reg
-        + PESOS['rotina']  * sim_rot
-        + PESOS['habitos'] * sim_hab
-        + PESOS['moradia'] * sim_mor
-        + PESOS['idade']   * sim_ida
-    )
-
-    scores = np.round(np.clip(raw, 0.0, 1.0), 4)
+    # A soma ponderada é feita em Python float para que a ordem e o modo de
+    # arredondamento sejam idênticos ao de calcular_score (escalar).  Sem isso,
+    # operações em array NumPy podem diferir em 1 ULP no raw, cruzando um
+    # limite de arredondamento em 4 casas e produzindo um score divergente.
+    scores = np.array([
+        round(max(0.0, min(1.0,
+            PESOS['orcamento'] * float(sim_orc[i])
+            + PESOS['regiao']  * float(sim_reg[i])
+            + PESOS['rotina']  * float(sim_rot[i])
+            + PESOS['habitos'] * float(sim_hab[i])
+            + PESOS['moradia'] * float(sim_mor[i])
+            + PESOS['idade']   * float(sim_ida[i])
+        )), 4)
+        for i in range(n)
+    ], dtype=np.float64)
     return ids, scores
