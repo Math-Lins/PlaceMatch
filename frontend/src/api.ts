@@ -112,6 +112,12 @@ export interface PerfilPayload {
   tolerancia_bagunca: number;
   nivel_organizacao: number;
   bio: string;
+  perfil_horario: 'madrugador' | 'noturno' | 'flexivel';
+  nivel_ruido: number;
+  nivel_social: number;
+  aceita_visitas: 'raramente' | 'as_vezes' | 'frequentemente';
+  tipo_imovel: 'apartamento' | 'casa' | 'republica' | 'indiferente';
+  qtd_moradores: number;
 }
 
 export interface Perfil extends PerfilPayload {
@@ -149,6 +155,12 @@ export interface PerfilDescoberto {
   aceita_pets: boolean;
   tolerancia_bagunca: number;
   nivel_organizacao: number;
+  perfil_horario: 'madrugador' | 'noturno' | 'flexivel';
+  nivel_ruido: number;
+  nivel_social: number;
+  aceita_visitas: 'raramente' | 'as_vezes' | 'frequentemente';
+  tipo_imovel: 'apartamento' | 'casa' | 'republica' | 'indiferente';
+  qtd_moradores: number;
   score: number;
 }
 
@@ -164,6 +176,12 @@ export interface PerfilBasico {
   nivel_organizacao: number;
   orcamento_min: string;
   orcamento_max: string;
+  perfil_horario: 'madrugador' | 'noturno' | 'flexivel';
+  nivel_ruido: number;
+  nivel_social: number;
+  aceita_visitas: 'raramente' | 'as_vezes' | 'frequentemente';
+  tipo_imovel: 'apartamento' | 'casa' | 'republica' | 'indiferente';
+  qtd_moradores: number;
 }
 
 export interface MatchData {

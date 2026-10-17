@@ -22,10 +22,10 @@
 }
 
 html, body, #root {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
-  background: #F0EDE8;
+  background: var(--color-bg);
   font-family: 'Nunito', sans-serif;
 }
 
