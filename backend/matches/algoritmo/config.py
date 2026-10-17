@@ -3,18 +3,22 @@
 
 Toda mudança de peso ou de regra deve acontecer AQUI — escalar.py e
 vetorial.py apenas lêem estas constantes.
+
+Pesos atuais (total = 1.0):
+  orcamento 25% · regiao 15% · rotina 15%
+  habitos   25% · moradia 10% · idade 10%
 """
 
 # ---------------------------------------------------------------------------
 # Pesos do score final (devem somar 1.0)
 # ---------------------------------------------------------------------------
 PESOS: dict[str, float] = {
-    'orcamento': 0.20,
-    'regiao':    0.10,
+    'orcamento': 0.25,
+    'regiao':    0.15,
     'rotina':    0.15,
     'habitos':   0.25,
     'moradia':   0.10,
-    'idade':     0.20,
+    'idade':     0.10,
 }
 
 assert abs(sum(PESOS.values()) - 1.0) < 1e-9, 'PESOS devem somar 1.0'
