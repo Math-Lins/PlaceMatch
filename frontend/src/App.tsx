@@ -8,6 +8,7 @@ import {
   atualizarPerfil as apiAtualizarPerfil,
   excluirPerfil as apiExcluirPerfil,
   logout,
+  setOn401,
   ApiError,
   listarDescoberta,
   enviarCurtida,
@@ -665,7 +666,7 @@ function WelcomeScreen({ nav }: { nav: (s: Screen) => void }) {
 
 // ─── Screen: Login ─────────────────────────────────────────────────────────────
 
-function LoginScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onLoginSuccess: () => Promise<void> }) {
+function LoginScreen({ nav, onLoginSuccess, loginMsg }: { nav: (s: Screen) => void; onLoginSuccess: () => Promise<void>; loginMsg?: string }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
@@ -707,6 +708,11 @@ function LoginScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onLogi
             <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 600 }}>Voltar</span>
           </button>
 
+          {loginMsg && (
+            <div style={{ background: `${C.danger}12`, border: `1px solid ${C.danger}40`, borderRadius: '12px', padding: '12px 16px', marginBottom: '20px' }}>
+              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.danger, margin: 0 }}>{loginMsg}</p>
+            </div>
+          )}
           <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>Boas-vindas de volta!</h2>
           <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted, margin: '0 0 32px' }}>Entre com sua conta para continuar</p>
 
@@ -1176,7 +1182,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
   onSelectProfile: (p: Profile) => void;
   showFilters: boolean;
   setShowFilters: (v: boolean) => void;
-  onMatch?: () => void;
+  onMatch?: (matchId: number) => void;
 }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingId, setLoadingId] = useState<number | null>(null);
@@ -1206,7 +1212,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
       if (res.match) {
         setMatchProfile(p);
         removeProfile(p.id);
-        onMatch?.();
+        onMatch?.(res.match_data?.id ?? 0);
         nav('match');
         return;
       }
@@ -1361,9 +1367,10 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
 
 // ─── Screen: Profile Detail ───────────────────────────────────────────────────
 
-function ProfileDetailScreen({ nav, profile, onLike }: {
+function ProfileDetailScreen({ nav, profile, backScreen, onLike }: {
   nav: (s: Screen) => void;
   profile: Profile;
+  backScreen: Screen;
   onLike?: (p: Profile) => Promise<void>;
 }) {
   const [liking, setLiking] = useState(false);
@@ -1384,7 +1391,7 @@ function ProfileDetailScreen({ nav, profile, onLike }: {
       <div className="relative h-[340px] lg:h-screen lg:sticky lg:top-0 lg:w-[420px] lg:flex-shrink-0">
         <img src={profile.photo} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(42,36,32,0.6) 0%, transparent 60%)' }} />
-        <button onClick={() => nav('discovery')} style={{ position: 'absolute', top: '16px', left: '16px', width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button onClick={() => nav(backScreen)} style={{ position: 'absolute', top: '16px', left: '16px', width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         </button>
         {/* Desktop: name overlay on photo */}
@@ -1607,7 +1614,7 @@ function MatchScreen({ nav, profile, setCurrentChat }: {
             border: 'none', borderRadius: '16px', fontSize: '14px', fontWeight: 600,
             fontFamily: 'Outfit,sans-serif', cursor: 'pointer',
           }}>
-            Continuar procurando
+            Continuar descobrindo
           </button>
         </div>
       </div>
@@ -2428,6 +2435,8 @@ export default function App() {
   const [showReport, setShowReport] = useState(getParam('report') === '1');
   const [meuPerfil, setMeuPerfil] = useState<PerfilAPI | null>(null);
   const [matchesKey, setMatchesKey] = useState(0);
+  const [sessionExpiredMsg, setSessionExpiredMsg] = useState('');
+  const [prevScreen, setPrevScreen] = useState<Screen>('discovery');
 
   const nav = (s: Screen) => {
     setScreen(s);
@@ -2435,7 +2444,27 @@ export default function App() {
     if (s === 'matches') setMatchesKey(k => k + 1);
   };
 
-  const handleLogout = () => { logout(); nav('welcome'); };
+  const handleLogout = () => {
+    logout();
+    setMeuPerfil(null);
+    setActiveChatMatchId(0);
+    setCurrentChat(PROFILES[0]);
+    setSelectedProfile(PROFILES[0]);
+    setSessionExpiredMsg('');
+    nav('welcome');
+  };
+
+  useEffect(() => {
+    setOn401(() => {
+      setMeuPerfil(null);
+      setActiveChatMatchId(0);
+      setCurrentChat(PROFILES[0]);
+      setSelectedProfile(PROFILES[0]);
+      setSessionExpiredMsg('Sua sessão expirou. Entre novamente.');
+      setScreen('login');
+      setTab('discovery');
+    });
+  }, []);
 
   const handleLoginSuccess = async () => {
     try {
@@ -2452,7 +2481,7 @@ export default function App() {
   return (
     <AppShell screen={screen} tab={tab} setTab={setTab} nav={nav} onLogout={handleLogout}>
       {screen === 'welcome' && <WelcomeScreen nav={nav} />}
-      {screen === 'login' && <LoginScreen nav={nav} onLoginSuccess={handleLoginSuccess} />}
+      {screen === 'login' && <LoginScreen nav={nav} onLoginSuccess={handleLoginSuccess} loginMsg={sessionExpiredMsg} />}
       {screen === 'register' && <RegisterScreen nav={nav} onLoginSuccess={handleLoginSuccess} />}
       {screen === 'profile-create' && (
         <ProfileCreateScreen nav={nav} onPerfilCriado={(p) => setMeuPerfil(p)} />
@@ -2461,16 +2490,17 @@ export default function App() {
         <DiscoveryScreen
           nav={nav}
           setMatchProfile={setMatchProfile}
-          onSelectProfile={setSelectedProfile}
+          onSelectProfile={(p) => { setSelectedProfile(p); setPrevScreen(screen); }}
           showFilters={showFilters}
           setShowFilters={setShowFilters}
-          onMatch={() => setMatchesKey(k => k + 1)}
+          onMatch={(matchId) => { setActiveChatMatchId(matchId); setMatchesKey(k => k + 1); }}
         />
       )}
       {screen === 'profile-detail' && (
         <ProfileDetailScreen
           nav={nav}
           profile={selectedProfile}
+          backScreen={prevScreen}
           onLike={async (p) => {
             try {
               const res = await enviarCurtida(p.id, 'curtir');

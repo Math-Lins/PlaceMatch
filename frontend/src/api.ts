@@ -1,5 +1,10 @@
 const BASE = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
 
+let _on401: (() => void) | null = null;
+export function setOn401(cb: () => void): void {
+  _on401 = cb;
+}
+
 function getToken(): string | null {
   return localStorage.getItem('pm_access');
 }
@@ -41,6 +46,13 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (res.status === 204) return {} as T;
   const body = await res.json().catch(() => ({}));
+
+  if (res.status === 401) {
+    localStorage.removeItem('pm_access');
+    localStorage.removeItem('pm_refresh');
+    _on401?.();
+    throw new ApiError('Sua sessão expirou. Entre novamente.');
+  }
 
   if (!res.ok) {
     const fieldErrors: Record<string, string> = {};
