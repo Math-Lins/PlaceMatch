@@ -36,7 +36,10 @@ class ConversasView(APIView):
 
             ultima = match.mensagens.order_by('-data_envio', '-id').first()
             nao_lidas = match.mensagens.filter(remetente_id=outro_id, lida=False).count()
-            sort_key = ultima.data_envio if ultima else match.data_match
+            # Tupla (timestamp, id) garante ordem determinística mesmo com timestamps iguais.
+            # Matches sem mensagem usam id=0 para sempre ficarem abaixo de matches com mensagem
+            # que tenham o mesmo timestamp de criação.
+            sort_key = (ultima.data_envio, ultima.id) if ultima else (match.data_match, 0)
 
             resultado.append({
                 'match_id': match.id,
