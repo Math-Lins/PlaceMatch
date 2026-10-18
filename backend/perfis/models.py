@@ -66,6 +66,11 @@ class Perfil(models.Model):
         default=2,
         validators=[MinValueValidator(1), MaxValueValidator(4)],
     )
+    # ── Anúncio / foto (Sprint D) ─────────────────────────────────────────────
+    titulo_anuncio = models.CharField(max_length=120, blank=True, default='')
+    descricao_imovel = models.TextField(blank=True, default='')
+    fotos_imovel = models.JSONField(default=list, blank=True)
+    foto_perfil_url = models.URLField(max_length=500, blank=True, default='')
     # ────────────────────────────────────────────────────────────────────────
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)

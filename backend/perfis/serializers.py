@@ -11,6 +11,7 @@ class PerfilSerializer(serializers.ModelSerializer):
             'tolerancia_bagunca', 'nivel_organizacao',
             'perfil_horario', 'nivel_ruido', 'nivel_social',
             'aceita_visitas', 'tipo_imovel', 'qtd_moradores',
+            'titulo_anuncio', 'descricao_imovel', 'fotos_imovel', 'foto_perfil_url',
         ]
         read_only_fields = ['id', 'usuario']
 
@@ -97,6 +98,42 @@ class PerfilSerializer(serializers.ModelSerializer):
         validos = [c[0] for c in Perfil.IMOVEL_CHOICES]
         if value not in validos:
             raise serializers.ValidationError(f'Escolha um dos valores: {validos}.')
+        return value
+
+    def validate_titulo_anuncio(self, value):
+        if value and len(value) > 120:
+            raise serializers.ValidationError(
+                f'O título do anúncio deve ter no máximo 120 caracteres (enviados: {len(value)}).'
+            )
+        return value
+
+    def validate_foto_perfil_url(self, value):
+        if value and not (value.startswith('http://') or value.startswith('https://')):
+            raise serializers.ValidationError(
+                'A URL da foto de perfil deve começar com http:// ou https://.'
+            )
+        return value
+
+    def validate_fotos_imovel(self, value):
+        if not isinstance(value, list):
+            raise serializers.ValidationError('fotos_imovel deve ser uma lista de URLs.')
+        if len(value) > 5:
+            raise serializers.ValidationError(
+                f'fotos_imovel aceita no máximo 5 URLs (enviadas: {len(value)}).'
+            )
+        for i, url in enumerate(value):
+            if not isinstance(url, str):
+                raise serializers.ValidationError(
+                    f'O item {i + 1} de fotos_imovel deve ser uma string.'
+                )
+            if not (url.startswith('http://') or url.startswith('https://')):
+                raise serializers.ValidationError(
+                    f'O item {i + 1} de fotos_imovel deve ser uma URL http/https válida.'
+                )
+            if len(url) > 500:
+                raise serializers.ValidationError(
+                    f'O item {i + 1} de fotos_imovel excede 500 caracteres.'
+                )
         return value
 
     def validate(self, attrs):

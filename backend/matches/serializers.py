@@ -5,6 +5,7 @@ from .models import Curtida, Match
 
 class PerfilDescobertoSerializer(serializers.ModelSerializer):
     score = serializers.SerializerMethodField()
+    tipo = serializers.CharField(source='usuario.tipo', read_only=True)
 
     class Meta:
         model = Perfil
@@ -15,7 +16,8 @@ class PerfilDescobertoSerializer(serializers.ModelSerializer):
             'tolerancia_bagunca', 'nivel_organizacao',
             'perfil_horario', 'nivel_ruido', 'nivel_social',
             'aceita_visitas', 'tipo_imovel', 'qtd_moradores',
-            'score',
+            'titulo_anuncio', 'descricao_imovel', 'fotos_imovel', 'foto_perfil_url',
+            'tipo', 'score',
         ]
 
     def get_score(self, obj) -> float:
@@ -33,6 +35,8 @@ class CurtidaSerializer(serializers.ModelSerializer):
 
 
 class PerfilBasicoSerializer(serializers.ModelSerializer):
+    tipo = serializers.CharField(source='usuario.tipo', read_only=True)
+
     class Meta:
         model = Perfil
         fields = [
@@ -41,6 +45,8 @@ class PerfilBasicoSerializer(serializers.ModelSerializer):
             'orcamento_min', 'orcamento_max',
             'perfil_horario', 'nivel_ruido', 'nivel_social',
             'aceita_visitas', 'tipo_imovel', 'qtd_moradores',
+            'titulo_anuncio', 'descricao_imovel', 'fotos_imovel', 'foto_perfil_url',
+            'tipo',
         ]
 
 

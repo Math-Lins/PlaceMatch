@@ -26,7 +26,7 @@ class ConversasView(APIView):
         matches = (
             Match.objects
             .filter(Q(perfil_a=meu_perfil) | Q(perfil_b=meu_perfil))
-            .select_related('perfil_a', 'perfil_b')
+            .select_related('perfil_a', 'perfil_a__usuario', 'perfil_b', 'perfil_b__usuario')
         )
 
         resultado = []
@@ -45,6 +45,17 @@ class ConversasView(APIView):
                     'nome': outro.nome,
                     'idade': outro.idade,
                     'regiao': outro.regiao,
+                    'tipo': outro.usuario.tipo,
+                    'titulo_anuncio': outro.titulo_anuncio,
+                    'descricao_imovel': outro.descricao_imovel,
+                    'fotos_imovel': outro.fotos_imovel,
+                    'foto_perfil_url': outro.foto_perfil_url,
+                    'tipo_imovel': outro.tipo_imovel,
+                    'qtd_moradores': outro.qtd_moradores,
+                    'orcamento_min': str(outro.orcamento_min),
+                    'orcamento_max': str(outro.orcamento_max),
+                    'aceita_pets': outro.aceita_pets,
+                    'fumante': outro.fumante,
                 },
                 'score': match.score,
                 'ultima_mensagem': {
