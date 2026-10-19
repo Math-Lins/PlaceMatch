@@ -6,17 +6,17 @@ export function setOn401(cb: () => void): void {
 }
 
 function getToken(): string | null {
-  return localStorage.getItem('pm_access');
+  return sessionStorage.getItem('pm_access');
 }
 
 function setTokens(access: string, refresh: string): void {
-  localStorage.setItem('pm_access', access);
-  localStorage.setItem('pm_refresh', refresh);
+  sessionStorage.setItem('pm_access', access);
+  sessionStorage.setItem('pm_refresh', refresh);
 }
 
 export function logout(): void {
-  localStorage.removeItem('pm_access');
-  localStorage.removeItem('pm_refresh');
+  sessionStorage.removeItem('pm_access');
+  sessionStorage.removeItem('pm_refresh');
 }
 
 export class ApiError extends Error {
@@ -48,8 +48,8 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
   const body = await res.json().catch(() => ({}));
 
   if (res.status === 401) {
-    localStorage.removeItem('pm_access');
-    localStorage.removeItem('pm_refresh');
+    sessionStorage.removeItem('pm_access');
+    sessionStorage.removeItem('pm_refresh');
     _on401?.();
     throw new ApiError('Sua sessão expirou. Entre novamente.');
   }
@@ -174,6 +174,11 @@ export interface PerfilDescoberto {
   tipo_imovel: 'apartamento' | 'casa' | 'republica' | 'indiferente';
   qtd_moradores: number;
   score: number;
+  tipo?: 'buscando_vaga' | 'oferecendo_vaga';
+  titulo_anuncio?: string | null;
+  descricao_imovel?: string | null;
+  fotos_imovel?: string[];
+  foto_perfil_url?: string | null;
 }
 
 export interface PerfilBasico {
@@ -194,6 +199,11 @@ export interface PerfilBasico {
   aceita_visitas: 'raramente' | 'as_vezes' | 'frequentemente';
   tipo_imovel: 'apartamento' | 'casa' | 'republica' | 'indiferente';
   qtd_moradores: number;
+  tipo?: 'buscando_vaga' | 'oferecendo_vaga';
+  titulo_anuncio?: string | null;
+  descricao_imovel?: string | null;
+  fotos_imovel?: string[];
+  foto_perfil_url?: string | null;
 }
 
 export interface MatchData {

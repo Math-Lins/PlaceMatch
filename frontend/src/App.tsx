@@ -58,6 +58,12 @@ interface Profile {
   qtdMoradores: number;
   lastMsg?: string;
   lastTime?: string;
+  // campos de anúncio (oferecendo_vaga)
+  tipo?: 'buscando_vaga' | 'oferecendo_vaga';
+  tituloAnuncio?: string;
+  descricaoImovel?: string;
+  fotosImovel?: string[];
+  fotoPerfilUrl?: string;
 }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -200,6 +206,11 @@ function buildTags(p: {
 }
 
 function perfilDescobertoParaProfile(p: PerfilDescoberto): Profile {
+  const min = Number(p.orcamento_min);
+  const max = Number(p.orcamento_max);
+  const budget = min === max
+    ? `R$ ${min.toLocaleString('pt-BR')}`
+    : `R$ ${min.toLocaleString('pt-BR')} – ${max.toLocaleString('pt-BR')}`;
   return {
     id: p.id,
     name: p.nome,
@@ -207,9 +218,9 @@ function perfilDescobertoParaProfile(p: PerfilDescoberto): Profile {
     region: p.regiao,
     bio: p.bio,
     compat: Math.round(p.score * 100),
-    photo: PLACEHOLDER_PHOTOS[p.id % PLACEHOLDER_PHOTOS.length],
+    photo: p.fotos_imovel?.[0] ?? PLACEHOLDER_PHOTOS[p.id % PLACEHOLDER_PHOTOS.length],
     tags: buildTags(p),
-    budget: `R$ ${Number(p.orcamento_min).toLocaleString('pt-BR')} – R$ ${Number(p.orcamento_max).toLocaleString('pt-BR')}`,
+    budget,
     smoker: p.fumante,
     pets: p.aceita_pets,
     organized: p.nivel_organizacao,
@@ -220,11 +231,21 @@ function perfilDescobertoParaProfile(p: PerfilDescoberto): Profile {
     visitas: p.aceita_visitas,
     tipoImovel: p.tipo_imovel,
     qtdMoradores: p.qtd_moradores,
+    tipo: p.tipo,
+    tituloAnuncio: p.titulo_anuncio ?? undefined,
+    descricaoImovel: p.descricao_imovel ?? undefined,
+    fotosImovel: p.fotos_imovel,
+    fotoPerfilUrl: p.foto_perfil_url ?? undefined,
   };
 }
 
 function perfilBasicoParaProfile(p: PerfilBasico | undefined, score: number): Profile {
   if (!p) return PROFILES[0];
+  const min = Number(p.orcamento_min);
+  const max = Number(p.orcamento_max);
+  const budget = min === max
+    ? `R$ ${min.toLocaleString('pt-BR')}`
+    : `R$ ${min.toLocaleString('pt-BR')} – ${max.toLocaleString('pt-BR')}`;
   return {
     id: p.id,
     name: p.nome,
@@ -232,9 +253,9 @@ function perfilBasicoParaProfile(p: PerfilBasico | undefined, score: number): Pr
     region: p.regiao,
     bio: p.bio,
     compat: Math.round(score * 100),
-    photo: PLACEHOLDER_PHOTOS[p.id % PLACEHOLDER_PHOTOS.length],
+    photo: p.fotos_imovel?.[0] ?? PLACEHOLDER_PHOTOS[p.id % PLACEHOLDER_PHOTOS.length],
     tags: buildTags(p),
-    budget: `R$ ${Number(p.orcamento_min).toLocaleString('pt-BR')} – R$ ${Number(p.orcamento_max).toLocaleString('pt-BR')}`,
+    budget,
     smoker: p.fumante,
     pets: p.aceita_pets,
     organized: p.nivel_organizacao,
@@ -245,6 +266,11 @@ function perfilBasicoParaProfile(p: PerfilBasico | undefined, score: number): Pr
     visitas: p.aceita_visitas,
     tipoImovel: p.tipo_imovel,
     qtdMoradores: p.qtd_moradores,
+    tipo: p.tipo,
+    tituloAnuncio: p.titulo_anuncio ?? undefined,
+    descricaoImovel: p.descricao_imovel ?? undefined,
+    fotosImovel: p.fotos_imovel,
+    fotoPerfilUrl: p.foto_perfil_url ?? undefined,
   };
 }
 
@@ -379,6 +405,36 @@ function CompatMeter({ value }: { value: number }) {
       </div>
     </div>
   );
+}
+
+function ImagemComFallback({ src, alt, style, tipo = 'imovel', iniciais = '' }: {
+  src?: string | null;
+  alt: string;
+  style?: React.CSSProperties;
+  tipo?: 'imovel' | 'avatar';
+  iniciais?: string;
+}) {
+  const [erro, setErro] = useState(false);
+  const base: React.CSSProperties = {
+    ...style,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    background: `linear-gradient(135deg, ${C.primary} 0%, ${C.mint} 100%)`,
+  };
+  if (!src || erro) {
+    return tipo === 'avatar' ? (
+      <div style={{ ...base, color: '#fff', fontFamily: 'Outfit,sans-serif', fontWeight: 700, fontSize: '11px' }}>
+        {(iniciais || alt.charAt(0) || '?').toUpperCase()}
+      </div>
+    ) : (
+      <div style={base}>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="rgba(255,255,255,0.85)">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+          <polyline points="9,22 9,12 15,12 15,22" fill="rgba(255,255,255,0)" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5"/>
+        </svg>
+      </div>
+    );
+  }
+  return <img src={src} alt={alt} style={style} onError={() => setErro(true)} />;
 }
 
 function ScaleBar({ value }: { value: number }) {
@@ -1189,6 +1245,10 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
   const [apiError, setApiError] = useState('');
   const [loadingProfiles, setLoadingProfiles] = useState(true);
 
+  const tituloTela = profiles[0]?.tipo === 'oferecendo_vaga' ? 'Vagas para você'
+    : profiles[0]?.tipo === 'buscando_vaga' ? 'Interessados na sua vaga'
+    : 'Descoberta';
+
   useEffect(() => {
     setLoadingProfiles(true);
     listarDescoberta()
@@ -1242,7 +1302,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
       {/* Header */}
       <div style={{ padding: '16px 24px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: C.bg }}>
         <div>
-          <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: 0 }}>Descoberta</h1>
+          <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: 0 }}>{tituloTela}</h1>
           <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>São Paulo · SP</p>
         </div>
         <button onClick={() => setShowFilters(true)} style={{
@@ -1279,28 +1339,65 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
           const isLoading = loadingId === p.id;
           return (
             <div className="md:hidden">
-              <div
-                onClick={() => { onSelectProfile(p); nav('profile-detail'); }}
-                style={{ borderRadius: '28px', overflow: 'hidden', position: 'relative', height: '480px', cursor: 'pointer', boxShadow: '0 12px 40px rgba(0,0,0,0.14)' }}
-              >
-                <img src={p.photo} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(42,36,32,0.88) 0%, rgba(42,36,32,0.2) 50%, transparent 80%)' }} />
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <div>
-                      <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '26px', fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>{p.name}, {p.age}</h2>
-                      <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>📍 {p.region}</p>
+              {p.tipo === 'oferecendo_vaga' ? (
+                /* ── card de anúncio (Airbnb-style) ── */
+                <div onClick={() => { onSelectProfile(p); nav('profile-detail'); }}
+                  style={{ borderRadius: '24px', overflow: 'hidden', background: C.card, boxShadow: '0 12px 40px rgba(0,0,0,0.12)', cursor: 'pointer' }}>
+                  <div style={{ position: 'relative', aspectRatio: '4/3' }}>
+                    <ImagemComFallback src={p.fotosImovel?.[0]} alt={p.tituloAnuncio ?? p.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} tipo="imovel" />
+                    <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
+                      <CompatBadge value={p.compat} />
                     </div>
-                    <CompatBadge value={p.compat} />
                   </div>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                    {p.tags.map(t => (
-                      <span key={t} style={{ padding: '4px 10px', borderRadius: '20px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', fontSize: '12px', fontWeight: 600, color: '#fff', fontFamily: 'Nunito,sans-serif' }}>{t}</span>
-                    ))}
+                  <div style={{ padding: '16px 20px 20px' }}>
+                    <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 800, color: C.text, margin: '0 0 4px', lineHeight: 1.3, overflow: 'hidden', maxHeight: '2.6em' }}>
+                      {p.tituloAnuncio ?? `Vaga em ${p.region}`}
+                    </h2>
+                    <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: '0 0 8px' }}>
+                      📍 {p.region} · {IMOVEL_LABEL[p.tipoImovel] ?? p.tipoImovel} · {p.qtdMoradores} morador{p.qtdMoradores !== 1 ? 'es' : ''}
+                    </p>
+                    <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '22px', fontWeight: 800, color: C.text, margin: '0 0 10px' }}>
+                      {p.budget} <span style={{ fontSize: '14px', fontWeight: 400, color: C.muted }}>/ mês</span>
+                    </p>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                      {p.pets && <Tag label="Aceita pets" />}
+                      {!p.smoker && <Tag label="Não fumante" />}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '12px', borderTop: `1px solid ${C.border}` }}>
+                      <ImagemComFallback src={p.fotoPerfilUrl} alt={p.name}
+                        style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                        tipo="avatar" iniciais={p.name.charAt(0)} />
+                      <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted }}>
+                        Anunciado por <strong style={{ color: C.text }}>{p.name.split(' ')[0]}</strong>
+                      </span>
+                    </div>
                   </div>
-                  <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.75)', margin: 0, lineHeight: 1.5 }}>{p.bio.slice(0, 80)}...</p>
                 </div>
-              </div>
+              ) : (
+                /* ── card de pessoa (estilo original) ── */
+                <div onClick={() => { onSelectProfile(p); nav('profile-detail'); }}
+                  style={{ borderRadius: '28px', overflow: 'hidden', position: 'relative', height: '480px', cursor: 'pointer', boxShadow: '0 12px 40px rgba(0,0,0,0.14)' }}>
+                  <ImagemComFallback src={p.photo} alt={p.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} tipo="avatar" iniciais={p.name.charAt(0)} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(42,36,32,0.88) 0%, rgba(42,36,32,0.2) 50%, transparent 80%)' }} />
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <div>
+                        <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '26px', fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>{p.name}, {p.age}</h2>
+                        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>📍 {p.region}</p>
+                      </div>
+                      <CompatBadge value={p.compat} />
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                      {p.tags.map(t => (
+                        <span key={t} style={{ padding: '4px 10px', borderRadius: '20px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', fontSize: '12px', fontWeight: 600, color: '#fff', fontFamily: 'Nunito,sans-serif' }}>{t}</span>
+                      ))}
+                    </div>
+                    <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.75)', margin: 0, lineHeight: 1.5 }}>{p.bio.slice(0, 80)}...</p>
+                  </div>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '24px' }}>
                 <button onClick={() => handleDislike(p)} disabled={isLoading} style={{ width: '64px', height: '64px', borderRadius: '50%', border: `2px solid ${C.border}`, background: C.card, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', opacity: isLoading ? 0.6 : 1 }}>
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={C.danger} strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1323,27 +1420,64 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
               const isLoading = loadingId === p.id;
               return (
                 <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div
-                    onClick={() => { onSelectProfile(p); nav('profile-detail'); }}
-                    style={{ borderRadius: '24px', overflow: 'hidden', position: 'relative', height: '380px', cursor: 'pointer', boxShadow: '0 8px 28px rgba(0,0,0,0.12)' }}
-                  >
-                    <img src={p.photo} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(42,36,32,0.85) 0%, rgba(42,36,32,0.15) 50%, transparent 80%)' }} />
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '6px' }}>
-                        <div>
-                          <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '22px', fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>{p.name}, {p.age}</h2>
-                          <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>📍 {p.region}</p>
+                  {p.tipo === 'oferecendo_vaga' ? (
+                    /* ── card de anúncio desktop ── */
+                    <div onClick={() => { onSelectProfile(p); nav('profile-detail'); }}
+                      style={{ borderRadius: '24px', overflow: 'hidden', background: C.card, boxShadow: '0 8px 28px rgba(0,0,0,0.10)', cursor: 'pointer' }}>
+                      <div style={{ position: 'relative', aspectRatio: '4/3' }}>
+                        <ImagemComFallback src={p.fotosImovel?.[0]} alt={p.tituloAnuncio ?? p.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} tipo="imovel" />
+                        <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                          <CompatBadge value={p.compat} />
                         </div>
-                        <CompatBadge value={p.compat} />
                       </div>
-                      <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                        {p.tags.slice(0, 3).map(t => (
-                          <span key={t} style={{ padding: '3px 8px', borderRadius: '16px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', fontSize: '11px', fontWeight: 600, color: '#fff', fontFamily: 'Nunito,sans-serif' }}>{t}</span>
-                        ))}
+                      <div style={{ padding: '14px 16px 16px' }}>
+                        <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 800, color: C.text, margin: '0 0 3px', lineHeight: 1.3, overflow: 'hidden', maxHeight: '2.6em' }}>
+                          {p.tituloAnuncio ?? `Vaga em ${p.region}`}
+                        </h2>
+                        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted, margin: '0 0 6px' }}>
+                          📍 {p.region} · {IMOVEL_LABEL[p.tipoImovel] ?? p.tipoImovel} · {p.qtdMoradores} morador{p.qtdMoradores !== 1 ? 'es' : ''}
+                        </p>
+                        <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '17px', fontWeight: 800, color: C.text, margin: '0 0 8px' }}>
+                          {p.budget} <span style={{ fontSize: '12px', fontWeight: 400, color: C.muted }}>/ mês</span>
+                        </p>
+                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                          {p.pets && <Tag label="Aceita pets" />}
+                          {!p.smoker && <Tag label="Não fumante" />}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '10px', borderTop: `1px solid ${C.border}` }}>
+                          <ImagemComFallback src={p.fotoPerfilUrl} alt={p.name}
+                            style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }}
+                            tipo="avatar" iniciais={p.name.charAt(0)} />
+                          <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '11px', color: C.muted }}>
+                            Anunciado por <strong style={{ color: C.text }}>{p.name.split(' ')[0]}</strong>
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    /* ── card de pessoa desktop (original) ── */
+                    <div onClick={() => { onSelectProfile(p); nav('profile-detail'); }}
+                      style={{ borderRadius: '24px', overflow: 'hidden', position: 'relative', height: '380px', cursor: 'pointer', boxShadow: '0 8px 28px rgba(0,0,0,0.12)' }}>
+                      <ImagemComFallback src={p.photo} alt={p.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} tipo="avatar" iniciais={p.name.charAt(0)} />
+                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(42,36,32,0.85) 0%, rgba(42,36,32,0.15) 50%, transparent 80%)' }} />
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '6px' }}>
+                          <div>
+                            <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '22px', fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>{p.name}, {p.age}</h2>
+                            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>📍 {p.region}</p>
+                          </div>
+                          <CompatBadge value={p.compat} />
+                        </div>
+                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                          {p.tags.slice(0, 3).map(t => (
+                            <span key={t} style={{ padding: '3px 8px', borderRadius: '16px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', fontSize: '11px', fontWeight: 600, color: '#fff', fontFamily: 'Nunito,sans-serif' }}>{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
                     <button onClick={() => handleDislike(p)} disabled={isLoading} style={{ width: '52px', height: '52px', borderRadius: '50%', border: `2px solid ${C.border}`, background: C.card, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', opacity: isLoading ? 0.6 : 1 }}>
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.danger} strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1374,6 +1508,11 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike }: {
   onLike?: (p: Profile) => Promise<void>;
 }) {
   const [liking, setLiking] = useState(false);
+  const [fotoAtiva, setFotoAtiva] = useState<string>(profile.fotosImovel?.[0] ?? '');
+
+  useEffect(() => {
+    setFotoAtiva(profile.fotosImovel?.[0] ?? '');
+  }, [profile.id]);
 
   const handleLike = async () => {
     if (!onLike || liking) return;
@@ -1384,6 +1523,91 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike }: {
       setLiking(false);
     }
   };
+
+  if (profile.tipo === 'oferecendo_vaga') {
+    const fotosImovel = profile.fotosImovel ?? [];
+    const fotoSrc = fotoAtiva || fotosImovel[0];
+    return (
+      <div className="flex flex-col flex-1 pb-20 lg:pb-0" style={{ background: C.bg }}>
+        {/* galeria de fotos */}
+        <div style={{ position: 'relative', background: '#000' }}>
+          <ImagemComFallback src={fotoSrc} alt={profile.tituloAnuncio ?? profile.name}
+            style={{ width: '100%', height: '300px', objectFit: 'cover', display: 'block' }} tipo="imovel" />
+          <button onClick={() => nav(backScreen)} style={{ position: 'absolute', top: '16px', left: '16px', width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          </button>
+          {fotosImovel.length > 1 && (
+            <div style={{ display: 'flex', gap: '8px', padding: '10px 16px', overflowX: 'auto', background: 'rgba(0,0,0,0.55)' }}>
+              {fotosImovel.map((f, i) => (
+                <button key={i} onClick={() => setFotoAtiva(f)} style={{ flexShrink: 0, padding: 0, border: `2px solid ${fotoAtiva === f ? '#fff' : 'transparent'}`, borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', background: 'none' }}>
+                  <img src={f} alt={`Foto ${i + 1}`} style={{ width: '64px', height: '48px', objectFit: 'cover', display: 'block' }} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* informações */}
+        <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '26px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>
+              {profile.tituloAnuncio ?? `Vaga em ${profile.region}`}
+            </h2>
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: '0 0 12px' }}>📍 {profile.region}</p>
+            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '26px', fontWeight: 800, color: C.text, margin: 0 }}>
+              {profile.budget} <span style={{ fontSize: '16px', fontWeight: 400, color: C.muted }}>/ mês</span>
+            </p>
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <CompatBadge value={profile.compat} large />
+          </div>
+
+          {profile.descricaoImovel && (
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.text, lineHeight: 1.7, marginBottom: '24px' }}>
+              {profile.descricaoImovel}
+            </p>
+          )}
+
+          {/* Sobre a vaga */}
+          <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
+            <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 16px' }}>Sobre a vaga</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[
+                { label: 'Tipo de imóvel', value: IMOVEL_LABEL[profile.tipoImovel] ?? profile.tipoImovel },
+                { label: 'Moradores', value: `${profile.qtdMoradores}${profile.qtdMoradores === 4 ? '+' : ''} pessoa${profile.qtdMoradores > 1 ? 's' : ''}` },
+                { label: 'Aceita pets', value: profile.pets ? 'Sim' : 'Não' },
+                { label: 'Fumante', value: profile.smoker ? 'Permitido' : 'Não permitido' },
+              ].map(row => (
+                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>{row.label}</span>
+                  <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Anunciado por */}
+          <div style={{ background: C.card, borderRadius: '20px', padding: '16px 20px', marginBottom: '24px', border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <ImagemComFallback src={profile.fotoPerfilUrl} alt={profile.name}
+              style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+              tipo="avatar" iniciais={profile.name.charAt(0)} />
+            <div>
+              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted, margin: '0 0 2px' }}>Anunciado por</p>
+              <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text, margin: 0 }}>
+                {profile.name.split(' ')[0]}, {profile.age} anos
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <Btn label="✕ Recusar" outline onClick={() => nav(backScreen)} />
+            <Btn label={liking ? 'Enviando...' : '💛 Tenho interesse'} onClick={onLike ? handleLike : () => nav('match')} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col lg:flex-row flex-1 pb-20 lg:pb-0" style={{ background: C.bg }}>
