@@ -35,11 +35,17 @@ class DescobertaView(APIView):
             perfil_origem=meu_perfil,
         ).values_list('perfil_destino_id', flat=True)
 
+        ja_matches_pares = Match.objects.filter(
+            Q(perfil_a=meu_perfil) | Q(perfil_b=meu_perfil)
+        ).values_list('perfil_a_id', 'perfil_b_id')
+        ja_matches_ids = {pid for par in ja_matches_pares for pid in par} - {meu_perfil.id}
+
         candidatos = (
             Perfil.objects
             .filter(usuario__tipo=tipo_oposto)
             .exclude(id=meu_perfil.id)
             .exclude(id__in=ja_avaliados)
+            .exclude(id__in=ja_matches_ids)
             .select_related('usuario')
         )
 

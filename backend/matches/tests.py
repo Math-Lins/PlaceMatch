@@ -206,6 +206,17 @@ class DescobertaTest(TestCase):
         self.assertNotIn(self.pb.id, ids)
         self.assertIn(self.pc.id, ids)
 
+    def test_descoberta_nao_retorna_ja_matched(self):
+        # Cria match direto entre pa e pb (sem passar pelas curtidas)
+        Match.objects.create(perfil_a=self.pa, perfil_b=self.pb, score=0.8)
+
+        self.client.force_authenticate(user=self.user_a)
+        res = self.client.get('/api/descoberta/')
+        self.assertEqual(res.status_code, http_status.HTTP_200_OK)
+        ids = [p['id'] for p in res.data]
+        self.assertNotIn(self.pb.id, ids, 'pb já é match e não deve aparecer na descoberta')
+        self.assertIn(self.pc.id, ids, 'pc ainda não é match e deve aparecer na descoberta')
+
 
 # ─── 7. Auxiliar _sim_horario ─────────────────────────────────────────────────
 

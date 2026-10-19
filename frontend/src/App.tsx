@@ -32,9 +32,10 @@ type Screen =
   | 'matches'
   | 'chat'
   | 'profile'
-  | 'filters';
+  | 'filters'
+  | 'notifications';
 
-type Tab = 'discovery' | 'matches' | 'profile';
+type Tab = 'discovery' | 'notifications' | 'matches' | 'profile';
 
 interface Profile {
   id: number;
@@ -452,7 +453,7 @@ function ScaleBar({ value }: { value: number }) {
 
 // ─── Bottom Navigation ─────────────────────────────────────────────────────────
 
-function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
+function BottomNav({ tab, setTab, notifsCount }: { tab: Tab; setTab: (t: Tab) => void; notifsCount: number }) {
   const items: { id: Tab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
     {
       id: 'discovery', label: 'Descoberta',
@@ -461,6 +462,28 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
           <polyline points="9,22 9,12 15,12 15,22"/>
         </svg>
+      ),
+    },
+    {
+      id: 'notifications', label: 'Notificações',
+      icon: (a) => (
+        <div style={{ position: 'relative', width: '22px', height: '22px' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill={a ? C.primary : 'none'} stroke={a ? C.primary : C.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 01-3.46 0"/>
+          </svg>
+          {notifsCount > 0 && (
+            <span style={{
+              position: 'absolute', top: '-4px', right: '-6px',
+              background: C.primary, color: '#fff', borderRadius: '10px',
+              padding: '0 4px', fontSize: '9px', fontWeight: 800,
+              fontFamily: 'Outfit,sans-serif', lineHeight: '14px',
+              minWidth: '14px', textAlign: 'center',
+            }}>
+              {notifsCount > 9 ? '9+' : notifsCount}
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -504,16 +527,17 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
 
 // ─── App Shell ────────────────────────────────────────────────────────────────
 
-function AppShell({ screen, tab, setTab, nav, onLogout, children }: {
+function AppShell({ screen, tab, setTab, nav, onLogout, notifsCount, children }: {
   screen: Screen;
   tab: Tab;
   setTab: (t: Tab) => void;
   nav: (s: Screen) => void;
   onLogout: () => void;
+  notifsCount: number;
   children: React.ReactNode;
 }) {
-  const isInternal = ['discovery', 'profile-detail', 'match', 'matches', 'chat', 'profile'].includes(screen);
-  const isTabScreen = ['discovery', 'matches', 'profile'].includes(screen);
+  const isInternal = ['discovery', 'profile-detail', 'match', 'matches', 'chat', 'profile', 'notifications'].includes(screen);
+  const isTabScreen = ['discovery', 'matches', 'profile', 'notifications'].includes(screen);
 
   if (!isInternal) return <>{children}</>;
 
@@ -527,6 +551,28 @@ function AppShell({ screen, tab, setTab, nav, onLogout, children }: {
           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
           <polyline points="9,22 9,12 15,12 15,22"/>
         </svg>
+      ),
+    },
+    {
+      id: 'notifications', label: 'Notificações',
+      icon: (a) => (
+        <div style={{ position: 'relative', width: '22px', height: '22px' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill={a ? C.primary : 'none'} stroke={a ? C.primary : C.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 01-3.46 0"/>
+          </svg>
+          {notifsCount > 0 && (
+            <span style={{
+              position: 'absolute', top: '-4px', right: '-6px',
+              background: C.primary, color: '#fff', borderRadius: '10px',
+              padding: '0 4px', fontSize: '9px', fontWeight: 800,
+              fontFamily: 'Outfit,sans-serif', lineHeight: '14px',
+              minWidth: '14px', textAlign: 'center',
+            }}>
+              {notifsCount > 9 ? '9+' : notifsCount}
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -626,7 +672,7 @@ function AppShell({ screen, tab, setTab, nav, onLogout, children }: {
           className="lg:hidden"
           style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50 }}
         >
-          <BottomNav tab={tab} setTab={handleTabChange} />
+          <BottomNav tab={tab} setTab={handleTabChange} notifsCount={notifsCount} />
         </div>
       )}
     </div>
@@ -1785,6 +1831,136 @@ function FiltersModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Screen: Notifications ───────────────────────────────────────────────────
+
+function tempoRelativo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 2) return 'agora mesmo';
+  if (mins < 60) return `há ${mins} min`;
+  const horas = Math.floor(mins / 60);
+  if (horas < 24) return `há ${horas} hora${horas !== 1 ? 's' : ''}`;
+  const dias = Math.floor(horas / 24);
+  if (dias < 30) return `há ${dias} dia${dias !== 1 ? 's' : ''}`;
+  const meses = Math.floor(dias / 30);
+  return `há ${meses} mês${meses !== 1 ? 'es' : ''}`;
+}
+
+function NotificationsScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId }: {
+  nav: (s: Screen) => void;
+  setCurrentChat: (p: Profile) => void;
+  setActiveChatMatchId: (id: number) => void;
+  meuPerfilId: number | null;
+}) {
+  const [matches, setMatches] = useState<MatchData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState('');
+
+  useEffect(() => {
+    const lastVisit = sessionStorage.getItem('pm_notif_last_visit');
+    sessionStorage.setItem('pm_notif_last_visit', new Date().toISOString());
+    listarMatches()
+      .then(data => {
+        const cutoff = lastVisit ? new Date(lastVisit) : null;
+        const novos = cutoff ? data.filter(m => new Date(m.data_match) > cutoff) : data;
+        setMatches(novos);
+        setLoading(false);
+      })
+      .catch((e: Error) => { setErro(e.message); setLoading(false); });
+  }, []);
+
+  const abrirChat = (m: MatchData) => {
+    const outro = m.perfil_a.id === meuPerfilId ? m.perfil_b : m.perfil_a;
+    setCurrentChat(perfilBasicoParaProfile(outro, m.score));
+    setActiveChatMatchId(m.id);
+    nav('chat');
+  };
+
+  return (
+    <div className="flex flex-col flex-1 pb-20 lg:pb-0" style={{ background: C.bg }}>
+      <div style={{ padding: '20px 24px 12px' }}>
+        <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: '0 0 4px' }}>Notificações</h1>
+        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>
+          {loading ? 'Carregando...' : erro ? ' ' : matches.length === 0 ? 'Tudo em dia' : `${matches.length} novo${matches.length !== 1 ? 's' : ''} match${matches.length !== 1 ? 'es' : ''}`}
+        </p>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {loading && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 24px' }}>
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted }}>Carregando...</p>
+          </div>
+        )}
+
+        {!loading && erro && (
+          <div style={{ padding: '60px 24px', textAlign: 'center' }}>
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.danger }}>{erro}</p>
+          </div>
+        )}
+
+        {!loading && !erro && matches.length === 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', gap: '12px' }}>
+            <div style={{ width: '72px', height: '72px', background: `${C.primary}18`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 01-3.46 0"/>
+              </svg>
+            </div>
+            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '18px', fontWeight: 700, color: C.text, margin: 0 }}>Nenhuma novidade</p>
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0, textAlign: 'center', maxWidth: '260px' }}>
+              Quando alguém curtir você de volta, você verá o match aqui.
+            </p>
+          </div>
+        )}
+
+        {!loading && !erro && matches.map(m => {
+          const outro = m.perfil_a.id === meuPerfilId ? m.perfil_b : m.perfil_a;
+          const compat = Math.round(m.score * 100);
+          const level = getCompatLevel(compat);
+          const foto = outro.fotos_imovel?.[0] ?? PLACEHOLDER_PHOTOS[outro.id % PLACEHOLDER_PHOTOS.length];
+          return (
+            <button
+              key={m.id}
+              onClick={() => abrirChat(m)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: '14px',
+                padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer',
+                textAlign: 'left', borderBottom: `1px solid ${C.border}`,
+              }}
+            >
+              <div style={{ flexShrink: 0, width: '58px', height: '58px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${level.color}` }}>
+                <img src={foto} alt={outro.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text }}>
+                    {outro.nome}
+                  </span>
+                  <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted, flexShrink: 0, marginLeft: '8px' }}>
+                    {tempoRelativo(m.data_match)}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{
+                    background: `${level.color}22`, color: level.color,
+                    borderRadius: '8px', padding: '2px 8px',
+                    fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 800,
+                  }}>
+                    {compat}% compatível
+                  </span>
+                  <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted }}>
+                    Toque para conversar →
+                  </span>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Screen: Match ────────────────────────────────────────────────────────────
 
 function MatchScreen({ nav, profile, setCurrentChat }: {
@@ -2647,7 +2823,7 @@ export default function App() {
   const initialScreen = (getParam('screen') as Screen) || 'welcome';
   const [screen, setScreen] = useState<Screen>(initialScreen);
   const [tab, setTab] = useState<Tab>(
-    (initialScreen === 'discovery' || initialScreen === 'matches' || initialScreen === 'profile')
+    (initialScreen === 'discovery' || initialScreen === 'notifications' || initialScreen === 'matches' || initialScreen === 'profile')
       ? (initialScreen as Tab)
       : 'discovery'
   );
@@ -2659,18 +2835,32 @@ export default function App() {
   const [showReport, setShowReport] = useState(getParam('report') === '1');
   const [meuPerfil, setMeuPerfil] = useState<PerfilAPI | null>(null);
   const [matchesKey, setMatchesKey] = useState(0);
+  const [notifsKey, setNotifsKey] = useState(0);
+  const [notifsCount, setNotifsCount] = useState(0);
   const [sessionExpiredMsg, setSessionExpiredMsg] = useState('');
   const [prevScreen, setPrevScreen] = useState<Screen>('discovery');
 
   const nav = (s: Screen) => {
     setScreen(s);
-    if (s === 'discovery' || s === 'matches' || s === 'profile') setTab(s as Tab);
+    if (s === 'discovery' || s === 'notifications' || s === 'matches' || s === 'profile') setTab(s as Tab);
     if (s === 'matches') setMatchesKey(k => k + 1);
+    if (s === 'notifications') { setNotifsKey(k => k + 1); setNotifsCount(0); }
+  };
+
+  const atualizarNotifsCount = async () => {
+    try {
+      const ms = await listarMatches();
+      const lastVisit = sessionStorage.getItem('pm_notif_last_visit');
+      const cutoff = lastVisit ? new Date(lastVisit) : null;
+      const count = cutoff ? ms.filter(m => new Date(m.data_match) > cutoff).length : ms.length;
+      setNotifsCount(count);
+    } catch { /* silent */ }
   };
 
   const handleLogout = () => {
     logout();
     setMeuPerfil(null);
+    setNotifsCount(0);
     setActiveChatMatchId(0);
     setCurrentChat(PROFILES[0]);
     setSelectedProfile(PROFILES[0]);
@@ -2681,6 +2871,7 @@ export default function App() {
   useEffect(() => {
     setOn401(() => {
       setMeuPerfil(null);
+      setNotifsCount(0);
       setActiveChatMatchId(0);
       setCurrentChat(PROFILES[0]);
       setSelectedProfile(PROFILES[0]);
@@ -2696,6 +2887,7 @@ export default function App() {
       const perfis = await listarPerfis();
       const perfil = perfis.find(p => p.usuario === usuario.id) ?? null;
       setMeuPerfil(perfil);
+      await atualizarNotifsCount();
       nav(perfil ? 'discovery' : 'profile-create');
     } catch {
       nav('profile-create');
@@ -2703,7 +2895,7 @@ export default function App() {
   };
 
   return (
-    <AppShell screen={screen} tab={tab} setTab={setTab} nav={nav} onLogout={handleLogout}>
+    <AppShell screen={screen} tab={tab} setTab={setTab} nav={nav} onLogout={handleLogout} notifsCount={notifsCount}>
       {screen === 'welcome' && <WelcomeScreen nav={nav} />}
       {screen === 'login' && <LoginScreen nav={nav} onLoginSuccess={handleLoginSuccess} loginMsg={sessionExpiredMsg} />}
       {screen === 'register' && <RegisterScreen nav={nav} onLoginSuccess={handleLoginSuccess} />}
@@ -2717,7 +2909,7 @@ export default function App() {
           onSelectProfile={(p) => { setSelectedProfile(p); setPrevScreen(screen); }}
           showFilters={showFilters}
           setShowFilters={setShowFilters}
-          onMatch={(matchId) => { setActiveChatMatchId(matchId); setMatchesKey(k => k + 1); }}
+          onMatch={(matchId) => { setActiveChatMatchId(matchId); setMatchesKey(k => k + 1); setNotifsCount(n => n + 1); }}
         />
       )}
       {screen === 'profile-detail' && (
@@ -2732,6 +2924,7 @@ export default function App() {
                 setMatchProfile(p);
                 if (res.match_data) setActiveChatMatchId(res.match_data.id);
                 setMatchesKey(k => k + 1);
+                setNotifsCount(n => n + 1);
                 nav('match');
               } else {
                 nav('discovery');
@@ -2745,6 +2938,9 @@ export default function App() {
       {screen === 'match' && <MatchScreen nav={nav} profile={matchProfile} setCurrentChat={setCurrentChat} />}
       {screen === 'matches' && (
         <MatchesScreen key={matchesKey} nav={nav} setCurrentChat={setCurrentChat} setActiveChatMatchId={setActiveChatMatchId} meuPerfilId={meuPerfil?.id ?? null} />
+      )}
+      {screen === 'notifications' && (
+        <NotificationsScreen key={notifsKey} nav={nav} setCurrentChat={setCurrentChat} setActiveChatMatchId={setActiveChatMatchId} meuPerfilId={meuPerfil?.id ?? null} />
       )}
       {screen === 'chat' && (
         <ChatScreen nav={nav} profile={currentChat} matchId={activeChatMatchId} meuPerfilId={meuPerfil?.id ?? 0} showReport={showReport} setShowReport={setShowReport} />
