@@ -1968,55 +1968,153 @@ function MatchScreen({ nav, profile, setCurrentChat }: {
   profile: Profile;
   setCurrentChat: (p: Profile) => void;
 }) {
+  const primeiroNome = profile.name.split(' ')[0];
+  const eAnuncio = profile.tipo === 'oferecendo_vaga';
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center" style={{ background: `linear-gradient(160deg, ${C.primaryDark} 0%, ${C.primary} 50%, ${C.primaryLight} 100%)`, padding: '40px 28px', minHeight: '100dvh' }}>
-      <div className="w-full max-w-lg flex flex-col items-center">
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ fontSize: '52px', marginBottom: '8px' }}>🎉</div>
-          <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '38px', fontWeight: 800, color: '#fff', margin: '0 0 8px' }}>Vocês combinam!</h1>
-          <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '16px', color: 'rgba(255,255,255,0.85)', margin: 0 }}>
-            Você e {profile.name} têm muito em comum
-          </p>
+    <div
+      className="flex flex-col flex-1 items-center justify-center"
+      style={{ background: C.bg, padding: '32px 16px', minHeight: '100dvh', overflowY: 'auto' }}
+    >
+      {/* Cabeçalho */}
+      <div style={{ textAlign: 'center', marginBottom: '24px', maxWidth: '420px', width: '100%' }}>
+        <div style={{
+          width: '52px', height: '52px', borderRadius: '50%',
+          background: `${C.mint}22`, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', margin: '0 auto 14px',
+        }}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={C.mint} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
         </div>
+        <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: '0 0 8px' }}>
+          Interesse mútuo confirmado
+        </h1>
+        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0 }}>
+          Vocês dois demonstraram interesse. Conversem para combinar os detalhes da vaga.
+        </p>
+      </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0', marginBottom: '32px' }}>
-          <div style={{ width: '110px', height: '110px', borderRadius: '50%', overflow: 'hidden', border: '4px solid white', boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>
-            <img src={MY_PROFILE.photo} alt="Você" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      {/* Cartão */}
+      <div style={{
+        width: '100%', maxWidth: '420px',
+        background: C.card, borderRadius: '20px',
+        border: `1px solid ${C.border}`,
+        boxShadow: '0 4px 24px rgba(42,36,32,0.08)',
+        overflow: 'hidden',
+        marginBottom: '20px',
+      }}>
+        {eAnuncio ? (
+          <>
+            {/* Foto 4:3 */}
+            <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden' }}>
+              <ImagemComFallback
+                src={profile.fotosImovel?.[0]}
+                alt={profile.tituloAnuncio ?? profile.name}
+                tipo="imovel"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+            {/* Informações */}
+            <div style={{ padding: '18px 20px 20px' }}>
+              <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '17px', fontWeight: 800, color: C.text, margin: '0 0 5px' }}>
+                {profile.tituloAnuncio ?? profile.name}
+              </h2>
+              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: '0 0 8px' }}>
+                📍 {profile.region} · {IMOVEL_LABEL[profile.tipoImovel] ?? profile.tipoImovel} · {profile.qtdMoradores} morador{profile.qtdMoradores !== 1 ? 'es' : ''}
+              </p>
+              <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 12px' }}>
+                {profile.budget}
+                <span style={{ fontFamily: 'Nunito,sans-serif', fontWeight: 400, fontSize: '13px', color: C.muted }}> / mês</span>
+              </p>
+              <span style={{
+                display: 'inline-block',
+                background: `${C.mint}22`, color: C.text,
+                borderRadius: '20px', padding: '3px 12px',
+                fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700,
+                marginBottom: '14px',
+              }}>
+                {profile.compat}% de compatibilidade
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '12px', borderTop: `1px solid ${C.border}` }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+                  <ImagemComFallback
+                    src={profile.fotoPerfilUrl}
+                    alt={primeiroNome}
+                    tipo="avatar"
+                    iniciais={primeiroNome.charAt(0)}
+                    style={{ width: '28px', height: '28px', objectFit: 'cover' }}
+                  />
+                </div>
+                <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted }}>
+                  Anunciado por <strong style={{ color: C.text }}>{primeiroNome}</strong>
+                </span>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Perfil de pessoa */
+          <div style={{ padding: '28px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${C.border}` }}>
+              <ImagemComFallback
+                src={profile.fotoPerfilUrl ?? profile.photo}
+                alt={profile.name}
+                tipo="avatar"
+                iniciais={profile.name.charAt(0)}
+                style={{ width: '80px', height: '80px', objectFit: 'cover' }}
+              />
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 800, color: C.text, margin: '0 0 4px' }}>
+                {profile.name}
+              </h2>
+              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0 }}>
+                {profile.age} anos · {profile.region}
+              </p>
+            </div>
+            <span style={{
+              background: `${C.mint}22`, color: C.text,
+              borderRadius: '20px', padding: '4px 14px',
+              fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700,
+            }}>
+              {profile.compat}% de compatibilidade
+            </span>
           </div>
-          <div style={{ background: '#fff', borderRadius: '50%', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, margin: '-10px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill={C.primary}><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-          </div>
-          <div style={{ width: '110px', height: '110px', borderRadius: '50%', overflow: 'hidden', border: '4px solid white', boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>
-            <img src={profile.photo} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-        </div>
+        )}
+      </div>
 
-        <CompatBadge value={profile.compat} large />
-
-        <div style={{ width: '100%', marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <button onClick={() => { setCurrentChat(profile); nav('chat'); }} style={{
-            width: '100%', padding: '16px', background: '#fff', color: C.primary,
+      {/* Botões */}
+      <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <button
+          onClick={() => { setCurrentChat(profile); nav('chat'); }}
+          style={{
+            width: '100%', padding: '15px', background: C.primary, color: '#fff',
             border: 'none', borderRadius: '16px', fontSize: '16px', fontWeight: 700,
             fontFamily: 'Outfit,sans-serif', cursor: 'pointer',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-          }}>
-            💬 Iniciar conversa
-          </button>
-          <button onClick={() => nav('matches')} style={{
-            width: '100%', padding: '16px', background: 'rgba(255,255,255,0.15)', color: '#fff',
-            border: '2px solid rgba(255,255,255,0.6)', borderRadius: '16px', fontSize: '16px', fontWeight: 700,
+          }}
+        >
+          Enviar mensagem
+        </button>
+        <button
+          onClick={() => nav('matches')}
+          style={{
+            width: '100%', padding: '15px', background: 'transparent', color: C.primary,
+            border: `2px solid ${C.primary}`, borderRadius: '16px', fontSize: '16px', fontWeight: 700,
             fontFamily: 'Outfit,sans-serif', cursor: 'pointer',
-          }}>
-            Ver meus matches
-          </button>
-          <button onClick={() => nav('discovery')} style={{
-            width: '100%', padding: '12px', background: 'transparent', color: 'rgba(255,255,255,0.7)',
+          }}
+        >
+          Ver meus matches
+        </button>
+        <button
+          onClick={() => nav('discovery')}
+          style={{
+            width: '100%', padding: '12px', background: 'transparent', color: C.muted,
             border: 'none', borderRadius: '16px', fontSize: '14px', fontWeight: 600,
             fontFamily: 'Outfit,sans-serif', cursor: 'pointer',
-          }}>
-            Continuar descobrindo
-          </button>
-        </div>
+          }}
+        >
+          Continuar buscando
+        </button>
       </div>
     </div>
   );
@@ -2887,7 +2985,6 @@ export default function App() {
       const perfis = await listarPerfis();
       const perfil = perfis.find(p => p.usuario === usuario.id) ?? null;
       setMeuPerfil(perfil);
-      await atualizarNotifsCount();
       nav(perfil ? 'discovery' : 'profile-create');
     } catch {
       nav('profile-create');
