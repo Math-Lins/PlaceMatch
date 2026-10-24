@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'perfis',
     'matches',
     'chat',
+    'logs',
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
