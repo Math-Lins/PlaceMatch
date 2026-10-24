@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'matches',
     'chat',
     'logs',
+    'painel',
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'

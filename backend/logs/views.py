@@ -1,5 +1,3 @@
-import csv
-import io
 from datetime import date
 
 from django.db.models import Q
@@ -8,21 +6,11 @@ from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
-from django.http import HttpResponse
 
 from .models import LogOperacao
 from .servicos import registrar
-
-
-def _eh_admin(user):
-    return user and user.is_authenticated and user.tipo == 'administrador'
-
-
-class AdminPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        return request.user.tipo == 'administrador'
+from painel.exportacao import gerar_csv_response
+from painel.permissoes import AdminPermission
 
 
 def _aplicar_filtros(qs, params):
@@ -126,13 +114,11 @@ class LogExportarView(APIView):
         qs = LogOperacao.objects.select_related('usuario').order_by('-data_hora', '-id')
         qs = _aplicar_filtros(qs, request.query_params)
 
-        output = io.StringIO()
-        writer = csv.writer(output, delimiter=';')
-        writer.writerow([
+        cabecalho = [
             'ID', 'Data/Hora', 'Usuário ID', 'Usuário Nome', 'Usuário E-mail',
             'Ação', 'Descrição da Ação', 'Entidade', 'ID da Entidade', 'Detalhes', 'IP',
-        ])
-
+        ]
+        linhas = []
         for log in qs:
             usuario_id = log.usuario_id or ''
             usuario_nome = ''
@@ -140,8 +126,7 @@ class LogExportarView(APIView):
             if log.usuario_id:
                 usuario_nome = log.usuario.get_full_name() or log.usuario.username
                 usuario_email = log.usuario.email
-
-            writer.writerow([
+            linhas.append([
                 log.id,
                 log.data_hora.strftime('%Y-%m-%d %H:%M:%S'),
                 usuario_id,
@@ -164,10 +149,4 @@ class LogExportarView(APIView):
             request=request,
         )
 
-        hoje = date.today().strftime('%Y%m%d')
-        response = HttpResponse(
-            '\ufeff' + output.getvalue(),
-            content_type='text/csv; charset=utf-8-sig',
-        )
-        response['Content-Disposition'] = f'attachment; filename="logs-{hoje}.csv"'
-        return response
+        return gerar_csv_response(cabecalho, linhas, 'logs')
