@@ -1,5 +1,6 @@
 # --- Ambiente ---
 .env
+ADMIN.md
 *.env.local
 
 # --- Python / Django ---

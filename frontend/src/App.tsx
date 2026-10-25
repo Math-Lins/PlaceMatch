@@ -17,11 +17,12 @@ import {
   listarMensagens,
   enviarMensagem,
 } from './api';
-import type { Perfil as PerfilAPI, PerfilDescoberto, PerfilBasico, MatchData, Conversa, MensagemAPI } from './api';
+import type { Perfil as PerfilAPI, PerfilDescoberto, PerfilBasico, MatchData, Conversa, MensagemAPI, DescobertaParams } from './api';
+import AdminPanel from './admin/AdminPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Screen =
+export type Screen =
   | 'welcome'
   | 'login'
   | 'register'
@@ -33,7 +34,8 @@ type Screen =
   | 'chat'
   | 'profile'
   | 'filters'
-  | 'notifications';
+  | 'notifications'
+  | 'admin';
 
 type Tab = 'discovery' | 'notifications' | 'matches' | 'profile';
 
@@ -1278,6 +1280,24 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
 
 // ─── Screen: Discovery ────────────────────────────────────────────────────────
 
+// ─── Discovery Filters ───────────────────────────────────────────────────────
+
+interface DiscoveryFilters {
+  regiao: string;
+  tipo_imovel: string;
+  aceita_pets: 'sim' | 'nao' | 'indiferente';
+  fumante: 'sim' | 'nao' | 'indiferente';
+  orcamento_min: string;
+  orcamento_max: string;
+  score_min: number;
+  ordenar: 'compatibilidade' | 'menor_preco' | 'maior_preco';
+}
+const EMPTY_FILTERS: DiscoveryFilters = {
+  regiao: '', tipo_imovel: '', aceita_pets: 'indiferente',
+  fumante: 'indiferente', orcamento_min: '', orcamento_max: '',
+  score_min: 0, ordenar: 'compatibilidade',
+};
+
 function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, setShowFilters, onMatch }: {
   nav: (s: Screen) => void;
   setMatchProfile: (p: Profile) => void;
@@ -1290,23 +1310,87 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [apiError, setApiError] = useState('');
   const [loadingProfiles, setLoadingProfiles] = useState(true);
+  const [searchQ, setSearchQ] = useState<string>(() => {
+    try { return sessionStorage.getItem('pm_disc_q') ?? ''; } catch { return ''; }
+  });
+  const [filters, setFilters] = useState<DiscoveryFilters>(() => {
+    try {
+      const s = sessionStorage.getItem('pm_disc_filters');
+      return s ? (JSON.parse(s) as DiscoveryFilters) : EMPTY_FILTERS;
+    } catch { return EMPTY_FILTERS; }
+  });
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tituloTela = profiles[0]?.tipo === 'oferecendo_vaga' ? 'Vagas para você'
     : profiles[0]?.tipo === 'buscando_vaga' ? 'Interessados na sua vaga'
     : 'Descoberta';
 
-  useEffect(() => {
+  const activeFiltersCount = [
+    filters.regiao,
+    filters.tipo_imovel,
+    filters.aceita_pets !== 'indiferente' ? 'x' : '',
+    filters.fumante !== 'indiferente' ? 'x' : '',
+    filters.orcamento_min,
+    filters.orcamento_max,
+    filters.score_min > 0 ? 'x' : '',
+    filters.ordenar !== 'compatibilidade' ? 'x' : '',
+  ].filter(Boolean).length;
+
+  const doFetch = (q: string, f: DiscoveryFilters) => {
     setLoadingProfiles(true);
-    listarDescoberta()
-      .then(data => {
-        setProfiles(data.map(perfilDescobertoParaProfile));
-        setLoadingProfiles(false);
-      })
+    setApiError('');
+    const params: DescobertaParams = {};
+    if (q) params.q = q;
+    if (f.regiao) params.regiao = [f.regiao];
+    if (f.tipo_imovel) params.tipo_imovel = f.tipo_imovel;
+    if (f.aceita_pets !== 'indiferente') params.aceita_pets = f.aceita_pets;
+    if (f.fumante !== 'indiferente') params.fumante = f.fumante;
+    if (f.orcamento_min) params.orcamento_min = parseFloat(f.orcamento_min);
+    if (f.orcamento_max) params.orcamento_max = parseFloat(f.orcamento_max);
+    if (f.score_min > 0) params.score_min = f.score_min;
+    if (f.ordenar !== 'compatibilidade') params.ordenar = f.ordenar;
+    listarDescoberta(params)
+      .then(data => { setProfiles(data.map(perfilDescobertoParaProfile)); setLoadingProfiles(false); })
       .catch(err => {
         setApiError(err instanceof ApiError ? err.message : 'Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
         setLoadingProfiles(false);
       });
-  }, []);
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { doFetch(searchQ, filters); }, []);
+
+  const handleSearchChange = (q: string) => {
+    setSearchQ(q);
+    sessionStorage.setItem('pm_disc_q', q);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => doFetch(q, filters), 400);
+  };
+
+  const handleApplyFilters = (newFilters: DiscoveryFilters) => {
+    setFilters(newFilters);
+    sessionStorage.setItem('pm_disc_filters', JSON.stringify(newFilters));
+    doFetch(searchQ, newFilters);
+  };
+
+  const handleClearFilters = () => {
+    setFilters(EMPTY_FILTERS);
+    sessionStorage.removeItem('pm_disc_filters');
+    sessionStorage.removeItem('pm_disc_q');
+    setSearchQ('');
+    doFetch('', EMPTY_FILTERS);
+  };
+
+  const removeFilterChip = (key: keyof DiscoveryFilters) => {
+    let newFilters: DiscoveryFilters;
+    if (key === 'aceita_pets' || key === 'fumante') newFilters = { ...filters, [key]: 'indiferente' as const };
+    else if (key === 'score_min') newFilters = { ...filters, score_min: 0 };
+    else if (key === 'ordenar') newFilters = { ...filters, ordenar: 'compatibilidade' };
+    else newFilters = { ...filters, [key]: '' };
+    setFilters(newFilters);
+    sessionStorage.setItem('pm_disc_filters', JSON.stringify(newFilters));
+    doFetch(searchQ, newFilters);
+  };
 
   const removeProfile = (id: number) => setProfiles(ps => ps.filter(p => p.id !== id));
 
@@ -1346,19 +1430,109 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
   return (
     <div className="flex flex-col flex-1 pb-20 lg:pb-0" style={{ background: C.bg }}>
       {/* Header */}
-      <div style={{ padding: '16px 24px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: C.bg }}>
-        <div>
-          <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: 0 }}>{tituloTela}</h1>
-          <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>São Paulo · SP</p>
+      <div style={{ padding: '16px 24px 8px', background: C.bg }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div>
+            <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: 0 }}>{tituloTela}</h1>
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>São Paulo · SP</p>
+          </div>
+          <button onClick={() => setShowFilters(true)} style={{
+            position: 'relative', width: '44px', height: '44px', borderRadius: '14px',
+            border: `1.5px solid ${activeFiltersCount > 0 ? C.primary : C.border}`,
+            background: activeFiltersCount > 0 ? `${C.primary}12` : C.card,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={activeFiltersCount > 0 ? C.primary : C.text} strokeWidth="2" strokeLinecap="round">
+              <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/>
+            </svg>
+            {activeFiltersCount > 0 && (
+              <span style={{
+                position: 'absolute', top: '-6px', right: '-6px', background: C.primary, color: '#fff',
+                borderRadius: '10px', padding: '0 5px', fontSize: '10px', fontWeight: 800,
+                fontFamily: 'Outfit,sans-serif', lineHeight: '16px', minWidth: '16px', textAlign: 'center',
+              }}>
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
         </div>
-        <button onClick={() => setShowFilters(true)} style={{
-          width: '44px', height: '44px', borderRadius: '14px', border: `1.5px solid ${C.border}`,
-          background: C.card, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round">
-            <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/>
+        {/* Search bar */}
+        <div style={{ position: 'relative' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round"
+            style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-        </button>
+          <input
+            type="text"
+            value={searchQ}
+            onChange={e => handleSearchChange(e.target.value)}
+            placeholder="Buscar por nome, região..."
+            style={{
+              width: '100%', padding: '10px 12px 10px 36px', borderRadius: '12px',
+              border: `1.5px solid ${C.border}`, background: C.card, fontFamily: 'Nunito,sans-serif',
+              fontSize: '14px', color: C.text, outline: 'none', boxSizing: 'border-box',
+            }}
+          />
+          {searchQ && (
+            <button
+              onClick={() => handleSearchChange('')}
+              style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '16px', lineHeight: 1 }}
+            >✕</button>
+          )}
+        </div>
+        {/* Active filter chips */}
+        {activeFiltersCount > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+            {filters.regiao && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
+                Região: {filters.regiao}
+                <button onClick={() => removeFilterChip('regiao')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
+              </span>
+            )}
+            {filters.tipo_imovel && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
+                {IMOVEL_LABEL[filters.tipo_imovel] ?? filters.tipo_imovel}
+                <button onClick={() => removeFilterChip('tipo_imovel')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
+              </span>
+            )}
+            {filters.aceita_pets !== 'indiferente' && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
+                Pets: {filters.aceita_pets === 'sim' ? 'Sim' : 'Não'}
+                <button onClick={() => removeFilterChip('aceita_pets')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
+              </span>
+            )}
+            {filters.fumante !== 'indiferente' && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
+                Fumante: {filters.fumante === 'sim' ? 'Sim' : 'Não'}
+                <button onClick={() => removeFilterChip('fumante')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
+              </span>
+            )}
+            {filters.orcamento_min && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
+                Mín: R$ {filters.orcamento_min}
+                <button onClick={() => removeFilterChip('orcamento_min')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
+              </span>
+            )}
+            {filters.orcamento_max && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
+                Máx: R$ {filters.orcamento_max}
+                <button onClick={() => removeFilterChip('orcamento_max')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
+              </span>
+            )}
+            {filters.score_min > 0 && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
+                Score ≥ {filters.score_min}%
+                <button onClick={() => removeFilterChip('score_min')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
+              </span>
+            )}
+            {filters.ordenar !== 'compatibilidade' && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
+                {filters.ordenar === 'menor_preco' ? 'Menor preço' : 'Maior preço'}
+                <button onClick={() => removeFilterChip('ordenar')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Cards */}
@@ -1373,11 +1547,23 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
             {apiError}
           </div>
         )}
-        {!loadingProfiles && !apiError && profiles.length === 0 && (
+        {!loadingProfiles && !apiError && profiles.length === 0 && (activeFiltersCount > 0 || searchQ) ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '360px', padding: '24px', textAlign: 'center', gap: '12px' }}>
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted, margin: 0 }}>
+              Nenhum resultado para os filtros escolhidos.
+            </p>
+            <button
+              onClick={handleClearFilters}
+              style={{ padding: '8px 20px', borderRadius: '12px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Limpar filtros
+            </button>
+          </div>
+        ) : (!loadingProfiles && !apiError && profiles.length === 0) ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '480px', padding: '24px', textAlign: 'center', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '15px' }}>
             Nenhum perfil compatível no momento. Volte mais tarde!
           </div>
-        )}
+        ) : null}
 
         {/* Mobile: single card */}
         {!loadingProfiles && !apiError && profiles.length > 0 && (() => {
@@ -1539,8 +1725,14 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
         )}
       </div>
 
-      {/* Filters modal */}
-      {showFilters && <FiltersModal onClose={() => setShowFilters(false)} />}
+      {showFilters && (
+        <FiltersModal
+          filters={filters}
+          onApply={handleApplyFilters}
+          onClear={handleClearFilters}
+          onClose={() => setShowFilters(false)}
+        />
+      )}
     </div>
   );
 }
@@ -1753,15 +1945,56 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike }: {
 
 // ─── Filters Modal ────────────────────────────────────────────────────────────
 
-function FiltersModal({ onClose }: { onClose: () => void }) {
-  const [pets, setPets] = useState<boolean | null>(null);
-  const [smoker, setSmoker] = useState<boolean | null>(null);
+function FiltersModal({ filters, onApply, onClear, onClose }: {
+  filters: DiscoveryFilters;
+  onApply: (f: DiscoveryFilters) => void;
+  onClear: () => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState<DiscoveryFilters>({ ...filters });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  const set = <K extends keyof DiscoveryFilters>(k: K, v: DiscoveryFilters[K]) =>
+    setDraft(d => ({ ...d, [k]: v }));
+
+  const triBtn = (
+    label: string,
+    field: 'aceita_pets' | 'fumante',
+  ) => (
+    <div>
+      <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{label}</p>
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {(['indiferente', 'sim', 'nao'] as const).map(v => {
+          const active = draft[field] === v;
+          const lbl = v === 'indiferente' ? 'Indiferente' : v === 'sim' ? 'Sim' : 'Não';
+          return (
+            <button key={v} onClick={() => set(field, v)} style={{
+              flex: 1, padding: '10px', borderRadius: '12px', cursor: 'pointer', minHeight: '40px',
+              border: `2px solid ${active ? C.primary : C.border}`,
+              background: active ? `${C.primary}12` : C.bg,
+              color: active ? C.primary : C.muted,
+              fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 700,
+            }}>
+              {lbl}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const TIPO_IMOVEL_OPTS = [
+    { value: '', label: 'Qualquer' },
+    { value: 'apartamento', label: 'Apartamento' },
+    { value: 'casa', label: 'Casa' },
+    { value: 'republica', label: 'República' },
+    { value: 'indiferente', label: 'Indiferente' },
+  ];
 
   return (
     <div
@@ -1774,57 +2007,125 @@ function FiltersModal({ onClose }: { onClose: () => void }) {
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ background: C.card, padding: '24px', width: '100%' }}
+        style={{ background: C.card, padding: '24px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
         className="rounded-t-[28px] md:rounded-[24px] md:max-w-md md:shadow-2xl"
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '22px', fontWeight: 800, color: C.text, margin: 0 }}>Filtros</h3>
           <button
             onClick={onClose}
             aria-label="Fechar filtros"
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '22px', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px' }}
-            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
           >✕</button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          {/* Região */}
+          <div>
+            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Região</p>
+            <input
+              value={draft.regiao}
+              onChange={e => set('regiao', e.target.value)}
+              placeholder="Ex: Pinheiros, Lapa..."
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: `1.5px solid ${C.border}`, fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.text, outline: 'none', boxSizing: 'border-box', background: C.bg }}
+            />
+          </div>
+
+          {/* Tipo de imóvel */}
+          <div>
+            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Tipo de imóvel</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {TIPO_IMOVEL_OPTS.map(opt => {
+                const active = draft.tipo_imovel === opt.value;
+                return (
+                  <button key={opt.value} onClick={() => set('tipo_imovel', opt.value)} style={{
+                    padding: '8px 14px', borderRadius: '20px', cursor: 'pointer',
+                    border: `2px solid ${active ? C.primary : C.border}`,
+                    background: active ? `${C.primary}12` : C.bg,
+                    color: active ? C.primary : C.muted,
+                    fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 700,
+                  }}>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Aceita pets */}
+          {triBtn('Aceita pets', 'aceita_pets')}
+
+          {/* Fumante */}
+          {triBtn('Fumante', 'fumante')}
+
+          {/* Orçamento */}
           <div>
             <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Faixa de orçamento</p>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <Input label="Mínimo" placeholder="R$ 500" />
-              <Input label="Máximo" placeholder="R$ 2.000" />
-            </div>
-          </div>
-          <Input label="Região ou bairro" placeholder="Ex: Pinheiros" />
-
-          {[
-            { label: 'Aceita pets', value: pets, set: setPets },
-            { label: 'Fumante', value: smoker, set: setSmoker },
-          ].map(({ label, value, set }) => (
-            <div key={label}>
-              <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{label}</p>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {[true, false].map(v => (
-                  <button key={String(v)} onClick={() => set(v)} style={{
-                    flex: 1, padding: '12px', borderRadius: '12px', cursor: 'pointer', minHeight: '44px',
-                    border: `2px solid ${value === v ? C.primary : C.border}`,
-                    background: value === v ? `${C.primary}12` : C.bg,
-                    color: value === v ? C.primary : C.muted,
-                    fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 700,
-                  }}
-                  className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                  >
-                    {v ? 'Sim' : 'Não'}
-                  </button>
-                ))}
+              <div style={{ flex: 1 }}>
+                <Input
+                  label="Mínimo"
+                  placeholder="R$ 500"
+                  value={draft.orcamento_min}
+                  onChange={v => set('orcamento_min', v)}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <Input
+                  label="Máximo"
+                  placeholder="R$ 2.000"
+                  value={draft.orcamento_max}
+                  onChange={v => set('orcamento_max', v)}
+                />
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Score mínimo */}
+          <div>
+            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>
+              Compatibilidade mínima: <span style={{ color: C.primary }}>{draft.score_min}%</span>
+            </p>
+            <input
+              type="range" min={0} max={100} step={5}
+              value={draft.score_min}
+              onChange={e => set('score_min', parseInt(e.target.value))}
+              style={{ width: '100%', accentColor: C.primary }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'Nunito,sans-serif', fontSize: '11px', color: C.muted, marginTop: '2px' }}>
+              <span>0%</span><span>50%</span><span>100%</span>
+            </div>
+          </div>
+
+          {/* Ordenar */}
+          <div>
+            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Ordenar por</p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {([
+                { value: 'compatibilidade', label: 'Mais compatível' },
+                { value: 'menor_preco', label: 'Menor preço' },
+                { value: 'maior_preco', label: 'Maior preço' },
+              ] as const).map(opt => {
+                const active = draft.ordenar === opt.value;
+                return (
+                  <button key={opt.value} onClick={() => set('ordenar', opt.value)} style={{
+                    padding: '8px 14px', borderRadius: '20px', cursor: 'pointer',
+                    border: `2px solid ${active ? C.primary : C.border}`,
+                    background: active ? `${C.primary}12` : C.bg,
+                    color: active ? C.primary : C.muted,
+                    fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 700,
+                  }}>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        <div style={{ marginTop: '28px', display: 'flex', gap: '12px' }}>
-          <Btn label="Limpar filtros" outline onClick={onClose} />
-          <Btn label="Aplicar filtros" onClick={onClose} />
+        <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+          <Btn label="Limpar filtros" outline onClick={onClear} />
+          <Btn label="Aplicar filtros" onClick={() => onApply(draft)} />
         </div>
       </div>
     </div>
@@ -2149,16 +2450,30 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
   const [conversas, setConversas] = useState<Conversa[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
+  const [search, setSearch] = useState('');
+  const [naoLidas, setNaoLidas] = useState(false);
+  const matchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const carregar = () => {
+  const carregar = (q: string, nl: boolean) => {
     setLoading(true);
     setErro('');
-    listarConversas()
+    listarConversas({ q: q || undefined, nao_lidas: nl || undefined })
       .then(data => { setConversas(data); setLoading(false); })
       .catch((e: Error) => { setErro(e.message); setLoading(false); });
   };
 
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => { carregar('', false); }, []); // eslint-disable-line
+
+  const handleMatchSearch = (q: string) => {
+    setSearch(q);
+    if (matchDebounceRef.current) clearTimeout(matchDebounceRef.current);
+    matchDebounceRef.current = setTimeout(() => carregar(q, naoLidas), 400);
+  };
+
+  const handleNaoLidasToggle = (v: boolean) => {
+    setNaoLidas(v);
+    carregar(search, v);
+  };
 
   const abrirChat = (c: Conversa) => {
     setCurrentChat(conversaParaProfile(c));
@@ -2173,6 +2488,38 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
         <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>
           {loading ? 'Carregando...' : erro ? ' ' : `${conversas.length} conversa${conversas.length !== 1 ? 's' : ''}`}
         </p>
+        {/* Search + nao_lidas */}
+        <div style={{ marginTop: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round"
+              style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              type="text"
+              value={search}
+              onChange={e => handleMatchSearch(e.target.value)}
+              placeholder="Buscar conversa..."
+              style={{
+                width: '100%', padding: '9px 10px 9px 32px', borderRadius: '12px',
+                border: `1.5px solid ${C.border}`, background: C.card,
+                fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.text, outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+          </div>
+          <button
+            onClick={() => handleNaoLidasToggle(!naoLidas)}
+            style={{
+              padding: '9px 14px', borderRadius: '12px', cursor: 'pointer', whiteSpace: 'nowrap',
+              border: `1.5px solid ${naoLidas ? C.primary : C.border}`,
+              background: naoLidas ? `${C.primary}12` : C.card,
+              color: naoLidas ? C.primary : C.muted,
+              fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700,
+            }}
+          >
+            Só não lidas
+          </button>
+        </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -2185,11 +2532,19 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
         {!loading && erro && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 24px', gap: '16px' }}>
             <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.danger, textAlign: 'center' }}>{erro}</p>
-            <Btn label="Tentar novamente" small onClick={carregar} style={{ maxWidth: '200px' }} />
+            <Btn label="Tentar novamente" small onClick={() => carregar(search, naoLidas)} style={{ maxWidth: '200px' }} />
           </div>
         )}
 
-        {!loading && !erro && conversas.length === 0 && (
+        {!loading && !erro && conversas.length === 0 && (search || naoLidas) && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', gap: '12px' }}>
+            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '17px', fontWeight: 700, color: C.text, margin: 0 }}>Nenhuma conversa encontrada</p>
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0, textAlign: 'center', maxWidth: '260px' }}>
+              Tente outros termos ou remova os filtros aplicados.
+            </p>
+          </div>
+        )}
+        {!loading && !erro && conversas.length === 0 && !search && !naoLidas && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', gap: '12px' }}>
             <div style={{ width: '72px', height: '72px', background: `${C.primary}18`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -2982,6 +3337,10 @@ export default function App() {
   const handleLoginSuccess = async () => {
     try {
       const usuario = await buscarMeuUsuario();
+      if (usuario.tipo === 'administrador') {
+        nav('admin');
+        return;
+      }
       const perfis = await listarPerfis();
       const perfil = perfis.find(p => p.usuario === usuario.id) ?? null;
       setMeuPerfil(perfil);
@@ -2993,6 +3352,7 @@ export default function App() {
 
   return (
     <AppShell screen={screen} tab={tab} setTab={setTab} nav={nav} onLogout={handleLogout} notifsCount={notifsCount}>
+      {screen === 'admin' && <AdminPanel nav={nav} />}
       {screen === 'welcome' && <WelcomeScreen nav={nav} />}
       {screen === 'login' && <LoginScreen nav={nav} onLoginSuccess={handleLoginSuccess} loginMsg={sessionExpiredMsg} />}
       {screen === 'register' && <RegisterScreen nav={nav} onLoginSuccess={handleLoginSuccess} />}

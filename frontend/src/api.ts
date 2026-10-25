@@ -219,8 +219,21 @@ export interface CurtidaResponse {
   match_data?: MatchData;
 }
 
-export async function listarDescoberta(): Promise<PerfilDescoberto[]> {
-  return req<PerfilDescoberto[]>('/api/descoberta/');
+export interface DescobertaParams {
+  q?: string;
+  regiao?: string[];
+  tipo_imovel?: string;
+  aceita_pets?: 'sim' | 'nao' | 'indiferente';
+  fumante?: 'sim' | 'nao' | 'indiferente';
+  orcamento_min?: number;
+  orcamento_max?: number;
+  score_min?: number;
+  ordenar?: 'compatibilidade' | 'menor_preco' | 'maior_preco';
+}
+
+export async function listarDescoberta(params?: DescobertaParams): Promise<PerfilDescoberto[]> {
+  const qs = params ? buildQS(params as Record<string, unknown>) : '';
+  return req<PerfilDescoberto[]>(`/api/descoberta/${qs}`);
 }
 
 export async function enviarCurtida(
@@ -262,8 +275,14 @@ export interface MensagemAPI {
   lida: boolean;
 }
 
-export async function listarConversas(): Promise<Conversa[]> {
-  return req<Conversa[]>('/api/conversas/');
+export interface ConversasParams {
+  q?: string;
+  nao_lidas?: boolean;
+}
+
+export async function listarConversas(params?: ConversasParams): Promise<Conversa[]> {
+  const qs = params ? buildQS(params as Record<string, unknown>) : '';
+  return req<Conversa[]>(`/api/conversas/${qs}`);
 }
 
 export async function listarMensagens(matchId: number, apos?: number): Promise<MensagemAPI[]> {
@@ -276,4 +295,101 @@ export async function enviarMensagem(matchId: number, conteudo: string): Promise
     method: 'POST',
     body: JSON.stringify({ conteudo }),
   });
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+export function buildQS(params: Record<string, unknown>): string {
+  const qs = new URLSearchParams();
+  for (const [key, val] of Object.entries(params)) {
+    if (val === undefined || val === null || val === '') continue;
+    if (Array.isArray(val)) {
+      val.forEach((v) => qs.append(key, String(v)));
+    } else {
+      qs.set(key, String(val));
+    }
+  }
+  const str = qs.toString();
+  return str ? `?${str}` : '';
+}
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+
+export interface PaginatedResponse<T> {
+  count: number;
+  page: number;
+  results: T[];
+}
+
+export interface LogEntry {
+  id: number;
+  data_hora: string;
+  usuario: { id: number; nome: string; email: string } | null;
+  acao: string;
+  acao_label: string;
+  entidade: string;
+  entidade_id: number | null;
+  detalhes: Record<string, unknown>;
+  ip: string | null;
+}
+
+export interface UsuarioAdmin {
+  id: number;
+  nome: string;
+  email: string;
+  tipo: string;
+  regiao: string | null;
+  data_cadastro: string;
+  tem_perfil: boolean;
+}
+
+export interface LogsParams {
+  acao?: string;
+  usuario?: string;
+  entidade?: string;
+  data_inicio?: string;
+  data_fim?: string;
+  page?: number;
+}
+
+export interface AdminUsuariosParams {
+  q?: string;
+  tipo?: string;
+  regiao?: string;
+  data_inicio?: string;
+  data_fim?: string;
+  page?: number;
+}
+
+export async function listarLogs(
+  params?: LogsParams,
+): Promise<PaginatedResponse<LogEntry>> {
+  const qs = params ? buildQS(params as Record<string, unknown>) : '';
+  return req<PaginatedResponse<LogEntry>>(`/api/admin/logs/${qs}`);
+}
+
+export async function listarAdminUsuarios(
+  params?: AdminUsuariosParams,
+): Promise<PaginatedResponse<UsuarioAdmin>> {
+  const qs = params ? buildQS(params as Record<string, unknown>) : '';
+  return req<PaginatedResponse<UsuarioAdmin>>(`/api/admin/usuarios/${qs}`);
+}
+
+export async function downloadCsv(path: string, filename: string): Promise<void> {
+  const token = getToken();
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, { headers });
+  } catch {
+    throw new ApiError('Não foi possível conectar ao servidor.');
+  }
+  if (!res.ok) throw new ApiError(`Erro ${res.status} ao exportar CSV.`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
