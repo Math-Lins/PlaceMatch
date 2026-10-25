@@ -290,7 +290,7 @@ def _dados_relatorio_matches(data_inicio, data_fim, regiao, tipo):
 
     colunas = [
         'Data', 'Perfil A', 'Perfil B', 'Região A', 'Região B',
-        'Score', 'Mensagens', 'Ativa',
+        'Score (%)', 'Mensagens', 'Ativa',
     ]
     linhas = []
     totais = {'matches': 0, 'mensagens': 0}
@@ -303,7 +303,7 @@ def _dados_relatorio_matches(data_inicio, data_fim, regiao, tipo):
             m.perfil_b.nome,
             m.perfil_a.regiao,
             m.perfil_b.regiao,
-            round(m.score, 4),
+            round(m.score * 100, 2),
             m.qtd_mensagens,
             ativa,
         ])
@@ -330,11 +330,12 @@ def _dados_relatorio_compatibilidade_regiao(regiao, tipo):
         perfis_por_regiao.setdefault(p['regiao'], []).append(p['id'])
 
     colunas = [
-        'Região', 'Perfis', 'Compatibilidades', 'Score Médio',
-        'Matches', 'Taxa de Match (%)',
+        'Região', 'Perfis', 'Compatibilidades', 'Score (%)',
+        'Matches (participações)', 'Perfis com match (%)',
     ]
     linhas = []
     totais = {'perfis': 0, 'compatibilidades': 0, 'matches': 0}
+    all_match_ids: set = set()
 
     for row in regioes_qs:
         r = row['regiao']
@@ -342,25 +343,42 @@ def _dados_relatorio_compatibilidade_regiao(regiao, tipo):
         compats = Compatibilidade.objects.filter(
             Q(perfil_a_id__in=ids) | Q(perfil_b_id__in=ids)
         ).aggregate(cnt=Count('id'), avg=Avg('score'))
-        m_agg = Match.objects.filter(
-            Q(perfil_a_id__in=ids) | Q(perfil_b_id__in=ids)
-        ).aggregate(cnt=Count('id'))
+
+        region_match_ids = set(
+            Match.objects.filter(
+                Q(perfil_a_id__in=ids) | Q(perfil_b_id__in=ids)
+            ).values_list('id', flat=True)
+        )
+        all_match_ids.update(region_match_ids)
 
         n_perfis = row['perfis']
         n_compats = compats['cnt'] or 0
-        n_matches = m_agg['cnt'] or 0
-        # score_medio é null quando não há matches (nunca 0.0)
-        score_avg = round(compats['avg'], 4) if compats['avg'] is not None else None
+        n_matches = len(region_match_ids)
+        # score em % (0-1 → 0-100); null quando não há compatibilidades
+        score_pct = round(compats['avg'] * 100, 2) if compats['avg'] is not None else None
 
-        curtidas_reg = Curtida.objects.filter(
-            perfil_origem_id__in=ids, tipo='curtir'
-        ).count()
-        taxa = round((n_matches * 2 / curtidas_reg) * 100, 2) if curtidas_reg > 0 else 0.0
+        # perfis_com_match_pct: perfis da região com ≥ 1 match ÷ total perfis × 100
+        if n_perfis > 0 and region_match_ids:
+            perfis_com_match = Perfil.objects.filter(
+                Q(id__in=ids) & (
+                    Q(matches_como_a__in=region_match_ids) |
+                    Q(matches_como_b__in=region_match_ids)
+                )
+            ).distinct().count()
+            perfis_com_match_pct = round(min(perfis_com_match / n_perfis * 100, 100.0), 2)
+        else:
+            perfis_com_match_pct = 0.0
 
-        linhas.append([r, n_perfis, n_compats, score_avg if score_avg is not None else '', n_matches, taxa])
+        linhas.append([
+            r, n_perfis, n_compats,
+            score_pct if score_pct is not None else '',
+            n_matches, perfis_com_match_pct,
+        ])
         totais['perfis'] += n_perfis
         totais['compatibilidades'] += n_compats
-        totais['matches'] += n_matches
+
+    # matches é a contagem DISTINTA (não a soma por região)
+    totais['matches'] = len(all_match_ids)
 
     return colunas, linhas, totais
 

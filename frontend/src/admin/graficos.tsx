@@ -136,9 +136,9 @@ export function HorizontalBars({ data, title }: { data: TopRegiao[]; title: stri
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block' }} aria-label={title} role="img">
       <title>{title}</title>
 
-      {/* Column header: Score médio */}
+      {/* Column header: Score médio dos matches */}
       <text x={W - 4} y={MT - 2} textAnchor="end" fontSize="10" fill="#8A7E78" fontFamily="Nunito,sans-serif">
-        Score méd.
+        Score médio dos matches
       </text>
 
       {data.map((r, i) => {
@@ -169,7 +169,7 @@ export function HorizontalBars({ data, title }: { data: TopRegiao[]; title: stri
               x={W - 4} y={y + BAR_H + 4}
               textAnchor="end" fontSize="12" fill="#2A2420" fontFamily="Nunito,sans-serif" fontWeight="700"
             >
-              {r.score_medio !== null ? `${Number(r.score_medio).toFixed(0)}%` : '—'}
+              {r.score_medio !== null ? `${(Number(r.score_medio) * 100).toFixed(1).replace('.', ',')}%` : '—'}
             </text>
           </g>
         );

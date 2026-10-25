@@ -334,13 +334,20 @@ class RelatorioMatchesTest(PainelBaseTestCase):
 
     def test_colunas_presentes(self):
         d = self._dados()
-        for col in ('Data', 'Perfil A', 'Perfil B', 'Score', 'Mensagens', 'Ativa'):
+        for col in ('Data', 'Perfil A', 'Perfil B', 'Score (%)', 'Mensagens', 'Ativa'):
             self.assertIn(col, d['colunas'])
 
     def test_totais_corretos(self):
         d = self._dados()
         self.assertEqual(d['totais']['matches'], 1)
         self.assertEqual(d['totais']['mensagens'], 2)
+
+    def test_score_exibido_em_porcentagem(self):
+        # match score=0.8 → deve aparecer como 80.0 na coluna 'Score (%)'
+        d = self._dados()
+        idx_score = d['colunas'].index('Score (%)')
+        scores = [l[idx_score] for l in d['linhas']]
+        self.assertAlmostEqual(float(scores[0]), 80.0, places=1)
 
     def test_linha_tem_ativa_sim(self):
         d = self._dados()
@@ -403,7 +410,7 @@ class RelatorioCompatibilidadeRegioTest(PainelBaseTestCase):
             reverse('relatorio-detalhe', args=['compatibilidade-regiao'])
         )
         self.assertEqual(resp.status_code, 200)
-        for col in ('Região', 'Perfis', 'Matches', 'Score Médio'):
+        for col in ('Região', 'Perfis', 'Matches (participações)', 'Score (%)', 'Perfis com match (%)'):
             self.assertIn(col, resp.data['colunas'])
 
     def test_recife_tem_2_perfis_e_1_match(self):
@@ -416,9 +423,43 @@ class RelatorioCompatibilidadeRegioTest(PainelBaseTestCase):
         linha = resp.data['linhas'][0]
         col = resp.data['colunas']
         idx_perfis = col.index('Perfis')
-        idx_matches = col.index('Matches')
+        idx_matches = col.index('Matches (participações)')
         self.assertEqual(linha[idx_perfis], 2)
         self.assertEqual(linha[idx_matches], 1)
+
+    def test_recife_perfis_com_match_pct(self):
+        # p1 e p2 (Recife) ambos participam do único match → 2/2 = 100%
+        resp = self.client.get(
+            reverse('relatorio-detalhe', args=['compatibilidade-regiao']),
+            {'regiao': 'Recife'},
+        )
+        self.assertEqual(resp.status_code, 200)
+        linha = resp.data['linhas'][0]
+        col = resp.data['colunas']
+        idx_pct = col.index('Perfis com match (%)')
+        self.assertEqual(linha[idx_pct], 100.0)
+
+    def test_totais_matches_distintos(self):
+        # Apenas 1 match no cenário (p1-p2 em Recife); Olinda não tem match
+        resp = self.client.get(
+            reverse('relatorio-detalhe', args=['compatibilidade-regiao'])
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['totais']['matches'], 1)
+
+    def test_score_exibido_em_porcentagem(self):
+        # Garante que o valor está em escala percentual (> 1), não fracionária (≤ 1)
+        resp = self.client.get(
+            reverse('relatorio-detalhe', args=['compatibilidade-regiao']),
+            {'regiao': 'Recife'},
+        )
+        self.assertEqual(resp.status_code, 200)
+        linha = resp.data['linhas'][0]
+        col = resp.data['colunas']
+        idx_score = col.index('Score (%)')
+        score_val = float(linha[idx_score])
+        self.assertGreater(score_val, 1.0)
+        self.assertLessEqual(score_val, 100.0)
 
 
 # ─── Relatório usuários ───────────────────────────────────────────────────────

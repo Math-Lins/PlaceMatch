@@ -26,7 +26,7 @@ const KPI_DEFS: { key: keyof import('../api').DashboardKPIs; label: string; fmt:
   { key: 'taxa_match',        label: 'Taxa de match',     fmt: 'pct'   },
   { key: 'mensagens_total',   label: 'Mensagens',         fmt: 'num'   },
   { key: 'conversas_ativas',  label: 'Conversas ativas',  fmt: 'num'   },
-  { key: 'score_medio',       label: 'Score médio',       fmt: 'pct01' },
+  { key: 'score_medio',       label: 'Score médio dos matches', fmt: 'pct01' },
 ];
 
 function fmtKpi(val: number | undefined | null, fmt: KpiFmt): string {

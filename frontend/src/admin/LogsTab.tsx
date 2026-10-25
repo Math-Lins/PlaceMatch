@@ -192,7 +192,11 @@ export default function LogsTab() {
                   >
                     <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: C.text }}>{formatDateBR(log.data_hora)}</td>
                     <td style={{ padding: '10px 12px', color: log.usuario ? C.text : C.muted, fontStyle: log.usuario ? 'normal' : 'italic' }}>
-                      {log.usuario ? `${log.usuario.nome} (${log.usuario.email})` : 'Usuário removido'}
+                      {log.usuario
+                        ? log.usuario.nome === log.usuario.email
+                          ? log.usuario.nome
+                          : `${log.usuario.nome} (${log.usuario.email})`
+                        : 'Usuário removido'}
                     </td>
                     <td style={{ padding: '10px 12px' }}>
                       <span style={{ padding: '2px 8px', borderRadius: '8px', background: `${C.mint}20`, color: C.text, fontWeight: 600, fontSize: '12px' }}>
