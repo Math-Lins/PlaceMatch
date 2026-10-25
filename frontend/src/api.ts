@@ -393,3 +393,87 @@ export async function downloadCsv(path: string, filename: string): Promise<void>
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// ─── Admin: Dashboard & Relatórios ────────────────────────────────────────────
+
+export interface AdminFiltros {
+  data_inicio?: string;
+  data_fim?: string;
+  regiao?: string;
+  tipo?: string;
+}
+
+export interface DashboardKPIs {
+  usuarios: number;
+  perfis: number;
+  curtidas: number;
+  matches: number;
+  taxa_match: number;
+  mensagens: number;
+  conversas_ativas: number;
+  score_medio: number;
+}
+
+export interface SeriePonto {
+  data: string;
+  matches: number;
+  curtidas: number;
+  mensagens: number;
+}
+
+export interface TopRegiao {
+  regiao: string;
+  perfis: number;
+  matches: number;
+  score_medio: number | null;
+}
+
+export interface DistribuicaoScore {
+  faixa: string;
+  total: number;
+}
+
+export interface DashboardData {
+  kpis: DashboardKPIs;
+  series: SeriePonto[];
+  top_regioes: TopRegiao[];
+  distribuicao_score: DistribuicaoScore[];
+  filtros_aplicados: Record<string, string>;
+}
+
+export interface RelatorioItem {
+  id: string;
+  titulo: string;
+  descricao: string;
+  filtros: string[];
+}
+
+export interface RelatorioResultado {
+  titulo: string;
+  colunas: string[];
+  linhas: (string | number | null)[][];
+  totais: (string | number | null)[] | null;
+  filtros_aplicados: Record<string, string>;
+  gerado_em: string;
+}
+
+export async function getDashboard(filtros?: AdminFiltros): Promise<DashboardData> {
+  const qs = filtros ? buildQS(filtros as Record<string, unknown>) : '';
+  return req<DashboardData>(`/api/admin/dashboard/${qs}`);
+}
+
+export async function listarRelatorios(): Promise<RelatorioItem[]> {
+  return req<RelatorioItem[]>('/api/admin/relatorios/');
+}
+
+export async function getRelatorio(id: string, filtros?: AdminFiltros): Promise<RelatorioResultado> {
+  const qs = filtros ? buildQS(filtros as Record<string, unknown>) : '';
+  return req<RelatorioResultado>(`/api/admin/relatorios/${id}/${qs}`);
+}
+
+export async function downloadRelatorioCSV(id: string, filtros?: AdminFiltros): Promise<void> {
+  const base: Record<string, unknown> = filtros ? { ...(filtros as Record<string, unknown>) } : {};
+  base.formato = 'csv';
+  const qs = buildQS(base);
+  await downloadCsv(`/api/admin/relatorios/${id}/${qs}`, `relatorio-${id}.csv`);
+}

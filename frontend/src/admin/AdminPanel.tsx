@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import LogsTab from './LogsTab';
 import UsuariosTab from './UsuariosTab';
+import PainelTab from './PainelTab';
+import RelatoriosTab from './RelatoriosTab';
 
 const C = {
   primary: '#E06B45',
@@ -11,8 +13,17 @@ const C = {
   border: '#EDE8E3',
 };
 
+type AdminTab = 'painel' | 'relatorios' | 'logs' | 'usuarios';
+
+const TAB_LABELS: Record<AdminTab, string> = {
+  painel: 'Painel',
+  relatorios: 'Relatórios',
+  logs: 'Logs',
+  usuarios: 'Usuários',
+};
+
 export default function AdminPanel({ nav }: { nav: (s: 'welcome') => void }) {
-  const [activeTab, setActiveTab] = useState<'logs' | 'usuarios'>('logs');
+  const [activeTab, setActiveTab] = useState<AdminTab>('painel');
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', flexDirection: 'column' }}>
@@ -33,20 +44,20 @@ export default function AdminPanel({ nav }: { nav: (s: 'welcome') => void }) {
           </button>
         </div>
         {/* Tabs */}
-        <div style={{ display: 'flex', marginTop: '12px' }}>
-          {(['logs', 'usuarios'] as const).map((t) => (
+        <div style={{ display: 'flex', marginTop: '12px', overflowX: 'auto' }}>
+          {(['painel', 'relatorios', 'logs', 'usuarios'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setActiveTab(t)}
               style={{
                 padding: '10px 20px', background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: 'Outfit,sans-serif', fontSize: '15px',
+                fontFamily: 'Outfit,sans-serif', fontSize: '15px', whiteSpace: 'nowrap',
                 fontWeight: activeTab === t ? 800 : 500,
                 color: activeTab === t ? C.primary : C.muted,
                 borderBottom: activeTab === t ? `3px solid ${C.primary}` : '3px solid transparent',
               }}
             >
-              {t === 'logs' ? 'Logs' : 'Usuários'}
+              {TAB_LABELS[t]}
             </button>
           ))}
         </div>
@@ -54,7 +65,10 @@ export default function AdminPanel({ nav }: { nav: (s: 'welcome') => void }) {
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {activeTab === 'logs' ? <LogsTab /> : <UsuariosTab />}
+        {activeTab === 'painel' && <PainelTab />}
+        {activeTab === 'relatorios' && <RelatoriosTab />}
+        {activeTab === 'logs' && <LogsTab />}
+        {activeTab === 'usuarios' && <UsuariosTab />}
       </div>
     </div>
   );
