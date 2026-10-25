@@ -19,10 +19,14 @@ Documentação completa da arquitetura, diagrama de classes, MER e modelo relaci
 - Cadastro e autenticação com diferentes perfis (buscando vaga, oferecendo vaga, administrador)
 - Criação de perfil detalhado (hábitos, rotina, orçamento, preferências)
 - **Algoritmo de compatibilidade** — núcleo de IA/processamento do projeto
-- Descoberta de perfis no estilo "curtir/recusar", com match mútuo
-- Chat entre usuários com match
-- Filtros por região, orçamento e preferências
-- Painel administrativo de moderação (denúncias e bloqueios)
+- Descoberta de perfis no estilo "curtir/recusar", com match mútuo, busca e filtros avançados
+- Chat entre usuários com match; busca de conversas e filtro "só não lidas"
+- Filtros por região, orçamento, tipo de imóvel, fumante, pets e score mínimo
+- **Painel administrativo completo:**
+  - Dashboard com 8 KPIs, gráfico de atividade diária, top regiões e distribuição de score
+  - 4 relatórios com filtros e exportação CSV (matches, compatibilidade por região, atividade, usuários)
+  - Gerenciamento de usuários com busca, filtros e exportação
+  - Histórico de operações (logs) com filtros e exportação
 
 ## Tecnologias utilizadas
 
@@ -44,6 +48,10 @@ PlaceMatch/
 │   ├── placematch/            # configurações do projeto (settings, urls)
 │   ├── usuarios/              # app: autenticação e controle de usuários
 │   ├── perfis/                # app: perfis, CRUD principal
+│   ├── matches/               # app: curtidas, matches e compatibilidade
+│   ├── chat/                  # app: mensagens e conversas
+│   ├── logs/                  # app: histórico de operações
+│   ├── painel/                # app: dashboard, relatórios e admin de usuários
 │   ├── manage.py
 │   ├── requirements.txt
 │   ├── Dockerfile
@@ -51,6 +59,9 @@ PlaceMatch/
 │   └── .env.example           # variáveis de ambiente do backend
 ├── frontend/                  # aplicação React (SPA)
 │   ├── src/
+│   │   ├── admin/             # painel administrativo (dashboard, logs, usuários, relatórios)
+│   │   ├── api.ts             # camada de acesso à API REST
+│   │   └── App.tsx            # aplicação principal (roteamento de telas)
 │   ├── package.json
 │   ├── Dockerfile
 │   ├── docker-compose.yml     # servidor Vite via Docker
@@ -152,20 +163,39 @@ npm run dev
 
 ### Endpoints disponíveis
 
+**Autenticação e perfil**
+
 | Método | Endpoint | Descrição |
 |---|---|---|
 | POST | `/api/auth/registrar/` | Cadastro de usuário |
 | POST | `/api/auth/login/` | Login (retorna JWT) |
 | POST | `/api/auth/login/refresh/` | Renovar token |
 | GET | `/api/auth/me/` | Dados do usuário logado |
-| GET | `/api/perfis/` | Listar perfis |
-| POST | `/api/perfis/` | Criar perfil |
-| GET | `/api/perfis/{id}/` | Detalhe de um perfil |
-| PATCH | `/api/perfis/{id}/` | Atualizar perfil (só o dono) |
-| DELETE | `/api/perfis/{id}/` | Excluir perfil (só o dono) |
-| GET | `/api/descoberta/` | Perfis compatíveis ordenados por score |
+| GET/POST | `/api/perfis/` | Listar / criar perfil |
+| PATCH/DELETE | `/api/perfis/{id}/` | Atualizar / excluir perfil |
+
+**Descoberta, matches e chat**
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| GET | `/api/descoberta/` | Perfis compatíveis (suporta busca e filtros) |
 | POST | `/api/curtidas/` | Curtir ou recusar um perfil |
 | GET | `/api/matches/` | Listar matches do usuário logado |
+| GET | `/api/conversas/` | Listar conversas (suporta busca e não lidas) |
+| GET | `/api/matches/{id}/mensagens/` | Mensagens de um match |
+| POST | `/api/matches/{id}/mensagens/` | Enviar mensagem |
+
+**Painel administrativo** *(requer tipo = administrador)*
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| GET | `/api/admin/dashboard/` | KPIs, séries, top regiões, distribuição de score |
+| GET | `/api/admin/relatorios/` | Catálogo de relatórios disponíveis |
+| GET | `/api/admin/relatorios/{id}/` | Dados de um relatório (JSON ou `?formato=csv`) |
+| GET | `/api/admin/logs/` | Histórico de operações paginado |
+| GET | `/api/admin/logs/exportar/` | Exportar logs em CSV |
+| GET | `/api/admin/usuarios/` | Listagem de usuários paginada |
+| GET | `/api/admin/usuarios/exportar/` | Exportar usuários em CSV |
 
 ### Dados de teste (seed)
 
@@ -252,3 +282,28 @@ python manage.py benchmark_compatibilidade --sem-banco  # só memória
 - Aba de matches atualiza automaticamente após novo match ou ao navegar para ela
 - Tela de celebração com atalhos: iniciar conversa, ver matches ou continuar procurando
 - Botão "Curtir perfil" no detalhe chama a API e redireciona corretamente
+
+✅ Sprint D1 concluída — painel administrativo: dashboard e relatórios:
+
+**Backend:**
+- App `painel`: dashboard com KPIs (8 indicadores), séries temporais com zero-fill, top regiões e distribuição de score por faixa
+- 4 relatórios prontos: matches, compatibilidade por região, atividade por dia e usuários cadastrados
+- Todos os relatórios suportam filtros (data, região, tipo) e exportação CSV (UTF-8 BOM, separador `;`)
+- App `logs`: registro automático de operações (login, perfil, curtida, match, mensagem)
+
+**Frontend:**
+- Tela `PainelTab`: 8 cards KPI, gráfico de linha/área (SVG puro, 3 séries), top regiões e distribuição de score; barra de filtros com aplicar/limpar
+- Tela `RelatoriosTab`: seletor de relatório, inputs dinâmicos por tipo de filtro, tabela de resultados com totais e exportação CSV
+- Gráficos implementados em SVG sem dependências externas (`LineAreaChart`, `HorizontalBars`, `ScoreDistChart`)
+
+✅ Sprint D2 concluída — admin: logs, usuários e melhorias na descoberta:
+
+**Backend:**
+- Endpoints paginados para listagem e exportação de logs e usuários (com filtros de busca, tipo, região e data)
+
+**Frontend:**
+- `LogsTab`: tabela paginada com linhas expansíveis para detalhes; filtros por ação, usuário, entidade e data
+- `UsuariosTab`: busca, filtros e exportação CSV de usuários
+- `DiscoveryScreen`: barra de busca com debounce 400 ms, filtros avançados (região, tipo de imóvel, pets, fumante, orçamento, score mínimo, ordenação), chips de filtros ativos com remoção individual, persistência em `sessionStorage`
+- `MatchesScreen`: busca de conversas e toggle "Só não lidas"
+- Redirecionamento automático de usuários `administrador` para o painel ao fazer login
