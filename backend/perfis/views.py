@@ -20,4 +20,37 @@ class PerfilViewSet(viewsets.ModelViewSet):
         return [permissions.IsAuthenticated(), IsOwner()]
 
     def perform_create(self, serializer):
-        serializer.save(usuario=self.request.user)
+        from logs.servicos import registrar
+        perfil = serializer.save(usuario=self.request.user)
+        registrar(
+            'PERFIL_CRIADO',
+            usuario=self.request.user,
+            entidade='perfil',
+            entidade_id=perfil.id,
+            request=self.request,
+        )
+
+    def perform_update(self, serializer):
+        from logs.servicos import registrar
+        campos_alterados = list(serializer.validated_data.keys())
+        perfil = serializer.save()
+        registrar(
+            'PERFIL_EDITADO',
+            usuario=self.request.user,
+            entidade='perfil',
+            entidade_id=perfil.id,
+            detalhes={'campos': campos_alterados},
+            request=self.request,
+        )
+
+    def perform_destroy(self, instance):
+        from logs.servicos import registrar
+        perfil_id = instance.id
+        registrar(
+            'PERFIL_EXCLUIDO',
+            usuario=self.request.user,
+            entidade='perfil',
+            entidade_id=perfil_id,
+            request=self.request,
+        )
+        instance.delete()
