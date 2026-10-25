@@ -339,3 +339,80 @@ class CascadeTest(TestCase):
         self.assertEqual(Mensagem.objects.filter(match=match).count(), 2)
         match.delete()
         self.assertEqual(Mensagem.objects.filter(match_id=match.id).count(), 0)
+
+
+# ─── 9. Filtros de conversas (q e nao_lidas) ─────────────────────────────────
+
+class ConversasFiltrosTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user_a, self.pa = _criar_usuario_e_perfil('buscando_vaga', 'Alice')
+        self.user_b, self.pb = _criar_usuario_e_perfil('oferecendo_vaga', 'Bruno Silvo')
+        self.user_c, self.pc = _criar_usuario_e_perfil('buscando_vaga', 'Carlos')
+        self.user_d, self.pd = _criar_usuario_e_perfil('oferecendo_vaga', 'Diana')
+
+        # pb tem titulo_anuncio
+        self.pb.titulo_anuncio = 'Quarto central metrô'
+        self.pb.save(update_fields=['titulo_anuncio'])
+
+        self.match_ab = _criar_match(self.pa, self.pb)
+        self.match_ad = _criar_match(self.pa, self.pd)
+
+    def test_filtro_q_por_nome_retorna_match_correto(self):
+        self.client.force_authenticate(user=self.user_a)
+        res = self.client.get('/api/conversas/?q=Bruno')
+        self.assertEqual(res.status_code, 200)
+        ids = [c['match_id'] for c in res.data]
+        self.assertIn(self.match_ab.id, ids)
+        self.assertNotIn(self.match_ad.id, ids)
+
+    def test_filtro_q_por_titulo_anuncio(self):
+        self.client.force_authenticate(user=self.user_a)
+        res = self.client.get('/api/conversas/?q=metrô')
+        self.assertEqual(res.status_code, 200)
+        ids = [c['match_id'] for c in res.data]
+        self.assertIn(self.match_ab.id, ids)
+        self.assertNotIn(self.match_ad.id, ids)
+
+    def test_filtro_q_sem_resultado(self):
+        self.client.force_authenticate(user=self.user_a)
+        res = self.client.get('/api/conversas/?q=xyzinexistente')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data, [])
+
+    def test_filtro_q_case_insensitive(self):
+        self.client.force_authenticate(user=self.user_a)
+        res = self.client.get('/api/conversas/?q=BRUNO')
+        self.assertEqual(res.status_code, 200)
+        ids = [c['match_id'] for c in res.data]
+        self.assertIn(self.match_ab.id, ids)
+
+    def test_filtro_nao_lidas_true_exclui_sem_nao_lidas(self):
+        # Apenas match_ab tem mensagem não lida de pb
+        Mensagem.objects.create(match=self.match_ab, remetente=self.pb, conteudo='Oi!')
+
+        self.client.force_authenticate(user=self.user_a)
+        res = self.client.get('/api/conversas/?nao_lidas=true')
+        self.assertEqual(res.status_code, 200)
+        ids = [c['match_id'] for c in res.data]
+        self.assertIn(self.match_ab.id, ids)
+        self.assertNotIn(self.match_ad.id, ids)
+
+    def test_filtro_nao_lidas_false_retorna_todos(self):
+        self.client.force_authenticate(user=self.user_a)
+        res = self.client.get('/api/conversas/?nao_lidas=false')
+        self.assertEqual(res.status_code, 200)
+        ids = [c['match_id'] for c in res.data]
+        self.assertIn(self.match_ab.id, ids)
+        self.assertIn(self.match_ad.id, ids)
+
+    def test_filtro_nao_lidas_true_vazio_quando_tudo_lido(self):
+        # Cria mensagem já marcada como lida
+        Mensagem.objects.create(
+            match=self.match_ab, remetente=self.pb, conteudo='Oi!', lida=True
+        )
+        self.client.force_authenticate(user=self.user_a)
+        res = self.client.get('/api/conversas/?nao_lidas=true')
+        self.assertEqual(res.status_code, 200)
+        ids = [c['match_id'] for c in res.data]
+        self.assertNotIn(self.match_ab.id, ids)

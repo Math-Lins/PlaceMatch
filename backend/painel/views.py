@@ -201,6 +201,8 @@ class DashboardView(APIView):
         for p in Perfil.objects.filter(regiao__in=regioes_nomes).values('id', 'regiao'):
             perfis_por_regiao.setdefault(p['regiao'], []).append(p['id'])
 
+        # Um match conta para a região dos dois perfis: um match entre perfil de
+        # Recife e perfil de Olinda aparece nas estatísticas de AMBAS as regiões.
         top_regioes = []
         for row in top_regioes_qs:
             r = row['regiao']
@@ -212,7 +214,8 @@ class DashboardView(APIView):
                 'regiao': r,
                 'perfis': row['perfis'],
                 'matches': agg['cnt'] or 0,
-                'score_medio': round(agg['avg'] or 0.0, 4),
+                # score_medio é null quando não há matches na região (nunca 0.0)
+                'score_medio': round(agg['avg'], 4) if agg['avg'] is not None else None,
             })
 
         # ── Distribuição de score ─────────────────────────────────────────────
@@ -346,14 +349,15 @@ def _dados_relatorio_compatibilidade_regiao(regiao, tipo):
         n_perfis = row['perfis']
         n_compats = compats['cnt'] or 0
         n_matches = m_agg['cnt'] or 0
-        score_avg = round(compats['avg'] or 0.0, 4)
+        # score_medio é null quando não há matches (nunca 0.0)
+        score_avg = round(compats['avg'], 4) if compats['avg'] is not None else None
 
         curtidas_reg = Curtida.objects.filter(
             perfil_origem_id__in=ids, tipo='curtir'
         ).count()
         taxa = round((n_matches * 2 / curtidas_reg) * 100, 2) if curtidas_reg > 0 else 0.0
 
-        linhas.append([r, n_perfis, n_compats, score_avg, n_matches, taxa])
+        linhas.append([r, n_perfis, n_compats, score_avg if score_avg is not None else '', n_matches, taxa])
         totais['perfis'] += n_perfis
         totais['compatibilidades'] += n_compats
         totais['matches'] += n_matches
@@ -540,3 +544,122 @@ class RelatorioDetalheView(APIView):
             'filtros_aplicados': filtros_aplicados,
             'gerado_em': timezone.now(),
         })
+
+
+# ─── Administração de usuários ────────────────────────────────────────────────
+
+def _serializar_usuario_admin(u):
+    try:
+        regiao = u.perfil.regiao
+        tem_perfil = True
+    except Exception:
+        regiao = None
+        tem_perfil = False
+    return {
+        'id': u.id,
+        'nome': u.get_full_name() or u.username,
+        'email': u.email,
+        'tipo': u.tipo,
+        'regiao': regiao,
+        'data_cadastro': u.date_joined,
+        'tem_perfil': tem_perfil,
+    }
+
+
+def _filtrar_usuarios(params, data_inicio, data_fim):
+    qs = Usuario.objects.select_related('perfil').order_by('-date_joined')
+
+    q = params.get('q')
+    if q:
+        qs = qs.filter(Q(username__icontains=q) | Q(email__icontains=q))
+
+    tipo = params.get('tipo')
+    if tipo:
+        qs = qs.filter(tipo=tipo)
+
+    regiao = params.get('regiao')
+    if regiao:
+        qs = qs.filter(perfil__regiao=regiao)
+
+    if data_inicio:
+        qs = qs.filter(date_joined__gte=data_inicio)
+    if data_fim:
+        qs = qs.filter(date_joined__lte=data_fim)
+
+    return qs
+
+
+class AdminUsuariosView(APIView):
+    permission_classes = [permissions.IsAuthenticated, AdminPermission]
+
+    def get(self, request):
+        params = request.query_params
+        data_inicio, data_fim, erro = validar_e_parsear_datas(params)
+        if erro:
+            return erro
+
+        qs = _filtrar_usuarios(params, data_inicio, data_fim)
+
+        try:
+            page = max(1, int(params.get('page', 1)))
+        except (ValueError, TypeError):
+            page = 1
+        try:
+            page_size = min(100, max(1, int(params.get('page_size', 20))))
+        except (ValueError, TypeError):
+            page_size = 20
+
+        count = qs.count()
+        offset = (page - 1) * page_size
+        usuarios = qs[offset:offset + page_size]
+
+        return Response({
+            'count': count,
+            'page': page,
+            'results': [_serializar_usuario_admin(u) for u in usuarios],
+        })
+
+
+class AdminUsuariosExportarView(APIView):
+    permission_classes = [permissions.IsAuthenticated, AdminPermission]
+
+    def get(self, request):
+        params = request.query_params
+        data_inicio, data_fim, erro = validar_e_parsear_datas(params)
+        if erro:
+            return erro
+
+        qs = _filtrar_usuarios(params, data_inicio, data_fim)
+
+        cabecalho = [
+            'ID', 'Nome', 'E-mail', 'Tipo', 'Região',
+            'Data de Cadastro', 'Tem Perfil',
+        ]
+        linhas = []
+        for u in qs:
+            try:
+                regiao = u.perfil.regiao
+                tem_perfil = 'sim'
+            except Exception:
+                regiao = ''
+                tem_perfil = 'não'
+            linhas.append([
+                u.id,
+                u.get_full_name() or u.username,
+                u.email,
+                u.tipo,
+                regiao,
+                str(u.date_joined.date()),
+                tem_perfil,
+            ])
+
+        filtros_usados = {k: v for k, v in params.items()}
+        registrar(
+            'RELATORIO_EXPORTADO',
+            usuario=request.user,
+            entidade='usuario',
+            detalhes={'filtros': filtros_usados},
+            request=request,
+        )
+
+        return gerar_csv_response(cabecalho, linhas, 'usuarios')

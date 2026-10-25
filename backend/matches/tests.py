@@ -754,3 +754,202 @@ class RecalcularComandoTest(TestCase):
         # deve concluir sem lançar exceção
         call_command('recalcular_compatibilidades', stdout=out)
         self.assertIn('Concluído', out.getvalue())
+
+
+# =============================================================================
+# Testes de filtros da Descoberta (Parte 3)
+# =============================================================================
+
+class DescobertaFiltrosTest(TestCase):
+    """
+    Testa os parâmetros de filtro, ordenação e validação da DescobertaView.
+    user_a (buscando_vaga) vê perfis oferecendo_vaga e vice-versa.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        # Buscador (visualiza oferecendo_vaga)
+        self.user_a, self.pa = _criar_usuario_e_perfil(
+            'buscando_vaga', nome='Buscador Alpha',
+            regiao='Recife', orcamento_min=500, orcamento_max=1500,
+            fumante=False, aceita_pets=True, tipo_imovel='apartamento',
+        )
+        # Ofertante 1 — boa compatibilidade com pa
+        self.user_b, self.pb = _criar_usuario_e_perfil(
+            'oferecendo_vaga', nome='Ofertante Beta',
+            regiao='Recife', orcamento_min=600, orcamento_max=1400,
+            fumante=False, aceita_pets=True, tipo_imovel='apartamento',
+        )
+        self.pb.titulo_anuncio = 'Quarto ensolarado Boa Viagem'
+        self.pb.save(update_fields=['titulo_anuncio'])
+        # Ofertante 2 — atributos distintos
+        self.user_c, self.pc = _criar_usuario_e_perfil(
+            'oferecendo_vaga', nome='Ofertante Gamma',
+            regiao='Olinda', orcamento_min=2000, orcamento_max=3000,
+            fumante=True, aceita_pets=False, tipo_imovel='casa',
+        )
+        self.pc.titulo_anuncio = 'Casa espaçosa Olinda'
+        self.pc.save(update_fields=['titulo_anuncio'])
+        self.client.force_authenticate(user=self.user_a)
+
+    # ── Filtro q ──────────────────────────────────────────────────────────────
+
+    def test_filtro_q_por_nome(self):
+        res = self.client.get('/api/descoberta/?q=Beta')
+        self.assertEqual(res.status_code, 200)
+        ids = [p['id'] for p in res.data]
+        self.assertIn(self.pb.id, ids)
+        self.assertNotIn(self.pc.id, ids)
+
+    def test_filtro_q_por_titulo_anuncio(self):
+        res = self.client.get('/api/descoberta/?q=ensolarado')
+        self.assertEqual(res.status_code, 200)
+        ids = [p['id'] for p in res.data]
+        self.assertIn(self.pb.id, ids)
+        self.assertNotIn(self.pc.id, ids)
+
+    def test_filtro_q_sem_resultado(self):
+        res = self.client.get('/api/descoberta/?q=xyzinexistente')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data, [])
+
+    # ── Filtro regiao ────────────────────────────────────────────────────────
+
+    def test_filtro_regiao_unica(self):
+        res = self.client.get('/api/descoberta/?regiao=Olinda')
+        ids = [p['id'] for p in res.data]
+        self.assertIn(self.pc.id, ids)
+        self.assertNotIn(self.pb.id, ids)
+
+    def test_filtro_regiao_multipla(self):
+        res = self.client.get('/api/descoberta/?regiao=Recife&regiao=Olinda')
+        ids = [p['id'] for p in res.data]
+        self.assertIn(self.pb.id, ids)
+        self.assertIn(self.pc.id, ids)
+
+    # ── Filtro tipo_imovel ───────────────────────────────────────────────────
+
+    def test_filtro_tipo_imovel(self):
+        res = self.client.get('/api/descoberta/?tipo_imovel=apartamento')
+        ids = [p['id'] for p in res.data]
+        self.assertIn(self.pb.id, ids)
+        self.assertNotIn(self.pc.id, ids)
+
+    # ── Filtro aceita_pets e fumante ─────────────────────────────────────────
+
+    def test_filtro_aceita_pets_true(self):
+        res = self.client.get('/api/descoberta/?aceita_pets=true')
+        ids = [p['id'] for p in res.data]
+        self.assertIn(self.pb.id, ids)
+        self.assertNotIn(self.pc.id, ids)
+
+    def test_filtro_aceita_pets_false(self):
+        res = self.client.get('/api/descoberta/?aceita_pets=false')
+        ids = [p['id'] for p in res.data]
+        self.assertNotIn(self.pb.id, ids)
+        self.assertIn(self.pc.id, ids)
+
+    def test_filtro_fumante_true(self):
+        res = self.client.get('/api/descoberta/?fumante=true')
+        ids = [p['id'] for p in res.data]
+        self.assertIn(self.pc.id, ids)
+        self.assertNotIn(self.pb.id, ids)
+
+    # ── Filtro orçamento (interseção) ────────────────────────────────────────
+
+    def test_filtro_orcamento_intersecao_encontra_pb(self):
+        # pb: [600, 1400]; filtro [800, 1200] → intersecta
+        res = self.client.get('/api/descoberta/?orcamento_min=800&orcamento_max=1200')
+        ids = [p['id'] for p in res.data]
+        self.assertIn(self.pb.id, ids)
+        self.assertNotIn(self.pc.id, ids)
+
+    def test_filtro_orcamento_sem_intersecao(self):
+        # pc: [2000, 3000]; filtro [100, 500] → sem interseção
+        res = self.client.get('/api/descoberta/?orcamento_max=500')
+        ids = [p['id'] for p in res.data]
+        self.assertNotIn(self.pc.id, ids)
+
+    # ── Filtro score_min ─────────────────────────────────────────────────────
+
+    def test_filtro_score_min_exclui_baixo_score(self):
+        # Força scores: pb → 0.9, pc → 0.1
+        pa_id, pb_id = min(self.pa.id, self.pb.id), max(self.pa.id, self.pb.id)
+        Compatibilidade.objects.update_or_create(
+            perfil_a_id=pa_id, perfil_b_id=pb_id,
+            defaults={'score': 0.9},
+        )
+        pa_id2, pb_id2 = min(self.pa.id, self.pc.id), max(self.pa.id, self.pc.id)
+        Compatibilidade.objects.update_or_create(
+            perfil_a_id=pa_id2, perfil_b_id=pb_id2,
+            defaults={'score': 0.1},
+        )
+        # score_min=50 → 50% → 0.5; pc (0.1) deve sair
+        res = self.client.get('/api/descoberta/?score_min=50')
+        self.assertEqual(res.status_code, 200)
+        ids = [p['id'] for p in res.data]
+        self.assertIn(self.pb.id, ids)
+        self.assertNotIn(self.pc.id, ids)
+
+    # ── Ordenação ────────────────────────────────────────────────────────────
+
+    def test_ordenar_orcamento_asc(self):
+        res = self.client.get('/api/descoberta/?ordenar=orcamento_asc')
+        self.assertEqual(res.status_code, 200)
+        # pb.orcamento_min=600 < pc.orcamento_min=2000 → pb primeiro
+        ids = [p['id'] for p in res.data]
+        self.assertLess(ids.index(self.pb.id), ids.index(self.pc.id))
+
+    def test_ordenar_orcamento_desc(self):
+        res = self.client.get('/api/descoberta/?ordenar=orcamento_desc')
+        self.assertEqual(res.status_code, 200)
+        ids = [p['id'] for p in res.data]
+        self.assertLess(ids.index(self.pc.id), ids.index(self.pb.id))
+
+    def test_ordenar_score_default(self):
+        # score padrão (score desc) — só verifica que não gera erro e retorna resultados
+        res = self.client.get('/api/descoberta/')
+        self.assertEqual(res.status_code, 200)
+        self.assertGreaterEqual(len(res.data), 2)
+
+    # ── Validação de parâmetros inválidos ────────────────────────────────────
+
+    def test_400_aceita_pets_invalido(self):
+        res = self.client.get('/api/descoberta/?aceita_pets=sim')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('aceita_pets', res.data.get('detail', ''))
+
+    def test_400_fumante_invalido(self):
+        res = self.client.get('/api/descoberta/?fumante=nao')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('fumante', res.data.get('detail', ''))
+
+    def test_400_orcamento_min_invalido(self):
+        res = self.client.get('/api/descoberta/?orcamento_min=abc')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('orcamento_min', res.data.get('detail', ''))
+
+    def test_400_orcamento_max_invalido(self):
+        res = self.client.get('/api/descoberta/?orcamento_max=xyz')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('orcamento_max', res.data.get('detail', ''))
+
+    def test_400_score_min_fora_de_faixa(self):
+        res = self.client.get('/api/descoberta/?score_min=150')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('score_min', res.data.get('detail', ''))
+
+    def test_400_ordenar_invalido(self):
+        res = self.client.get('/api/descoberta/?ordenar=invalido')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('ordenar', res.data.get('detail', ''))
+
+    # ── Regressão: match existente não aparece na descoberta ─────────────────
+
+    def test_regressao_match_existente_exclui_perfil(self):
+        Match.objects.create(perfil_a=self.pa, perfil_b=self.pb, score=0.8)
+        res = self.client.get('/api/descoberta/')
+        self.assertEqual(res.status_code, 200)
+        ids = [p['id'] for p in res.data]
+        self.assertNotIn(self.pb.id, ids, 'pb tem match e não deve aparecer na descoberta')
+        self.assertIn(self.pc.id, ids, 'pc sem match deve continuar visível')

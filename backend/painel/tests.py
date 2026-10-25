@@ -474,3 +474,112 @@ class CSVFormatoTest(PainelBaseTestCase):
         )
         hoje = datetime.date.today().strftime('%Y%m%d')
         self.assertIn(hoje, resp['Content-Disposition'])
+
+
+# ─── Admin: listagem de usuários ─────────────────────────────────────────────
+
+class AdminUsuariosListaTest(PainelBaseTestCase):
+    def test_admin_ve_lista(self):
+        resp = self.client.get(reverse('admin-usuarios'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('count', resp.data)
+        self.assertIn('results', resp.data)
+        self.assertEqual(resp.data['count'], 4)  # admin + u1 + u2 + u3
+
+    def test_anonimo_recebe_401(self):
+        self.client.logout()
+        resp = self.client.get(reverse('admin-usuarios'))
+        self.assertEqual(resp.status_code, 401)
+
+    def test_nao_admin_recebe_403(self):
+        self.client.force_authenticate(self.u1)
+        resp = self.client.get(reverse('admin-usuarios'))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_resultado_nao_contem_senha(self):
+        resp = self.client.get(reverse('admin-usuarios'))
+        for u in resp.data['results']:
+            self.assertNotIn('password', u)
+            self.assertNotIn('password_hash', u)
+
+    def test_campos_esperados_presentes(self):
+        resp = self.client.get(reverse('admin-usuarios'))
+        u = resp.data['results'][0]
+        for campo in ('id', 'nome', 'email', 'tipo', 'data_cadastro', 'tem_perfil'):
+            self.assertIn(campo, u)
+
+    def test_filtro_tipo(self):
+        resp = self.client.get(reverse('admin-usuarios'), {'tipo': 'buscando_vaga'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['count'], 2)  # u1 + u3
+        for u in resp.data['results']:
+            self.assertEqual(u['tipo'], 'buscando_vaga')
+
+    def test_filtro_q_por_email(self):
+        resp = self.client.get(reverse('admin-usuarios'), {'q': 'u1@'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['count'], 1)
+        self.assertEqual(resp.data['results'][0]['email'], 'u1@test.com')
+
+    def test_filtro_regiao(self):
+        resp = self.client.get(reverse('admin-usuarios'), {'regiao': 'Olinda'})
+        self.assertEqual(resp.status_code, 200)
+        # Apenas u3 tem perfil em Olinda
+        self.assertEqual(resp.data['count'], 1)
+
+    def test_filtro_data_invalida_retorna_400(self):
+        resp = self.client.get(reverse('admin-usuarios'), {'data_inicio': 'invalido'})
+        self.assertEqual(resp.status_code, 400)
+
+    def test_paginacao_page_size(self):
+        resp = self.client.get(reverse('admin-usuarios'), {'page_size': 2, 'page': 1})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data['results']), 2)
+        self.assertEqual(resp.data['count'], 4)
+
+    def test_paginacao_page2(self):
+        resp = self.client.get(reverse('admin-usuarios'), {'page_size': 2, 'page': 2})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data['results']), 2)
+
+
+# ─── Admin: exportar usuários CSV ────────────────────────────────────────────
+
+class AdminUsuariosExportarTest(PainelBaseTestCase):
+    def test_csv_retorna_200_e_content_type_correto(self):
+        resp = self.client.get(reverse('admin-usuarios-exportar'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('text/csv', resp['Content-Type'])
+
+    def test_csv_tem_bom_utf8(self):
+        resp = self.client.get(reverse('admin-usuarios-exportar'))
+        self.assertTrue(resp.content.startswith(b'\xef\xbb\xbf'))
+
+    def test_csv_tem_cabecalho_correto(self):
+        resp = self.client.get(reverse('admin-usuarios-exportar'))
+        content = resp.content.decode('utf-8-sig')
+        primeira_linha = content.split('\n')[0]
+        for col in ('ID', 'Nome', 'E-mail', 'Tipo'):
+            self.assertIn(col, primeira_linha)
+
+    def test_csv_separador_ponto_virgula(self):
+        resp = self.client.get(reverse('admin-usuarios-exportar'))
+        content = resp.content.decode('utf-8-sig')
+        self.assertIn(';', content.split('\n')[0])
+
+    def test_exportar_gera_log_relatorio_exportado(self):
+        LogOperacao.objects.filter(acao='RELATORIO_EXPORTADO').delete()
+        self.client.get(reverse('admin-usuarios-exportar'))
+        self.assertTrue(
+            LogOperacao.objects.filter(acao='RELATORIO_EXPORTADO').exists()
+        )
+
+    def test_anonimo_recebe_401(self):
+        self.client.logout()
+        resp = self.client.get(reverse('admin-usuarios-exportar'))
+        self.assertEqual(resp.status_code, 401)
+
+    def test_nao_admin_recebe_403(self):
+        self.client.force_authenticate(self.u1)
+        resp = self.client.get(reverse('admin-usuarios-exportar'))
+        self.assertEqual(resp.status_code, 403)

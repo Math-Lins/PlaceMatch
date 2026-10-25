@@ -23,6 +23,9 @@ class ConversasView(APIView):
         if meu_perfil is None:
             return Response([], status=status.HTTP_200_OK)
 
+        q = request.query_params.get('q', '').strip()
+        nao_lidas_param = request.query_params.get('nao_lidas', '').lower()
+
         matches = (
             Match.objects
             .filter(Q(perfil_a=meu_perfil) | Q(perfil_b=meu_perfil))
@@ -34,8 +37,20 @@ class ConversasView(APIView):
             outro = match.perfil_b if match.perfil_a_id == meu_perfil.id else match.perfil_a
             outro_id = outro.id
 
+            # Filtro por q: nome ou título do anúncio do outro perfil
+            if q:
+                nome_match = q.lower() in (outro.nome or '').lower()
+                titulo_match = q.lower() in (outro.titulo_anuncio or '').lower()
+                if not nome_match and not titulo_match:
+                    continue
+
             ultima = match.mensagens.order_by('-data_envio', '-id').first()
             nao_lidas = match.mensagens.filter(remetente_id=outro_id, lida=False).count()
+
+            # Filtro nao_lidas=true: só conversas com mensagens não lidas
+            if nao_lidas_param == 'true' and nao_lidas == 0:
+                continue
+
             # Tupla (timestamp, id) garante ordem determinística mesmo com timestamps iguais.
             # Matches sem mensagem usam id=0 para sempre ficarem abaixo de matches com mensagem
             # que tenham o mesmo timestamp de criação.
@@ -148,4 +163,15 @@ class MensagensView(APIView):
             remetente=meu_perfil,
             conteudo=conteudo,
         )
+
+        from logs.servicos import registrar
+        registrar(
+            'MENSAGEM_ENVIADA',
+            usuario=request.user,
+            entidade='mensagem',
+            entidade_id=mensagem.id,
+            detalhes={'match_id': match.id, 'tamanho': len(str(conteudo))},
+            request=request,
+        )
+
         return Response(MensagemSerializer(mensagem).data, status=status.HTTP_201_CREATED)
