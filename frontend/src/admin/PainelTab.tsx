@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getDashboard, ApiError } from '../api';
-import type { DashboardData, AdminFiltros } from '../api';
+import type { DashboardData, SeriePonto, AdminFiltros } from '../api';
 import { LineAreaChart, HorizontalBars, ScoreDistChart } from './graficos';
 
 const C = {
@@ -16,20 +16,25 @@ const C = {
 
 // ─── KPI definitions ──────────────────────────────────────────────────────────
 
-const KPI_DEFS: { key: keyof import('../api').DashboardKPIs; label: string; fmt: 'num' | 'pct' }[] = [
-  { key: 'usuarios', label: 'Usuários', fmt: 'num' },
-  { key: 'perfis', label: 'Perfis', fmt: 'num' },
-  { key: 'curtidas', label: 'Curtidas', fmt: 'num' },
-  { key: 'matches', label: 'Matches', fmt: 'num' },
-  { key: 'taxa_match', label: 'Taxa de match', fmt: 'pct' },
-  { key: 'mensagens', label: 'Mensagens', fmt: 'num' },
-  { key: 'conversas_ativas', label: 'Conversas ativas', fmt: 'num' },
-  { key: 'score_medio', label: 'Score médio', fmt: 'pct' },
+type KpiFmt = 'num' | 'pct' | 'pct01';
+
+const KPI_DEFS: { key: keyof import('../api').DashboardKPIs; label: string; fmt: KpiFmt }[] = [
+  { key: 'usuarios_total',    label: 'Usuários',          fmt: 'num'   },
+  { key: 'perfis_total',      label: 'Perfis',            fmt: 'num'   },
+  { key: 'curtidas_total',    label: 'Curtidas',          fmt: 'num'   },
+  { key: 'matches_total',     label: 'Matches',           fmt: 'num'   },
+  { key: 'taxa_match',        label: 'Taxa de match',     fmt: 'pct'   },
+  { key: 'mensagens_total',   label: 'Mensagens',         fmt: 'num'   },
+  { key: 'conversas_ativas',  label: 'Conversas ativas',  fmt: 'num'   },
+  { key: 'score_medio',       label: 'Score médio',       fmt: 'pct01' },
 ];
 
-function fmtKpi(val: number, fmt: 'num' | 'pct'): string {
-  if (fmt === 'pct') return `${val.toFixed(1).replace('.', ',')}%`;
-  return val.toLocaleString('pt-BR');
+function fmtKpi(val: number | undefined | null, fmt: KpiFmt): string {
+  if (val == null || isNaN(Number(val))) return '—';
+  const n = Number(val);
+  if (fmt === 'pct')   return `${n.toFixed(1).replace('.', ',')}%`;
+  if (fmt === 'pct01') return `${(n * 100).toFixed(1).replace('.', ',')}%`;
+  return n.toLocaleString('pt-BR');
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -163,6 +168,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
 
 export default function PainelTab() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [series, setSeries] = useState<SeriePonto[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [filtros, setFiltros] = useState<AdminFiltros>({});
@@ -172,7 +178,21 @@ export default function PainelTab() {
     setLoading(true);
     setErro('');
     getDashboard(f)
-      .then(res => { setData(res); setLoading(false); })
+      .then(res => {
+        setData(res);
+        // Normaliza as três séries paralelas → SeriePonto[]
+        const raw = res.series;
+        const matches = raw?.matches_por_dia ?? [];
+        const curtidas = raw?.curtidas_por_dia ?? [];
+        const mensagens = raw?.mensagens_por_dia ?? [];
+        setSeries(matches.map((m, i) => ({
+          data: m.data,
+          matches: m.total,
+          curtidas: curtidas[i]?.total ?? 0,
+          mensagens: mensagens[i]?.total ?? 0,
+        })));
+        setLoading(false);
+      })
       .catch((e: Error) => {
         setErro(e instanceof ApiError ? e.message : 'Não foi possível conectar ao servidor.');
         setLoading(false);
@@ -220,7 +240,7 @@ export default function PainelTab() {
     );
   }
 
-  const hasData = data.series.length > 0 || Object.values(data.kpis).some(v => v > 0);
+  const hasData = series.length > 0 || (data.kpis.matches_total ?? 0) > 0 || (data.kpis.usuarios_total ?? 0) > 0;
   const vazio = !hasData;
 
   return (
@@ -253,16 +273,16 @@ export default function PainelTab() {
                   {label}
                 </span>
                 <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '28px', fontWeight: 800, color: C.text, lineHeight: 1 }}>
-                  {fmtKpi(data.kpis[key], fmt)}
+                  {fmtKpi(data.kpis[key] as number, fmt)}
                 </span>
               </div>
             ))}
           </div>
 
           {/* Line chart */}
-          {data.series.length > 0 && (
+          {series.length > 0 && (
             <SectionCard title="Atividade diária">
-              <LineAreaChart series={data.series} title="Atividade diária — matches, curtidas e mensagens por dia" />
+              <LineAreaChart series={series} title="Atividade diária — matches, curtidas e mensagens por dia" />
             </SectionCard>
           )}
 

@@ -404,16 +404,26 @@ export interface AdminFiltros {
 }
 
 export interface DashboardKPIs {
-  usuarios: number;
-  perfis: number;
-  curtidas: number;
-  matches: number;
-  taxa_match: number;
-  mensagens: number;
+  usuarios_total: number;
+  usuarios_por_tipo: Record<string, number>;
+  perfis_total: number;
+  curtidas_total: number;
+  recusas_total: number;
+  matches_total: number;
+  taxa_match: number;       // já em %
+  mensagens_total: number;
   conversas_ativas: number;
-  score_medio: number;
+  score_medio: number;      // 0–1 (fração)
 }
 
+/** Shape real da API — três arrays paralelos */
+export interface DashboardSeriesRaw {
+  matches_por_dia: { data: string; total: number }[];
+  curtidas_por_dia: { data: string; total: number }[];
+  mensagens_por_dia: { data: string; total: number }[];
+}
+
+/** Shape normalizada usada pelos gráficos */
 export interface SeriePonto {
   data: string;
   matches: number;
@@ -435,7 +445,7 @@ export interface DistribuicaoScore {
 
 export interface DashboardData {
   kpis: DashboardKPIs;
-  series: SeriePonto[];
+  series: DashboardSeriesRaw;
   top_regioes: TopRegiao[];
   distribuicao_score: DistribuicaoScore[];
   filtros_aplicados: Record<string, string>;
@@ -452,7 +462,7 @@ export interface RelatorioResultado {
   titulo: string;
   colunas: string[];
   linhas: (string | number | null)[][];
-  totais: (string | number | null)[] | null;
+  totais: (string | number | null)[] | Record<string, number> | null;
   filtros_aplicados: Record<string, string>;
   gerado_em: string;
 }

@@ -115,6 +115,20 @@ function ResultTable({ resultado }: { resultado: RelatorioResultado }) {
         )}
       </div>
 
+      {/* Totais como objeto (ex: {matches: 18, mensagens: 3}) */}
+      {resultado.totais && !Array.isArray(resultado.totais) && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '12px' }}>
+          {Object.entries(resultado.totais as Record<string, number>).map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', gap: '6px', alignItems: 'baseline' }}>
+              <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted }}>{k}:</span>
+              <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '18px', fontWeight: 800, color: C.text }}>
+                {typeof v === 'number' ? v.toLocaleString('pt-BR') : String(v)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Table */}
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'Nunito,sans-serif', fontSize: '13px' }}>
@@ -151,10 +165,10 @@ function ResultTable({ resultado }: { resultado: RelatorioResultado }) {
                 </tr>
               ))
             )}
-            {/* Totals row */}
-            {resultado.totais && resultado.totais.length > 0 && (
+            {/* Totals row — só quando for array */}
+            {Array.isArray(resultado.totais) && resultado.totais.length > 0 && (
               <tr style={{ background: `${C.primary}08`, borderTop: `2px solid ${C.border}` }}>
-                {resultado.totais.map((cell, ci) => (
+                {(resultado.totais as (string | number | null)[]).map((cell, ci) => (
                   <td
                     key={ci}
                     style={{ padding: '10px 12px', fontFamily: 'Outfit,sans-serif', fontWeight: 800, color: C.text }}

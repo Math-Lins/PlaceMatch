@@ -1,8 +1,47 @@
-import { useState } from 'react';
+import { useState, Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import LogsTab from './LogsTab';
 import UsuariosTab from './UsuariosTab';
 import PainelTab from './PainelTab';
 import RelatoriosTab from './RelatoriosTab';
+
+// ─── Error Boundary ───────────────────────────────────────────────────────────
+
+interface EBState { error: Error | null }
+
+class AdminErrorBoundary extends Component<{ children: ReactNode }, EBState> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error: Error): EBState {
+    return { error };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[AdminPanel] Uncaught error:', error, info.componentStack);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: '40px 24px', textAlign: 'center', fontFamily: 'Nunito,sans-serif' }}>
+          <p style={{ color: '#E05555', fontSize: '14px', marginBottom: '8px', fontWeight: 700 }}>
+            Algo deu errado nesta seção.
+          </p>
+          <pre style={{ color: '#8A7E78', fontSize: '12px', whiteSpace: 'pre-wrap', textAlign: 'left', maxWidth: '600px', margin: '0 auto' }}>
+            {this.state.error.message}
+          </pre>
+          <button
+            onClick={() => this.setState({ error: null })}
+            style={{ marginTop: '16px', padding: '8px 18px', borderRadius: '10px', border: 'none', background: '#E06B45', color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const C = {
   primary: '#E06B45',
@@ -65,10 +104,12 @@ export default function AdminPanel({ nav }: { nav: (s: 'welcome') => void }) {
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {activeTab === 'painel' && <PainelTab />}
-        {activeTab === 'relatorios' && <RelatoriosTab />}
-        {activeTab === 'logs' && <LogsTab />}
-        {activeTab === 'usuarios' && <UsuariosTab />}
+        <AdminErrorBoundary key={activeTab}>
+          {activeTab === 'painel' && <PainelTab />}
+          {activeTab === 'relatorios' && <RelatoriosTab />}
+          {activeTab === 'logs' && <LogsTab />}
+          {activeTab === 'usuarios' && <UsuariosTab />}
+        </AdminErrorBoundary>
       </div>
     </div>
   );
