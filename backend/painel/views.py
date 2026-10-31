@@ -42,6 +42,11 @@ RELATORIOS = {
         ),
         'filtros': ['data_inicio', 'data_fim', 'tipo'],
     },
+    'denuncias': {
+        'titulo': 'Denúncias',
+        'descricao': 'Listagem de denúncias no período com status e motivo.',
+        'filtros': ['data_inicio', 'data_fim', 'status'],
+    },
 }
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -111,6 +116,7 @@ class DashboardView(APIView):
         perfil_ids = _perfil_ids_filtrados(regiao, tipo)
 
         # ── KPIs ─────────────────────────────────────────────────────────────
+        from moderacao.models import Denuncia
         usuarios_total = Usuario.objects.count()
 
         if tipo:
@@ -247,6 +253,7 @@ class DashboardView(APIView):
             'kpis': {
                 'usuarios_total': usuarios_total,
                 'usuarios_por_tipo': usuarios_por_tipo,
+                'usuarios_suspensos': Usuario.objects.filter(is_active=False).count(),
                 'perfis_total': perfis_total,
                 'curtidas_total': curtidas_total,
                 'recusas_total': recusas_total,
@@ -255,6 +262,7 @@ class DashboardView(APIView):
                 'mensagens_total': mensagens_total,
                 'conversas_ativas': conversas_ativas,
                 'score_medio': score_medio,
+                'denuncias_pendentes': Denuncia.objects.filter(status='pendente').count(),
             },
             'series': {
                 'matches_por_dia': matches_por_dia,
@@ -488,6 +496,38 @@ def _dados_relatorio_usuarios(data_inicio, data_fim, tipo):
     return colunas, linhas, totais
 
 
+def _dados_relatorio_denuncias(data_inicio, data_fim):
+    from moderacao.models import Denuncia
+    qs = Denuncia.objects.select_related('denunciante', 'denunciado', 'resolvida_por')
+    if data_inicio:
+        qs = qs.filter(criada_em__gte=data_inicio)
+    if data_fim:
+        qs = qs.filter(criada_em__lte=data_fim)
+
+    colunas = ['Data', 'Denunciante', 'Denunciado', 'Motivo', 'Status', 'Resolvida Por']
+    linhas = []
+    totais = {'total': 0, 'pendentes': 0, 'resolvidas': 0, 'descartadas': 0}
+
+    for d in qs.order_by('-criada_em'):
+        linhas.append([
+            str(d.criada_em.date()),
+            d.denunciante.email if d.denunciante else '',
+            d.denunciado.email,
+            d.get_motivo_display(),
+            d.status,
+            d.resolvida_por.email if d.resolvida_por else '',
+        ])
+        totais['total'] += 1
+        if d.status == 'pendente':
+            totais['pendentes'] += 1
+        elif d.status == 'resolvida':
+            totais['resolvidas'] += 1
+        elif d.status == 'descartada':
+            totais['descartadas'] += 1
+
+    return colunas, linhas, totais
+
+
 def _obter_dados_relatorio(rel_id, data_inicio, data_fim, regiao, tipo):
     if rel_id == 'matches':
         return _dados_relatorio_matches(data_inicio, data_fim, regiao, tipo)
@@ -497,6 +537,8 @@ def _obter_dados_relatorio(rel_id, data_inicio, data_fim, regiao, tipo):
         return _dados_relatorio_atividade(data_inicio, data_fim, regiao, tipo)
     if rel_id == 'usuarios':
         return _dados_relatorio_usuarios(data_inicio, data_fim, tipo)
+    if rel_id == 'denuncias':
+        return _dados_relatorio_denuncias(data_inicio, data_fim)
     return None, None, None
 
 
@@ -581,6 +623,7 @@ def _serializar_usuario_admin(u):
         'regiao': regiao,
         'data_cadastro': u.date_joined,
         'tem_perfil': tem_perfil,
+        'ativo': u.is_active,
     }
 
 
@@ -598,6 +641,10 @@ def _filtrar_usuarios(params, data_inicio, data_fim):
     regiao = params.get('regiao')
     if regiao:
         qs = qs.filter(perfil__regiao=regiao)
+
+    ativo = params.get('ativo')
+    if ativo is not None:
+        qs = qs.filter(is_active=(ativo.lower() == 'true'))
 
     if data_inicio:
         qs = qs.filter(date_joined__gte=data_inicio)

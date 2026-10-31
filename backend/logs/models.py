@@ -15,6 +15,10 @@ class LogOperacao(models.Model):
         ('MATCH_CRIADO', 'Match criado'),
         ('MENSAGEM_ENVIADA', 'Mensagem enviada'),
         ('RELATORIO_EXPORTADO', 'Relatório exportado'),
+        ('DENUNCIA_CRIADA', 'Denúncia criada'),
+        ('DENUNCIA_RESOLVIDA', 'Denúncia resolvida'),
+        ('USUARIO_SUSPENSO', 'Usuário suspenso'),
+        ('USUARIO_REATIVADO', 'Usuário reativado'),
     ]
 
     usuario = models.ForeignKey(

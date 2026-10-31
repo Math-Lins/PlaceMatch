@@ -296,10 +296,10 @@ class DashboardSemDadosTest(APITestCase):
 # ─── Catálogo de relatórios ───────────────────────────────────────────────────
 
 class RelatoriosCatalogoTest(PainelBaseTestCase):
-    def test_catalogo_tem_4_relatorios(self):
+    def test_catalogo_tem_5_relatorios(self):
         resp = self.client.get(reverse('relatorios-catalogo'))
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(len(resp.data), 4)
+        self.assertEqual(len(resp.data), 5)
 
     def test_catalogo_ids_corretos(self):
         resp = self.client.get(reverse('relatorios-catalogo'))

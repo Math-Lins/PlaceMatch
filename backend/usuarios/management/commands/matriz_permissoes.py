@@ -161,6 +161,19 @@ class Command(BaseCommand):
               (cli_b2, {'conteudo': 'invasao'}),
               (cli_o2, {'conteudo': 'invasao'}),
               (cli_a,  {'conteudo': 'invasao'})]),
+            # Moderacao - denuncia
+            ('POST /api/moderacao/denuncias/ (usuario->outro)',
+             [(anon,   {'denunciado': perfil_o.usuario.id, 'motivo': 'spam'}),
+              (cli_b,  {'denunciado': perfil_o.usuario.id, 'motivo': 'spam'}),
+              (cli_o,  {'denunciado': perfil_b.usuario.id, 'motivo': 'spam'}),
+              (cli_a,  {'denunciado': perfil_b.usuario.id, 'motivo': 'spam'})]),
+            ('GET  /api/admin/moderacao/denuncias/',
+             [(anon, None), (cli_b, None), (cli_o, None), (cli_a, None)]),
+            # Admin — suspensao/reativacao
+            (f'POST /api/admin/moderacao/usuarios/{user_b2.id}/suspender/',
+             [(anon, None), (cli_b, None), (cli_o, None), (cli_a, {'motivo': 'teste'})]),
+            (f'POST /api/admin/moderacao/usuarios/{user_b2.id}/reativar/',
+             [(anon, None), (cli_b, None), (cli_o, None), (cli_a, None)]),
             # Admin
             ('GET  /api/admin/logs/',
              [(anon, None), (cli_b, None), (cli_o, None), (cli_a, None)]),

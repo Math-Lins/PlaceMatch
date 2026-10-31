@@ -118,7 +118,7 @@ class DescobertaView(APIView):
 
         candidatos = (
             Perfil.objects
-            .filter(usuario__tipo=tipo_oposto)
+            .filter(usuario__tipo=tipo_oposto, usuario__is_active=True)
             .exclude(id=meu_perfil.id)
             .exclude(id__in=ja_avaliados)
             .exclude(id__in=ja_matches_ids)
@@ -306,6 +306,7 @@ class MatchListView(APIView):
         matches = (
             Match.objects
             .filter(Q(perfil_a=meu_perfil) | Q(perfil_b=meu_perfil))
+            .filter(perfil_a__usuario__is_active=True, perfil_b__usuario__is_active=True)
             .select_related('perfil_a', 'perfil_b')
             .order_by('-score', '-data_match')
         )

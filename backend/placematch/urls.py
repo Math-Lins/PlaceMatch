@@ -9,4 +9,5 @@ urlpatterns = [
     path('api/', include('chat.urls')),
     path('api/', include('logs.urls')),
     path('api/', include('painel.urls')),
+    path('api/', include('moderacao.urls')),
 ]

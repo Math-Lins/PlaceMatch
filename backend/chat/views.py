@@ -29,6 +29,7 @@ class ConversasView(APIView):
         matches = (
             Match.objects
             .filter(Q(perfil_a=meu_perfil) | Q(perfil_b=meu_perfil))
+            .filter(perfil_a__usuario__is_active=True, perfil_b__usuario__is_active=True)
             .select_related('perfil_a', 'perfil_a__usuario', 'perfil_b', 'perfil_b__usuario')
         )
 

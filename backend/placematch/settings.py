@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'chat',
     'logs',
     'painel',
+    'moderacao',
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
