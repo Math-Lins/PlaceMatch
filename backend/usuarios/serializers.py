@@ -27,6 +27,16 @@ class RegistrarSerializer(serializers.ModelSerializer):
     # automaticamente pelo ModelSerializer — a unicidade é checada
     # no validate_email com mensagem em português.
     email = serializers.EmailField()
+    # Apenas usuários comuns podem se auto-cadastrar; administrador só via
+    # manage.py criar_admin.
+    tipo = serializers.ChoiceField(
+        choices=['buscando_vaga', 'oferecendo_vaga'],
+        error_messages={
+            'invalid_choice': (
+                'Tipo de conta inválido. Use "buscando_vaga" ou "oferecendo_vaga".'
+            ),
+        },
+    )
 
     class Meta:
         model = Usuario

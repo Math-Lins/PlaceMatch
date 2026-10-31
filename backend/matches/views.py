@@ -197,6 +197,12 @@ class CurtidaView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        if request.user.tipo == 'administrador':
+            return Response(
+                {'detail': 'Administradores não podem avaliar perfis.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         meu_perfil = _get_perfil(request.user)
         if meu_perfil is None:
             return Response(
@@ -214,6 +220,12 @@ class CurtidaView(APIView):
         if perfil_destino.id == meu_perfil.id:
             return Response(
                 {'detail': 'Você não pode curtir o seu próprio perfil.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if perfil_destino.usuario.tipo == request.user.tipo:
+            return Response(
+                {'detail': 'Você só pode avaliar perfis do tipo oposto.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import Usuario
 from .serializers import RegistrarSerializer, UsuarioSerializer
@@ -26,7 +27,7 @@ class LoginView(TokenObtainPairView):
         from logs.servicos import registrar
         try:
             response = super().post(request, *args, **kwargs)
-            # sucesso: tenta identificar o usuário pelo e-mail enviado
+            # Sucesso: identifica o usuário pelo e-mail para o log.
             email = request.data.get('email', '')
             try:
                 usuario = Usuario.objects.get(email__iexact=email)
@@ -41,14 +42,28 @@ class LoginView(TokenObtainPairView):
             )
             return response
         except Exception:
+            # Distingue conta inativa (senha certa, is_active=False) de credenciais erradas.
+            # Não grava o e-mail digitado no log — apenas o motivo.
+            motivo = 'credenciais'
+            usuario_log = None
+            email = request.data.get('email', '')
+            try:
+                u = Usuario.objects.get(email__iexact=email)
+                if u.check_password(request.data.get('password', '')):
+                    motivo = 'conta_inativa'
+                    usuario_log = u
+            except Usuario.DoesNotExist:
+                pass
             registrar(
                 'LOGIN_FALHA',
-                usuario=None,
+                usuario=usuario_log,
                 entidade='usuario',
-                detalhes={'motivo': 'Credenciais inválidas'},
+                detalhes={'motivo': motivo},
                 request=request,
             )
-            raise
+            if motivo == 'conta_inativa':
+                raise AuthenticationFailed('Conta suspensa. Procure o suporte.')
+            raise AuthenticationFailed('E-mail ou senha incorretos.')
 
 
 class MeView(generics.RetrieveAPIView):
