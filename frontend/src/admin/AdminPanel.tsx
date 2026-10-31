@@ -1,9 +1,11 @@
-import { useState, Component } from 'react';
+import { useState, useEffect, Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import LogsTab from './LogsTab';
 import UsuariosTab from './UsuariosTab';
 import PainelTab from './PainelTab';
 import RelatoriosTab from './RelatoriosTab';
+import ModeracaoTab from './ModeracaoTab';
+import { listarDenuncias } from '../api';
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 
@@ -52,17 +54,25 @@ const C = {
   border: '#EDE8E3',
 };
 
-type AdminTab = 'painel' | 'relatorios' | 'logs' | 'usuarios';
+type AdminTab = 'painel' | 'relatorios' | 'logs' | 'usuarios' | 'moderacao';
 
 const TAB_LABELS: Record<AdminTab, string> = {
   painel: 'Painel',
   relatorios: 'Relatórios',
   logs: 'Logs',
   usuarios: 'Usuários',
+  moderacao: 'Moderação',
 };
 
 export default function AdminPanel({ nav }: { nav: (s: 'welcome') => void }) {
   const [activeTab, setActiveTab] = useState<AdminTab>('painel');
+  const [pendingDenuncias, setPendingDenuncias] = useState(0);
+
+  useEffect(() => {
+    listarDenuncias({ status: 'pendente' })
+      .then(res => setPendingDenuncias(res.length))
+      .catch(() => { /* silent */ });
+  }, []);
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', flexDirection: 'column' }}>
@@ -84,11 +94,12 @@ export default function AdminPanel({ nav }: { nav: (s: 'welcome') => void }) {
         </div>
         {/* Tabs */}
         <div style={{ display: 'flex', marginTop: '12px', overflowX: 'auto' }}>
-          {(['painel', 'relatorios', 'logs', 'usuarios'] as const).map((t) => (
+          {(['painel', 'relatorios', 'logs', 'usuarios', 'moderacao'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setActiveTab(t)}
               style={{
+                position: 'relative',
                 padding: '10px 20px', background: 'none', border: 'none', cursor: 'pointer',
                 fontFamily: 'Outfit,sans-serif', fontSize: '15px', whiteSpace: 'nowrap',
                 fontWeight: activeTab === t ? 800 : 500,
@@ -97,6 +108,16 @@ export default function AdminPanel({ nav }: { nav: (s: 'welcome') => void }) {
               }}
             >
               {TAB_LABELS[t]}
+              {t === 'moderacao' && pendingDenuncias > 0 && (
+                <span style={{
+                  position: 'absolute', top: '6px', right: '4px',
+                  background: C.primary, color: '#fff', borderRadius: '10px',
+                  padding: '0 5px', fontSize: '10px', fontWeight: 800,
+                  fontFamily: 'Outfit,sans-serif', lineHeight: '16px', minWidth: '16px', textAlign: 'center',
+                }}>
+                  {pendingDenuncias}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -109,6 +130,7 @@ export default function AdminPanel({ nav }: { nav: (s: 'welcome') => void }) {
           {activeTab === 'relatorios' && <RelatoriosTab />}
           {activeTab === 'logs' && <LogsTab />}
           {activeTab === 'usuarios' && <UsuariosTab />}
+          {activeTab === 'moderacao' && <ModeracaoTab />}
         </AdminErrorBoundary>
       </div>
     </div>

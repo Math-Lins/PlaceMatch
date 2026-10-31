@@ -174,6 +174,7 @@ export interface PerfilDescoberto {
   tipo_imovel: 'apartamento' | 'casa' | 'republica' | 'indiferente';
   qtd_moradores: number;
   score: number;
+  usuario_id: number;
   tipo?: 'buscando_vaga' | 'oferecendo_vaga';
   titulo_anuncio?: string | null;
   descricao_imovel?: string | null;
@@ -199,6 +200,7 @@ export interface PerfilBasico {
   aceita_visitas: 'raramente' | 'as_vezes' | 'frequentemente';
   tipo_imovel: 'apartamento' | 'casa' | 'republica' | 'indiferente';
   qtd_moradores: number;
+  usuario_id: number;
   tipo?: 'buscando_vaga' | 'oferecendo_vaga';
   titulo_anuncio?: string | null;
   descricao_imovel?: string | null;
@@ -341,6 +343,7 @@ export interface UsuarioAdmin {
   regiao: string | null;
   data_cadastro: string;
   tem_perfil: boolean;
+  ativo: boolean;
 }
 
 export interface LogsParams {
@@ -356,6 +359,7 @@ export interface AdminUsuariosParams {
   q?: string;
   tipo?: string;
   regiao?: string;
+  ativo?: string;
   data_inicio?: string;
   data_fim?: string;
   page?: number;
@@ -414,6 +418,8 @@ export interface DashboardKPIs {
   mensagens_total: number;
   conversas_ativas: number;
   score_medio: number;      // 0–1 (fração)
+  denuncias_pendentes?: number;
+  usuarios_suspensos?: number;
 }
 
 /** Shape real da API — três arrays paralelos */
@@ -486,4 +492,74 @@ export async function downloadRelatorioCSV(id: string, filtros?: AdminFiltros): 
   base.formato = 'csv';
   const qs = buildQS(base);
   await downloadCsv(`/api/admin/relatorios/${id}/${qs}`, `relatorio-${id}.csv`);
+}
+
+// ─── Moderação ────────────────────────────────────────────────────────────────
+
+export interface DenunciaItem {
+  id: number;
+  denunciante: { id: number | null; email: string | null };
+  denunciado: { id: number; email: string };
+  motivo: string;
+  motivo_display: string;
+  descricao: string;
+  status: 'pendente' | 'resolvida' | 'descartada';
+  resolvida_por: string | null;
+  resolucao: string;
+  criada_em: string;
+  atualizada_em: string;
+}
+
+export interface DenunciasParams {
+  status?: string;
+  denunciado?: number;
+  motivo?: string;
+}
+
+export const MOTIVO_LABELS: Record<string, string> = {
+  spam: 'Spam',
+  ofensivo: 'Conteúdo ofensivo',
+  falso: 'Perfil falso',
+  outro: 'Outro',
+};
+
+export async function criarDenuncia(
+  denunciado: number,
+  motivo: string,
+  descricao?: string,
+): Promise<{ id: number; status: string }> {
+  return req<{ id: number; status: string }>('/api/moderacao/denuncias/', {
+    method: 'POST',
+    body: JSON.stringify({ denunciado, motivo, descricao: descricao ?? '' }),
+  });
+}
+
+export async function listarDenuncias(params?: DenunciasParams): Promise<DenunciaItem[]> {
+  const qs = params ? buildQS(params as Record<string, unknown>) : '';
+  return req<DenunciaItem[]>(`/api/admin/moderacao/denuncias/${qs}`);
+}
+
+export async function resolverDenuncia(
+  id: number,
+  status: 'resolvida' | 'descartada',
+  resolucao?: string,
+): Promise<void> {
+  await req<void>(`/api/admin/moderacao/denuncias/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, resolucao: resolucao ?? '' }),
+  });
+}
+
+export async function suspenderUsuario(id: number, motivo?: string): Promise<void> {
+  await req<void>(`/api/admin/moderacao/usuarios/${id}/suspender/`, {
+    method: 'POST',
+    body: JSON.stringify({ motivo: motivo ?? '' }),
+  });
+}
+
+export async function reativarUsuario(id: number): Promise<void> {
+  await req<void>(`/api/admin/moderacao/usuarios/${id}/reativar/`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
 }

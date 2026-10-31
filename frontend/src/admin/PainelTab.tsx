@@ -27,6 +27,8 @@ const KPI_DEFS: { key: keyof import('../api').DashboardKPIs; label: string; fmt:
   { key: 'mensagens_total',   label: 'Mensagens',         fmt: 'num'   },
   { key: 'conversas_ativas',  label: 'Conversas ativas',  fmt: 'num'   },
   { key: 'score_medio',       label: 'Score médio dos matches', fmt: 'pct01' },
+  { key: 'denuncias_pendentes', label: 'Denúncias pendentes', fmt: 'num' },
+  { key: 'usuarios_suspensos',  label: 'Contas suspensas',    fmt: 'num' },
 ];
 
 function fmtKpi(val: number | undefined | null, fmt: KpiFmt): string {

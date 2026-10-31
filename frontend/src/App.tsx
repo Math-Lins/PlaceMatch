@@ -16,6 +16,7 @@ import {
   listarConversas,
   listarMensagens,
   enviarMensagem,
+  criarDenuncia,
 } from './api';
 import type { Perfil as PerfilAPI, PerfilDescoberto, PerfilBasico, MatchData, Conversa, MensagemAPI, DescobertaParams } from './api';
 import AdminPanel from './admin/AdminPanel';
@@ -67,6 +68,7 @@ interface Profile {
   descricaoImovel?: string;
   fotosImovel?: string[];
   fotoPerfilUrl?: string;
+  usuarioId?: number;
 }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -239,6 +241,7 @@ function perfilDescobertoParaProfile(p: PerfilDescoberto): Profile {
     descricaoImovel: p.descricao_imovel ?? undefined,
     fotosImovel: p.fotos_imovel,
     fotoPerfilUrl: p.foto_perfil_url ?? undefined,
+    usuarioId: p.usuario_id,
   };
 }
 
@@ -274,6 +277,7 @@ function perfilBasicoParaProfile(p: PerfilBasico | undefined, score: number): Pr
     descricaoImovel: p.descricao_imovel ?? undefined,
     fotosImovel: p.fotos_imovel,
     fotoPerfilUrl: p.foto_perfil_url ?? undefined,
+    usuarioId: p.usuario_id,
   };
 }
 
@@ -1747,6 +1751,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike }: {
 }) {
   const [liking, setLiking] = useState(false);
   const [fotoAtiva, setFotoAtiva] = useState<string>(profile.fotosImovel?.[0] ?? '');
+  const [showDenuncia, setShowDenuncia] = useState(false);
 
   useEffect(() => {
     setFotoAtiva(profile.fotosImovel?.[0] ?? '');
@@ -1842,7 +1847,15 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike }: {
             <Btn label="✕ Recusar" outline onClick={() => nav(backScreen)} />
             <Btn label={liking ? 'Enviando...' : '💛 Tenho interesse'} onClick={onLike ? handleLike : () => nav('match')} />
           </div>
+          <div style={{ textAlign: 'center', marginTop: '12px' }}>
+            <button onClick={() => setShowDenuncia(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 600, padding: '4px 0' }}>
+              Denunciar este anúncio
+            </button>
+          </div>
         </div>
+      {showDenuncia && profile.usuarioId && (
+        <ReportModal denunciadoUsuarioId={profile.usuarioId} onClose={() => setShowDenuncia(false)} />
+      )}
       </div>
     );
   }
@@ -1938,7 +1951,15 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike }: {
         </div>
 
         <Btn label={liking ? 'Curtindo...' : '💛 Curtir perfil'} onClick={onLike ? handleLike : () => nav('match')} />
+        <div style={{ textAlign: 'center', marginTop: '12px' }}>
+          <button onClick={() => setShowDenuncia(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 600, padding: '4px 0' }}>
+            Denunciar este perfil
+          </button>
+        </div>
       </div>
+    {showDenuncia && profile.usuarioId && (
+      <ReportModal denunciadoUsuarioId={profile.usuarioId} onClose={() => setShowDenuncia(false)} />
+    )}
     </div>
   );
 }
@@ -2875,7 +2896,7 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
         </div>
       </div>
 
-      {showReport && <ReportModal onClose={() => setShowReport(false)} />}
+      {showReport && <ReportModal denunciadoUsuarioId={profile.usuarioId ?? 0} onClose={() => setShowReport(false)} />}
     </div>
   );
 }
@@ -3201,15 +3222,40 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
 
 // ─── Report Modal ─────────────────────────────────────────────────────────────
 
-function ReportModal({ onClose }: { onClose: () => void }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const reasons = ['Conteúdo inapropriado', 'Perfil falso', 'Assédio ou ameaças', 'Informações enganosas', 'Spam', 'Outro motivo'];
+const MOTIVOS_UI = [
+  { value: 'spam', label: 'Spam' },
+  { value: 'ofensivo', label: 'Conteúdo ofensivo' },
+  { value: 'falso', label: 'Perfil falso' },
+  { value: 'outro', label: 'Outro' },
+];
+
+function ReportModal({ onClose, denunciadoUsuarioId }: { onClose: () => void; denunciadoUsuarioId: number }) {
+  const [motivo, setMotivo] = useState<string | null>(null);
+  const [descricao, setDescricao] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sucesso, setSucesso] = useState(false);
+  const [erro, setErro] = useState('');
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  const handleEnviar = async () => {
+    if (!motivo) { setErro('Selecione um motivo.'); return; }
+    setErro('');
+    setLoading(true);
+    try {
+      await criarDenuncia(denunciadoUsuarioId, motivo, descricao);
+      setSucesso(true);
+      setTimeout(onClose, 2500);
+    } catch (e: unknown) {
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível enviar a denúncia.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div
@@ -3231,35 +3277,51 @@ function ReportModal({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             aria-label="Fechar denúncia"
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '22px', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px' }}
-            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
           >✕</button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-          {reasons.map(r => (
-            <button key={r} onClick={() => setSelected(r)} style={{
-              padding: '13px 16px', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', minHeight: '44px',
-              border: `1.5px solid ${selected === r ? C.danger : C.border}`,
-              background: selected === r ? `${C.danger}10` : C.bg,
-              color: selected === r ? C.danger : C.text,
-              fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 600,
-            }}
-            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-            >
-              {r}
-            </button>
-          ))}
-        </div>
+        {sucesso ? (
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '18px', fontWeight: 800, color: C.mint, margin: '0 0 8px' }}>Denúncia enviada!</p>
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0 }}>Nossa equipe vai analisar.</p>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+              {MOTIVOS_UI.map(m => (
+                <button key={m.value} onClick={() => { setMotivo(m.value); setErro(''); }} style={{
+                  padding: '13px 16px', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', minHeight: '44px',
+                  border: `1.5px solid ${motivo === m.value ? C.danger : C.border}`,
+                  background: motivo === m.value ? `${C.danger}10` : C.bg,
+                  color: motivo === m.value ? C.danger : C.text,
+                  fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 600,
+                }}>
+                  {m.label}
+                </button>
+              ))}
+            </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif', display: 'block', marginBottom: '6px' }}>Descrição (opcional)</label>
-          <textarea placeholder="Descreva o ocorrido com mais detalhes..." style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: `1.5px solid ${C.border}`, background: C.bg, fontSize: '14px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none', resize: 'none', height: '80px', boxSizing: 'border-box' }} />
-        </div>
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif' }}>Descrição (opcional)</label>
+                <span style={{ fontSize: '12px', color: C.muted, fontFamily: 'Nunito,sans-serif' }}>{descricao.length}/500</span>
+              </div>
+              <textarea
+                value={descricao}
+                onChange={e => setDescricao(e.target.value.slice(0, 500))}
+                placeholder="Descreva o ocorrido com mais detalhes..."
+                style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: `1.5px solid ${C.border}`, background: C.bg, fontSize: '14px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none', resize: 'none', height: '80px', boxSizing: 'border-box' }}
+              />
+            </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Btn label="Cancelar" outline onClick={onClose} />
-          <Btn label="Enviar denúncia" danger onClick={onClose} />
-        </div>
+            {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginBottom: '12px', textAlign: 'center' }}>{erro}</p>}
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <Btn label="Cancelar" outline onClick={onClose} />
+              <Btn label={loading ? 'Enviando...' : 'Enviar denúncia'} danger onClick={handleEnviar} />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
