@@ -2466,6 +2466,7 @@ function conversaParaProfile(c: Conversa): Profile {
     smoker: false, pets: false, organized: 3, messy: 3,
     horario: 'flexivel', ruido: 3, social: 3,
     visitas: 'as_vezes', tipoImovel: 'indiferente', qtdMoradores: 2,
+    usuarioId: p.usuario_id,
   };
 }
 
@@ -3264,13 +3265,11 @@ function DeleteProfileModal({ onClose, onConfirm, loading }: { onClose: () => vo
       aria-modal="true"
       aria-label="Excluir perfil"
       onClick={() => { if (!loading) onClose(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(42,36,32,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}
-      className="md:items-center md:justify-center"
+      style={{ position: 'fixed', inset: 0, background: 'rgba(42,36,32,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ background: C.card, padding: '24px', width: '100%' }}
-        className="rounded-t-[28px] md:rounded-[24px] md:max-w-md md:shadow-2xl"
+        style={{ background: C.card, padding: '24px', width: '100%', maxWidth: '420px', margin: '0 16px', borderRadius: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 800, color: C.text, margin: 0 }}>Excluir perfil?</h3>
@@ -3336,13 +3335,12 @@ function ReportModal({ onClose, denunciadoUsuarioId }: { onClose: () => void; de
       aria-modal="true"
       aria-label="Denunciar usuário"
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(42,36,32,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}
-      className="md:items-center md:justify-center"
+      style={{ position: 'fixed', inset: 0, background: 'rgba(42,36,32,0.5)', zIndex: 100, display: 'flex', alignItems: sucesso ? 'center' : 'flex-end', justifyContent: 'center' }}
     >
       <div
         onClick={e => e.stopPropagation()}
         style={{ background: C.card, padding: '24px', width: '100%' }}
-        className="rounded-t-[28px] md:rounded-[24px] md:max-w-md md:shadow-2xl"
+        className={sucesso ? 'rounded-[24px] max-w-sm mx-4 shadow-2xl' : 'rounded-t-[28px] md:rounded-[24px] md:max-w-md md:shadow-2xl'}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 800, color: C.text, margin: 0 }}>Denunciar usuário</h3>

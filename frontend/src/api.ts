@@ -48,10 +48,14 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
   const body = await res.json().catch(() => ({}));
 
   if (res.status === 401) {
-    sessionStorage.removeItem('pm_access');
-    sessionStorage.removeItem('pm_refresh');
-    _on401?.();
-    throw new ApiError('Sua sessão expirou. Entre novamente.');
+    const detail = (body as Record<string, string>)?.detail ?? '';
+    const isLoginRoute = path === '/api/auth/login/';
+    if (!isLoginRoute) {
+      sessionStorage.removeItem('pm_access');
+      sessionStorage.removeItem('pm_refresh');
+      _on401?.();
+    }
+    throw new ApiError(detail || 'Sua sessão expirou. Entre novamente.');
   }
 
   if (!res.ok) {
@@ -262,7 +266,7 @@ export interface UltimaMensagem {
 
 export interface Conversa {
   match_id: number;
-  outro_perfil: { id: number; nome: string; idade: number; regiao: string };
+  outro_perfil: { id: number; usuario_id: number; nome: string; idade: number; regiao: string };
   score: number;
   ultima_mensagem: UltimaMensagem | null;
   nao_lidas: number;

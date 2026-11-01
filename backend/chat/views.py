@@ -67,6 +67,7 @@ class ConversasView(APIView):
                 'match_id': match.id,
                 'outro_perfil': {
                     'id': outro.id,
+                    'usuario_id': outro.usuario_id,
                     'nome': outro.nome,
                     'idade': outro.idade,
                     'regiao': outro.regiao,
