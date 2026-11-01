@@ -120,6 +120,39 @@ class AcessoMensagensTest(TestCase):
         res = self.client.get('/api/conversas/')
         self.assertEqual(res.status_code, http_status.HTTP_401_UNAUTHORIZED)
 
+    def test_admin_retorna_403_em_conversas(self):
+        adm = Usuario.objects.create_user(
+            username='adm_chat1', email='adm_chat1@test.com',
+            password='Senha@1234', tipo='administrador',
+        )
+        self.client.force_authenticate(user=adm)
+        res = self.client.get('/api/conversas/')
+        self.assertEqual(res.status_code, http_status.HTTP_403_FORBIDDEN)
+        self.assertIn('administrador', res.data.get('detail', '').lower())
+
+    def test_admin_retorna_403_em_mensagens_get(self):
+        adm = Usuario.objects.create_user(
+            username='adm_chat2', email='adm_chat2@test.com',
+            password='Senha@1234', tipo='administrador',
+        )
+        self.client.force_authenticate(user=adm)
+        res = self.client.get(f'/api/matches/{self.match.id}/mensagens/')
+        self.assertEqual(res.status_code, http_status.HTTP_403_FORBIDDEN)
+        self.assertIn('administrador', res.data.get('detail', '').lower())
+
+    def test_admin_retorna_403_em_mensagens_post(self):
+        adm = Usuario.objects.create_user(
+            username='adm_chat3', email='adm_chat3@test.com',
+            password='Senha@1234', tipo='administrador',
+        )
+        self.client.force_authenticate(user=adm)
+        res = self.client.post(
+            f'/api/matches/{self.match.id}/mensagens/',
+            {'conteudo': 'teste'},
+        )
+        self.assertEqual(res.status_code, http_status.HTTP_403_FORBIDDEN)
+        self.assertIn('administrador', res.data.get('detail', '').lower())
+
 
 # ─── 3. Validação de conteúdo ────────────────────────────────────────────────
 

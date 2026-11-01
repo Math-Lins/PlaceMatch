@@ -19,6 +19,12 @@ class ConversasView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        if request.user.tipo == 'administrador':
+            return Response(
+                {'detail': 'O administrador não participa deste recurso.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         meu_perfil = _get_perfil(request.user)
         if meu_perfil is None:
             return Response([], status=status.HTTP_200_OK)
@@ -97,6 +103,12 @@ class MensagensView(APIView):
         """
         Retorna (match, meu_perfil, outro_id) ou (None, Response de erro, None).
         """
+        if request.user.tipo == 'administrador':
+            return None, Response(
+                {'detail': 'O administrador não participa deste recurso.'},
+                status=status.HTTP_403_FORBIDDEN,
+            ), None
+
         try:
             match = Match.objects.get(id=match_id)
         except Match.DoesNotExist:

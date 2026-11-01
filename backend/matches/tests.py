@@ -217,6 +217,18 @@ class DescobertaTest(TestCase):
         self.assertNotIn(self.pb.id, ids, 'pb já é match e não deve aparecer na descoberta')
         self.assertIn(self.pc.id, ids, 'pc ainda não é match e deve aparecer na descoberta')
 
+    def test_admin_retorna_403_na_descoberta(self):
+        admin = Usuario.objects.create_user(
+            username='adm_descoberta',
+            email='adm_descoberta@test.com',
+            password='Senha@1234',
+            tipo='administrador',
+        )
+        self.client.force_authenticate(user=admin)
+        res = self.client.get('/api/descoberta/')
+        self.assertEqual(res.status_code, http_status.HTTP_403_FORBIDDEN)
+        self.assertIn('administrador', res.data.get('detail', '').lower())
+
 
 # ─── 7. Auxiliar _sim_horario ─────────────────────────────────────────────────
 

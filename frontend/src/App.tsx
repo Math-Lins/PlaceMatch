@@ -301,23 +301,23 @@ const C = {
 // ─── Shared UI Components ─────────────────────────────────────────────────────
 
 
-function Btn({ label, onClick, outline = false, danger = false, small = false, style: extraStyle }: {
-  label: string; onClick?: () => void; outline?: boolean; danger?: boolean; small?: boolean; style?: React.CSSProperties;
+function Btn({ label, onClick, outline = false, danger = false, small = false, disabled = false, style: extraStyle }: {
+  label: string; onClick?: () => void; outline?: boolean; danger?: boolean; small?: boolean; disabled?: boolean; style?: React.CSSProperties;
 }) {
   const bg = danger ? C.danger : outline ? 'transparent' : C.primary;
   const color = outline ? (danger ? C.danger : C.primary) : '#fff';
   const border = outline ? `2px solid ${danger ? C.danger : C.primary}` : 'none';
   return (
-    <button onClick={onClick} style={{
+    <button onClick={disabled ? undefined : onClick} disabled={disabled} style={{
       width: '100%', padding: small ? '10px 16px' : '15px 16px',
       background: bg, color, border, borderRadius: '16px',
       fontSize: small ? '14px' : '16px', fontWeight: 700,
-      fontFamily: 'Outfit,sans-serif', cursor: 'pointer', minHeight: '44px',
-      transition: 'opacity 0.15s', ...extraStyle,
+      fontFamily: 'Outfit,sans-serif', cursor: disabled ? 'not-allowed' : 'pointer', minHeight: '44px',
+      transition: 'opacity 0.15s', opacity: disabled ? 0.6 : 1, ...extraStyle,
     }}
       className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-      onMouseDown={e => (e.currentTarget.style.opacity = '0.8')}
-      onMouseUp={e => (e.currentTarget.style.opacity = '1')}
+      onMouseDown={e => { if (!disabled) e.currentTarget.style.opacity = '0.8'; }}
+      onMouseUp={e => { if (!disabled) e.currentTarget.style.opacity = '1'; }}
     >
       {label}
     </button>
@@ -836,7 +836,7 @@ function LoginScreen({ nav, onLoginSuccess, loginMsg }: { nav: (s: Screen) => vo
           {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginTop: '8px', textAlign: 'center' }}>{erro}</p>}
 
           <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <Btn label={loading ? 'Aguarde...' : 'Entrar'} onClick={handleEntrar} />
+            <Btn label={loading ? 'Aguarde...' : 'Entrar'} onClick={handleEntrar} disabled={loading} />
           </div>
 
           <p style={{ textAlign: 'center', marginTop: '24px', fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>
@@ -939,7 +939,7 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
           {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginTop: '12px', textAlign: 'center' }}>{erro}</p>}
 
           <div style={{ marginTop: '28px' }}>
-            <Btn label={loading ? 'Aguarde...' : 'Continuar'} onClick={handleContinuar} />
+            <Btn label={loading ? 'Aguarde...' : 'Continuar'} onClick={handleContinuar} disabled={loading} />
           </div>
 
           <p style={{ textAlign: 'center', marginTop: '20px', fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>
@@ -1273,6 +1273,7 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
               <Btn
                 label={step === TOTAL_STEPS ? (loading ? 'Aguarde...' : 'Concluir perfil') : 'Próxima etapa'}
                 onClick={step < TOTAL_STEPS ? handleProximo : handleConcluir}
+                disabled={step === TOTAL_STEPS && loading}
               />
             </div>
           </div>
@@ -1440,7 +1441,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
             <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: 0 }}>{tituloTela}</h1>
             <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>São Paulo · SP</p>
           </div>
-          <button onClick={() => setShowFilters(true)} style={{
+          <button onClick={() => setShowFilters(true)} aria-label="Abrir filtros de busca" style={{
             position: 'relative', width: '44px', height: '44px', borderRadius: '14px',
             border: `1.5px solid ${activeFiltersCount > 0 ? C.primary : C.border}`,
             background: activeFiltersCount > 0 ? `${C.primary}12` : C.card,
@@ -1554,7 +1555,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
         {!loadingProfiles && !apiError && profiles.length === 0 && (activeFiltersCount > 0 || searchQ) ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '360px', padding: '24px', textAlign: 'center', gap: '12px' }}>
             <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted, margin: 0 }}>
-              Nenhum resultado para os filtros escolhidos.
+              Nenhum perfil com esses filtros.
             </p>
             <button
               onClick={handleClearFilters}
@@ -1565,7 +1566,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
           </div>
         ) : (!loadingProfiles && !apiError && profiles.length === 0) ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '480px', padding: '24px', textAlign: 'center', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '15px' }}>
-            Nenhum perfil compatível no momento. Volte mais tarde!
+            Ainda não há perfis para você. Volte mais tarde.
           </div>
         ) : null}
 
@@ -1635,13 +1636,13 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '24px' }}>
-                <button onClick={() => handleDislike(p)} disabled={isLoading} style={{ width: '64px', height: '64px', borderRadius: '50%', border: `2px solid ${C.border}`, background: C.card, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', opacity: isLoading ? 0.6 : 1 }}>
+                <button aria-label="Recusar perfil" onClick={() => handleDislike(p)} disabled={isLoading} style={{ width: '64px', height: '64px', borderRadius: '50%', border: `2px solid ${C.border}`, background: C.card, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', opacity: isLoading ? 0.6 : 1 }}>
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={C.danger} strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
-                <button onClick={() => handleLike(p)} disabled={isLoading} style={{ width: '72px', height: '72px', borderRadius: '50%', border: 'none', background: `linear-gradient(135deg, ${C.primary}, ${C.primaryLight})`, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 24px rgba(224,107,69,0.4)`, opacity: isLoading ? 0.6 : 1 }}>
+                <button aria-label="Curtir perfil" onClick={() => handleLike(p)} disabled={isLoading} style={{ width: '72px', height: '72px', borderRadius: '50%', border: 'none', background: `linear-gradient(135deg, ${C.primary}, ${C.primaryLight})`, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 24px rgba(224,107,69,0.4)`, opacity: isLoading ? 0.6 : 1 }}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                 </button>
-                <button style={{ width: '64px', height: '64px', borderRadius: '50%', border: `2px solid ${C.border}`, background: C.card, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
+                <button aria-label="Ver mais opções" style={{ width: '64px', height: '64px', borderRadius: '50%', border: `2px solid ${C.border}`, background: C.card, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.mint} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
                 </button>
               </div>
@@ -1715,10 +1716,10 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                     </div>
                   )}
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-                    <button onClick={() => handleDislike(p)} disabled={isLoading} style={{ width: '52px', height: '52px', borderRadius: '50%', border: `2px solid ${C.border}`, background: C.card, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', opacity: isLoading ? 0.6 : 1 }}>
+                    <button aria-label="Recusar perfil" onClick={() => handleDislike(p)} disabled={isLoading} style={{ width: '52px', height: '52px', borderRadius: '50%', border: `2px solid ${C.border}`, background: C.card, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', opacity: isLoading ? 0.6 : 1 }}>
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.danger} strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
-                    <button onClick={() => handleLike(p)} disabled={isLoading} style={{ width: '60px', height: '60px', borderRadius: '50%', border: 'none', background: `linear-gradient(135deg, ${C.primary}, ${C.primaryLight})`, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 6px 20px rgba(224,107,69,0.4)`, opacity: isLoading ? 0.6 : 1 }}>
+                    <button aria-label="Curtir perfil" onClick={() => handleLike(p)} disabled={isLoading} style={{ width: '60px', height: '60px', borderRadius: '50%', border: 'none', background: `linear-gradient(135deg, ${C.primary}, ${C.primaryLight})`, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 6px 20px rgba(224,107,69,0.4)`, opacity: isLoading ? 0.6 : 1 }}>
                       <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                     </button>
                   </div>
@@ -2232,6 +2233,12 @@ function NotificationsScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPer
             <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0, textAlign: 'center', maxWidth: '260px' }}>
               Quando alguém curtir você de volta, você verá o match aqui.
             </p>
+            <button
+              onClick={() => nav('discovery')}
+              style={{ marginTop: '4px', padding: '10px 20px', borderRadius: '14px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Ir para a Descoberta
+            </button>
           </div>
         )}
 
@@ -2576,6 +2583,12 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
             <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0, textAlign: 'center', maxWidth: '260px' }}>
               Curta perfis na tela de Descoberta. Quando alguém curtir você de volta, aparece aqui!
             </p>
+            <button
+              onClick={() => nav('discovery')}
+              style={{ marginTop: '4px', padding: '10px 20px', borderRadius: '14px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Ir para a Descoberta
+            </button>
           </div>
         )}
 
@@ -2826,7 +2839,7 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
           )}
           {!loading && !erro && messages.length === 0 && (
             <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>Nenhuma mensagem ainda. Envie a primeira! 👋</p>
+              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>Diga olá! Combinem os detalhes da vaga.</p>
             </div>
           )}
           {messages.map(msg => {
@@ -2885,13 +2898,20 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
           <button
             onClick={send}
             disabled={sending || !input.trim()}
+            aria-label="Enviar mensagem"
             style={{
               width: '46px', height: '46px', borderRadius: '50%', border: 'none',
               background: sending || !input.trim() ? C.border : C.primary,
               cursor: sending || !input.trim() ? 'default' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            {sending ? (
+              <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            )}
           </button>
         </div>
       </div>
@@ -2923,6 +2943,7 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
   const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string>>({});
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (meuPerfil) {
@@ -2980,7 +3001,7 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
   };
 
   const excluir = async () => {
-    if (!meuPerfil || !confirm('Tem certeza que deseja excluir seu perfil?')) return;
+    if (!meuPerfil) return;
     setErro('');
     setLoading(true);
     try {
@@ -2988,6 +3009,7 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
       onPerfilExcluido();
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : 'Erro ao excluir perfil.');
+      setShowDeleteModal(false);
     } finally {
       setLoading(false);
     }
@@ -3003,7 +3025,7 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
       <div style={{ padding: '20px 24px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: 0 }}>Meu Perfil</h1>
         {editing
-          ? <button onClick={salvar} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: '12px', padding: '8px 16px', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>{loading ? '...' : 'Salvar'}</button>
+          ? <button onClick={salvar} disabled={loading} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: '12px', padding: '8px 16px', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>{loading ? 'Salvando...' : 'Salvar'}</button>
           : <button onClick={() => setEditing(true)} style={{ background: 'none', border: `1.5px solid ${C.primary}`, color: C.primary, borderRadius: '12px', padding: '8px 16px', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>Editar</button>
         }
       </div>
@@ -3204,18 +3226,69 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
             }}>
               Sair da conta
             </button>
-            {meuPerfil && <button onClick={excluir} disabled={loading} style={{
+            {meuPerfil && <button onClick={() => setShowDeleteModal(true)} style={{
               width: '100%', padding: '15px', marginTop: '10px', background: 'none',
               border: `1.5px solid ${C.danger}`, borderRadius: '16px',
-              fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.danger, cursor: loading ? 'wait' : 'pointer',
+              fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.danger, cursor: 'pointer',
             }}>
-              {loading ? 'Excluindo...' : 'Excluir perfil'}
+              Excluir perfil
             </button>}
+            {showDeleteModal && (
+              <DeleteProfileModal
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={excluir}
+                loading={loading}
+              />
+            )}
           </div>
 
         </div>
       </div>
 
+    </div>
+  );
+}
+
+// ─── Delete Profile Modal ─────────────────────────────────────────────────────
+
+function DeleteProfileModal({ onClose, onConfirm, loading }: { onClose: () => void; onConfirm: () => void; loading: boolean }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !loading) onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose, loading]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Excluir perfil"
+      onClick={() => { if (!loading) onClose(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(42,36,32,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}
+      className="md:items-center md:justify-center"
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ background: C.card, padding: '24px', width: '100%' }}
+        className="rounded-t-[28px] md:rounded-[24px] md:max-w-md md:shadow-2xl"
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 800, color: C.text, margin: 0 }}>Excluir perfil?</h3>
+          <button
+            onClick={onClose}
+            aria-label="Fechar modal"
+            disabled={loading}
+            style={{ background: 'none', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', color: C.muted, fontSize: '22px', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', opacity: loading ? 0.4 : 1 }}
+          >✕</button>
+        </div>
+        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: '0 0 24px', lineHeight: 1.6 }}>
+          Ao excluir seu perfil, você perderá todas as suas curtidas, matches e conversas. Esta ação não pode ser desfeita.
+        </p>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <Btn label="Cancelar" outline onClick={onClose} disabled={loading} />
+          <Btn label={loading ? 'Excluindo...' : 'Excluir definitivamente'} danger onClick={onConfirm} disabled={loading} />
+        </div>
+      </div>
     </div>
   );
 }
