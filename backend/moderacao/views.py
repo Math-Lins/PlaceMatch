@@ -3,7 +3,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
 
+from painel.filtros import corpo_invalido, resposta_400, validar_escolha_param
 from painel.permissoes import AdminPermission
+from placematch import validacao
 from .models import Denuncia
 from .servicos import criar_denuncia, resolver_denuncia, suspender_usuario, reativar_usuario
 
@@ -18,11 +20,14 @@ class DenunciaCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        erro = corpo_invalido(request)
+        if erro:
+            return erro
         denunciado_id = request.data.get('denunciado')
         motivo = request.data.get('motivo', '')
         descricao = request.data.get('descricao', '')
 
-        if not denunciado_id:
+        if denunciado_id in (None, ''):
             return Response(
                 {'detail': 'O campo "denunciado" é obrigatório.'},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -61,14 +66,25 @@ class AdminDenunciaListView(APIView):
         qs = Denuncia.objects.select_related('denunciante', 'denunciado', 'resolvida_por')
 
         status_param = request.query_params.get('status')
+        erro = validar_escolha_param(
+            status_param, [c for c, _ in Denuncia.STATUS_CHOICES], 'Status')
+        if erro:
+            return erro
         if status_param:
             qs = qs.filter(status=status_param)
 
         denunciado_id = request.query_params.get('denunciado')
         if denunciado_id:
-            qs = qs.filter(denunciado_id=denunciado_id)
+            try:
+                qs = qs.filter(denunciado_id=validacao.inteiro(denunciado_id, 'O filtro "denunciado"'))
+            except ValueError as e:
+                return resposta_400(str(e))
 
         motivo = request.query_params.get('motivo')
+        erro = validar_escolha_param(
+            motivo, [c for c, _ in Denuncia.MOTIVO_CHOICES], 'Motivo')
+        if erro:
+            return erro
         if motivo:
             qs = qs.filter(motivo=motivo)
 
@@ -102,6 +118,9 @@ class AdminDenunciaResolverView(APIView):
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
     def patch(self, request, denuncia_id):
+        erro = corpo_invalido(request)
+        if erro:
+            return erro
         try:
             denuncia = Denuncia.objects.get(id=denuncia_id)
         except Denuncia.DoesNotExist:
@@ -131,6 +150,9 @@ class AdminSuspenderUsuarioView(APIView):
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
     def post(self, request, usuario_id):
+        erro = corpo_invalido(request)
+        if erro:
+            return erro
         try:
             usuario = User.objects.get(id=usuario_id)
         except User.DoesNotExist:

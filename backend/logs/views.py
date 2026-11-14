@@ -1,8 +1,4 @@
-from datetime import date
-
 from django.db.models import Q
-from django.utils.timezone import make_aware
-from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
@@ -10,52 +6,57 @@ from rest_framework import permissions
 from .models import LogOperacao
 from .servicos import registrar
 from painel.exportacao import gerar_csv_response
+from painel.filtros import validar_e_parsear_datas, validar_escolha_param
 from painel.permissoes import AdminPermission
+from placematch import validacao
 
 
 def _aplicar_filtros(qs, params):
+    """Aplica os filtros da query string. Retorna (qs, erro_response|None)."""
     acao = params.get('acao')
+    erro = validar_escolha_param(acao, [c for c, _ in LogOperacao.ACAO_CHOICES], 'Ação')
+    if erro:
+        return qs, erro
     if acao:
         qs = qs.filter(acao=acao)
 
-    usuario_id = params.get('usuario')
-    if usuario_id:
-        try:
-            qs = qs.filter(usuario_id=int(usuario_id))
-        except (ValueError, TypeError):
-            pass
+    # `usuario` aceita o ID numérico, o e-mail ou parte do nome.
+    usuario = (params.get('usuario') or '').strip()
+    if usuario:
+        if usuario.isascii() and usuario.isdigit():
+            try:
+                qs = qs.filter(usuario_id=validacao.inteiro(usuario, 'O filtro "usuario"'))
+            except ValueError:
+                qs = qs.none()
+        else:
+            qs = qs.filter(
+                Q(usuario__email__icontains=usuario)
+                | Q(usuario__first_name__icontains=usuario)
+                | Q(usuario__username__icontains=usuario)
+            )
 
     entidade = params.get('entidade')
     if entidade:
         qs = qs.filter(entidade=entidade)
 
-    data_inicio = params.get('data_inicio')
+    data_inicio, data_fim, erro = validar_e_parsear_datas(params)
+    if erro:
+        return qs, erro
     if data_inicio:
-        try:
-            d = date.fromisoformat(data_inicio)
-            dt = make_aware(timezone.datetime(d.year, d.month, d.day, 0, 0, 0))
-            qs = qs.filter(data_hora__gte=dt)
-        except (ValueError, AttributeError):
-            pass
-
-    data_fim = params.get('data_fim')
+        qs = qs.filter(data_hora__gte=data_inicio)
     if data_fim:
-        try:
-            d = date.fromisoformat(data_fim)
-            dt = make_aware(timezone.datetime(d.year, d.month, d.day, 23, 59, 59))
-            qs = qs.filter(data_hora__lte=dt)
-        except (ValueError, AttributeError):
-            pass
+        qs = qs.filter(data_hora__lte=data_fim)
 
     q = params.get('q')
     if q:
         qs = qs.filter(
             Q(usuario__email__icontains=q)
             | Q(usuario__username__icontains=q)
+            | Q(usuario__first_name__icontains=q)
             | Q(entidade__icontains=q)
         )
 
-    return qs
+    return qs, None
 
 
 def _serializar_log(log):
@@ -84,7 +85,9 @@ class LogListView(APIView):
 
     def get(self, request):
         qs = LogOperacao.objects.select_related('usuario').order_by('-data_hora', '-id')
-        qs = _aplicar_filtros(qs, request.query_params)
+        qs, erro = _aplicar_filtros(qs, request.query_params)
+        if erro:
+            return erro
 
         try:
             page = max(1, int(request.query_params.get('page', 1)))
@@ -112,7 +115,9 @@ class LogExportarView(APIView):
 
     def get(self, request):
         qs = LogOperacao.objects.select_related('usuario').order_by('-data_hora', '-id')
-        qs = _aplicar_filtros(qs, request.query_params)
+        qs, erro = _aplicar_filtros(qs, request.query_params)
+        if erro:
+            return erro
 
         cabecalho = [
             'ID', 'Data/Hora', 'Usuário ID', 'Usuário Nome', 'Usuário E-mail',

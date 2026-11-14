@@ -13,6 +13,15 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'chave-local-insegura-nao-usar-em-producao'
 
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
+# Em produção (DEBUG=False) a chave DEVE vir da variável de ambiente SECRET_KEY, com pelo
+# menos 32 caracteres (também é a chave de assinatura do JWT/HS256). O valor padrão acima
+# existe só para desenvolvimento local.
+if not DEBUG and len(os.getenv('SECRET_KEY', '')) < 32:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
+        'Defina SECRET_KEY no ambiente com pelo menos 32 caracteres quando DEBUG=False.'
+    )
+
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # ─── Apps instalados ──────────────────────────────────────────────────────────

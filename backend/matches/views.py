@@ -30,15 +30,24 @@ def _parse_bool_param(val, campo):
     )
 
 
+_ORCAMENTO_MAXIMO = Decimal('99999999.99')  # DecimalField(max_digits=10, decimal_places=2)
+
+
 def _parse_decimal_param(val, campo):
     """Converte string para Decimal. Retorna (Decimal|None, erro|None)."""
     if val is None:
         return None, None
     try:
-        return Decimal(val), None
-    except (InvalidOperation, ValueError, TypeError):
+        d = Decimal(val.strip())
+        if not d.is_finite() or d < 0 or d > _ORCAMENTO_MAXIMO:
+            raise ValueError
+        return d, None
+    except (InvalidOperation, ValueError, TypeError, AttributeError):
         return None, Response(
-            {'detail': f'Valor inválido para {campo}. Informe um número.'},
+            {'detail': (
+                f'Valor inválido para {campo}. '
+                f'Informe um número entre 0 e {_ORCAMENTO_MAXIMO}.'
+            )},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -227,6 +236,12 @@ class CurtidaView(APIView):
             return Response(
                 {'detail': 'Você não pode curtir o seu próprio perfil.'},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not perfil_destino.usuario.is_active:
+            return Response(
+                {'detail': 'Perfil não encontrado.'},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         if perfil_destino.usuario.tipo == request.user.tipo:

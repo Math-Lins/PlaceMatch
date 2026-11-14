@@ -1,5 +1,7 @@
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from rest_framework import viewsets, permissions
+from rest_framework.exceptions import ValidationError
 from .models import Perfil
 from .serializers import PerfilSerializer
 
@@ -7,6 +9,16 @@ from .serializers import PerfilSerializer
 class IsOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.usuario == request.user
+
+
+class NaoAdministradorNaCriacao(permissions.BasePermission):
+    """O administrador não participa do matching: não cria perfil."""
+    message = 'O administrador não participa deste recurso.'
+
+    def has_permission(self, request, view):
+        if request.method == 'POST' and request.user.tipo == 'administrador':
+            return False
+        return True
 
 
 # Mapa de tipo → tipo oposto (apenas usuários comuns participam da descoberta).
@@ -34,7 +46,7 @@ class PerfilViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), IsOwner()]
+        return [permissions.IsAuthenticated(), NaoAdministradorNaCriacao(), IsOwner()]
 
     def get_object(self):
         obj = super().get_object()  # já chama check_object_permissions (IsOwner para write)
@@ -70,7 +82,13 @@ class PerfilViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         from logs.servicos import registrar
-        perfil = serializer.save(usuario=self.request.user)
+        if Perfil.objects.filter(usuario=self.request.user).exists():
+            raise ValidationError({'detail': 'Você já possui um perfil.'})
+        try:
+            with transaction.atomic():
+                perfil = serializer.save(usuario=self.request.user)
+        except IntegrityError:
+            raise ValidationError({'detail': 'Você já possui um perfil.'})
         registrar(
             'PERFIL_CRIADO',
             usuario=self.request.user,

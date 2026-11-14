@@ -14,7 +14,9 @@ from matches.models import Curtida, Match, Compatibilidade
 from chat.models import Mensagem
 from logs.servicos import registrar
 from .exportacao import gerar_csv_response
-from .filtros import validar_e_parsear_datas
+from .filtros import (
+    TIPOS_USUARIO, validar_bool_param, validar_e_parsear_datas, validar_escolha_param,
+)
 from .permissoes import AdminPermission
 
 # ─── Catálogo de relatórios ───────────────────────────────────────────────────
@@ -101,6 +103,9 @@ class DashboardView(APIView):
 
         regiao = params.get('regiao')
         tipo = params.get('tipo')
+        erro = validar_escolha_param(tipo, TIPOS_USUARIO, 'Tipo')
+        if erro:
+            return erro
 
         # Período padrão: últimos 30 dias
         agora = timezone.now()
@@ -570,7 +575,13 @@ class RelatorioDetalheView(APIView):
 
         regiao = params.get('regiao')
         tipo = params.get('tipo')
+        erro = validar_escolha_param(tipo, TIPOS_USUARIO, 'Tipo')
+        if erro:
+            return erro
         formato = params.get('formato', 'json').lower()
+        erro = validar_escolha_param(formato, ('json', 'csv'), 'Formato')
+        if erro:
+            return erro
 
         colunas, linhas, totais = _obter_dados_relatorio(
             rel_id, data_inicio, data_fim, regiao, tipo
@@ -627,12 +638,22 @@ def _serializar_usuario_admin(u):
     }
 
 
+def _validar_filtros_usuarios(params):
+    """Valida tipo e ativo da lista/exportação de usuários. Retorna Response 400 ou None."""
+    return (
+        validar_escolha_param(params.get('tipo'), TIPOS_USUARIO, 'Tipo')
+        or validar_bool_param(params.get('ativo'), 'ativo')
+    )
+
+
 def _filtrar_usuarios(params, data_inicio, data_fim):
     qs = Usuario.objects.select_related('perfil').order_by('-date_joined')
 
     q = params.get('q')
     if q:
-        qs = qs.filter(Q(username__icontains=q) | Q(email__icontains=q))
+        qs = qs.filter(
+            Q(username__icontains=q) | Q(first_name__icontains=q) | Q(email__icontains=q)
+        )
 
     tipo = params.get('tipo')
     if tipo:
@@ -660,6 +681,10 @@ class AdminUsuariosView(APIView):
     def get(self, request):
         params = request.query_params
         data_inicio, data_fim, erro = validar_e_parsear_datas(params)
+        if erro:
+            return erro
+
+        erro = _validar_filtros_usuarios(params)
         if erro:
             return erro
 
@@ -691,6 +716,10 @@ class AdminUsuariosExportarView(APIView):
     def get(self, request):
         params = request.query_params
         data_inicio, data_fim, erro = validar_e_parsear_datas(params)
+        if erro:
+            return erro
+
+        erro = _validar_filtros_usuarios(params)
         if erro:
             return erro
 

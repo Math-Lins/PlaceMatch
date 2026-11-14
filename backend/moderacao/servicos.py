@@ -4,7 +4,10 @@ Serviços de moderação: criação de denúncias, resolução e suspensão de u
 from django.contrib.auth import get_user_model
 
 from logs.servicos import registrar
+from placematch import validacao
 from .models import Denuncia
+
+LIMITE_TEXTO = 500
 
 
 def criar_denuncia(denunciante, denunciado_id, motivo, descricao='', request=None):
@@ -13,6 +16,10 @@ def criar_denuncia(denunciante, denunciado_id, motivo, descricao='', request=Non
     Retorna a instância criada.
     """
     User = get_user_model()
+    denunciado_id = validacao.inteiro(denunciado_id, 'O campo "denunciado"')
+    descricao = validacao.texto(descricao, 'A descrição', maximo=LIMITE_TEXTO)
+    if not isinstance(motivo, str):
+        raise ValueError('O motivo deve ser um texto.')
     try:
         denunciado = User.objects.get(id=denunciado_id)
     except User.DoesNotExist:
@@ -50,6 +57,8 @@ def resolver_denuncia(denuncia, admin, novo_status, resolucao='', request=None):
     """
     Resolve ou descarta uma denúncia. Levanta ValueError em caso de violação.
     """
+    resolucao = validacao.texto(resolucao, 'A resolução', maximo=LIMITE_TEXTO)
+
     if novo_status not in ('resolvida', 'descartada'):
         raise ValueError('Status inválido. Use "resolvida" ou "descartada".')
 
@@ -76,6 +85,8 @@ def suspender_usuario(usuario, admin, motivo='', request=None):
     """
     Desativa a conta do usuário (is_active=False). Levanta ValueError se já suspenso.
     """
+    motivo = validacao.texto(motivo, 'O motivo da suspensão', maximo=LIMITE_TEXTO)
+
     if not usuario.is_active:
         raise ValueError('Este usuário já está suspenso.')
 

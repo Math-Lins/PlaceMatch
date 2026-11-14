@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from perfis.models import Perfil
 from matches.models import Match
+from painel.filtros import corpo_invalido, resposta_400
+from placematch import validacao
 from .models import Mensagem
 from .serializers import MensagemSerializer
 
@@ -147,9 +149,11 @@ class MensagensView(APIView):
         apos = request.query_params.get('apos')
         if apos is not None:
             try:
-                qs = qs.filter(id__gt=int(apos))
-            except (ValueError, TypeError):
-                pass
+                qs = qs.filter(id__gt=validacao.inteiro(apos, 'O parâmetro "apos"', minimo=0))
+            except ValueError as e:
+                return resposta_400(
+                    f'{e} Informe o número da última mensagem já recebida.'
+                )
 
         return Response(MensagemSerializer(qs, many=True).data)
 
@@ -159,7 +163,22 @@ class MensagensView(APIView):
             return meu_perfil_ou_erro
 
         meu_perfil = meu_perfil_ou_erro
+
+        erro = corpo_invalido(request)
+        if erro:
+            return erro
+
+        outro_perfil = match.perfil_b if match.perfil_a_id == meu_perfil.id else match.perfil_a
+        if not outro_perfil.usuario.is_active:
+            return Response(
+                {'detail': 'Não é possível enviar mensagens: a conta do outro participante está suspensa.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         conteudo = request.data.get('conteudo', '')
+
+        if conteudo is not None and not isinstance(conteudo, str):
+            return resposta_400('O conteúdo da mensagem deve ser um texto.')
 
         if not conteudo or not str(conteudo).strip():
             return Response(

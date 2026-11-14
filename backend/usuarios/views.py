@@ -1,5 +1,7 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.response import Response
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import Usuario
 from .serializers import RegistrarSerializer, UsuarioSerializer
@@ -22,38 +24,43 @@ class RegistrarView(generics.CreateAPIView):
         )
 
 
+def _validar_corpo_login(data):
+    """Retorna (email, senha, erros). `erros` é dict campo -> mensagem (vazio se ok)."""
+    if not hasattr(data, 'get'):
+        return None, None, {'detail': 'O corpo da requisição deve ser um objeto JSON com e-mail e senha.'}
+    email, senha = data.get('email'), data.get('password')
+    erros = {}
+    if email is None or (isinstance(email, str) and not email.strip()):
+        erros['email'] = ['Informe o e-mail.']
+    elif not isinstance(email, str):
+        erros['email'] = ['O e-mail deve ser um texto.']
+    if senha is None or (isinstance(senha, str) and not senha):
+        erros['password'] = ['Informe a senha.']
+    elif not isinstance(senha, str):
+        erros['password'] = ['A senha deve ser um texto.']
+    return email, senha, erros
+
+
 class LoginView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         from logs.servicos import registrar
+
+        email, senha, erros = _validar_corpo_login(request.data)
+        if erros:
+            return Response(erros, status=status.HTTP_400_BAD_REQUEST)
+        email = email.strip()
+
         try:
             response = super().post(request, *args, **kwargs)
-            # Sucesso: identifica o usuário pelo e-mail para o log.
-            email = request.data.get('email', '')
-            try:
-                usuario = Usuario.objects.get(email__iexact=email)
-            except Usuario.DoesNotExist:
-                usuario = None
-            registrar(
-                'LOGIN',
-                usuario=usuario,
-                entidade='usuario',
-                entidade_id=usuario.id if usuario else None,
-                request=request,
-            )
-            return response
-        except Exception:
-            # Distingue conta inativa (senha certa, is_active=False) de credenciais erradas.
-            # Não grava o e-mail digitado no log — apenas o motivo.
+        except (AuthenticationFailed, TokenError):
+            # Distingue conta suspensa (existe, senha confere, is_active=False) de
+            # credenciais erradas. Não grava o e-mail digitado no log — só o motivo.
             motivo = 'credenciais'
             usuario_log = None
-            email = request.data.get('email', '')
-            try:
-                u = Usuario.objects.get(email__iexact=email)
-                if u.check_password(request.data.get('password', '')):
-                    motivo = 'conta_inativa'
-                    usuario_log = u
-            except Usuario.DoesNotExist:
-                pass
+            u = Usuario.objects.filter(email__iexact=email).first()
+            if u is not None and not u.is_active and u.check_password(senha):
+                motivo = 'conta_inativa'
+                usuario_log = u
             registrar(
                 'LOGIN_FALHA',
                 usuario=usuario_log,
@@ -64,6 +71,17 @@ class LoginView(TokenObtainPairView):
             if motivo == 'conta_inativa':
                 raise AuthenticationFailed('Conta suspensa. Procure o suporte.')
             raise AuthenticationFailed('E-mail ou senha incorretos.')
+
+        # Sucesso: identifica o usuário pelo e-mail para o log.
+        usuario = Usuario.objects.filter(email__iexact=email).first()
+        registrar(
+            'LOGIN',
+            usuario=usuario,
+            entidade='usuario',
+            entidade_id=usuario.id if usuario else None,
+            request=request,
+        )
+        return response
 
 
 class MeView(generics.RetrieveAPIView):
