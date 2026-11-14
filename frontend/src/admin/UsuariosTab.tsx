@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { listarAdminUsuarios, downloadCsv, suspenderUsuario, reativarUsuario, ApiError } from '../api';
+import { listarAdminUsuarios, downloadCsv, suspenderUsuario, reativarUsuario, validarPeriodo, ApiError } from '../api';
 import type { UsuarioAdmin, PaginatedResponse } from '../api';
 
 const C = {
@@ -75,9 +75,13 @@ function SuspenderModal({ usuario, onClose, onConcluido }: {
         <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '18px', fontWeight: 800, color: C.text, margin: '0 0 8px' }}>Suspender conta</h3>
         <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: '0 0 20px' }}>{usuario.email}</p>
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, color: C.muted, display: 'block', marginBottom: '6px' }}>Motivo (opcional)</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, color: C.muted }}>Motivo (opcional)</label>
+            <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: motivo.length >= 500 ? C.danger : C.muted }}>{motivo.length}/500</span>
+          </div>
           <input
             value={motivo}
+            maxLength={500}
             onChange={e => setMotivo(e.target.value)}
             placeholder="Ex: Comportamento abusivo"
             style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: `1.5px solid ${C.border}`, fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.text, background: C.bg, outline: 'none', boxSizing: 'border-box' }}
@@ -115,7 +119,10 @@ export default function UsuariosTab() {
   const [dataFim, setDataFim] = useState('');
   const [page, setPage] = useState(1);
 
+  const erroPeriodo = validarPeriodo(dataInicio, dataFim);
+
   const carregar = useCallback((pg: number) => {
+    if (validarPeriodo(dataInicio, dataFim)) { setLoading(false); return; }
     setLoading(true);
     setErro('');
     listarAdminUsuarios({
@@ -136,6 +143,7 @@ export default function UsuariosTab() {
   const handleSearch = () => { setPage(1); carregar(1); };
 
   const handleExport = async () => {
+    if (erroPeriodo) return;
     setExporting(true);
     try {
       const qs = new URLSearchParams();
@@ -207,12 +215,17 @@ export default function UsuariosTab() {
           </select>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Cadastro de</label>
-          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} style={inputStyle} />
+          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} aria-invalid={!!erroPeriodo} style={erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Até</label>
-          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} style={inputStyle} />
+          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} aria-invalid={!!erroPeriodo} style={erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle} />
+        </div>
+          </div>
+          {erroPeriodo && <span role="alert" style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.danger }}>{erroPeriodo}</span>}
         </div>
         <button onClick={handleSearch} style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-end' }}>
           Buscar

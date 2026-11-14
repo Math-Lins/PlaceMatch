@@ -18,7 +18,7 @@ import {
   enviarMensagem,
   criarDenuncia,
 } from './api';
-import type { Perfil as PerfilAPI, PerfilDescoberto, PerfilBasico, MatchData, Conversa, MensagemAPI, DescobertaParams } from './api';
+import type { Perfil as PerfilAPI, PerfilPayload, PerfilDescoberto, PerfilBasico, MatchData, Conversa, MensagemAPI, DescobertaParams } from './api';
 import AdminPanel from './admin/AdminPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -324,16 +324,23 @@ function Btn({ label, onClick, outline = false, danger = false, small = false, d
   );
 }
 
-function Input({ label, type = 'text', placeholder, value, onChange, error }: {
-  label: string; type?: string; placeholder?: string; value?: string; onChange?: (v: string) => void; error?: string;
+function Input({ label, type = 'text', placeholder, value, onChange, error, maxLength }: {
+  label: string; type?: string; placeholder?: string; value?: string; onChange?: (v: string) => void; error?: string; maxLength?: number;
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif' }}>{label}</label>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif' }}>{label}</label>
+        {maxLength !== undefined && (
+          <span style={{ fontSize: '12px', color: (value?.length ?? 0) >= maxLength ? C.danger : C.muted, fontFamily: 'Nunito,sans-serif' }}>{value?.length ?? 0}/{maxLength}</span>
+        )}
+      </div>
       <input
         type={type}
         placeholder={placeholder}
         value={value}
+        maxLength={maxLength}
+        aria-invalid={!!error}
         onChange={e => onChange?.(e.target.value)}
         className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
         style={{
@@ -867,6 +874,7 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
     setErro('');
     const erros: Record<string, string> = {};
     if (!nome.trim() || nome.trim().length < 2) erros.username = 'Nome deve ter pelo menos 2 caracteres.';
+    else if (nome.trim().length > 150) erros.username = 'Nome deve ter no máximo 150 caracteres.';
     if (!email.trim()) erros.email = 'Informe seu e-mail.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) erros.email = 'Informe um e-mail válido.';
     if (!senha) erros.password = 'Informe uma senha.';
@@ -888,8 +896,13 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
       await onLoginSuccess();
     } catch (e: unknown) {
       if (e instanceof ApiError) {
-        setFieldErrors(e.fieldErrors);
-        if (Object.keys(e.fieldErrors).length === 0) setErro(e.message);
+        // Campos da API (backend/usuarios/serializers.py): username, email, password, tipo.
+        // Na tela, `tipo` aparece no seletor "Você está:" (chave `role`).
+        const fe: Record<string, string> = { ...e.fieldErrors };
+        if (fe.tipo) { fe.role = fe.tipo; delete fe.tipo; }
+        setFieldErrors(fe);
+        const visiveis = ['username', 'email', 'password', 'role'];
+        if (!visiveis.some(k => fe[k])) setErro(e.message);
       } else {
         setErro(e instanceof Error ? e.message : 'Erro ao criar conta.');
       }
@@ -912,7 +925,7 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
           <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted, margin: '0 0 28px' }}>Vamos te conectar ao lugar certo</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <Input label="Nome completo" placeholder="Seu nome" value={nome} onChange={setNome} error={fieldErrors.username} />
+            <Input label="Nome completo" placeholder="Seu nome" value={nome} onChange={setNome} error={fieldErrors.username} maxLength={150} />
             <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={setEmail} error={fieldErrors.email} />
             <div className="grid md:grid-cols-2 gap-4">
               <Input label="Senha" type="password" placeholder="Mínimo 8 caracteres" value={senha} onChange={setSenha} error={fieldErrors.password} />
@@ -954,62 +967,441 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
   );
 }
 
+// ─── Perfil: tipos, validação e campos compartilhados (criação e edição) ──────
+
+type TipoImovel = 'apartamento' | 'casa' | 'republica' | 'indiferente';
+type Visitas = 'raramente' | 'as_vezes' | 'frequentemente';
+type Horario = 'madrugador' | 'noturno' | 'flexivel';
+
+// Limites iguais aos do backend (perfis/models.py e serializers.py). A descrição do imóvel
+// não tem limite no backend; 1000 é um limite de interface.
+const LIM = { nome: 150, regiao: 200, bio: 500, titulo: 120, descricao: 1000, fotos: 5, url: 500, orcamento: 99999999.99 };
+
+interface PerfilForm {
+  nome: string; idade: string; regiao: string; bio: string;
+  orcamentoMin: string; orcamentoMax: string;
+  tipoImovel: TipoImovel | null; qtdMoradores: number | null;
+  fumante: boolean | null; pets: boolean | null;
+  visitas: Visitas | null; horario: Horario | null;
+  organizacao: number; bagunca: number; ruido: number; social: number;
+  titulo: string; descricaoImovel: string; fotos: string[]; fotoPerfil: string;
+}
+
+const FORM_VAZIO: PerfilForm = {
+  nome: '', idade: '', regiao: '', bio: '',
+  orcamentoMin: '', orcamentoMax: '',
+  tipoImovel: null, qtdMoradores: null,
+  fumante: null, pets: null, visitas: null, horario: null,
+  organizacao: 0, bagunca: 0, ruido: 0, social: 0,
+  titulo: '', descricaoImovel: '', fotos: [], fotoPerfil: '',
+};
+
+// Campos (nomes da API) de cada etapa da criação de perfil.
+const CAMPOS_ETAPA: Record<number, string[]> = {
+  1: ['nome', 'idade', 'regiao', 'bio'],
+  2: ['orcamento_min', 'orcamento_max', 'tipo_imovel', 'qtd_moradores'],
+  3: ['fumante', 'aceita_pets', 'aceita_visitas', 'perfil_horario'],
+  4: ['tolerancia_bagunca', 'nivel_organizacao', 'nivel_ruido', 'nivel_social'],
+  5: ['titulo_anuncio', 'descricao_imovel', 'fotos_imovel', 'foto_perfil_url'],
+};
+
+function etapaDoCampo(campo: string): number | null {
+  for (const [etapa, campos] of Object.entries(CAMPOS_ETAPA)) {
+    if (campos.includes(campo)) return Number(etapa);
+  }
+  return null;
+}
+
+function numBR(v: string): number {
+  return Number(v.trim().replace(',', '.'));
+}
+
+function urlHttpValida(u: string): boolean {
+  if (!/^https?:\/\//.test(u)) return false;
+  try { return !!new URL(u).hostname; } catch { return false; }
+}
+
+function perfilParaForm(p: PerfilAPI): PerfilForm {
+  return {
+    nome: p.nome, idade: String(p.idade), regiao: p.regiao, bio: p.bio ?? '',
+    orcamentoMin: String(Number(p.orcamento_min)), orcamentoMax: String(Number(p.orcamento_max)),
+    tipoImovel: p.tipo_imovel, qtdMoradores: p.qtd_moradores,
+    fumante: p.fumante, pets: p.aceita_pets,
+    visitas: p.aceita_visitas, horario: p.perfil_horario,
+    organizacao: p.nivel_organizacao, bagunca: p.tolerancia_bagunca,
+    ruido: p.nivel_ruido, social: p.nivel_social,
+    titulo: p.titulo_anuncio ?? '', descricaoImovel: p.descricao_imovel ?? '',
+    fotos: p.fotos_imovel ?? [], fotoPerfil: p.foto_perfil_url ?? '',
+  };
+}
+
+function montarPayload(f: PerfilForm, anuncio: boolean): PerfilPayload {
+  return {
+    nome: f.nome.trim(),
+    idade: Number(f.idade),
+    regiao: f.regiao.trim(),
+    bio: f.bio.trim(),
+    orcamento_min: numBR(f.orcamentoMin),
+    orcamento_max: numBR(f.orcamentoMax),
+    fumante: f.fumante ?? false,
+    aceita_pets: f.pets ?? false,
+    tolerancia_bagunca: f.bagunca,
+    nivel_organizacao: f.organizacao,
+    perfil_horario: f.horario ?? 'flexivel',
+    nivel_ruido: f.ruido,
+    nivel_social: f.social,
+    aceita_visitas: f.visitas ?? 'as_vezes',
+    tipo_imovel: f.tipoImovel ?? 'indiferente',
+    qtd_moradores: f.qtdMoradores ?? 2,
+    ...(anuncio ? {
+      titulo_anuncio: f.titulo.trim(),
+      descricao_imovel: f.descricaoImovel.trim(),
+      fotos_imovel: f.fotos.map(x => x.trim()).filter(Boolean),
+      foto_perfil_url: f.fotoPerfil.trim(),
+    } : {}),
+  };
+}
+
+/** Valida só os `campos` pedidos (nomes da API). Mesmas regras da API, antes do envio. */
+function validarPerfil(f: PerfilForm, campos: string[], anuncio: boolean): Record<string, string> {
+  const e: Record<string, string> = {};
+  const quer = (c: string) => campos.includes(c);
+
+  if (quer('nome')) {
+    const n = f.nome.trim();
+    if (n.length < 2) e.nome = 'Nome deve ter pelo menos 2 caracteres.';
+    else if (n.length > LIM.nome) e.nome = `Nome deve ter no máximo ${LIM.nome} caracteres (${n.length}/${LIM.nome}).`;
+  }
+  if (quer('idade')) {
+    const n = Number(f.idade);
+    if (!f.idade || isNaN(n) || !Number.isInteger(n) || n < 18 || n > 100) e.idade = 'Idade deve estar entre 18 e 100 anos.';
+  }
+  if (quer('regiao')) {
+    const r = f.regiao.trim();
+    if (r.length < 2) e.regiao = 'Região deve ter pelo menos 2 caracteres.';
+    else if (r.length > LIM.regiao) e.regiao = `Região deve ter no máximo ${LIM.regiao} caracteres (${r.length}/${LIM.regiao}).`;
+  }
+  if (quer('bio') && f.bio.length > LIM.bio) e.bio = `Bio deve ter no máximo ${LIM.bio} caracteres (${f.bio.length}/${LIM.bio}).`;
+
+  if (quer('orcamento_min') || quer('orcamento_max')) {
+    const min = numBR(f.orcamentoMin);
+    const max = numBR(f.orcamentoMax);
+    if (!f.orcamentoMin.trim() || isNaN(min) || min <= 0) e.orcamento_min = 'Informe um valor maior que zero.';
+    else if (min > LIM.orcamento) e.orcamento_min = 'O valor máximo permitido é R$ 99.999.999,99.';
+    if (!f.orcamentoMax.trim() || isNaN(max) || max <= 0) e.orcamento_max = 'Informe um valor maior que zero.';
+    else if (max > LIM.orcamento) e.orcamento_max = 'O valor máximo permitido é R$ 99.999.999,99.';
+    if (!e.orcamento_min && !e.orcamento_max && min > max) e.orcamento_max = 'O máximo deve ser maior ou igual ao mínimo.';
+  }
+
+  if (quer('fumante') && f.fumante === null) e.fumante = 'Responda se você fuma.';
+  if (quer('aceita_pets') && f.pets === null) e.aceita_pets = 'Responda sobre pets.';
+  if (quer('aceita_visitas') && !f.visitas) e.aceita_visitas = 'Selecione sua preferência.';
+  if (quer('perfil_horario') && !f.horario) e.perfil_horario = 'Selecione seu perfil de horário.';
+
+  if (quer('tolerancia_bagunca') && f.bagunca === 0) e.tolerancia_bagunca = 'Selecione sua tolerância à bagunça.';
+  if (quer('nivel_organizacao') && f.organizacao === 0) e.nivel_organizacao = 'Selecione seu nível de organização.';
+  if (quer('nivel_ruido') && f.ruido === 0) e.nivel_ruido = 'Selecione sua tolerância a barulho.';
+  if (quer('nivel_social') && f.social === 0) e.nivel_social = 'Selecione seu nível social.';
+
+  if (anuncio) {
+    if (quer('titulo_anuncio') && f.titulo.trim().length > LIM.titulo) {
+      e.titulo_anuncio = `O título deve ter no máximo ${LIM.titulo} caracteres (${f.titulo.trim().length}/${LIM.titulo}).`;
+    }
+    if (quer('descricao_imovel') && f.descricaoImovel.trim().length > LIM.descricao) {
+      e.descricao_imovel = `A descrição deve ter no máximo ${LIM.descricao} caracteres (${f.descricaoImovel.trim().length}/${LIM.descricao}).`;
+    }
+    if (quer('fotos_imovel')) {
+      const preenchidas = f.fotos.map(x => x.trim()).filter(Boolean);
+      const ruim = f.fotos.findIndex(x => x.trim() !== '' && (x.trim().length > LIM.url || !urlHttpValida(x.trim())));
+      if (preenchidas.length > LIM.fotos) e.fotos_imovel = `Envie no máximo ${LIM.fotos} fotos do imóvel.`;
+      else if (ruim >= 0) e.fotos_imovel = `A foto ${ruim + 1} precisa ser um link http:// ou https:// válido (até ${LIM.url} caracteres).`;
+    }
+    if (quer('foto_perfil_url')) {
+      const u = f.fotoPerfil.trim();
+      if (u && (u.length > LIM.url || !urlHttpValida(u))) e.foto_perfil_url = 'A foto de perfil precisa ser um link http:// ou https:// válido.';
+    }
+  }
+  return e;
+}
+
+const ROTULO_ESTILO: React.CSSProperties = { fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' };
+const ERRO_ESTILO: React.CSSProperties = { fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '4px' };
+
+function CampoSimNao({ label, value, onChange, error }: { label: string; value: boolean | null; onChange: (v: boolean) => void; error?: string }) {
+  return (
+    <div>
+      <p style={ROTULO_ESTILO}>{label}</p>
+      <div style={{ display: 'flex', gap: '10px' }}>
+        {[true, false].map(v => (
+          <button key={String(v)} type="button" onClick={() => onChange(v)} aria-pressed={value === v} style={{
+            flex: 1, padding: '12px', borderRadius: '12px', cursor: 'pointer', minHeight: '44px',
+            border: `2px solid ${value === v ? C.primary : error ? C.danger : C.border}`,
+            background: value === v ? `${C.primary}12` : C.card,
+            color: value === v ? C.primary : C.muted,
+            fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 700,
+          }}>
+            {v ? 'Sim' : 'Não'}
+          </button>
+        ))}
+      </div>
+      {error && <span style={ERRO_ESTILO}>{error}</span>}
+    </div>
+  );
+}
+
+function CampoEscolha<T extends string>({ label, value, onChange, options, error }: {
+  label: string; value: T | null; onChange: (v: T) => void;
+  options: { value: T; label: string }[]; error?: string;
+}) {
+  return (
+    <div>
+      <p style={ROTULO_ESTILO}>{label}</p>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        {options.map(opt => (
+          <button key={opt.value} type="button" onClick={() => onChange(opt.value)} aria-pressed={value === opt.value} style={{
+            flex: 1, minWidth: '80px', padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', minHeight: '44px',
+            border: `2px solid ${value === opt.value ? C.primary : error ? C.danger : C.border}`,
+            background: value === opt.value ? `${C.primary}12` : C.card,
+            color: value === opt.value ? C.primary : C.muted,
+            fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 700, textAlign: 'center',
+          }}>
+            {opt.label}
+          </button>
+        ))}
+      </div>
+      {error && <span style={ERRO_ESTILO}>{error}</span>}
+    </div>
+  );
+}
+
+function CampoEscala({ label, value, onChange, error }: { label: string; value: number; onChange: (v: number) => void; error?: string }) {
+  return (
+    <div>
+      <p style={ROTULO_ESTILO}>{label}</p>
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {[1, 2, 3, 4, 5].map(i => (
+          <button key={i} type="button" onClick={() => onChange(i)} aria-label={`${label}: ${i} de 5`} style={{
+            flex: 1, height: '44px', borderRadius: '10px', cursor: 'pointer',
+            border: `2px solid ${value >= i ? C.primary : error ? C.danger : C.border}`,
+            background: value >= i ? C.primary : C.card,
+            color: value >= i ? '#fff' : C.muted,
+            fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
+          }}>{i}</button>
+        ))}
+      </div>
+      {error && <span style={ERRO_ESTILO}>{error}</span>}
+    </div>
+  );
+}
+
+function CampoQtdMoradores({ value, onChange, error }: { value: number | null; onChange: (v: number) => void; error?: string }) {
+  return (
+    <div>
+      <p style={ROTULO_ESTILO}>Quantas pessoas no imóvel?</p>
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {[1, 2, 3, 4].map(n => (
+          <button key={n} type="button" onClick={() => onChange(n)} aria-pressed={value === n} style={{
+            flex: 1, height: '44px', borderRadius: '12px', cursor: 'pointer',
+            border: `2px solid ${value === n ? C.primary : error ? C.danger : C.border}`,
+            background: value === n ? `${C.primary}12` : C.card,
+            color: value === n ? C.primary : C.muted,
+            fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700,
+          }}>{n}{n === 4 ? '+' : ''}</button>
+        ))}
+      </div>
+      {error && <span style={ERRO_ESTILO}>{error}</span>}
+    </div>
+  );
+}
+
+function CampoTexto({ label, value, onChange, max, error, placeholder, altura = 100 }: {
+  label: string; value: string; onChange: (v: string) => void; max: number; error?: string; placeholder?: string; altura?: number;
+}) {
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+        <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif' }}>{label}</label>
+        <span style={{ fontSize: '12px', color: value.length >= max ? C.danger : C.muted, fontFamily: 'Nunito,sans-serif' }}>{value.length}/{max}</span>
+      </div>
+      <textarea
+        placeholder={placeholder}
+        value={value}
+        maxLength={max}
+        aria-invalid={!!error}
+        onChange={e => onChange(e.target.value)}
+        style={{ width: '100%', padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${error ? C.danger : C.border}`, background: C.card, fontSize: '15px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none', resize: 'none', height: `${altura}px`, boxSizing: 'border-box' }}
+      />
+      {error && <span style={ERRO_ESTILO}>{error}</span>}
+    </div>
+  );
+}
+
+type PropsEtapa = { form: PerfilForm; setForm: (p: Partial<PerfilForm>) => void; errors: Record<string, string> };
+
+function EtapaPessoal({ form, setForm, errors }: PropsEtapa) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <Input label="Nome" placeholder="Seu nome completo" value={form.nome} onChange={v => setForm({ nome: v })} error={errors.nome} maxLength={LIM.nome} />
+      <div className="grid md:grid-cols-2 gap-4">
+        <Input label="Idade" type="number" placeholder="Sua idade" value={form.idade} onChange={v => setForm({ idade: v })} error={errors.idade} />
+        <Input label="Região ou bairro" placeholder="Ex: Vila Madalena, SP" value={form.regiao} onChange={v => setForm({ regiao: v })} error={errors.regiao} maxLength={LIM.regiao} />
+      </div>
+      <CampoTexto label="Sobre você" placeholder="Conte um pouco sobre você e o que procura em um colega de moradia..." value={form.bio} onChange={v => setForm({ bio: v })} max={LIM.bio} error={errors.bio} />
+    </div>
+  );
+}
+
+function EtapaMoradia({ form, setForm, errors }: PropsEtapa) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div>
+        <p style={ROTULO_ESTILO}>Faixa de orçamento mensal</p>
+        <div className="grid md:grid-cols-2 gap-4">
+          <Input label="Mínimo (R$)" placeholder="700" value={form.orcamentoMin} onChange={v => setForm({ orcamentoMin: v })} error={errors.orcamento_min} />
+          <Input label="Máximo (R$)" placeholder="1500" value={form.orcamentoMax} onChange={v => setForm({ orcamentoMax: v })} error={errors.orcamento_max} />
+        </div>
+      </div>
+      <CampoEscolha<TipoImovel>
+        label="Tipo de imóvel preferido"
+        value={form.tipoImovel}
+        onChange={v => setForm({ tipoImovel: v })}
+        error={errors.tipo_imovel}
+        options={[
+          { value: 'apartamento', label: 'Apartamento' },
+          { value: 'casa', label: 'Casa' },
+          { value: 'republica', label: 'República' },
+          { value: 'indiferente', label: 'Indiferente' },
+        ]}
+      />
+      <CampoQtdMoradores value={form.qtdMoradores} onChange={v => setForm({ qtdMoradores: v })} error={errors.qtd_moradores} />
+    </div>
+  );
+}
+
+function EtapaConvivencia({ form, setForm, errors }: PropsEtapa) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="grid md:grid-cols-2 gap-6">
+        <CampoSimNao label="Você fuma?" value={form.fumante} onChange={v => setForm({ fumante: v })} error={errors.fumante} />
+        <CampoSimNao label="Aceita pets?" value={form.pets} onChange={v => setForm({ pets: v })} error={errors.aceita_pets} />
+      </div>
+      <CampoEscolha<Visitas>
+        label="Com que frequência recebe visitas?"
+        value={form.visitas}
+        onChange={v => setForm({ visitas: v })}
+        error={errors.aceita_visitas}
+        options={[
+          { value: 'raramente', label: 'Raramente' },
+          { value: 'as_vezes', label: 'Às vezes' },
+          { value: 'frequentemente', label: 'Frequentemente' },
+        ]}
+      />
+      <CampoEscolha<Horario>
+        label="Qual é o seu perfil de horário?"
+        value={form.horario}
+        onChange={v => setForm({ horario: v })}
+        error={errors.perfil_horario}
+        options={[
+          { value: 'madrugador', label: '🌅 Madrugador(a)' },
+          { value: 'noturno', label: '🌙 Noturno(a)' },
+          { value: 'flexivel', label: '☀️ Flexível' },
+        ]}
+      />
+    </div>
+  );
+}
+
+function EtapaHabitos({ form, setForm, errors }: PropsEtapa) {
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <CampoEscala label="Organização" value={form.organizacao} onChange={v => setForm({ organizacao: v })} error={errors.nivel_organizacao} />
+      <CampoEscala label="Tolerância à bagunça" value={form.bagunca} onChange={v => setForm({ bagunca: v })} error={errors.tolerancia_bagunca} />
+      <CampoEscala label="Tolerância a barulho" value={form.ruido} onChange={v => setForm({ ruido: v })} error={errors.nivel_ruido} />
+      <CampoEscala label="Perfil social" value={form.social} onChange={v => setForm({ social: v })} error={errors.nivel_social} />
+    </div>
+  );
+}
+
+function PreviewFoto({ url, alt, redonda = false }: { url: string; alt: string; redonda?: boolean }) {
+  const u = url.trim();
+  if (!u || !urlHttpValida(u)) return null;
+  return (
+    <div style={{ width: redonda ? '72px' : '100%', maxWidth: redonda ? '72px' : '220px', height: redonda ? '72px' : '124px', borderRadius: redonda ? '50%' : '12px', overflow: 'hidden', border: `1.5px solid ${C.border}`, marginTop: '8px' }}>
+      <ImagemComFallback key={u} src={u} alt={alt} tipo={redonda ? 'avatar' : 'imovel'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    </div>
+  );
+}
+
+function EtapaAnuncio({ form, setForm, errors }: PropsEtapa) {
+  const setFoto = (i: number, v: string) => setForm({ fotos: form.fotos.map((f, idx) => (idx === i ? v : f)) });
+  const remover = (i: number) => setForm({ fotos: form.fotos.filter((_, idx) => idx !== i) });
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <Input label="Título do anúncio" placeholder="Ex: Quarto amplo próximo ao metrô" value={form.titulo} onChange={v => setForm({ titulo: v })} error={errors.titulo_anuncio} maxLength={LIM.titulo} />
+      <CampoTexto label="Descrição do imóvel" placeholder="Descreva o imóvel, a vaga e as regras da casa..." value={form.descricaoImovel} onChange={v => setForm({ descricaoImovel: v })} max={LIM.descricao} error={errors.descricao_imovel} altura={110} />
+
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+          <p style={{ ...ROTULO_ESTILO, margin: 0 }}>Fotos do imóvel (links)</p>
+          <span style={{ fontSize: '12px', color: C.muted, fontFamily: 'Nunito,sans-serif' }}>{form.fotos.length}/{LIM.fotos}</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {form.fotos.map((url, i) => {
+            const u = url.trim();
+            const ruim = u !== '' && (u.length > LIM.url || !urlHttpValida(u));
+            return (
+              <div key={i}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                  <div style={{ flex: 1 }}>
+                    <Input label={`Foto ${i + 1}`} placeholder="https://..." value={url} onChange={v => setFoto(i, v)} maxLength={LIM.url} error={ruim ? 'Informe um link http:// ou https:// válido.' : undefined} />
+                  </div>
+                  <button type="button" onClick={() => remover(i)} aria-label={`Remover foto ${i + 1}`} style={{ minWidth: '44px', minHeight: '48px', borderRadius: '12px', border: `1.5px solid ${C.border}`, background: C.card, color: C.muted, cursor: 'pointer', fontSize: '16px' }}>✕</button>
+                </div>
+                <PreviewFoto url={url} alt={`Pré-visualização da foto ${i + 1}`} />
+              </div>
+            );
+          })}
+        </div>
+        {form.fotos.length < LIM.fotos && (
+          <button type="button" onClick={() => setForm({ fotos: [...form.fotos, ''] })} style={{ marginTop: '10px', padding: '10px 14px', minHeight: '44px', borderRadius: '12px', border: `1.5px dashed ${C.primary}`, background: 'none', color: C.primary, cursor: 'pointer', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700 }}>
+            + Adicionar foto
+          </button>
+        )}
+        {errors.fotos_imovel && <span style={ERRO_ESTILO}>{errors.fotos_imovel}</span>}
+      </div>
+
+      <div>
+        <Input label="Sua foto (link)" placeholder="https://..." value={form.fotoPerfil} onChange={v => setForm({ fotoPerfil: v })} error={errors.foto_perfil_url} maxLength={LIM.url} />
+        <PreviewFoto url={form.fotoPerfil} alt="Pré-visualização da sua foto" redonda />
+      </div>
+    </div>
+  );
+}
+
 // ─── Screen: Profile Create ───────────────────────────────────────────────────
 
-function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void; onPerfilCriado: (p: PerfilAPI) => void }) {
-  const TOTAL_STEPS = 4;
+function ProfileCreateScreen({ nav, onPerfilCriado, tipo }: { nav: (s: Screen) => void; onPerfilCriado: (p: PerfilAPI) => void; tipo: string }) {
+  const anuncio = tipo === 'oferecendo_vaga';
+  const TOTAL_STEPS = anuncio ? 5 : 4;
   const [step, setStep] = useState(1);
-  // Etapa 1
-  const [nome, setNome] = useState('');
-  const [idade, setIdade] = useState('');
-  const [regiao, setRegiao] = useState('');
-  const [bio, setBio] = useState('');
-  // Etapa 2 — moradia
-  const [orcamentoMin, setOrcamentoMin] = useState('');
-  const [orcamentoMax, setOrcamentoMax] = useState('');
-  const [tipoImovel, setTipoImovel] = useState<'apartamento'|'casa'|'republica'|'indiferente'|null>(null);
-  const [qtdMoradores, setQtdMoradores] = useState<number|null>(null);
-  // Etapa 3 — convivência
-  const [smoker, setSmoker] = useState<boolean | null>(null);
-  const [pets, setPets] = useState<boolean | null>(null);
-  const [visitas, setVisitas] = useState<'raramente'|'as_vezes'|'frequentemente'|null>(null);
-  const [horario, setHorario] = useState<'madrugador'|'noturno'|'flexivel'|null>(null);
-  // Etapa 4 — escalas
-  const [organized, setOrganized] = useState(0);
-  const [messy, setMessy] = useState(0);
-  const [ruido, setRuido] = useState(0);
-  const [social, setSocial] = useState(0);
+  const [form, setFormState] = useState<PerfilForm>(FORM_VAZIO);
+  const setForm = (p: Partial<PerfilForm>) => setFormState(f => ({ ...f, ...p }));
 
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  // Leva o foco/rolagem ao primeiro campo com erro (ex.: ao voltar para uma etapa anterior).
+  useEffect(() => {
+    if (Object.keys(fieldErrors).length === 0) return;
+    const el = document.querySelector('[aria-invalid="true"]');
+    if (el && 'scrollIntoView' in el) (el as HTMLElement).scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [fieldErrors, step]);
+
   const validarStep = (): boolean => {
-    const erros: Record<string, string> = {};
-    if (step === 1) {
-      if (!nome.trim() || nome.trim().length < 2) erros.nome = 'Nome deve ter pelo menos 2 caracteres.';
-      const idadeN = Number(idade);
-      if (!idade || isNaN(idadeN) || idadeN < 18 || idadeN > 100) erros.idade = 'Idade deve estar entre 18 e 100 anos.';
-      if (!regiao.trim() || regiao.trim().length < 2) erros.regiao = 'Região deve ter pelo menos 2 caracteres.';
-      if (bio.length > 500) erros.bio = `Bio deve ter no máximo 500 caracteres (${bio.length}/500).`;
-    } else if (step === 2) {
-      const min = Number(orcamentoMin);
-      const max = Number(orcamentoMax);
-      if (!orcamentoMin || isNaN(min) || min <= 0) erros.orcamento_min = 'Informe um valor maior que zero.';
-      if (!orcamentoMax || isNaN(max) || max <= 0) erros.orcamento_max = 'Informe um valor maior que zero.';
-      if (!erros.orcamento_min && !erros.orcamento_max && min > max) erros.orcamento_max = 'O máximo deve ser maior ou igual ao mínimo.';
-    } else if (step === 3) {
-      if (smoker === null) erros.fumante = 'Responda se você fuma.';
-      if (pets === null) erros.aceita_pets = 'Responda sobre pets.';
-      if (!visitas) erros.aceita_visitas = 'Selecione sua preferência.';
-      if (!horario) erros.perfil_horario = 'Selecione seu perfil de horário.';
-    } else if (step === 4) {
-      if (messy === 0) erros.tolerancia_bagunca = 'Selecione sua tolerância à bagunça.';
-      if (organized === 0) erros.nivel_organizacao = 'Selecione seu nível de organização.';
-      if (ruido === 0) erros.nivel_ruido = 'Selecione sua tolerância a barulho.';
-      if (social === 0) erros.nivel_social = 'Selecione seu nível social.';
-    }
+    const erros = validarPerfil(form, CAMPOS_ETAPA[step] ?? [], anuncio);
     setFieldErrors(erros);
+    setErro('');
     return Object.keys(erros).length === 0;
   };
 
@@ -1022,30 +1414,22 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
     setErro('');
     setLoading(true);
     try {
-      const perfil = await apiCriarPerfil({
-        nome: nome.trim(),
-        idade: Number(idade),
-        regiao: regiao.trim(),
-        bio: bio.trim(),
-        orcamento_min: Number(orcamentoMin),
-        orcamento_max: Number(orcamentoMax),
-        fumante: smoker ?? false,
-        aceita_pets: pets ?? false,
-        tolerancia_bagunca: messy,
-        nivel_organizacao: organized,
-        perfil_horario: horario ?? 'flexivel',
-        nivel_ruido: ruido,
-        nivel_social: social,
-        aceita_visitas: visitas ?? 'as_vezes',
-        tipo_imovel: tipoImovel ?? 'indiferente',
-        qtd_moradores: qtdMoradores ?? 2,
-      });
+      const perfil = await apiCriarPerfil(montarPayload(form, anuncio));
       onPerfilCriado(perfil);
       nav('discovery');
     } catch (e: unknown) {
       if (e instanceof ApiError) {
+        const etapas = Object.keys(e.fieldErrors)
+          .map(etapaDoCampo)
+          .filter((n): n is number => n !== null && n <= TOTAL_STEPS);
         setFieldErrors(e.fieldErrors);
-        setErro(Object.keys(e.fieldErrors).length > 0 ? 'Corrija os erros acima e tente novamente.' : e.message);
+        if (etapas.length > 0) {
+          // Volta para a primeira etapa que tem campo com erro e destaca o campo.
+          setStep(Math.min(...etapas));
+          setErro('Corrija os campos destacados e tente novamente.');
+        } else {
+          setErro(e.message);
+        }
       } else {
         setErro(e instanceof Error ? e.message : 'Erro ao criar perfil.');
       }
@@ -1054,83 +1438,9 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
     }
   };
 
-  const STEP_LABELS = ['Informações pessoais', 'Preferências de moradia', 'Estilo de convivência', 'Hábitos'];
-
-  const ProgressBar = () => (
-    <div style={{ marginBottom: '8px' }}>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-        {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map(i => (
-          <div key={i} style={{ flex: 1, height: '6px', borderRadius: '3px', background: i <= step ? C.primary : C.border }} />
-        ))}
-      </div>
-      <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>
-        Etapa {step} de {TOTAL_STEPS} — {STEP_LABELS[step - 1]}
-      </p>
-    </div>
-  );
-
-  const YesNo = ({ label, value, onChange, errorKey }: { label: string; value: boolean | null; onChange: (v: boolean) => void; errorKey?: string }) => (
-    <div>
-      <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{label}</p>
-      <div style={{ display: 'flex', gap: '10px' }}>
-        {[true, false].map(v => (
-          <button key={String(v)} onClick={() => onChange(v)} style={{
-            flex: 1, padding: '12px', borderRadius: '12px', cursor: 'pointer', minHeight: '44px',
-            border: `2px solid ${value === v ? C.primary : fieldErrors[errorKey ?? ''] ? C.danger : C.border}`,
-            background: value === v ? `${C.primary}12` : C.card,
-            color: value === v ? C.primary : C.muted,
-            fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 700,
-          }}>
-            {v ? 'Sim' : 'Não'}
-          </button>
-        ))}
-      </div>
-      {errorKey && fieldErrors[errorKey] && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '4px' }}>{fieldErrors[errorKey]}</span>}
-    </div>
-  );
-
-  function ChoiceGroup<T extends string>({ label, value, onChange, options, errorKey }: {
-    label: string; value: T | null; onChange: (v: T) => void;
-    options: { value: T; label: string }[]; errorKey?: string;
-  }) {
-    return (
-      <div>
-        <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{label}</p>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {options.map(opt => (
-            <button key={opt.value} onClick={() => onChange(opt.value)} style={{
-              flex: 1, minWidth: '80px', padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', minHeight: '44px',
-              border: `2px solid ${value === opt.value ? C.primary : errorKey && fieldErrors[errorKey] ? C.danger : C.border}`,
-              background: value === opt.value ? `${C.primary}12` : C.card,
-              color: value === opt.value ? C.primary : C.muted,
-              fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 700, textAlign: 'center',
-            }}>
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        {errorKey && fieldErrors[errorKey] && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '4px' }}>{fieldErrors[errorKey]}</span>}
-      </div>
-    );
-  }
-
-  const ScaleInput = ({ label, value, onChange, errorKey }: { label: string; value: number; onChange: (v: number) => void; errorKey: string }) => (
-    <div>
-      <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{label}</p>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        {[1,2,3,4,5].map(i => (
-          <button key={i} onClick={() => onChange(i)} style={{
-            flex: 1, height: '44px', borderRadius: '10px', cursor: 'pointer',
-            border: `2px solid ${value >= i ? C.primary : fieldErrors[errorKey] ? C.danger : C.border}`,
-            background: value >= i ? C.primary : C.card,
-            color: value >= i ? '#fff' : C.muted,
-            fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
-          }}>{i}</button>
-        ))}
-      </div>
-      {fieldErrors[errorKey] && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '4px' }}>{fieldErrors[errorKey]}</span>}
-    </div>
-  );
+  const STEP_LABELS = ['Informações pessoais', 'Preferências de moradia', 'Estilo de convivência', 'Hábitos', 'Anúncio do imóvel'];
+  const TITULOS = ['Sobre você', 'Preferências de moradia', 'Estilo de convivência', 'Seus hábitos', 'Anúncio do imóvel'];
+  const props: PropsEtapa = { form, setForm, errors: fieldErrors };
 
   return (
     <div className="flex min-h-dvh bg-bg">
@@ -1139,14 +1449,24 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
       {/* Painel do formulário */}
       <div className="flex-1 flex justify-center p-6 lg:p-10">
         <div className="w-full max-w-2xl flex flex-col">
-          <ProgressBar />
+          <div style={{ marginBottom: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+              {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map(i => (
+                <div key={i} style={{ flex: 1, height: '6px', borderRadius: '3px', background: i <= step ? C.primary : C.border }} />
+              ))}
+            </div>
+            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>
+              Etapa {step} de {TOTAL_STEPS} — {STEP_LABELS[step - 1]}
+            </p>
+          </div>
 
           <div style={{ paddingTop: '24px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: step === 4 ? '0 0 6px' : '0 0 24px' }}>{TITULOS[step - 1]}</h2>
+            {step === 4 && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: '0 0 24px' }}>1 = mínimo &nbsp;·&nbsp; 5 = máximo</p>}
+            {step === 5 && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: '-12px 0 20px' }}>Opcional — você pode completar depois em Meu Perfil.</p>}
 
-            {/* ── Etapa 1: Informações pessoais ── */}
             {step === 1 && (
               <>
-                <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: '0 0 24px' }}>Sobre você</h2>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
                   <div style={{ width: '96px', height: '96px', borderRadius: '50%', background: C.border, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', border: `3px dashed ${C.primary}` }}>
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -1155,121 +1475,19 @@ function ProfileCreateScreen({ nav, onPerfilCriado }: { nav: (s: Screen) => void
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <Input label="Nome" placeholder="Seu nome completo" value={nome} onChange={setNome} error={fieldErrors.nome} />
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <Input label="Idade" type="number" placeholder="Sua idade" value={idade} onChange={setIdade} error={fieldErrors.idade} />
-                    <Input label="Região ou bairro" placeholder="Ex: Vila Madalena, SP" value={regiao} onChange={setRegiao} error={fieldErrors.regiao} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif', display: 'block', marginBottom: '6px' }}>Sobre você</label>
-                    <textarea
-                      placeholder="Conte um pouco sobre você e o que procura em um colega de moradia..."
-                      value={bio}
-                      onChange={e => setBio(e.target.value)}
-                      style={{ width: '100%', padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${fieldErrors.bio ? C.danger : C.border}`, background: C.card, fontSize: '15px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none', resize: 'none', height: '100px', boxSizing: 'border-box' }}
-                    />
-                    {fieldErrors.bio && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '4px' }}>{fieldErrors.bio}</span>}
-                  </div>
-                </div>
+                <EtapaPessoal {...props} />
               </>
             )}
-
-            {/* ── Etapa 2: Preferências de moradia ── */}
-            {step === 2 && (
-              <>
-                <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: '0 0 24px' }}>Preferências de moradia</h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  <div>
-                    <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Faixa de orçamento mensal</p>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <Input label="Mínimo (R$)" placeholder="700" value={orcamentoMin} onChange={setOrcamentoMin} error={fieldErrors.orcamento_min} />
-                      <Input label="Máximo (R$)" placeholder="1500" value={orcamentoMax} onChange={setOrcamentoMax} error={fieldErrors.orcamento_max} />
-                    </div>
-                  </div>
-                  <ChoiceGroup
-                    label="Tipo de imóvel preferido"
-                    value={tipoImovel}
-                    onChange={setTipoImovel}
-                    options={[
-                      { value: 'apartamento', label: 'Apartamento' },
-                      { value: 'casa', label: 'Casa' },
-                      { value: 'republica', label: 'República' },
-                      { value: 'indiferente', label: 'Indiferente' },
-                    ]}
-                  />
-                  <div>
-                    <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Quantas pessoas no imóvel?</p>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      {[1, 2, 3, 4].map(n => (
-                        <button key={n} onClick={() => setQtdMoradores(n)} style={{
-                          flex: 1, height: '44px', borderRadius: '12px', cursor: 'pointer',
-                          border: `2px solid ${qtdMoradores === n ? C.primary : C.border}`,
-                          background: qtdMoradores === n ? `${C.primary}12` : C.card,
-                          color: qtdMoradores === n ? C.primary : C.muted,
-                          fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700,
-                        }}>{n}{n === 4 ? '+' : ''}</button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* ── Etapa 3: Estilo de convivência ── */}
-            {step === 3 && (
-              <>
-                <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: '0 0 24px' }}>Estilo de convivência</h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <YesNo label="Você fuma?" value={smoker} onChange={setSmoker} errorKey="fumante" />
-                    <YesNo label="Aceita pets?" value={pets} onChange={setPets} errorKey="aceita_pets" />
-                  </div>
-                  <ChoiceGroup
-                    label="Com que frequência recebe visitas?"
-                    value={visitas}
-                    onChange={setVisitas}
-                    options={[
-                      { value: 'raramente', label: 'Raramente' },
-                      { value: 'as_vezes', label: 'Às vezes' },
-                      { value: 'frequentemente', label: 'Frequentemente' },
-                    ]}
-                    errorKey="aceita_visitas"
-                  />
-                  <ChoiceGroup
-                    label="Qual é o seu perfil de horário?"
-                    value={horario}
-                    onChange={setHorario}
-                    options={[
-                      { value: 'madrugador', label: '🌅 Madrugador(a)' },
-                      { value: 'noturno', label: '🌙 Noturno(a)' },
-                      { value: 'flexivel', label: '☀️ Flexível' },
-                    ]}
-                    errorKey="perfil_horario"
-                  />
-                </div>
-              </>
-            )}
-
-            {/* ── Etapa 4: Hábitos (escalas) ── */}
-            {step === 4 && (
-              <>
-                <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>Seus hábitos</h2>
-                <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: '0 0 24px' }}>1 = mínimo &nbsp;·&nbsp; 5 = máximo</p>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <ScaleInput label="Organização" value={organized} onChange={setOrganized} errorKey="nivel_organizacao" />
-                  <ScaleInput label="Tolerância à bagunça" value={messy} onChange={setMessy} errorKey="tolerancia_bagunca" />
-                  <ScaleInput label="Tolerância a barulho" value={ruido} onChange={setRuido} errorKey="nivel_ruido" />
-                  <ScaleInput label="Perfil social" value={social} onChange={setSocial} errorKey="nivel_social" />
-                </div>
-              </>
-            )}
+            {step === 2 && <EtapaMoradia {...props} />}
+            {step === 3 && <EtapaConvivencia {...props} />}
+            {step === 4 && <EtapaHabitos {...props} />}
+            {step === 5 && anuncio && <EtapaAnuncio {...props} />}
 
             {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginTop: '12px', textAlign: 'center' }}>{erro}</p>}
 
             {/* Rodapé */}
             <div className="flex flex-col md:flex-row gap-3 mt-auto pt-8">
-              {step > 1 && <Btn label="Voltar" outline onClick={() => { setFieldErrors({}); setStep(s => s - 1); }} />}
+              {step > 1 && <Btn label="Voltar" outline onClick={() => { setFieldErrors({}); setErro(''); setStep(s => s - 1); }} />}
               <Btn
                 label={step === TOTAL_STEPS ? (loading ? 'Aguarde...' : 'Concluir perfil') : 'Próxima etapa'}
                 onClick={step < TOTAL_STEPS ? handleProximo : handleConcluir}
@@ -2924,75 +3142,53 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
 
 // ─── Screen: My Profile ───────────────────────────────────────────────────────
 
-function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido }: {
+function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExcluido }: {
   nav: (s: Screen) => void;
   meuPerfil: PerfilAPI | null;
+  tipo: string;
   onPerfilAtualizado: (p: PerfilAPI) => void;
   onPerfilExcluido: () => void;
 }) {
+  const anuncio = tipo === 'oferecendo_vaga';
   const [editing, setEditing] = useState(false);
-  const [editNome, setEditNome] = useState('');
-  const [editIdade, setEditIdade] = useState('');
-  const [editRegiao, setEditRegiao] = useState('');
-  const [editBio, setEditBio] = useState('');
-  const [editHorario, setEditHorario] = useState<'madrugador' | 'noturno' | 'flexivel'>('flexivel');
-  const [editVisitas, setEditVisitas] = useState<'raramente' | 'as_vezes' | 'frequentemente'>('as_vezes');
-  const [editTipoImovel, setEditTipoImovel] = useState<'apartamento' | 'casa' | 'republica' | 'indiferente'>('indiferente');
-  const [editQtdMoradores, setEditQtdMoradores] = useState(2);
-  const [editRuido, setEditRuido] = useState(3);
-  const [editSocial, setEditSocial] = useState(3);
+  const [form, setFormState] = useState<PerfilForm>(FORM_VAZIO);
+  const setForm = (p: Partial<PerfilForm>) => setFormState(f => ({ ...f, ...p }));
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
   const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string>>({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
-    if (meuPerfil) {
-      setEditNome(meuPerfil.nome);
-      setEditIdade(String(meuPerfil.idade));
-      setEditRegiao(meuPerfil.regiao);
-      setEditBio(meuPerfil.bio);
-      setEditHorario(meuPerfil.perfil_horario);
-      setEditVisitas(meuPerfil.aceita_visitas);
-      setEditTipoImovel(meuPerfil.tipo_imovel);
-      setEditQtdMoradores(meuPerfil.qtd_moradores);
-      setEditRuido(meuPerfil.nivel_ruido);
-      setEditSocial(meuPerfil.nivel_social);
-    }
+    if (meuPerfil) setFormState(perfilParaForm(meuPerfil));
   }, [meuPerfil]);
+
+  const cancelarEdicao = () => {
+    if (meuPerfil) setFormState(perfilParaForm(meuPerfil));
+    setEditFieldErrors({});
+    setErro('');
+    setEditing(false);
+  };
 
   const salvar = async () => {
     if (!meuPerfil) return;
-    const idade = Number(editIdade);
-    const erros: Record<string, string> = {};
-    if (!editNome.trim() || editNome.trim().length < 2) erros.nome = 'Nome deve ter pelo menos 2 caracteres.';
-    if (!editIdade || isNaN(idade) || idade < 18 || idade > 100) erros.idade = 'Idade deve estar entre 18 e 100 anos.';
-    if (!editRegiao.trim() || editRegiao.trim().length < 2) erros.regiao = 'Região deve ter pelo menos 2 caracteres.';
-    if (editBio.length > 500) erros.bio = `Bio deve ter no máximo 500 caracteres (${editBio.length}/500).`;
+    const todos = Object.values(CAMPOS_ETAPA).flat();
+    const erros = validarPerfil(form, todos, anuncio);
     setEditFieldErrors(erros);
-    if (Object.keys(erros).length > 0) return;
+    if (Object.keys(erros).length > 0) {
+      setErro('Corrija os campos destacados e tente novamente.');
+      return;
+    }
 
     setErro('');
     setLoading(true);
     try {
-      const atualizado = await apiAtualizarPerfil(meuPerfil.id, {
-        nome: editNome.trim(),
-        idade: Number(editIdade),
-        regiao: editRegiao.trim(),
-        bio: editBio.trim(),
-        perfil_horario: editHorario,
-        aceita_visitas: editVisitas,
-        tipo_imovel: editTipoImovel,
-        qtd_moradores: editQtdMoradores,
-        nivel_ruido: editRuido,
-        nivel_social: editSocial,
-      });
+      const atualizado = await apiAtualizarPerfil(meuPerfil.id, montarPayload(form, anuncio));
       onPerfilAtualizado(atualizado);
       setEditing(false);
     } catch (e: unknown) {
       if (e instanceof ApiError) {
         setEditFieldErrors(e.fieldErrors);
-        setErro(Object.keys(e.fieldErrors).length > 0 ? 'Corrija os erros acima e tente novamente.' : e.message);
+        setErro(Object.keys(e.fieldErrors).length > 0 ? 'Corrija os campos destacados e tente novamente.' : e.message);
       } else {
         setErro(e instanceof Error ? e.message : 'Erro ao salvar.');
       }
@@ -3026,7 +3222,10 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
       <div style={{ padding: '20px 24px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: 0 }}>Meu Perfil</h1>
         {editing
-          ? <button onClick={salvar} disabled={loading} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: '12px', padding: '8px 16px', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>{loading ? 'Salvando...' : 'Salvar'}</button>
+          ? <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={cancelarEdicao} disabled={loading} style={{ background: 'none', border: `1.5px solid ${C.border}`, color: C.muted, borderRadius: '12px', padding: '8px 16px', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}>Cancelar</button>
+              <button onClick={salvar} disabled={loading} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: '12px', padding: '8px 16px', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>{loading ? 'Salvando...' : 'Salvar'}</button>
+            </div>
           : <button onClick={() => setEditing(true)} style={{ background: 'none', border: `1.5px solid ${C.primary}`, color: C.primary, borderRadius: '12px', padding: '8px 16px', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>Editar</button>
         }
       </div>
@@ -3059,105 +3258,17 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
             {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginBottom: '12px', textAlign: 'center' }}>{erro}</p>}
 
             {editing ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
-                <Input label="Nome" placeholder="Seu nome" value={editNome} onChange={setEditNome} error={editFieldErrors.nome} />
-                <Input label="Idade" type="number" placeholder="Sua idade" value={editIdade} onChange={setEditIdade} error={editFieldErrors.idade} />
-                <Input label="Região" placeholder="Bairro ou cidade" value={editRegiao} onChange={setEditRegiao} error={editFieldErrors.regiao} />
-                <div>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif', display: 'block', marginBottom: '6px' }}>Biografia</label>
-                  <textarea value={editBio} onChange={e => setEditBio(e.target.value)} style={{ width: '100%', padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${editFieldErrors.bio ? C.danger : C.border}`, background: C.card, fontSize: '15px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none', resize: 'none', height: '90px', boxSizing: 'border-box' }} />
-                  {editFieldErrors.bio && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '4px' }}>{editFieldErrors.bio}</span>}
-                </div>
-                <div>
-                  <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Perfil de horário</p>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {([
-                      { value: 'madrugador', label: '🌅 Madrugador(a)' },
-                      { value: 'noturno', label: '🌙 Noturno(a)' },
-                      { value: 'flexivel', label: '☀️ Flexível' },
-                    ] as { value: 'madrugador' | 'noturno' | 'flexivel'; label: string }[]).map(opt => (
-                      <button key={opt.value} onClick={() => setEditHorario(opt.value)} style={{
-                        flex: 1, minWidth: '100px', padding: '10px 12px', borderRadius: '12px', cursor: 'pointer',
-                        border: `2px solid ${editHorario === opt.value ? C.primary : C.border}`,
-                        background: editHorario === opt.value ? `${C.primary}12` : C.card,
-                        color: editHorario === opt.value ? C.primary : C.muted,
-                        fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
-                      }}>{opt.label}</button>
-                    ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '24px' }}>
+                <EtapaPessoal form={form} setForm={setForm} errors={editFieldErrors} />
+                <EtapaMoradia form={form} setForm={setForm} errors={editFieldErrors} />
+                <EtapaConvivencia form={form} setForm={setForm} errors={editFieldErrors} />
+                <EtapaHabitos form={form} setForm={setForm} errors={editFieldErrors} />
+                {anuncio && (
+                  <div>
+                    <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 800, color: C.text, margin: '0 0 14px' }}>Anúncio do imóvel</h3>
+                    <EtapaAnuncio form={form} setForm={setForm} errors={editFieldErrors} />
                   </div>
-                </div>
-                <div>
-                  <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Com que frequência recebe visitas?</p>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {([
-                      { value: 'raramente', label: 'Raramente' },
-                      { value: 'as_vezes', label: 'Às vezes' },
-                      { value: 'frequentemente', label: 'Frequentemente' },
-                    ] as { value: 'raramente' | 'as_vezes' | 'frequentemente'; label: string }[]).map(opt => (
-                      <button key={opt.value} onClick={() => setEditVisitas(opt.value)} style={{
-                        flex: 1, minWidth: '100px', padding: '10px 12px', borderRadius: '12px', cursor: 'pointer',
-                        border: `2px solid ${editVisitas === opt.value ? C.primary : C.border}`,
-                        background: editVisitas === opt.value ? `${C.primary}12` : C.card,
-                        color: editVisitas === opt.value ? C.primary : C.muted,
-                        fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
-                      }}>{opt.label}</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Tipo de imóvel preferido</p>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {([
-                      { value: 'apartamento', label: 'Apartamento' },
-                      { value: 'casa', label: 'Casa' },
-                      { value: 'republica', label: 'República' },
-                      { value: 'indiferente', label: 'Indiferente' },
-                    ] as { value: 'apartamento' | 'casa' | 'republica' | 'indiferente'; label: string }[]).map(opt => (
-                      <button key={opt.value} onClick={() => setEditTipoImovel(opt.value)} style={{
-                        flex: 1, minWidth: '90px', padding: '10px 12px', borderRadius: '12px', cursor: 'pointer',
-                        border: `2px solid ${editTipoImovel === opt.value ? C.primary : C.border}`,
-                        background: editTipoImovel === opt.value ? `${C.primary}12` : C.card,
-                        color: editTipoImovel === opt.value ? C.primary : C.muted,
-                        fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
-                      }}>{opt.label}</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Quantas pessoas no imóvel?</p>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {[1, 2, 3, 4].map(n => (
-                      <button key={n} onClick={() => setEditQtdMoradores(n)} style={{
-                        flex: 1, height: '44px', borderRadius: '12px', cursor: 'pointer',
-                        border: `2px solid ${editQtdMoradores === n ? C.primary : C.border}`,
-                        background: editQtdMoradores === n ? `${C.primary}12` : C.card,
-                        color: editQtdMoradores === n ? C.primary : C.muted,
-                        fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700,
-                      }}>{n}{n === 4 ? '+' : ''}</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {([
-                    { label: 'Tolerância a barulho', value: editRuido, onChange: setEditRuido },
-                    { label: 'Perfil social', value: editSocial, onChange: setEditSocial },
-                  ] as { label: string; value: number; onChange: (v: number) => void }[]).map(({ label, value, onChange }) => (
-                    <div key={label}>
-                      <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{label}</p>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {[1, 2, 3, 4, 5].map(i => (
-                          <button key={i} onClick={() => onChange(i)} style={{
-                            flex: 1, height: '44px', borderRadius: '10px', cursor: 'pointer',
-                            border: `2px solid ${value >= i ? C.primary : C.border}`,
-                            background: value >= i ? C.primary : C.card,
-                            color: value >= i ? '#fff' : C.muted,
-                            fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
-                          }}>{i}</button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                )}
               </div>
             ) : (
               <>
@@ -3212,6 +3323,23 @@ function MyProfileScreen({ nav, meuPerfil, onPerfilAtualizado, onPerfilExcluido 
                     </div>
                   ))}
                 </div>
+
+                {anuncio && meuPerfil && (meuPerfil.titulo_anuncio || meuPerfil.descricao_imovel || (meuPerfil.fotos_imovel?.length ?? 0) > 0) && (
+                  <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
+                    <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text, margin: '0 0 10px' }}>Meu anúncio</h3>
+                    {meuPerfil.titulo_anuncio && <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>{meuPerfil.titulo_anuncio}</p>}
+                    {meuPerfil.descricao_imovel && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.text, lineHeight: 1.7, margin: '0 0 12px' }}>{meuPerfil.descricao_imovel}</p>}
+                    {(meuPerfil.fotos_imovel?.length ?? 0) > 0 && (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {meuPerfil.fotos_imovel!.map((u, i) => (
+                          <div key={u + i} style={{ width: '96px', height: '72px', borderRadius: '10px', overflow: 'hidden', border: `1.5px solid ${C.border}` }}>
+                            <ImagemComFallback src={u} alt={`Foto ${i + 1} do imóvel`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Tags on mobile */}
                 <div className="lg:hidden" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
@@ -3420,6 +3548,7 @@ export default function App() {
   const [showFilters, setShowFilters] = useState(getParam('filters') === '1');
   const [showReport, setShowReport] = useState(getParam('report') === '1');
   const [meuPerfil, setMeuPerfil] = useState<PerfilAPI | null>(null);
+  const [meuTipo, setMeuTipo] = useState('');
   const [matchesKey, setMatchesKey] = useState(0);
   const [notifsKey, setNotifsKey] = useState(0);
   const [notifsCount, setNotifsCount] = useState(0);
@@ -3446,6 +3575,7 @@ export default function App() {
   const handleLogout = () => {
     logout();
     setMeuPerfil(null);
+    setMeuTipo('');
     setNotifsCount(0);
     setActiveChatMatchId(0);
     setCurrentChat(PROFILES[0]);
@@ -3457,6 +3587,7 @@ export default function App() {
   useEffect(() => {
     setOn401(() => {
       setMeuPerfil(null);
+      setMeuTipo('');
       setNotifsCount(0);
       setActiveChatMatchId(0);
       setCurrentChat(PROFILES[0]);
@@ -3470,6 +3601,7 @@ export default function App() {
   const handleLoginSuccess = async () => {
     try {
       const usuario = await buscarMeuUsuario();
+      setMeuTipo(usuario.tipo);
       if (usuario.tipo === 'administrador') {
         nav('admin');
         return;
@@ -3490,7 +3622,7 @@ export default function App() {
       {screen === 'login' && <LoginScreen nav={nav} onLoginSuccess={handleLoginSuccess} loginMsg={sessionExpiredMsg} />}
       {screen === 'register' && <RegisterScreen nav={nav} onLoginSuccess={handleLoginSuccess} />}
       {screen === 'profile-create' && (
-        <ProfileCreateScreen nav={nav} onPerfilCriado={(p) => setMeuPerfil(p)} />
+        <ProfileCreateScreen nav={nav} tipo={meuTipo} onPerfilCriado={(p) => setMeuPerfil(p)} />
       )}
       {screen === 'discovery' && (
         <DiscoveryScreen
@@ -3539,6 +3671,7 @@ export default function App() {
         <MyProfileScreen
           nav={nav}
           meuPerfil={meuPerfil}
+          tipo={meuTipo}
           onPerfilAtualizado={(p) => setMeuPerfil(p)}
           onPerfilExcluido={() => { setMeuPerfil(null); nav('profile-create'); }}
         />

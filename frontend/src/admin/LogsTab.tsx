@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { listarLogs, downloadCsv, ApiError } from '../api';
+import { listarLogs, downloadCsv, validarPeriodo, ApiError } from '../api';
 import type { LogEntry, PaginatedResponse } from '../api';
 
 const C = {
@@ -71,7 +71,10 @@ export default function LogsTab() {
   const [dataFim, setDataFim] = useState('');
   const [page, setPage] = useState(1);
 
+  const erroPeriodo = validarPeriodo(dataInicio, dataFim);
+
   const carregar = useCallback((pg: number) => {
+    if (validarPeriodo(dataInicio, dataFim)) { setLoading(false); return; }
     setLoading(true);
     setErro('');
     listarLogs({ acao: acao || undefined, usuario: usuario || undefined, entidade: entidade || undefined, data_inicio: dataInicio || undefined, data_fim: dataFim || undefined, page: pg })
@@ -84,6 +87,7 @@ export default function LogsTab() {
   const handleSearch = () => { setPage(1); carregar(1); };
 
   const handleExport = async () => {
+    if (erroPeriodo) return;
     setExporting(true);
     try {
       const qs = new URLSearchParams();
@@ -128,12 +132,17 @@ export default function LogsTab() {
           <input value={entidade} onChange={e => setEntidade(e.target.value)} placeholder="Ex: Perfil" style={inputStyle} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>De</label>
-          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} style={inputStyle} />
+          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} aria-invalid={!!erroPeriodo} style={erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Até</label>
-          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} style={inputStyle} />
+          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} aria-invalid={!!erroPeriodo} style={erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle} />
+        </div>
+          </div>
+          {erroPeriodo && <span role="alert" style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.danger }}>{erroPeriodo}</span>}
         </div>
         <button
           onClick={handleSearch}

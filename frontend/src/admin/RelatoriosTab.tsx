@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { listarRelatorios, getRelatorio, downloadRelatorioCSV, ApiError } from '../api';
+import { listarRelatorios, getRelatorio, downloadRelatorioCSV, validarPeriodo, ApiError } from '../api';
 import type { RelatorioItem, RelatorioResultado, AdminFiltros } from '../api';
 
 const C = {
@@ -62,8 +62,13 @@ function FilterInputs({
     fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.text, background: C.card,
     outline: 'none', minWidth: 0,
   };
+  const erroPeriodo = validarPeriodo(
+    (values as Record<string, string | undefined>).data_inicio,
+    (values as Record<string, string | undefined>).data_fim,
+  );
 
   return (
+    <div>
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end' }}>
       {filtroKeys.map(key => {
         const meta = FILTRO_META[key];
@@ -85,12 +90,15 @@ function FilterInputs({
                 value={rawVal}
                 onChange={e => onChange(key, e.target.value)}
                 placeholder={meta.tipo === 'text' ? 'Ex: São Paulo' : undefined}
-                style={inputStyle}
+                aria-invalid={meta.tipo === 'date' && !!erroPeriodo}
+                style={meta.tipo === 'date' && erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle}
               />
             )}
           </div>
         );
       })}
+    </div>
+    {erroPeriodo && <span role="alert" style={{ display: 'block', marginTop: '8px', fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.danger }}>{erroPeriodo}</span>}
     </div>
   );
 }
@@ -223,7 +231,7 @@ export default function RelatoriosTab() {
   };
 
   const handleGerar = () => {
-    if (!selectedId) return;
+    if (!selectedId || validarPeriodo(filtros.data_inicio, filtros.data_fim)) return;
     setLoadingRel(true);
     setErroRel('');
     setResultado(null);
@@ -236,7 +244,7 @@ export default function RelatoriosTab() {
   };
 
   const handleExport = async () => {
-    if (!selectedId) return;
+    if (!selectedId || validarPeriodo(filtros.data_inicio, filtros.data_fim)) return;
     setExporting(true);
     try {
       await downloadRelatorioCSV(selectedId, filtros);

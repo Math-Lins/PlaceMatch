@@ -5,8 +5,18 @@ export function setOn401(cb: () => void): void {
   _on401 = cb;
 }
 
+export const MSG_FALHA = 'Não foi possível concluir a operação. Tente novamente em instantes.';
+export const MSG_SESSAO_EXPIRADA = 'Sua sessão expirou. Entre novamente.';
+
+const ROTA_LOGIN = '/api/auth/login/';
+const ROTA_REFRESH = '/api/auth/login/refresh/';
+
 function getToken(): string | null {
   return sessionStorage.getItem('pm_access');
+}
+
+function getRefreshToken(): string | null {
+  return sessionStorage.getItem('pm_refresh');
 }
 
 function setTokens(access: string, refresh: string): void {
@@ -28,35 +38,124 @@ export class ApiError extends Error {
   }
 }
 
-async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+/** Extrai a primeira mensagem de texto de um erro do DRF (string, lista ou objeto aninhado). */
+function primeiraMensagem(val: unknown): string {
+  if (typeof val === 'string') return val;
+  if (Array.isArray(val)) {
+    for (const item of val) {
+      const m = primeiraMensagem(item);
+      if (m) return m;
+    }
+    return '';
+  }
+  if (val && typeof val === 'object') {
+    for (const item of Object.values(val as Record<string, unknown>)) {
+      const m = primeiraMensagem(item);
+      if (m) return m;
+    }
+    return '';
+  }
+  return val == null ? '' : String(val);
+}
+
+type ResultadoRefresh = 'ok' | 'invalido' | 'rede';
+let _refreshEmAndamento: Promise<ResultadoRefresh> | null = null;
+
+async function executarRefresh(): Promise<ResultadoRefresh> {
+  const refresh = getRefreshToken();
+  if (!refresh) return 'invalido';
+  try {
+    const res = await fetch(`${BASE}${ROTA_REFRESH}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh }),
+    });
+    if (res.status >= 500) return 'rede';
+    if (!res.ok) return 'invalido';
+    const body = (await res.json().catch(() => ({}))) as { access?: string; refresh?: string };
+    if (!body.access) return 'invalido';
+    // O backend rotaciona o refresh (ROTATE_REFRESH_TOKENS): guarda o novo, se vier.
+    setTokens(body.access, body.refresh ?? refresh);
+    return 'ok';
+  } catch {
+    return 'rede';
+  }
+}
+
+/** Uma única renovação por vez: chamadas simultâneas compartilham a mesma promessa. */
+function renovarToken(): Promise<ResultadoRefresh> {
+  if (!_refreshEmAndamento) {
+    _refreshEmAndamento = executarRefresh().finally(() => {
+      _refreshEmAndamento = null;
+    });
+  }
+  return _refreshEmAndamento;
+}
+
+function encerrarSessao(): never {
+  logout();
+  _on401?.();
+  throw new ApiError(MSG_SESSAO_EXPIRADA);
+}
+
+/**
+ * fetch autenticado. Em 401 (fora das rotas de login/refresh) tenta renovar o access uma
+ * única vez e repete a requisição; se não der, limpa a sessão e leva ao login.
+ */
+async function fetchComAuth(path: string, options: RequestInit = {}, comJson = true): Promise<Response> {
+  const enviar = (): Promise<Response> => {
+    const token = getToken();
+    const headers: Record<string, string> = {
+      ...(comJson ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+    return fetch(`${BASE}${path}`, { ...options, headers });
   };
 
+  const tokenEnviado = getToken();
   let res: Response;
   try {
-    res = await fetch(`${BASE}${path}`, { ...options, headers });
+    res = await enviar();
   } catch {
-    throw new ApiError(
-      'Não foi possível conectar ao servidor. Verifique se o backend está rodando.'
-    );
+    throw new ApiError(MSG_FALHA);
   }
+
+  if (res.status !== 401 || path === ROTA_LOGIN || path === ROTA_REFRESH) return res;
+
+  // 401 em rota autenticada: tenta renovar uma vez.
+  const tokenAtual = getToken();
+  if (!tokenAtual && !getRefreshToken()) return encerrarSessao();
+
+  if (tokenAtual && tokenAtual !== tokenEnviado) {
+    // outra requisição já renovou o token enquanto esta estava em voo: só repete
+  } else {
+    const r = await renovarToken();
+    if (r === 'rede') throw new ApiError(MSG_FALHA);
+    if (r === 'invalido') return encerrarSessao();
+  }
+
+  try {
+    res = await enviar();
+  } catch {
+    throw new ApiError(MSG_FALHA);
+  }
+  if (res.status === 401) return encerrarSessao();
+  return res;
+}
+
+async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const res = await fetchComAuth(path, options);
 
   if (res.status === 204) return {} as T;
   const body = await res.json().catch(() => ({}));
 
   if (res.status === 401) {
+    // só chega aqui na rota de login (credenciais erradas ou conta suspensa)
     const detail = (body as Record<string, string>)?.detail ?? '';
-    const isLoginRoute = path === '/api/auth/login/';
-    if (!isLoginRoute) {
-      sessionStorage.removeItem('pm_access');
-      sessionStorage.removeItem('pm_refresh');
-      _on401?.();
-    }
-    throw new ApiError(detail || 'Sua sessão expirou. Entre novamente.');
+    throw new ApiError(detail || 'E-mail ou senha incorretos.');
   }
+
+  if (res.status >= 500) throw new ApiError(MSG_FALHA);
 
   if (!res.ok) {
     const fieldErrors: Record<string, string> = {};
@@ -64,7 +163,8 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
 
     if (body && typeof body === 'object') {
       for (const [key, val] of Object.entries(body as Record<string, unknown>)) {
-        const msg = Array.isArray(val) ? String(val[0]) : String(val);
+        const msg = primeiraMensagem(val);
+        if (!msg) continue;
         if (!firstMsg) firstMsg = msg;
         if (key !== 'detail' && key !== 'non_field_errors') {
           fieldErrors[key] = msg;
@@ -72,11 +172,13 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
       }
     }
 
+    const detail = primeiraMensagem((body as Record<string, unknown>)?.detail);
+    const naoCampo = primeiraMensagem((body as Record<string, unknown>)?.non_field_errors);
     const msg =
-      (body as Record<string, string>)?.detail ||
-      (body as Record<string, string[]>)?.non_field_errors?.[0] ||
+      detail ||
+      naoCampo ||
       firstMsg ||
-      `Erro ${res.status}`;
+      (res.status === 404 ? 'Recurso não encontrado.' : MSG_FALHA);
     throw new ApiError(String(msg), fieldErrors);
   }
 
@@ -95,6 +197,7 @@ export interface RegistrarDados {
 export interface Usuario {
   id: number;
   username: string;
+  nome?: string;
   email: string;
   tipo: string;
 }
@@ -134,6 +237,11 @@ export interface PerfilPayload {
   aceita_visitas: 'raramente' | 'as_vezes' | 'frequentemente';
   tipo_imovel: 'apartamento' | 'casa' | 'republica' | 'indiferente';
   qtd_moradores: number;
+  // Anúncio (apenas oferecendo_vaga)
+  titulo_anuncio?: string;
+  descricao_imovel?: string;
+  fotos_imovel?: string[];
+  foto_perfil_url?: string;
 }
 
 export interface Perfil extends PerfilPayload {
@@ -321,6 +429,12 @@ export function buildQS(params: Record<string, unknown>): string {
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
+/** Valida o período (datas AAAA-MM-DD) no cliente. Retorna a mensagem de erro, ou '' se ok. */
+export function validarPeriodo(inicio?: string, fim?: string): string {
+  if (inicio && fim && inicio > fim) return 'A data inicial não pode ser maior que a data final.';
+  return '';
+}
+
 export interface PaginatedResponse<T> {
   count: number;
   page: number;
@@ -384,15 +498,13 @@ export async function listarAdminUsuarios(
 }
 
 export async function downloadCsv(path: string, filename: string): Promise<void> {
-  const token = getToken();
-  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-  let res: Response;
-  try {
-    res = await fetch(`${BASE}${path}`, { headers });
-  } catch {
-    throw new ApiError('Não foi possível conectar ao servidor.');
+  const res = await fetchComAuth(path, {}, false);
+  if (res.status >= 500) throw new ApiError(MSG_FALHA);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const msg = primeiraMensagem((body as Record<string, unknown>)?.detail);
+    throw new ApiError(msg || 'Não foi possível exportar o arquivo. Verifique os filtros.');
   }
-  if (!res.ok) throw new ApiError(`Erro ${res.status} ao exportar CSV.`);
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

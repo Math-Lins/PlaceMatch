@@ -3,6 +3,7 @@ import {
   listarDenuncias, resolverDenuncia, suspenderUsuario,
   downloadRelatorioCSV, ApiError,
 } from '../api';
+import { validarPeriodo } from '../api';
 import type { DenunciaItem, AdminFiltros } from '../api';
 
 const C = {
@@ -128,9 +129,13 @@ function AnalisarModal({ denuncia, onClose, onConcluido }: AnalisarModalProps) {
         </div>
 
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, color: C.muted, display: 'block', marginBottom: '6px' }}>Observação (opcional)</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, color: C.muted }}>Observação (opcional)</label>
+            <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: observacao.length >= 500 ? C.danger : C.muted }}>{observacao.length}/500</span>
+          </div>
           <textarea
             value={observacao}
+            maxLength={500}
             onChange={e => setObservacao(e.target.value)}
             placeholder="Observação interna sobre a decisão..."
             style={{ ...inputStyle, resize: 'none', height: '72px' }}
@@ -195,9 +200,12 @@ export default function ModeracaoTab() {
 
   useEffect(() => { carregar({ status: 'pendente' }); }, [carregar]);
 
+  const erroPeriodo = validarPeriodo(dataInicio, dataFim);
+
   const handleBuscar = () => carregar({ status, motivo });
 
   const handleExport = async () => {
+    if (erroPeriodo) return;
     setExporting(true);
     try {
       const filtros: AdminFiltros = {};
@@ -245,12 +253,17 @@ export default function ModeracaoTab() {
           <input value={busca} onChange={e => setBusca(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleBuscar()} placeholder="Buscar denunciante/denunciado..." style={inputStyle} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>De</label>
-          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} style={inputStyle} />
+          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} aria-invalid={!!erroPeriodo} style={erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Até</label>
-          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} style={inputStyle} />
+          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} aria-invalid={!!erroPeriodo} style={erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle} />
+        </div>
+          </div>
+          {erroPeriodo && <span role="alert" style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.danger }}>{erroPeriodo}</span>}
         </div>
         <button onClick={handleBuscar} style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-end' }}>
           Buscar

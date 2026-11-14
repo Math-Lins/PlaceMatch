@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getDashboard, ApiError } from '../api';
+import { getDashboard, validarPeriodo, ApiError } from '../api';
 import type { DashboardData, SeriePonto, AdminFiltros } from '../api';
 import { LineAreaChart, HorizontalBars, ScoreDistChart } from './graficos';
 
@@ -97,15 +97,20 @@ function FilterBar({
     fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.text, background: C.card,
     outline: 'none', minWidth: 0,
   };
+  const erroPeriodo = validarPeriodo(draft.data_inicio, draft.data_fim);
+  const inputData: React.CSSProperties = erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle;
 
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>De</label>
         <input
           type="date" value={draft.data_inicio ?? ''}
           onChange={e => setDraft(d => ({ ...d, data_inicio: e.target.value || undefined }))}
-          style={inputStyle}
+          aria-invalid={!!erroPeriodo}
+          style={inputData}
         />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -113,8 +118,12 @@ function FilterBar({
         <input
           type="date" value={draft.data_fim ?? ''}
           onChange={e => setDraft(d => ({ ...d, data_fim: e.target.value || undefined }))}
-          style={inputStyle}
+          aria-invalid={!!erroPeriodo}
+          style={inputData}
         />
+      </div>
+        </div>
+        {erroPeriodo && <span role="alert" style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.danger }}>{erroPeriodo}</span>}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
         <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Região</label>
@@ -204,6 +213,7 @@ export default function PainelTab() {
   useEffect(() => { carregar({}); }, [carregar]);
 
   const handleApply = () => {
+    if (validarPeriodo(draft.data_inicio, draft.data_fim)) return;
     setFiltros(draft);
     carregar(draft);
   };
