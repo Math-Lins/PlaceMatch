@@ -116,7 +116,7 @@ class Command(BaseCommand):
                 criados += 1
                 nome_a = pa.nome
                 nome_b = pb.nome
-                self.stdout.write(f'  ✓ Match: {nome_a} ↔ {nome_b}  ({score:.0%})')
+                self.stdout.write(f'  OK Match: {nome_a} <-> {nome_b}  ({score:.0%})')
             else:
                 pulados += 1
 

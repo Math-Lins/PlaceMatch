@@ -92,14 +92,16 @@ docker compose exec backend python manage.py shell
 
 | Variável | Descrição | Padrão |
 |---|---|---|
-| `SECRET_KEY` | Chave secreta do Django | (definir) |
+| `SECRET_KEY` | Chave do Django e de assinatura do JWT. **Mínimo de 32 caracteres**; com `DEBUG=False` a aplicação não sobe sem ela | (definir) |
 | `DEBUG` | Modo debug | `True` |
 | `ALLOWED_HOSTS` | Hosts permitidos | `localhost,127.0.0.1` |
 | `DB_NAME` | Nome do banco | `placematch` |
 | `DB_USER` | Usuário do banco | `placematch_user` |
 | `DB_PASSWORD` | Senha do banco | (definir) |
 | `DB_HOST` | Host do banco **fora do Docker** | `localhost` |
-| `DB_PORT` | Porta externa do banco | `5433` |
+| `DB_PORT` | Porta do banco publicada no host (`${DB_PORT}:5432`) e usada pelo Django fora do Docker | `5433` |
+| `ADMIN_EMAIL` | E-mail do administrador criado por `criar_admin` | `admin@placematch.com` |
+| `ADMIN_SENHA` | Senha do administrador (se vazia, o comando gera e mostra uma) | (opcional) |
 
 > Dentro do Docker, o compose sobrescreve `DB_HOST=db` e `DB_PORT=5432` automaticamente.
 
@@ -115,7 +117,20 @@ docker compose exec backend python manage.py shell
 
 ### `password authentication failed for user "placematch_user"`
 
-O volume do Postgres guarda as credenciais da **primeira** criação. Se a senha do `.env` mudou, recrie o volume:
+Sintoma: o container `placematch_backend` reinicia em loop (e consome CPU) com esse erro. O Postgres só lê `POSTGRES_PASSWORD` na **primeira** criação do volume; se a senha do `.env` mudou depois (ou o volume foi criado com outra), o banco continua com a senha antiga.
+
+**Solução sem perder dados** — alinhe a senha do banco à do `.env`:
+
+```bash
+# na raiz do projeto (Git Bash)
+PW=$(grep '^DB_PASSWORD=' backend/.env | cut -d= -f2- | tr -d '')
+docker exec placematch_db psql -U placematch_user -d placematch -c "ALTER USER placematch_user PASSWORD '$PW'"
+docker restart placematch_backend
+```
+
+O `psql` dentro do container usa `trust` em `127.0.0.1`, então esse comando funciona mesmo com a senha divergente. Para **testar** a senha de verdade, conecte por outro container na mesma rede (`docker run --rm --network backend_default -e PGPASSWORD=<senha> postgres:16 psql -h db -U placematch_user -d placematch -c "select 1"`).
+
+**Alternativa que apaga os dados** — recriar o volume:
 
 ```bash
 cd backend
@@ -124,6 +139,10 @@ docker compose up
 ```
 
 > ⚠️ Isso apaga todos os dados do banco local.
+
+### Migrações novas depois de um `git pull`
+
+O container do backend roda `migrate` ao iniciar. Se ele já estava no ar: `docker exec placematch_backend python manage.py migrate`. Para conferir se falta migration nos modelos: `docker exec placematch_backend python manage.py makemigrations --check --dry-run` (esperado: "No changes detected").
 
 ### Porta já em uso (`port is already allocated`)
 
@@ -152,9 +171,13 @@ docker compose up --build
 ## Verificação rápida de saúde
 
 ```bash
-# Backend respondendo (esperado: 400 com erros de validação)
+# Backend respondendo (esperado: 400 {"email":["Informe o e-mail."],"password":["Informe a senha."]})
 curl -X POST http://localhost:8000/api/auth/login/ -H "Content-Type: application/json" -d "{}"
 
 # Frontend respondendo (esperado: 200)
 curl http://localhost:5173
 ```
+
+## Containers dos testes e2e
+
+Os testes de navegação (`npm run e2e`, veja o README da raiz) usam o container **`placematch_e2e_db`** (PostgreSQL 16 em memória, porta `5433`), separado do banco de desenvolvimento. Subir: `npm run e2e:db`; apagar: `npm run e2e:db:parar` (ambos em `frontend/`). Como ele publica a porta `5433`, **não rode ao mesmo tempo** o banco de desenvolvimento com `DB_PORT=5433`: use `5432` no `backend/.env` ou pare o e2e antes.

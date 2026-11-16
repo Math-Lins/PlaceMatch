@@ -47,7 +47,7 @@ RELATORIOS = {
     'denuncias': {
         'titulo': 'Denúncias',
         'descricao': 'Listagem de denúncias no período com status e motivo.',
-        'filtros': ['data_inicio', 'data_fim', 'status'],
+        'filtros': ['data_inicio', 'data_fim'],
     },
 }
 

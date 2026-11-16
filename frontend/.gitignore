@@ -3,6 +3,9 @@ dist/
 build/
 .cache/
 .env*
+# os modelos de variáveis (sem segredos) são versionados
+!.env.example
+!e2e/.env.e2e.example
 .vite/
 vite.config.*.timestamp-*
 *.tsbuildinfo

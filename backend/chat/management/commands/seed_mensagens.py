@@ -116,7 +116,7 @@ class Command(BaseCommand):
                     Mensagem.objects.create(match=match, remetente=remetente, conteudo=conteudo)
 
             criados += len(msgs)
-            self.stdout.write(f'  ✓ {len(msgs)} msgs: {pa.nome} ↔ {pb.nome}')
+            self.stdout.write(f'  OK {len(msgs)} msgs: {pa.nome} <-> {pb.nome}')
 
         self.stdout.write(self.style.SUCCESS(
             f'\nConcluído: {criados} mensagens criadas, {pulados} pares pulados.'

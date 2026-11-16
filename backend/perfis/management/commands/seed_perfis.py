@@ -346,7 +346,7 @@ class Command(BaseCommand):
             )
             Perfil.objects.create(usuario=user, **perfil_data)
             criados += 1
-            self.stdout.write(f'  ✓ {perfil_data["nome"]} ({email})')
+            self.stdout.write(f'  OK {perfil_data["nome"]} ({email})')
 
         self.stdout.write(self.style.SUCCESS(
             f'\nConcluído: {criados} criados, {pulados} já existiam.'

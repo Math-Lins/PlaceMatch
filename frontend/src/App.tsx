@@ -34,7 +34,6 @@ export type Screen =
   | 'matches'
   | 'chat'
   | 'profile'
-  | 'filters'
   | 'notifications'
   | 'admin';
 

@@ -13,7 +13,7 @@
 | `data_envio` | DateTimeField   | Criado automaticamente (`auto_now_add=True`)   |
 | `lida`       | BooleanField    | `False` por padrão; marcado ao listar msgs     |
 
-**Índice:** `(match, data_envio)` para listagem eficiente por match.
+**Índice:** `(match, data_envio)` (`chat_mensag_match_i_36edce_idx`) para listagem eficiente por match.
 **Ordenação padrão:** `data_envio ASC, id ASC`.
 
 ---
@@ -68,7 +68,7 @@ Lista todas as conversas (matches) do usuário autenticado, ordenadas pela mensa
 
 Lista as mensagens do match. Marca automaticamente como `lida=True` as mensagens do outro participante.
 
-**Query param opcional:** `?apos=<id>` — retorna apenas mensagens com `id > apos` (polling incremental).
+**Query param opcional:** `?apos=<id>` — retorna apenas mensagens com `id > apos` (polling incremental). Deve ser um inteiro maior ou igual a 0; qualquer outro valor responde `400` com a mensagem `O parâmetro "apos" inválido. Informe um número inteiro. Informe o número da última mensagem já recebida.`
 
 **Exemplo de requisição:**
 
@@ -93,8 +93,9 @@ Authorization: Bearer eyJ...
 ```
 
 **Erros:**
+- `400` — `apos` inválido; usuário sem perfil criado
 - `401` — sem token ou token expirado
-- `403` — autenticado, mas não é participante do match
+- `403` — autenticado, mas não é participante do match; ou administrador
 - `404` — match não existe
 
 ---
@@ -134,6 +135,10 @@ Authorization: Bearer eyJ...
 | Match inexistente                 | 404    | "Match não encontrado."                               |
 | `conteudo` vazio ou só espaços    | 400    | "O conteúdo da mensagem não pode ser vazio."          |
 | `conteudo` com mais de 1000 chars | 400    | "O conteúdo da mensagem não pode ter mais de 1000 caracteres." |
+| `conteudo` que não é texto (objeto, lista, número) | 400 | "O conteúdo da mensagem deve ser um texto."      |
+| Corpo da requisição que não é um objeto JSON | 400 | "O corpo da requisição deve ser um objeto JSON." |
+| O outro participante está com a conta suspensa | 403 | "Não é possível enviar mensagens: a conta do outro participante está suspensa." |
+| Administrador                     | 403    | "O administrador não participa deste recurso."        |
 
 ---
 
@@ -142,9 +147,12 @@ Authorization: Bearer eyJ...
 Apenas os dois perfis que compõem o match (`perfil_a` e `perfil_b`) podem ler e escrever mensagens naquele match. Qualquer outro perfil autenticado recebe `403`. Se o match não existir, `404`.
 
 A verificação é feita pelo helper `_verificar_participacao()` na view, que:
-1. Busca o match pelo `match_id`
-2. Obtém o perfil do usuário autenticado
-3. Compara com `perfil_a_id` e `perfil_b_id`
+1. Recusa o administrador (`403`)
+2. Busca o match pelo `match_id` (`404` se não existir; IDs fora do intervalo do banco também dão `404`)
+3. Obtém o perfil do usuário autenticado (`400` se ainda não criou perfil)
+4. Compara com `perfil_a_id` e `perfil_b_id` (`403` se não participa)
+
+**Contas suspensas.** Conversas com uma conta suspensa não aparecem em `GET /api/conversas/` nem em `GET /api/matches/`, e o envio de mensagens nesse match é bloqueado (`403`).
 
 ---
 
@@ -165,7 +173,7 @@ A verificação é feita pelo helper `_verificar_participacao()` na view, que:
 
 ### Polling no Frontend
 
-O `ChatScreen` usa `setInterval` de 4 segundos com `?apos=<last_id>` para buscar apenas mensagens novas. O polling é pausado quando a aba do navegador está oculta (`document.hidden`) e limpo no unmount do componente.
+O `ChatScreen` usa `setInterval` de 4 segundos com `?apos=<last_id>` para buscar apenas mensagens novas. O polling não busca nada enquanto a aba do navegador está oculta (`document.hidden`) e é limpo no unmount do componente. O botão voltar do chat e o menu (⋮ → "Ver perfil" / "Denunciar") têm nome acessível (`Voltar`, `Mais opções`).
 
 ---
 

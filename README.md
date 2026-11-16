@@ -1,240 +1,257 @@
 # PlaceMatch
 
-Plataforma que conecta pessoas compatíveis para dividir moradia, usando um algoritmo de compatibilidade baseado em hábitos, orçamento, localização e preferências de convivência — reduzindo o "achismo" na hora de encontrar um colega de apartamento.
+Plataforma que conecta pessoas compatíveis para dividir moradia, usando um algoritmo de compatibilidade baseado em hábitos, rotina, orçamento, localização e preferências de convivência — reduzindo o "achismo" na hora de encontrar um colega de apartamento.
 
 Projeto desenvolvido para as disciplinas de **Fábrica de Software** e **Tópicos Avançados** — UNINASSAU, 2026.2.
 
 ## Sobre o projeto
 
-Encontrar um colega de apartamento compatível hoje é um processo manual e pouco confiável, feito por grupos de WhatsApp, redes sociais ou indicação, sem nenhum critério estruturado de compatibilidade. O PlaceMatch propõe resolver isso calculando um **score de compatibilidade** entre usuários a partir de hábitos, rotina, orçamento e localização, aproximando pessoas antes mesmo do primeiro contato.
+Encontrar um colega de apartamento compatível hoje é um processo manual e pouco confiável, feito por grupos de WhatsApp, redes sociais ou indicação, sem nenhum critério estruturado de compatibilidade. O PlaceMatch calcula um **score de compatibilidade** entre usuários a partir de hábitos, rotina, orçamento e localização, aproximando pessoas antes mesmo do primeiro contato.
+
+Há dois tipos de usuário comum — quem **procura uma vaga** e quem **oferece uma vaga** (com anúncio do imóvel) — e um **administrador**, que acompanha o sistema por um painel e faz a moderação.
+
+## Funcionalidades por módulo
+
+| Módulo | O que faz |
+|---|---|
+| **Usuários e autenticação** | Cadastro (nome completo com espaços e acentos, e-mail único sem diferenciar maiúsculas, senha validada), login por e-mail, JWT com renovação automática, consulta do usuário logado. O administrador só é criado por linha de comando. |
+| **Perfis** | Um perfil por usuário: dados pessoais, orçamento (mínimo/máximo), tipo e tamanho do imóvel, fumante, pets, visitas, horário e quatro escalas de hábitos (1 a 5). Quem oferece vaga também preenche o **anúncio**: título, descrição, até 5 fotos do imóvel (por URL) e foto do proprietário. Criação em etapas, edição de todos os campos e exclusão com confirmação. |
+| **Descoberta e compatibilidade** | Lista de perfis do tipo oposto ordenada pelo score, com busca por texto (nome, região, título) e filtros (região, tipo de imóvel, pets, fumante, faixa de orçamento, score mínimo, ordenação). Perfis já avaliados, já com match ou de contas suspensas não aparecem. O algoritmo tem 6 critérios ponderados — veja [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md). |
+| **Curtidas e matches** | Curtir ou recusar um perfil. Quando as duas pessoas se curtem, o match é criado (com o score) e as duas veem a tela de "interesse mútuo". Lista de matches ordenada por score. |
+| **Chat** | Conversa entre as duas pessoas de um match: mensagens de até 1000 caracteres, contagem de não lidas, busca de conversas e filtro "só não lidas", atualização automática (polling de 4 s). Menu do chat: ver perfil do outro participante e denunciar. |
+| **Notificações** | Telas do aplicativo (sem endpoint próprio): novos matches desde a última visita à tela, e selo com a contagem no menu. |
+| **Logs** | Registro automático de 15 tipos de operação (login, falha de login, cadastro, perfil, curtida, recusa, match, mensagem, exportação, denúncia, suspensão...). Mensagens e senhas nunca são gravadas. |
+| **Painel, relatórios e exportação** | Dashboard (KPIs, atividade diária, top regiões, distribuição de score), **5 relatórios** com filtros e exportação CSV (matches, compatibilidade por região, atividade por dia, usuários, denúncias), lista de usuários, e histórico de logs com paginação e filtros — tudo exportável em CSV (UTF-8 com BOM, separador `;`). |
+| **Moderação** | Qualquer usuário denuncia outro (spam, conteúdo ofensivo, perfil falso, outro) pelo chat ou pelo anúncio. O administrador analisa (procedente/improcedente), pode suspender a conta na mesma decisão e reativar depois. Conta suspensa não entra ("Conta suspensa. Procure o suporte."), some da descoberta, dos matches e do chat, e não recebe curtidas nem mensagens. |
+
+## Perfis de acesso
+
+| Perfil (`tipo`) | Como é criado | O que acessa |
+|---|---|---|
+| `buscando_vaga` | Cadastro pela tela "Criar conta" | Perfil próprio, Descoberta (vê perfis `oferecendo_vaga`), curtidas, matches, chat, notificações, denúncias |
+| `oferecendo_vaga` | Cadastro pela tela "Criar conta" | Igual ao anterior, com o anúncio do imóvel; na Descoberta vê perfis `buscando_vaga` |
+| `administrador` | Somente `python manage.py criar_admin` | Painel administrativo (`/api/admin/...`) e moderação. **Não participa** da Descoberta, curtidas, chat nem criação de perfil (HTTP 403) |
+
+Telas e rotas sem login levam ao login; o painel admin só abre para o administrador. A matriz completa de permissões por rota pode ser gerada com `python manage.py matriz_permissoes` (veja [Testes](#testes)).
+
+## Tecnologias e versões
+
+| Camada | Tecnologia | Versão |
+|---|---|---|
+| Frontend | React + TypeScript (SPA) | React 19.3 · TypeScript 5.9 |
+| Build/dev do frontend | Vite + Tailwind CSS 4 | Vite 8.3 · Tailwind 4.3 |
+| Backend | Django + Django REST Framework | Django 6.1.1 · DRF 3.18.1 |
+| Autenticação | JWT (`djangorestframework-simplejwt`) | 5.5.1 — access 1 h, refresh 7 dias com rotação |
+| CORS | `django-cors-headers` | 4.9.0 |
+| Banco de dados | PostgreSQL (Docker) | 16 |
+| Processamento de compatibilidade | Python + NumPy (cálculo em lote) | NumPy 2.5 |
+| Testes | `manage.py test` (SQLite em memória) · Playwright (e2e) | Playwright 1.65 |
+| Contêineres | Docker + docker-compose | Docker 29 |
+| Linguagens | Python 3.13 (imagem Docker; testado também com 3.14) · Node 22 (imagem Docker; testado também com 24) | — |
+
+Dependências exatas: [`backend/requirements.txt`](./backend/requirements.txt) e [`frontend/package.json`](./frontend/package.json).
 
 ## Arquitetura
 
-Frontend desacoplado: uma SPA em **React** consome uma **API REST** construída em **Django REST Framework**, que concentra toda a lógica de negócio e o núcleo de IA/processamento (módulo de compatibilidade). A comunicação acontece via HTTP, trocando dados em JSON, com autenticação por token.
+Frontend desacoplado: uma SPA em **React** consome a **API REST** em **Django REST Framework**, que concentra as regras de negócio e o cálculo de compatibilidade, trocando JSON com autenticação por **JWT**.
 
-Documentação completa da arquitetura, diagrama de classes, MER e modelo relacional: [`/docs`](./docs).
-
-## Funcionalidades principais
-
-- Cadastro e autenticação com diferentes perfis (buscando vaga, oferecendo vaga, administrador)
-- Criação de perfil detalhado (hábitos, rotina, orçamento, preferências)
-- **Algoritmo de compatibilidade** — núcleo de IA/processamento do projeto
-- Descoberta de perfis no estilo "curtir/recusar", com match mútuo, busca e filtros avançados
-- Chat entre usuários com match; busca de conversas e filtro "só não lidas"
-- Filtros por região, orçamento, tipo de imóvel, fumante, pets e score mínimo
-- **Painel administrativo completo:**
-  - Dashboard com 8 KPIs, gráfico de atividade diária, top regiões e distribuição de score
-  - 4 relatórios com filtros e exportação CSV (matches, compatibilidade por região, atividade, usuários)
-  - Gerenciamento de usuários com busca, filtros e exportação
-  - Histórico de operações (logs) com filtros e exportação
-
-## Tecnologias utilizadas
-
-| Camada | Tecnologia |
-|---|---|
-| Frontend | React (SPA) |
-| Backend | Django + Django REST Framework |
-| Autenticação | Token / JWT (djangorestframework-simplejwt) |
-| Banco de dados | PostgreSQL (via Docker) |
-| IA / Processamento | Python puro (score ponderado) + NumPy (otimização) |
-| Ambiente de banco | Docker + docker-compose |
-| Versionamento | Git + GitHub |
+- O frontend guarda os tokens em `sessionStorage` (**uma sessão por aba**), renova o access automaticamente quando ele expira (uma única renovação por vez) e, se a renovação falhar, leva ao login com "Sua sessão expirou. Entre novamente.".
+- A tela atual fica na URL (`?screen=...`) e no histórico do navegador: o botão voltar e o recarregar funcionam, e a sessão é restaurada a partir de `/api/auth/me/`.
+- Documentação detalhada: [`docs/`](./docs) (veja [Documentação](#documentação)).
 
 ## Estrutura do projeto
 
 ```
 PlaceMatch/
-├── backend/                   # API Django REST Framework
-│   ├── placematch/            # configurações do projeto (settings, urls)
-│   ├── usuarios/              # app: autenticação e controle de usuários
-│   ├── perfis/                # app: perfis, CRUD principal
-│   ├── matches/               # app: curtidas, matches e compatibilidade
-│   ├── chat/                  # app: mensagens e conversas
-│   ├── logs/                  # app: histórico de operações
-│   ├── painel/                # app: dashboard, relatórios e admin de usuários
+├── backend/                     # API Django REST Framework
+│   ├── placematch/              # settings, urls, mensagens padrão em português, validação, utilitários de teste
+│   ├── usuarios/                # modelo de usuário, cadastro, login, /me, comandos criar_admin e matriz_permissoes
+│   ├── perfis/                  # perfil e anúncio (CRUD), comando seed_perfis
+│   ├── matches/                 # compatibilidade (algoritmo/), curtidas, matches, descoberta, seeds e benchmark
+│   ├── chat/                    # mensagens e conversas, comando seed_mensagens
+│   ├── logs/                    # histórico de operações (modelo, serviço de registro, listagem e CSV)
+│   ├── painel/                  # dashboard, relatórios, lista de usuários, filtros e exportação CSV
+│   ├── moderacao/               # denúncias, suspensão e reativação de contas
+│   ├── seed.py                  # script de dados de demonstração completos (apenas desenvolvimento)
 │   ├── manage.py
 │   ├── requirements.txt
 │   ├── Dockerfile
-│   ├── docker-compose.yml     # banco PostgreSQL + backend via Docker
-│   └── .env.example           # variáveis de ambiente do backend
-├── frontend/                  # aplicação React (SPA)
+│   ├── docker-compose.yml       # PostgreSQL 16 + backend
+│   └── .env.example
+├── frontend/                    # SPA React
 │   ├── src/
-│   │   ├── admin/             # painel administrativo (dashboard, logs, usuários, relatórios)
-│   │   ├── api.ts             # camada de acesso à API REST
-│   │   └── App.tsx            # aplicação principal (roteamento de telas)
-│   ├── package.json
+│   │   ├── App.tsx              # telas do usuário, navegação por ?screen=, guarda de rotas, sessão
+│   │   ├── api.ts               # acesso à API, renovação de token, erros em português
+│   │   └── admin/               # painel administrativo (Painel, Relatórios, Logs, Usuários, Moderação)
+│   ├── e2e/                     # testes de navegação (Playwright) e evidências (prints)
 │   ├── Dockerfile
-│   ├── docker-compose.yml     # servidor Vite via Docker
-│   └── .env.example           # variáveis de ambiente do frontend
-├── docs/                      # documentação técnica (diagramas, MER)
-├── .gitignore
+│   ├── docker-compose.yml       # servidor Vite
+│   └── .env.example
+├── docs/                        # documentação técnica (api, algoritmo, chat, runbook, testes)
 └── README.md
 ```
 
-## Como rodar o projeto localmente
-
-> Runbook completo de operação com Docker (comandos, variáveis e troubleshooting): [`/docs/runbook-docker.md`](./docs/runbook-docker.md)
+## Como rodar o projeto
 
 ### Pré-requisitos
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- **Git**.
+- **Docker Desktop** (banco PostgreSQL e, opcionalmente, backend e frontend).
+- Para rodar **sem Docker** o backend e o frontend: **Python 3.12 ou superior** (exigência do Django 6.1) e **Node.js 20.19+ ou 22.12+** (exigência do Vite 8; use 22 LTS).
 
-Para rodar sem Docker (modo manual), também é necessário:
+Os comandos abaixo estão em PowerShell (Windows); em Linux/Mac, troque `Copy-Item` por `cp` e `venv\Scripts\activate` por `source venv/bin/activate`.
 
-- [Node.js](https://nodejs.org/) (v18+)
-- [Python](https://www.python.org/) (v3.11+)
-
----
-
-### 1. Clonar o repositório
+### 1. Clonar
 
 ```bash
 git clone https://github.com/seu-usuario/PlaceMatch.git
 cd PlaceMatch
 ```
 
----
+### 2. Backend
 
-### 2. Backend (Django + PostgreSQL via Docker)
-
-```bash
-cd backend
-
-# Windows (PowerShell)
-Copy-Item .env.example .env
-# Linux / Mac
-# cp .env.example .env
-
-docker compose up --build
-```
-
-Isso sobe o PostgreSQL 16 e a API Django (migrações aplicadas automaticamente).
-API disponível em `http://localhost:8000`.
-
----
-
-### 3. Frontend (React via Docker)
-
-Em outro terminal:
-
-```bash
-cd frontend
-
-# Windows (PowerShell)
-Copy-Item .env.example .env
-# Linux / Mac
-# cp .env.example .env
-
-docker compose up --build
-```
-
-Abre em `http://localhost:5173`. O dev server do Vite roda com hot-reload.
-
----
-
-### Alternativa: rodar sem Docker
-
-Com o banco subindo via Docker (`cd backend && docker compose up db`), rode o backend e o frontend manualmente:
-
-**Backend:**
+#### Opção A — tudo no Docker (banco + API)
 
 ```powershell
 cd backend
-Copy-Item .env.example .env
-python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # Linux / Mac
-
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
+Copy-Item .env.example .env      # edite SECRET_KEY e DB_PASSWORD (veja a tabela de variáveis)
+docker compose up --build
 ```
 
-**Frontend:**
+Sobe o PostgreSQL 16 e a API em `http://localhost:8000`; as migrações rodam sozinhas ao iniciar. Para comandos de gerenciamento, use `docker exec placematch_backend python manage.py <comando>`.
+
+#### Opção B — banco no Docker, backend na sua máquina
+
+```powershell
+cd backend
+Copy-Item .env.example .env      # DB_HOST=localhost e DB_PORT=5433 (padrão do exemplo)
+docker compose up -d db          # só o PostgreSQL
+
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver       # http://127.0.0.1:8000
+```
+
+### 3. Frontend
+
+#### Opção A — Docker
+
+```powershell
+cd frontend
+Copy-Item .env.example .env
+docker compose up --build        # http://localhost:5173 (hot-reload)
+```
+
+A primeira construção leva alguns minutos (`npm ci` dentro da imagem).
+
+#### Opção B — Node na sua máquina
 
 ```powershell
 cd frontend
 Copy-Item .env.example .env
 npm install
-npm run dev
+npm run dev                      # http://localhost:5173
 ```
 
----
+O backend libera por CORS apenas `http://localhost:5173` e `http://127.0.0.1:5173`.
 
-### Endpoints disponíveis
+### 4. Variáveis de ambiente
 
-**Autenticação e perfil**
+`backend/.env` (modelo em [`backend/.env.example`](./backend/.env.example)):
 
-| Método | Endpoint | Descrição |
+| Variável | Descrição | Padrão do exemplo |
 |---|---|---|
-| POST | `/api/auth/registrar/` | Cadastro de usuário |
-| POST | `/api/auth/login/` | Login (retorna JWT) |
-| POST | `/api/auth/login/refresh/` | Renovar token |
-| GET | `/api/auth/me/` | Dados do usuário logado |
-| GET/POST | `/api/perfis/` | Listar / criar perfil |
-| PATCH/DELETE | `/api/perfis/{id}/` | Atualizar / excluir perfil |
+| `SECRET_KEY` | Chave do Django e de assinatura do JWT. **Mínimo de 32 caracteres.** Com `DEBUG=False` a aplicação não sobe sem ela. | (definir) |
+| `DEBUG` | `True` em desenvolvimento | `True` |
+| `ALLOWED_HOSTS` | Hosts permitidos | `localhost,127.0.0.1` |
+| `DB_NAME` / `DB_USER` / `DB_PASSWORD` | Credenciais do PostgreSQL | `placematch` / `placematch_user` / (definir) |
+| `DB_HOST` / `DB_PORT` | Fora do Docker: `localhost` e a porta publicada no host. No Docker o compose usa `db:5432` | `localhost` / `5433` |
+| `ADMIN_EMAIL` / `ADMIN_SENHA` | Usados pelo comando `criar_admin` | `admin@placematch.com` / (gerada se vazia) |
 
-**Descoberta, matches e chat**
+`frontend/.env` (modelo em [`frontend/.env.example`](./frontend/.env.example)): `VITE_API_URL` — URL da API (padrão `http://localhost:8000`).
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| GET | `/api/descoberta/` | Perfis compatíveis (suporta busca e filtros) |
-| POST | `/api/curtidas/` | Curtir ou recusar um perfil |
-| GET | `/api/matches/` | Listar matches do usuário logado |
-| GET | `/api/conversas/` | Listar conversas (suporta busca e não lidas) |
-| GET | `/api/matches/{id}/mensagens/` | Mensagens de um match |
-| POST | `/api/matches/{id}/mensagens/` | Enviar mensagem |
+Gere uma `SECRET_KEY` com: `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
 
-**Painel administrativo** *(requer tipo = administrador)*
+### 5. Administrador e dados de demonstração
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| GET | `/api/admin/dashboard/` | KPIs, séries, top regiões, distribuição de score |
-| GET | `/api/admin/relatorios/` | Catálogo de relatórios disponíveis |
-| GET | `/api/admin/relatorios/{id}/` | Dados de um relatório (JSON ou `?formato=csv`) |
-| GET | `/api/admin/logs/` | Histórico de operações paginado |
-| GET | `/api/admin/logs/exportar/` | Exportar logs em CSV |
-| GET | `/api/admin/usuarios/` | Listagem de usuários paginada |
-| GET | `/api/admin/usuarios/exportar/` | Exportar usuários em CSV |
+Com o backend configurado (e as migrações aplicadas):
 
-### Dados de teste (seed)
+```powershell
+# Administrador (idempotente). Com ADMIN_SENHA no .env a senha não é exibida; sem ela, é gerada e mostrada uma única vez.
+python manage.py criar_admin
+# Docker: docker exec placematch_backend python manage.py criar_admin
 
-Após rodar as migrações, popule o banco com perfis e matches de exemplo:
-
-```bash
-# Criar 21 perfis variados (15 buscando vaga + 6 oferecendo vaga)
-docker exec placematch_backend python manage.py seed_perfis
-
-# Criar 15 matches pré-populados entre pares de alta compatibilidade
-docker exec placematch_backend python manage.py seed_matches
+# Dados de exemplo: 21 perfis, 15 matches e mensagens (idempotentes; senha de todos: Test@1234)
+python manage.py seed_perfis
+python manage.py seed_matches
+python manage.py seed_mensagens
+python manage.py recalcular_compatibilidades   # opcional: recalcula todos os scores
 ```
 
-Senha de todos os seeds: `Test@1234`
+Logins de exemplo dos seeds: `ana@seed.pm` e `mariana@seed.pm` (buscando vaga), `beatriz@seed.pm` (oferecendo vaga) — senha `Test@1234`.
 
-Exemplos de login para teste:
+Há também um script alternativo de demonstração mais completa (20 usuários, 170 curtidas, 65 matches, mensagens e 5 denúncias): `python seed.py` (dentro de `backend/`). Ele imprime as credenciais ao final. **Use apenas em desenvolvimento:** cria contas com senhas fracas.
 
-| E-mail | Tipo | Melhores matches |
-|---|---|---|
-| `ana@seed.pm` | buscando vaga | Beatriz 96%, João 67% |
-| `mariana@seed.pm` | buscando vaga | Beatriz 95%, Júlia 87% |
-| `fernanda@seed.pm` | buscando vaga | Clara 90% |
-| `beatriz@seed.pm` | oferecendo vaga | Ana 96%, Mariana 95% |
+Depois de subir backend e frontend, abra `http://localhost:5173`, crie uma conta pela tela "Criar conta" ou entre com um dos logins acima. O administrador entra pela mesma tela de login e cai direto no painel.
+
+> Se o container do backend ficar reiniciando com `password authentication failed`, veja o [runbook](./docs/runbook-docker.md#password-authentication-failed-for-user-placematch_user).
+
+### 6. Testes
+
+**Backend** (não precisa de Docker nem de PostgreSQL: usa SQLite em memória):
+
+```powershell
+cd backend
+python manage.py test --settings=placematch.test_settings           # 531 testes
+python manage.py matriz_permissoes --settings=placematch.test_settings   # matriz rota x perfil (anônimo, buscando, oferecendo, admin)
+python manage.py makemigrations --check --dry-run --settings=placematch.test_settings   # deve dizer "No changes detected"
+```
+
+**Frontend** (verificação de tipos e build):
+
+```powershell
+cd frontend
+npx tsc --noEmit
+npm run build
+```
+
+**Navegação (e2e, Playwright)** — abre o sistema no Chromium e percorre 13 roteiros (desktop 1366x768 e mobile 375x812). Usa um **banco descartável** próprio (container `placematch_e2e_db`, porta 5433) e uma conta de administrador de teste; não toca no seu banco de desenvolvimento.
+
+```powershell
+cd frontend
+npm install
+npx playwright install chromium
+Copy-Item e2e\.env.e2e.example e2e\.env.e2e   # edite as senhas; este arquivo NÃO é versionado
+npm run e2e:db                                 # sobe o banco do e2e
+npm run e2e                                    # todos os roteiros (~16 min) — ou: npm run e2e -- n06
+npm run e2e:db:parar                           # apaga o banco do e2e
+```
+
+O Playwright sobe sozinho a API (porta 8001) e o frontend (porta 5173), então **pare o frontend de desenvolvimento antes**. Cada execução grava os prints em `frontend/e2e/evidencias/` (versionada) — descarte as mudanças se não quiser atualizá-las. Detalhes em [`frontend/e2e/README.md`](./frontend/e2e/README.md).
+
+## Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [`docs/api.md`](./docs/api.md) | Todos os endpoints: método, rota, permissão, parâmetros, respostas e erros |
+| [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md) | Fórmulas, pesos, tabelas de similaridade e benchmark do score |
+| [`docs/modulo-chat.md`](./docs/modulo-chat.md) | Chat: modelo, endpoints, regras de acesso e polling |
+| [`docs/runbook-docker.md`](./docs/runbook-docker.md) | Operação com Docker e solução de problemas |
+| [`docs/testes-sprint9.md`](./docs/testes-sprint9.md) | Campanha de testes funcionais, de validação e de navegação, e bugs corrigidos |
 
 ## Desempenho
 
-O algoritmo de compatibilidade usa NumPy para calcular scores em lote, o que reduz as queries ao banco de N+1 para 2, independentemente do número de perfis. Em testes com 5.000 perfis, a versão em lote é **~61x mais rápida** do que a versão escalar em loop.
+O cálculo de compatibilidade usa NumPy em lote, reduzindo as consultas ao banco de N+1 para 2, independentemente do número de perfis. Com 5.000 perfis, a versão em lote é **~61x mais rápida** que a versão em loop. Para repetir o benchmark:
 
-Documentação completa do algoritmo, fórmulas, tabelas de similaridade e resultados do benchmark: [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md).
-
-Para rodar o benchmark localmente:
-
-```bash
+```powershell
 cd backend
-python manage.py benchmark_compatibilidade          # completo (banco + memória)
-python manage.py benchmark_compatibilidade --sem-banco  # só memória
+python manage.py benchmark_compatibilidade --sem-banco   # só memória (~1 min)
+python manage.py benchmark_compatibilidade               # completo (usa o banco)
 ```
 
----
+> O benchmark **sobrescreve** os arquivos de resultado em `docs/benchmark/` com os números da sua máquina; restaure com `git checkout -- docs/benchmark` se não quiser trocá-los.
 
 ## Equipe
 
@@ -248,62 +265,15 @@ python manage.py benchmark_compatibilidade --sem-banco  # só memória
 
 **Turma:** 8 NA — Ciência da Computação
 
-## Status do projeto
+## Histórico do projeto
 
-✅ Sprint 2 e 3 concluídas — banco conectado, autenticação JWT, cadastro de usuários, controle de perfis e CRUD funcionando com deploy local.
-
-✅ Sprint 4 concluída — validações de regra de negócio no backend e frontend:
-
-**Backend:**
-- Perfil: nome (mín. 2 chars), idade (18–100 anos), região (mín. 2 chars), bio (máx. 500 chars), orçamento mínimo e máximo maiores que zero, orçamento mínimo ≤ máximo (validação cruzada), tolerância à bagunça e nível de organização entre 1 e 5
-- Usuário: `AUTH_PASSWORD_VALIDATORS` do Django efetivamente aplicados no cadastro (senha numérica, senha comum, comprimento mínimo), mensagem específica para e-mail duplicado
-
-**Frontend:**
-- Validação por campo antes do envio (formato de e-mail, comprimento mínimo de senha, orçamento, etc.)
-- Erros da API (400) exibidos embaixo do campo correspondente, não como alerta genérico
-- Tratamento de erro de rede com mensagem amigável ("Não foi possível conectar ao servidor...")
-
-✅ Sprint 5 concluída — algoritmo de compatibilidade, descoberta e matches:
-
-- Algoritmo de score ponderado (orçamento, região, hábitos, rotina, faixa etária)
-- Tela de descoberta com curtir/recusar e match mútuo
-- Tela de matches e chat entre usuários
-
-✅ Sprint 6 concluída — matches funcionais, algoritmo expandido e UI de compatibilidade:
-
-**Backend:**
-- 6 novos campos no perfil: horário (madrugador/noturno/flexível), nível de ruído, nível social, frequência de visitas, tipo de imóvel e quantidade de moradores
-- Algoritmo reescrito com 6 dimensões e pesos calibrados: orçamento 20%, região 10%, rotina 15%, hábitos 25%, estilo de moradia 10%, faixa etária 20%
-- Matches ordenados por score decrescente na API
-- Comandos de seed: `seed_perfis` (21 perfis) e `seed_matches` (15 matches pré-populados)
-
-**Frontend:**
-- Métrica de compatibilidade em 5 níveis a cada 20% (Baixa → Combinação perfeita), com barras coloridas e label em cada card de match
-- Aba de matches atualiza automaticamente após novo match ou ao navegar para ela
-- Tela de celebração com atalhos: iniciar conversa, ver matches ou continuar procurando
-- Botão "Curtir perfil" no detalhe chama a API e redireciona corretamente
-
-✅ Sprint D1 concluída — painel administrativo: dashboard e relatórios:
-
-**Backend:**
-- App `painel`: dashboard com KPIs (8 indicadores), séries temporais com zero-fill, top regiões e distribuição de score por faixa
-- 4 relatórios prontos: matches, compatibilidade por região, atividade por dia e usuários cadastrados
-- Todos os relatórios suportam filtros (data, região, tipo) e exportação CSV (UTF-8 BOM, separador `;`)
-- App `logs`: registro automático de operações (login, perfil, curtida, match, mensagem)
-
-**Frontend:**
-- Tela `PainelTab`: 8 cards KPI, gráfico de linha/área (SVG puro, 3 séries), top regiões e distribuição de score; barra de filtros com aplicar/limpar
-- Tela `RelatoriosTab`: seletor de relatório, inputs dinâmicos por tipo de filtro, tabela de resultados com totais e exportação CSV
-- Gráficos implementados em SVG sem dependências externas (`LineAreaChart`, `HorizontalBars`, `ScoreDistChart`)
-
-✅ Sprint D2 concluída — admin: logs, usuários e melhorias na descoberta:
-
-**Backend:**
-- Endpoints paginados para listagem e exportação de logs e usuários (com filtros de busca, tipo, região e data)
-
-**Frontend:**
-- `LogsTab`: tabela paginada com linhas expansíveis para detalhes; filtros por ação, usuário, entidade e data
-- `UsuariosTab`: busca, filtros e exportação CSV de usuários
-- `DiscoveryScreen`: barra de busca com debounce 400 ms, filtros avançados (região, tipo de imóvel, pets, fumante, orçamento, score mínimo, ordenação), chips de filtros ativos com remoção individual, persistência em `sessionStorage`
-- `MatchesScreen`: busca de conversas e toggle "Só não lidas"
-- Redirecionamento automático de usuários `administrador` para o painel ao fazer login
+| Sprint | Entrega |
+|---|---|
+| 2 e 3 | Banco conectado, autenticação JWT, cadastro, controle de perfis e CRUD |
+| 4 | Validações de regra de negócio no backend e no frontend; erros da API junto ao campo |
+| 5 | Algoritmo de compatibilidade, descoberta (curtir/recusar), matches e chat |
+| 6 | Perfil expandido (horário, ruído, social, visitas, tipo de imóvel, moradores), algoritmo com 6 critérios, matches ordenados por score, seeds |
+| D1 | Painel administrativo: dashboard, relatórios e registro automático de logs |
+| D2 | Logs e usuários no painel, busca e filtros na descoberta, busca de conversas, anúncio do imóvel |
+| Moderação | Denúncias, suspensão/reativação de contas e relatório de denúncias |
+| 9 | Campanha de testes (funcionais, validação e navegação), correção de 21 bugs do backend e dos defeitos de navegação do frontend, renovação de sessão, edição completa de perfil, formulário de anúncio e documentação atualizada — veja [`docs/testes-sprint9.md`](./docs/testes-sprint9.md) |
