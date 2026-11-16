@@ -675,7 +675,7 @@ function AppShell({ screen, tab, setTab, nav, onLogout, notifsCount, children }:
       </aside>
 
       {/* Área principal — offset da sidebar em lg */}
-      <div className="flex-1 flex flex-col lg:ml-[260px]">
+      <div className="flex-1 flex flex-col lg:ml-[260px] min-w-0">
         {children}
       </div>
 
@@ -1521,7 +1521,9 @@ const EMPTY_FILTERS: DiscoveryFilters = {
   score_min: 0, ordenar: 'compatibilidade',
 };
 
-function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, setShowFilters, onMatch }: {
+function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, setShowFilters, onMatch, tipo, regiao }: {
+  tipo: string;
+  regiao?: string;
   nav: (s: Screen) => void;
   setMatchProfile: (p: Profile) => void;
   onSelectProfile: (p: Profile) => void;
@@ -1544,8 +1546,9 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
   });
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const tituloTela = profiles[0]?.tipo === 'oferecendo_vaga' ? 'Vagas para você'
-    : profiles[0]?.tipo === 'buscando_vaga' ? 'Interessados na sua vaga'
+  // O título depende de quem está logado (vale também com a lista vazia).
+  const tituloTela = tipo === 'buscando_vaga' ? 'Vagas para você'
+    : tipo === 'oferecendo_vaga' ? 'Interessados na sua vaga'
     : 'Descoberta';
 
   const activeFiltersCount = [
@@ -1591,6 +1594,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
   };
 
   const handleApplyFilters = (newFilters: DiscoveryFilters) => {
+    setShowFilters(false);
     setFilters(newFilters);
     sessionStorage.setItem('pm_disc_filters', JSON.stringify(newFilters));
     doFetch(searchQ, newFilters);
@@ -1657,7 +1661,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <div>
             <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: 0 }}>{tituloTela}</h1>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>São Paulo · SP</p>
+            {regiao && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>📍 {regiao}</p>}
           </div>
           <button onClick={() => setShowFilters(true)} aria-label="Abrir filtros de busca" style={{
             position: 'relative', width: '44px', height: '44px', borderRadius: '14px',
@@ -1962,13 +1966,21 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
 
 // ─── Screen: Profile Detail ───────────────────────────────────────────────────
 
-function ProfileDetailScreen({ nav, profile, backScreen, onLike }: {
+function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
+  onRecusar?: (p: Profile) => Promise<void>;
   nav: (s: Screen) => void;
   profile: Profile;
   backScreen: Screen;
   onLike?: (p: Profile) => Promise<void>;
 }) {
   const [liking, setLiking] = useState(false);
+  // Vindo do chat (já há match) não faz sentido curtir/recusar: o detalhe é só leitura.
+  const somenteLeitura = backScreen === 'chat';
+  const handleRecusar = async () => {
+    if (!onRecusar) { nav(backScreen); return; }
+    setLiking(true);
+    try { await onRecusar(profile); } finally { setLiking(false); }
+  };
   const [fotoAtiva, setFotoAtiva] = useState<string>(profile.fotosImovel?.[0] ?? '');
   const [showDenuncia, setShowDenuncia] = useState(false);
 
@@ -1995,7 +2007,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike }: {
         <div style={{ position: 'relative', background: '#000' }}>
           <ImagemComFallback src={fotoSrc} alt={profile.tituloAnuncio ?? profile.name}
             style={{ width: '100%', height: '300px', objectFit: 'cover', display: 'block' }} tipo="imovel" />
-          <button onClick={() => nav(backScreen)} style={{ position: 'absolute', top: '16px', left: '16px', width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button aria-label="Voltar" onClick={() => nav(backScreen)} style={{ position: 'absolute', top: '16px', left: '16px', width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           </button>
           {fotosImovel.length > 1 && (
@@ -2062,10 +2074,12 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike }: {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <Btn label="✕ Recusar" outline onClick={() => nav(backScreen)} />
-            <Btn label={liking ? 'Enviando...' : '💛 Tenho interesse'} onClick={onLike ? handleLike : () => nav('match')} />
-          </div>
+          {!somenteLeitura && (
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <Btn label="✕ Recusar" outline onClick={handleRecusar} disabled={liking} />
+              <Btn label={liking ? 'Enviando...' : '💛 Tenho interesse'} onClick={onLike ? handleLike : () => nav('match')} disabled={liking} />
+            </div>
+          )}
           <div style={{ textAlign: 'center', marginTop: '12px' }}>
             <button onClick={() => setShowDenuncia(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 600, padding: '4px 0' }}>
               Denunciar este anúncio
@@ -2085,7 +2099,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike }: {
       <div className="relative h-[340px] lg:h-screen lg:sticky lg:top-0 lg:w-[420px] lg:flex-shrink-0">
         <img src={profile.photo} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(42,36,32,0.6) 0%, transparent 60%)' }} />
-        <button onClick={() => nav(backScreen)} style={{ position: 'absolute', top: '16px', left: '16px', width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button aria-label="Voltar" onClick={() => nav(backScreen)} style={{ position: 'absolute', top: '16px', left: '16px', width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         </button>
         {/* Desktop: name overlay on photo */}
@@ -2169,7 +2183,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike }: {
           </div>
         </div>
 
-        <Btn label={liking ? 'Curtindo...' : '💛 Curtir perfil'} onClick={onLike ? handleLike : () => nav('match')} />
+        {!somenteLeitura && <Btn label={liking ? 'Curtindo...' : '💛 Curtir perfil'} onClick={onLike ? handleLike : () => nav('match')} />}
         <div style={{ textAlign: 'center', marginTop: '12px' }}>
           <button onClick={() => setShowDenuncia(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 600, padding: '4px 0' }}>
             Denunciar este perfil
@@ -2399,11 +2413,14 @@ function NotificationsScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPer
 
   useEffect(() => {
     const lastVisit = sessionStorage.getItem('pm_notif_last_visit');
-    sessionStorage.setItem('pm_notif_last_visit', new Date().toISOString());
+    const agora = new Date().toISOString();
     listarMatches()
       .then(data => {
         const cutoff = lastVisit ? new Date(lastVisit) : null;
         const novos = cutoff ? data.filter(m => new Date(m.data_match) > cutoff) : data;
+        // Grava a visita só depois de usar o corte anterior: no StrictMode (dev) o efeito roda duas
+        // vezes e a segunda execução leria a visita recém-gravada, esvaziando a lista.
+        sessionStorage.setItem('pm_notif_last_visit', agora);
         setMatches(novos);
         setLoading(false);
       })
@@ -2925,7 +2942,8 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
 
 // ─── Screen: Chat ─────────────────────────────────────────────────────────────
 
-function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowReport }: {
+function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowReport, onVerPerfil }: {
+  onVerPerfil: () => void;
   nav: (s: Screen) => void;
   profile: Profile;
   matchId: number;
@@ -3014,7 +3032,7 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
       <div className="flex flex-col flex-1 w-full max-w-3xl mx-auto" style={{ overflow: 'hidden' }}>
         {/* Header */}
         <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px', background: C.card, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-          <button onClick={() => nav('matches')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: C.muted }}>
+          <button aria-label="Voltar" onClick={() => nav('matches')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: C.muted }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           </button>
           <div style={{ width: '44px', height: '44px', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${C.primary}` }}>
@@ -3025,13 +3043,13 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
             <CompatBadge value={profile.compat} />
           </div>
           <div style={{ position: 'relative' }}>
-            <button onClick={() => setShowMenu(m => !m)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: C.muted }}>
+            <button aria-label="Mais opções" onClick={() => setShowMenu(m => !m)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: C.muted }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
             </button>
             {showMenu && (
               <div style={{ position: 'absolute', right: 0, top: '36px', background: C.card, borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,0.14)', border: `1px solid ${C.border}`, zIndex: 50, minWidth: '160px', overflow: 'hidden' }}>
-                {['Ver perfil', 'Bloquear', 'Denunciar'].map(opt => (
-                  <button key={opt} onClick={() => { setShowMenu(false); if (opt === 'Denunciar') setShowReport(true); }} style={{
+                {['Ver perfil', 'Denunciar'].map(opt => (
+                  <button key={opt} onClick={() => { setShowMenu(false); if (opt === 'Denunciar') setShowReport(true); if (opt === 'Ver perfil') onVerPerfil(); }} style={{
                     display: 'block', width: '100%', padding: '14px 16px',
                     background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
                     fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 600,
@@ -3142,8 +3160,9 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
 
 // ─── Screen: My Profile ───────────────────────────────────────────────────────
 
-function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExcluido }: {
+function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExcluido, onLogout }: {
   nav: (s: Screen) => void;
+  onLogout: () => void;
   meuPerfil: PerfilAPI | null;
   tipo: string;
   onPerfilAtualizado: (p: PerfilAPI) => void;
@@ -3212,10 +3231,7 @@ function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExc
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    nav('welcome');
-  };
+  const handleLogout = () => onLogout();
 
   return (
     <div className="flex flex-col flex-1 pb-20 lg:pb-0" style={{ background: C.bg }}>
@@ -3533,9 +3549,30 @@ function getParam(name: string) {
   return new URLSearchParams(window.location.search).get(name);
 }
 
+// Navegação: a tela atual fica na URL (?screen=...) e no histórico do navegador.
+const TELAS_PUBLICAS: Screen[] = ['welcome', 'login', 'register'];
+const TELAS_DE_ABA: Screen[] = ['discovery', 'notifications', 'matches', 'profile'];
+// Dependem de estado em memória (perfil/conversa escolhidos): ao abrir direto pela URL, voltam à tela-mãe.
+const TELA_SEM_ESTADO: Partial<Record<Screen, Screen>> = { 'profile-detail': 'discovery', match: 'matches', chat: 'matches' };
+
+function temSessao(): boolean {
+  try { return !!sessionStorage.getItem('pm_access'); } catch { return false; }
+}
+
+function registrarTelaNaUrl(s: Screen, substituir: boolean) {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('screen', s);
+    if (substituir) window.history.replaceState({ screen: s }, '', url);
+    else window.history.pushState({ screen: s }, '', url);
+  } catch { /* ambiente sem history */ }
+}
+
 export default function App() {
-  const initialScreen = (getParam('screen') as Screen) || 'welcome';
+  const telaDaUrl = (getParam('screen') as Screen) || (temSessao() ? 'discovery' : 'welcome');
+  const initialScreen: Screen = temSessao() ? (TELA_SEM_ESTADO[telaDaUrl] ?? telaDaUrl) : telaDaUrl;
   const [screen, setScreen] = useState<Screen>(initialScreen);
+  const [restaurando, setRestaurando] = useState<boolean>(temSessao());
   const [tab, setTab] = useState<Tab>(
     (initialScreen === 'discovery' || initialScreen === 'notifications' || initialScreen === 'matches' || initialScreen === 'profile')
       ? (initialScreen as Tab)
@@ -3557,6 +3594,7 @@ export default function App() {
 
   const nav = (s: Screen) => {
     setScreen(s);
+    if (s !== screen) registrarTelaNaUrl(s, false);
     if (s === 'discovery' || s === 'notifications' || s === 'matches' || s === 'profile') setTab(s as Tab);
     if (s === 'matches') setMatchesKey(k => k + 1);
     if (s === 'notifications') { setNotifsKey(k => k + 1); setNotifsCount(0); }
@@ -3594,9 +3632,68 @@ export default function App() {
       setSelectedProfile(PROFILES[0]);
       setSessionExpiredMsg('Sua sessão expirou. Entre novamente.');
       setScreen('login');
+      registrarTelaNaUrl('login', true);
       setTab('discovery');
     });
   }, []);
+
+  // Estado inicial da URL no histórico + botão voltar/avançar do navegador.
+  useEffect(() => {
+    registrarTelaNaUrl(initialScreen, true);
+    const onPop = (e: PopStateEvent) => {
+      const s = ((e.state as { screen?: Screen } | null)?.screen ?? (getParam('screen') as Screen | null) ?? 'welcome') as Screen;
+      setScreen(s);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // A aba do menu acompanha a tela atual (também ao voltar pelo navegador).
+  useEffect(() => {
+    if (TELAS_DE_ABA.includes(screen)) setTab(screen as Tab);
+  }, [screen]);
+
+  // Restaura a sessão ao abrir/recarregar: tipo do usuário (/api/auth/me/) e perfil.
+  useEffect(() => {
+    if (!temSessao()) { setRestaurando(false); return; }
+    let ativo = true;
+    (async () => {
+      try {
+        const usuario = await buscarMeuUsuario();
+        if (!ativo) return;
+        setMeuTipo(usuario.tipo);
+        if (usuario.tipo === 'administrador') {
+          setScreen(s => (TELAS_PUBLICAS.includes(s) ? s : 'admin'));
+        } else {
+          const perfis = await listarPerfis();
+          if (!ativo) return;
+          const perfil = perfis.find(p => p.usuario === usuario.id) ?? null;
+          setMeuPerfil(perfil);
+          setScreen(s => {
+            if (TELAS_PUBLICAS.includes(s)) return s;
+            if (!perfil) return 'profile-create';
+            return s === 'profile-create' || s === 'admin' ? 'discovery' : s;
+          });
+        }
+      } catch { /* 401: a sessão inválida já foi tratada por onOn401 (volta ao login) */ }
+      finally { if (ativo) setRestaurando(false); }
+    })();
+    return () => { ativo = false; };
+  }, []);
+
+  // Guarda de rotas: tela interna exige sessão; o painel admin só para administrador;
+  // o administrador não usa as telas de usuário.
+  useEffect(() => {
+    if (restaurando) return;
+    const publica = TELAS_PUBLICAS.includes(screen);
+    const logado = temSessao();
+    if (!publica && !logado) { setScreen('login'); registrarTelaNaUrl('login', true); return; }
+    if (logado && meuTipo) {
+      if (meuTipo === 'administrador' && !publica && screen !== 'admin') { setScreen('admin'); registrarTelaNaUrl('admin', true); }
+      else if (meuTipo !== 'administrador' && screen === 'admin') { setScreen('discovery'); registrarTelaNaUrl('discovery', true); }
+    }
+  }, [screen, meuTipo, restaurando]);
 
   const handleLoginSuccess = async () => {
     try {
@@ -3615,17 +3712,34 @@ export default function App() {
     }
   };
 
+  if (restaurando) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-bg" style={{ color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '15px' }}>
+        Carregando...
+      </div>
+    );
+  }
+
+  // Tela efetivamente exibida: a guarda de rotas acima corrige o estado logo em seguida,
+  // mas a tela proibida nunca chega a ser desenhada.
+  const logado = temSessao();
+  const ehAdmin = meuTipo === 'administrador';
+  const permitida = TELAS_PUBLICAS.includes(screen) || (logado && (screen === 'admin' ? ehAdmin : !ehAdmin));
+  const telaAtual: Screen = permitida ? screen : (!logado ? 'login' : ehAdmin ? 'admin' : 'discovery');
+
   return (
-    <AppShell screen={screen} tab={tab} setTab={setTab} nav={nav} onLogout={handleLogout} notifsCount={notifsCount}>
-      {screen === 'admin' && <AdminPanel nav={nav} />}
-      {screen === 'welcome' && <WelcomeScreen nav={nav} />}
-      {screen === 'login' && <LoginScreen nav={nav} onLoginSuccess={handleLoginSuccess} loginMsg={sessionExpiredMsg} />}
-      {screen === 'register' && <RegisterScreen nav={nav} onLoginSuccess={handleLoginSuccess} />}
-      {screen === 'profile-create' && (
+    <AppShell screen={telaAtual} tab={tab} setTab={setTab} nav={nav} onLogout={handleLogout} notifsCount={notifsCount}>
+      {telaAtual === 'admin' && <AdminPanel nav={nav} onLogout={handleLogout} />}
+      {telaAtual === 'welcome' && <WelcomeScreen nav={nav} />}
+      {telaAtual === 'login' && <LoginScreen nav={nav} onLoginSuccess={handleLoginSuccess} loginMsg={sessionExpiredMsg} />}
+      {telaAtual === 'register' && <RegisterScreen nav={nav} onLoginSuccess={handleLoginSuccess} />}
+      {telaAtual === 'profile-create' && (
         <ProfileCreateScreen nav={nav} tipo={meuTipo} onPerfilCriado={(p) => setMeuPerfil(p)} />
       )}
-      {screen === 'discovery' && (
+      {telaAtual === 'discovery' && (
         <DiscoveryScreen
+          tipo={meuTipo}
+          regiao={meuPerfil?.regiao}
           nav={nav}
           setMatchProfile={setMatchProfile}
           onSelectProfile={(p) => { setSelectedProfile(p); setPrevScreen(screen); }}
@@ -3634,11 +3748,15 @@ export default function App() {
           onMatch={(matchId) => { setActiveChatMatchId(matchId); setMatchesKey(k => k + 1); setNotifsCount(n => n + 1); }}
         />
       )}
-      {screen === 'profile-detail' && (
+      {telaAtual === 'profile-detail' && (
         <ProfileDetailScreen
           nav={nav}
           profile={selectedProfile}
           backScreen={prevScreen}
+          onRecusar={async (p) => {
+            try { await enviarCurtida(p.id, 'recusar'); } catch { /* a Descoberta recarrega a lista de qualquer forma */ }
+            nav('discovery');
+          }}
           onLike={async (p) => {
             try {
               const res = await enviarCurtida(p.id, 'curtir');
@@ -3657,21 +3775,39 @@ export default function App() {
           }}
         />
       )}
-      {screen === 'match' && <MatchScreen nav={nav} profile={matchProfile} setCurrentChat={setCurrentChat} />}
-      {screen === 'matches' && (
+      {telaAtual === 'match' && <MatchScreen nav={nav} profile={matchProfile} setCurrentChat={setCurrentChat} />}
+      {telaAtual === 'matches' && (
         <MatchesScreen key={matchesKey} nav={nav} setCurrentChat={setCurrentChat} setActiveChatMatchId={setActiveChatMatchId} meuPerfilId={meuPerfil?.id ?? null} />
       )}
-      {screen === 'notifications' && (
+      {telaAtual === 'notifications' && (
         <NotificationsScreen key={notifsKey} nav={nav} setCurrentChat={setCurrentChat} setActiveChatMatchId={setActiveChatMatchId} meuPerfilId={meuPerfil?.id ?? null} />
       )}
-      {screen === 'chat' && (
-        <ChatScreen nav={nav} profile={currentChat} matchId={activeChatMatchId} meuPerfilId={meuPerfil?.id ?? 0} showReport={showReport} setShowReport={setShowReport} />
+      {telaAtual === 'chat' && (
+        <ChatScreen nav={nav} profile={currentChat} matchId={activeChatMatchId} meuPerfilId={meuPerfil?.id ?? 0} showReport={showReport} setShowReport={setShowReport}
+          onVerPerfil={async () => {
+            // Dados reais do outro participante (a lista de conversas só traz um resumo).
+            try {
+              const ms = await listarMatches();
+              const m = ms.find(x => x.id === activeChatMatchId);
+              if (m) {
+                const outro = m.perfil_a.id === meuPerfil?.id ? m.perfil_b : m.perfil_a;
+                setSelectedProfile(perfilBasicoParaProfile(outro, m.score));
+                setPrevScreen('chat');
+                nav('profile-detail');
+                return;
+              }
+            } catch { /* usa o resumo da conversa */ }
+            setSelectedProfile(currentChat);
+            setPrevScreen('chat');
+            nav('profile-detail');
+          }} />
       )}
-      {screen === 'profile' && (
+      {telaAtual === 'profile' && (
         <MyProfileScreen
           nav={nav}
           meuPerfil={meuPerfil}
           tipo={meuTipo}
+          onLogout={handleLogout}
           onPerfilAtualizado={(p) => setMeuPerfil(p)}
           onPerfilExcluido={() => { setMeuPerfil(null); nav('profile-create'); }}
         />

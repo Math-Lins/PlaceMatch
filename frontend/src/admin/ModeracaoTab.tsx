@@ -220,12 +220,17 @@ export default function ModeracaoTab() {
   };
 
   const buscaLower = busca.toLowerCase();
-  const filtradas = busca
-    ? denuncias.filter(d =>
-        (d.denunciante.email ?? '').toLowerCase().includes(buscaLower) ||
-        d.denunciado.email.toLowerCase().includes(buscaLower)
-      )
-    : denuncias;
+  // Dia local (AAAA-MM-DD) em que a denúncia foi criada, para comparar com os campos de data.
+  const diaDaDenuncia = (iso: string) => new Date(iso).toLocaleDateString('en-CA');
+  const filtradas = denuncias.filter(d => {
+    if (busca && !((d.denunciante.email ?? '').toLowerCase().includes(buscaLower) || d.denunciado.email.toLowerCase().includes(buscaLower))) return false;
+    if (!erroPeriodo) {
+      const dia = diaDaDenuncia(d.criada_em);
+      if (dataInicio && dia < dataInicio) return false;
+      if (dataFim && dia > dataFim) return false;
+    }
+    return true;
+  });
 
   const inputStyle: React.CSSProperties = {
     padding: '8px 12px', borderRadius: '10px', border: `1.5px solid ${C.border}`,

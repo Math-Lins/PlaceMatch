@@ -64,7 +64,7 @@ const TAB_LABELS: Record<AdminTab, string> = {
   moderacao: 'Moderação',
 };
 
-export default function AdminPanel({ nav }: { nav: (s: 'welcome') => void }) {
+export default function AdminPanel({ nav, onLogout }: { nav: (s: 'welcome') => void; onLogout?: () => void }) {
   const [activeTab, setActiveTab] = useState<AdminTab>('painel');
   const [pendingDenuncias, setPendingDenuncias] = useState(0);
 
@@ -83,7 +83,7 @@ export default function AdminPanel({ nav }: { nav: (s: 'welcome') => void }) {
             Painel Admin
           </h1>
           <button
-            onClick={() => nav('welcome')}
+            onClick={() => (onLogout ? onLogout() : nav('welcome'))}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '14px', padding: '8px 0',

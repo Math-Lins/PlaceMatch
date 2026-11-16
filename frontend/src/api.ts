@@ -345,8 +345,16 @@ export interface DescobertaParams {
   ordenar?: 'compatibilidade' | 'menor_preco' | 'maior_preco';
 }
 
+// A tela usa sim/não/indiferente e nomes de ordenação próprios; a API espera true/false e score/orcamento_*.
+const BOOL_API: Record<string, string> = { sim: 'true', nao: 'false' };
+const ORDEM_API: Record<string, string> = { compatibilidade: 'score', menor_preco: 'orcamento_asc', maior_preco: 'orcamento_desc' };
+
 export async function listarDescoberta(params?: DescobertaParams): Promise<PerfilDescoberto[]> {
-  const qs = params ? buildQS(params as Record<string, unknown>) : '';
+  const paraApi: Record<string, unknown> = { ...(params ?? {}) };
+  if (params?.aceita_pets) paraApi.aceita_pets = BOOL_API[params.aceita_pets];
+  if (params?.fumante) paraApi.fumante = BOOL_API[params.fumante];
+  if (params?.ordenar) paraApi.ordenar = ORDEM_API[params.ordenar];
+  const qs = params ? buildQS(paraApi) : '';
   return req<PerfilDescoberto[]>(`/api/descoberta/${qs}`);
 }
 
