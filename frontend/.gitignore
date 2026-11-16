@@ -7,3 +7,12 @@ build/
 vite.config.*.timestamp-*
 *.tsbuildinfo
 *.log
+
+# e2e (Playwright): resultados, relatório e traces; só e2e/evidencias/ é versionada
+e2e/resultados/
+e2e/relatorio/
+e2e/.env.e2e
+playwright-report/
+test-results/
+
+evidencias-sprint9*.zip

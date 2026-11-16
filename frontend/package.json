@@ -7,20 +7,24 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "e2e": "playwright test -c e2e/playwright.config.ts",
+    "e2e:db": "docker compose -f e2e/docker-compose.e2e.yml --env-file e2e/.env.e2e up -d --wait",
+    "e2e:db:parar": "docker compose -f e2e/docker-compose.e2e.yml --env-file e2e/.env.e2e down -v"
   },
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.0.0",
-    "tailwindcss": "^4.0.0",
-    "@tailwindcss/vite": "^4.0.0",
     "oxfmt": "^0.2.0",
+    "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",
     "vite": "^8.0.5"
   }
