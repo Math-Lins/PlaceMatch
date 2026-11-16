@@ -1,4 +1,7 @@
 from django.db import models
+from django.db.models import CheckConstraint
+from django.db.models.functions import Length
+from django.db.models.lookups import GreaterThanOrEqual, LessThanOrEqual
 
 
 class Mensagem(models.Model):
@@ -19,6 +22,10 @@ class Mensagem(models.Model):
         ordering = ['data_envio', 'id']
         indexes = [
             models.Index(fields=['match', 'data_envio']),
+        ]
+        constraints = [
+            CheckConstraint(condition=GreaterThanOrEqual(Length('conteudo'), 1), name='mensagem_conteudo_min_1_ck'),
+            CheckConstraint(condition=LessThanOrEqual(Length('conteudo'), 1000), name='mensagem_conteudo_max_1000_ck'),
         ]
 
     def __str__(self):

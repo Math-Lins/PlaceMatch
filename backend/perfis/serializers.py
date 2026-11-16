@@ -107,6 +107,13 @@ class PerfilSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def validate_descricao_imovel(self, value):
+        if value and len(value) > 1000:
+            raise serializers.ValidationError(
+                f'A descrição do imóvel deve ter no máximo 1000 caracteres (enviados: {len(value)}).'
+            )
+        return value
+
     def validate_foto_perfil_url(self, value):
         if value and not (value.startswith('http://') or value.startswith('https://')):
             raise serializers.ValidationError(

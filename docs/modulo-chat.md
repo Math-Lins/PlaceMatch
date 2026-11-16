@@ -14,6 +14,7 @@
 | `lida`       | BooleanField    | `False` por padrão; marcado ao listar msgs     |
 
 **Índice:** `(match, data_envio)` (`chat_mensag_match_i_36edce_idx`) para listagem eficiente por match.
+**Restrições no banco:** `conteudo` com 1 a 1000 caracteres (`mensagem_conteudo_min_1_ck` e `mensagem_conteudo_max_1000_ck`).
 **Ordenação padrão:** `data_envio ASC, id ASC`.
 
 ---

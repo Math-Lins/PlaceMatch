@@ -190,10 +190,16 @@ export default function ModeracaoTab() {
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
 
-  const carregar = useCallback((params: { status?: string; motivo?: string }) => {
+  const carregar = useCallback((params: { status?: string; motivo?: string; data_inicio?: string; data_fim?: string }) => {
+    if (validarPeriodo(params.data_inicio, params.data_fim)) { setLoading(false); return; }
     setLoading(true);
     setErro('');
-    listarDenuncias({ status: params.status || undefined, motivo: params.motivo || undefined })
+    listarDenuncias({
+      status: params.status || undefined,
+      motivo: params.motivo || undefined,
+      data_inicio: params.data_inicio || undefined,
+      data_fim: params.data_fim || undefined,
+    })
       .then(res => { setDenuncias(res); setLoading(false); })
       .catch((e: Error) => { setErro(e instanceof ApiError ? e.message : e.message); setLoading(false); });
   }, []);
@@ -202,7 +208,7 @@ export default function ModeracaoTab() {
 
   const erroPeriodo = validarPeriodo(dataInicio, dataFim);
 
-  const handleBuscar = () => carregar({ status, motivo });
+  const handleBuscar = () => carregar({ status, motivo, data_inicio: dataInicio, data_fim: dataFim });
 
   const handleExport = async () => {
     if (erroPeriodo) return;
@@ -220,17 +226,10 @@ export default function ModeracaoTab() {
   };
 
   const buscaLower = busca.toLowerCase();
-  // Dia local (AAAA-MM-DD) em que a denúncia foi criada, para comparar com os campos de data.
-  const diaDaDenuncia = (iso: string) => new Date(iso).toLocaleDateString('en-CA');
-  const filtradas = denuncias.filter(d => {
-    if (busca && !((d.denunciante.email ?? '').toLowerCase().includes(buscaLower) || d.denunciado.email.toLowerCase().includes(buscaLower))) return false;
-    if (!erroPeriodo) {
-      const dia = diaDaDenuncia(d.criada_em);
-      if (dataInicio && dia < dataInicio) return false;
-      if (dataFim && dia > dataFim) return false;
-    }
-    return true;
-  });
+  // O período (De/Até) é aplicado pelo backend ao clicar em "Buscar"; aqui só a busca por e-mail.
+  const filtradas = denuncias.filter(d =>
+    !busca || (d.denunciante.email ?? '').toLowerCase().includes(buscaLower) || d.denunciado.email.toLowerCase().includes(buscaLower),
+  );
 
   const inputStyle: React.CSSProperties = {
     padding: '8px 12px', borderRadius: '10px', border: `1.5px solid ${C.border}`,
@@ -378,7 +377,7 @@ export default function ModeracaoTab() {
         <AnalisarModal
           denuncia={analisando}
           onClose={() => setAnalisando(null)}
-          onConcluido={() => { setAnalisando(null); carregar({ status, motivo }); }}
+          onConcluido={() => { setAnalisando(null); carregar({ status, motivo, data_inicio: dataInicio, data_fim: dataFim }); }}
         />
       )}
     </div>

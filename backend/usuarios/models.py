@@ -2,6 +2,8 @@ import hashlib
 
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
+from django.db.models import CheckConstraint, Q, UniqueConstraint
+from django.db.models.functions import Lower
 
 
 class UsuarioManager(UserManager):
@@ -32,6 +34,13 @@ class Usuario(AbstractUser):
     REQUIRED_FIELDS = ['username']
 
     objects = UsuarioManager()
+
+    class Meta(AbstractUser.Meta):
+        constraints = [
+            CheckConstraint(condition=Q(tipo__in=['buscando_vaga', 'oferecendo_vaga', 'administrador']), name='usuario_tipo_valido_ck'),
+            # e-mail único sem diferenciar maiúsculas (a API já grava em minúsculas)
+            UniqueConstraint(Lower('email'), name='usuario_email_lower_uniq'),
+        ]
 
     def __str__(self):
         return self.email

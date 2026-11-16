@@ -3,7 +3,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
 
-from painel.filtros import corpo_invalido, resposta_400, validar_escolha_param
+from painel.filtros import (
+    corpo_invalido, resposta_400, validar_e_parsear_datas, validar_escolha_param,
+)
 from painel.permissoes import AdminPermission
 from placematch import validacao
 from .models import Denuncia
@@ -87,6 +89,14 @@ class AdminDenunciaListView(APIView):
             return erro
         if motivo:
             qs = qs.filter(motivo=motivo)
+
+        data_inicio, data_fim, erro = validar_e_parsear_datas(request.query_params)
+        if erro:
+            return erro
+        if data_inicio:
+            qs = qs.filter(criada_em__gte=data_inicio)
+        if data_fim:
+            qs = qs.filter(criada_em__lte=data_fim)
 
         resultado = []
         for d in qs:

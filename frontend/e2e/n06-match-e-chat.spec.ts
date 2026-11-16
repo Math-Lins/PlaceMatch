@@ -70,9 +70,24 @@ test('N06 Match e chat com duas sessões isoladas', async ({ browser }) => {
         .toBeHidden({ timeout: 5_000 });
       await expect(B.page.getByRole('heading', { name: new RegExp(A.perfil.nome.split(' ').slice(0, 3).join(' ')) }).first()).toBeVisible();
       await expect(B.page.getByText(/R\$\s*800/), 'o perfil aberto pelo chat deve mostrar o orçamento real').toBeVisible();
+      // a capa usa imagem de reserva: sem foto, nada de imagem quebrada com texto alternativo
+      await expect(B.page.getByRole('img', { name: A.perfil.nome }), 'sem foto, a capa deve mostrar a reserva (iniciais), não uma imagem quebrada').toHaveCount(0);
       await print(B.page, 'N06', 7, 'ver-perfil');
       await B.page.getByRole('button', { name: 'Voltar' }).click();
       await expect(B.page.getByPlaceholder('Digite uma mensagem...'), 'voltar do perfil deveria retornar ao chat').toBeVisible();
+    });
+
+    await test.step('9. recarregar a página no chat reabre a mesma conversa (id do match na URL)', async () => {
+      await expect(B.page).toHaveURL(/screen=chat&match=\d+/);
+      await B.page.reload();
+      await expect(B.page.getByPlaceholder('Digite uma mensagem...'), 'o chat deveria reabrir após recarregar').toBeVisible({ timeout: 20_000 });
+      await expect(B.page.getByText('Oi! Podemos conversar, sim.')).toBeVisible();
+      await expect(B.page.getByText('Olá! Tenho interesse em conversar sobre a vaga.')).toBeVisible();
+      await print(B.page, 'N06', 8, 'chat-recarregado');
+      // conversa que não existe (ou de outra pessoa): cai em Matches, sem erro
+      await B.page.goto('/?screen=chat&match=999999');
+      await expect(B.page.getByRole('heading', { name: 'Seus Matches' })).toBeVisible({ timeout: 20_000 });
+      await expect(B.page).not.toHaveURL(/match=/);
     });
   } finally {
     await A.context.close();

@@ -1,12 +1,12 @@
 # Campanha de testes — Sprint 9
 
-Resumo da campanha de testes funcionais, de validação e de navegação, dos bugs encontrados e do que foi corrigido. Estado final: **todos os testes passam**; restam 2 pendências de baixa gravidade na navegação (seção 6).
+Resumo da campanha de testes funcionais, de validação e de navegação, dos bugs encontrados e do que foi corrigido. Estado final: **todos os testes passam**. As pendências de navegação (N17 e N18) foram resolvidas na Sprint 10 (seção 6).
 
 ## 1. Números
 
 | Verificação | Antes | Depois |
 |---|---|---|
-| Testes do backend (`manage.py test`) | 326 | **531** (+172 casos novos + 33 de regressão), 0 falhas, 0 falhas esperadas |
+| Testes do backend (`manage.py test`) | 326 | **531** ao fim da Sprint 9 (+172 casos novos + 33 de regressão) e **560** ao fim da Sprint 10 (+29: restrições do banco, `verificar_banco`, filtro de datas e limite da descrição), 0 falhas |
 | Casos funcionais (CT-F) | — | 38 (38 aprovados) |
 | Casos de validação (CT-V) | — | 134 (98 aprovados na primeira execução; 36 reprovados, todos corrigidos) |
 | Roteiros de navegação (Playwright) | — | 13 roteiros, 25 testes (23 desktop + 2 mobile), todos aprovados; 89 prints de evidência |
@@ -118,15 +118,15 @@ Mensagem amigável para erros 5xx e falha de rede; renovação automática do ac
 | N14 | Subtítulo fixo "São Paulo · SP"; título da Descoberta dependia da lista | Corrigido |
 | N15 | Notificações vazia de forma intermitente em desenvolvimento (efeito duplicado do `StrictMode`) | Corrigido |
 | N16 | Perfil aberto pelo chat usava dados padrão inventados | Corrigido (perfil real do match) |
-| N17 | Capa do detalhe usa `<img>` sem imagem de reserva | **Pendente** (baixa) |
-| N18 | Chat aberto direto pela URL volta para Matches (conversa só em memória) | **Pendente** (baixa) |
+| N17 | Capa do detalhe usa `<img>` sem imagem de reserva | Corrigido na Sprint 10 (`ImagemComFallback` em todas as imagens) |
+| N18 | Chat aberto direto pela URL volta para Matches (conversa só em memória) | Corrigido na Sprint 10 (`?screen=chat&match=<id>`) |
 | N19 | N10 travou uma vez com o banco cheio de dados acumulados | Não reproduzido em banco limpo |
 
-## 6. Pendências
+## 6. Pendências resolvidas na Sprint 10
 
-- Detalhe do perfil: usar imagem de reserva na capa (N17).
-- Guardar o id da conversa na URL para o chat sobreviver ao recarregar (N18).
-- O filtro de datas da Moderação filtra a lista no cliente (o endpoint de denúncias não tem filtro de data).
+- N17: imagem de reserva na capa do detalhe (e em todas as imagens do aplicativo).
+- N18: o chat reabre a mesma conversa ao recarregar (id do match na URL). O detalhe do perfil continua sem restauração pela URL, porque o endpoint de perfis não traz o score de compatibilidade.
+- O filtro de datas da Moderação passou a ser aplicado pelo backend (`data_inicio` e `data_fim` em `GET /api/admin/moderacao/denuncias/`).
 
 ## 7. Observação sobre os prints
 

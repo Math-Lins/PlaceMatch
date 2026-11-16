@@ -70,110 +70,14 @@ interface Profile {
   usuarioId?: number;
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ─── Dados ───────────────────────────────────────────
 
-const PROFILES: Profile[] = [
-  {
-    id: 1,
-    name: 'Ana Luísa',
-    age: 23,
-    region: 'Vila Madalena',
-    bio: 'Estudante de arquitetura, adoro cozinhar aos fins de semana e tenho uma gata chamada Biscuit. Procuro alguém tranquilo e que respeite espaço pessoal.',
-    compat: 89,
-    photo: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&h=1000&fit=crop&auto=format',
-    tags: ['Não fumante', 'Aceita pets', 'Madrugadora'],
-    budget: 'R$ 800 – R$ 1.400',
-    smoker: false,
-    pets: true,
-    organized: 4,
-    messy: 2,
-    horario: 'madrugador',
-    ruido: 2,
-    social: 3,
-    visitas: 'as_vezes',
-    tipoImovel: 'apartamento',
-    qtdMoradores: 2,
-    lastMsg: 'Oi! Vi que você também é da Vila Madalena 😊',
-    lastTime: '14:32',
-  },
-  {
-    id: 2,
-    name: 'Pedro Henrique',
-    age: 26,
-    region: 'Pinheiros',
-    bio: 'Dev front-end trabalhando remoto. Sou tranquilo, gosto de música lo-fi e cuido bem dos espaços comuns. Não fumo e prefiro ambientes organizados.',
-    compat: 74,
-    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1000&fit=crop&auto=format',
-    tags: ['Não fumante', 'Sem pets', 'Noturno'],
-    budget: 'R$ 1.000 – R$ 1.800',
-    smoker: false,
-    pets: false,
-    organized: 5,
-    messy: 1,
-    horario: 'noturno',
-    ruido: 1,
-    social: 2,
-    visitas: 'raramente',
-    tipoImovel: 'apartamento',
-    qtdMoradores: 2,
-    lastMsg: 'Que legal, você trabalha na área de tech também?',
-    lastTime: '10:15',
-  },
-  {
-    id: 3,
-    name: 'Camila Souza',
-    age: 24,
-    region: 'Consolação',
-    bio: 'Mestranda em comunicação, vivia em intercâmbio até ano passado. Gosto de ambientes aconchegantes, faço yoga e tenho um cachorrinho chamado Tofu.',
-    compat: 92,
-    photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=1000&fit=crop&auto=format',
-    tags: ['Não fumante', 'Aceita pets', 'Flexível'],
-    budget: 'R$ 900 – R$ 1.600',
-    smoker: false,
-    pets: true,
-    organized: 3,
-    messy: 3,
-    horario: 'flexivel',
-    ruido: 3,
-    social: 4,
-    visitas: 'frequentemente',
-    tipoImovel: 'casa',
-    qtdMoradores: 3,
-    lastMsg: 'Adorei seu perfil! A gente tem muito em comum',
-    lastTime: 'Ontem',
-  },
-];
-
-const MY_PROFILE: Profile = {
-  id: 0,
-  name: 'Você',
-  age: 25,
-  region: 'Jardins',
-  bio: 'Procuro um lugar tranquilo perto do trabalho. Gosto de cozinhar, sou organizado e respeito muito o espaço dos outros.',
-  compat: 100,
-  photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&h=1000&fit=crop&auto=format',
-  tags: ['Não fumante', 'Sem pets', 'Organizado'],
-  budget: 'R$ 800 – R$ 1.500',
-  smoker: false,
-  pets: false,
-  organized: 4,
-  messy: 2,
-  horario: 'madrugador',
-  ruido: 2,
-  social: 3,
-  visitas: 'as_vezes',
-  tipoImovel: 'apartamento',
-  qtdMoradores: 2,
+// Perfil "vazio": valor inicial neutro dos estados de tela (nunca mostra dados de pessoas).
+const PERFIL_VAZIO: Profile = {
+  id: 0, name: '', age: 0, region: '', bio: '', compat: 0, photo: '', tags: [], budget: '',
+  smoker: false, pets: false, organized: 3, messy: 3, horario: 'flexivel', ruido: 3, social: 3,
+  visitas: 'as_vezes', tipoImovel: 'indiferente', qtdMoradores: 2,
 };
-
-// Fotos usadas enquanto o backend não tem campo de foto no perfil
-const PLACEHOLDER_PHOTOS = [
-  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&h=1000&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1000&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=1000&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800&h=1000&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&h=1000&fit=crop&auto=format',
-];
 
 const HORARIO_LABEL: Record<string, string> = {
   madrugador: 'Madrugador(a)',
@@ -222,7 +126,7 @@ function perfilDescobertoParaProfile(p: PerfilDescoberto): Profile {
     region: p.regiao,
     bio: p.bio,
     compat: Math.round(p.score * 100),
-    photo: p.fotos_imovel?.[0] ?? PLACEHOLDER_PHOTOS[p.id % PLACEHOLDER_PHOTOS.length],
+    photo: p.fotos_imovel?.[0] ?? '',
     tags: buildTags(p),
     budget,
     smoker: p.fumante,
@@ -245,7 +149,7 @@ function perfilDescobertoParaProfile(p: PerfilDescoberto): Profile {
 }
 
 function perfilBasicoParaProfile(p: PerfilBasico | undefined, score: number): Profile {
-  if (!p) return PROFILES[0];
+  if (!p) return PERFIL_VAZIO;
   const min = Number(p.orcamento_min);
   const max = Number(p.orcamento_max);
   const budget = min === max
@@ -258,7 +162,7 @@ function perfilBasicoParaProfile(p: PerfilBasico | undefined, score: number): Pr
     region: p.regiao,
     bio: p.bio,
     compat: Math.round(score * 100),
-    photo: p.fotos_imovel?.[0] ?? PLACEHOLDER_PHOTOS[p.id % PLACEHOLDER_PHOTOS.length],
+    photo: p.fotos_imovel?.[0] ?? '',
     tags: buildTags(p),
     budget,
     smoker: p.fumante,
@@ -2013,7 +1917,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
             <div style={{ display: 'flex', gap: '8px', padding: '10px 16px', overflowX: 'auto', background: 'rgba(0,0,0,0.55)' }}>
               {fotosImovel.map((f, i) => (
                 <button key={i} onClick={() => setFotoAtiva(f)} style={{ flexShrink: 0, padding: 0, border: `2px solid ${fotoAtiva === f ? '#fff' : 'transparent'}`, borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', background: 'none' }}>
-                  <img src={f} alt={`Foto ${i + 1}`} style={{ width: '64px', height: '48px', objectFit: 'cover', display: 'block' }} />
+                  <ImagemComFallback src={f} alt={`Foto ${i + 1}`} tipo="imovel" style={{ width: '64px', height: '48px', objectFit: 'cover', display: 'block' }} />
                 </button>
               ))}
             </div>
@@ -2096,7 +2000,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
     <div className="flex flex-col lg:flex-row flex-1 pb-20 lg:pb-0" style={{ background: C.bg }}>
       {/* Photo column */}
       <div className="relative h-[340px] lg:h-screen lg:sticky lg:top-0 lg:w-[420px] lg:flex-shrink-0">
-        <img src={profile.photo} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <ImagemComFallback src={profile.photo} alt={profile.name} tipo="avatar" iniciais={profile.name.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(42,36,32,0.6) 0%, transparent 60%)' }} />
         <button aria-label="Voltar" onClick={() => nav(backScreen)} style={{ position: 'absolute', top: '16px', left: '16px', width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
@@ -2480,7 +2384,7 @@ function NotificationsScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPer
           const outro = m.perfil_a.id === meuPerfilId ? m.perfil_b : m.perfil_a;
           const compat = Math.round(m.score * 100);
           const level = getCompatLevel(compat);
-          const foto = outro.fotos_imovel?.[0] ?? PLACEHOLDER_PHOTOS[outro.id % PLACEHOLDER_PHOTOS.length];
+          const foto = outro.fotos_imovel?.[0] ?? '';
           return (
             <button
               key={m.id}
@@ -2492,7 +2396,7 @@ function NotificationsScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPer
               }}
             >
               <div style={{ flexShrink: 0, width: '58px', height: '58px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${level.color}` }}>
-                <img src={foto} alt={outro.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <ImagemComFallback src={foto} alt={outro.nome} tipo="avatar" iniciais={outro.nome.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
@@ -2694,7 +2598,7 @@ function conversaParaProfile(c: Conversa): Profile {
     region: p.regiao,
     bio: '',
     compat: Math.round(c.score * 100),
-    photo: PLACEHOLDER_PHOTOS[p.id % PLACEHOLDER_PHOTOS.length],
+    photo: '',
     tags: [],
     budget: '',
     smoker: false, pets: false, organized: 3, messy: 3,
@@ -2842,7 +2746,7 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
                 }}>
                   <div style={{ position: 'relative', flexShrink: 0 }}>
                     <div style={{ width: '58px', height: '58px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${level.color}` }}>
-                      <img src={profile.photo} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <ImagemComFallback src={profile.photo} alt={profile.name} tipo="avatar" iniciais={profile.name.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                     <div style={{
                       position: 'absolute', bottom: '-2px', right: '-2px',
@@ -2906,7 +2810,7 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
                     </span>
                   )}
                   <div style={{ position: 'relative', height: '160px', flexShrink: 0 }}>
-                    <img src={profile.photo} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <ImagemComFallback src={profile.photo} alt={profile.name} tipo="avatar" iniciais={profile.name.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     <div style={{
                       position: 'absolute', top: '10px', left: '10px',
                       background: `${level.color}EE`, borderRadius: '10px', padding: '3px 10px',
@@ -3035,7 +2939,7 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           </button>
           <div style={{ width: '44px', height: '44px', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${C.primary}` }}>
-            <img src={profile.photo} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <ImagemComFallback src={profile.photo} alt={profile.name} tipo="avatar" iniciais={profile.name.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text, margin: 0 }}>{profile.name}</p>
@@ -3232,6 +3136,14 @@ function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExc
 
   const handleLogout = () => onLogout();
 
+  if (!meuPerfil) {
+    return (
+      <div className="flex flex-1 items-center justify-center" style={{ background: C.bg, color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '15px' }}>
+        Carregando perfil...
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col flex-1 pb-20 lg:pb-0" style={{ background: C.bg }}>
       <div style={{ padding: '20px 24px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -3252,18 +3164,18 @@ function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExc
           <div className="lg:w-72 lg:flex-shrink-0 lg:sticky lg:top-6">
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', padding: '20px', background: C.card, borderRadius: '20px', border: `1px solid ${C.border}` }}>
               <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${C.primary}`, flexShrink: 0 }}>
-                <img src={MY_PROFILE.photo} alt="Você" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <ImagemComFallback src={meuPerfil.foto_perfil_url} alt={meuPerfil.nome} tipo="avatar" iniciais={meuPerfil.nome.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div>
-                <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 800, color: C.text, margin: '0 0 2px' }}>{meuPerfil?.nome || MY_PROFILE.name}</h2>
-                <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: '0 0 6px' }}>{meuPerfil?.idade || MY_PROFILE.age} anos · {meuPerfil?.regiao || MY_PROFILE.region}</p>
+                <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 800, color: C.text, margin: '0 0 2px' }}>{meuPerfil.nome}</h2>
+                <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: '0 0 6px' }}>{meuPerfil.idade} anos · {meuPerfil.regiao}</p>
               </div>
             </div>
 
             {/* Tags on desktop (view mode only) */}
             {!editing && (
               <div className="hidden lg:flex" style={{ gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                {MY_PROFILE.tags.map(t => <Tag key={t} label={t} />)}
+                {buildTags(meuPerfil).map(t => <Tag key={t} label={t} />)}
               </div>
             )}
           </div>
@@ -3289,17 +3201,17 @@ function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExc
               <>
                 <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
                   <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text, margin: '0 0 10px' }}>Sobre mim</h3>
-                  <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.text, lineHeight: 1.7, margin: 0 }}>{meuPerfil?.bio || MY_PROFILE.bio}</p>
+                  <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.text, lineHeight: 1.7, margin: 0 }}>{meuPerfil.bio || 'Você ainda não escreveu uma apresentação.'}</p>
                 </div>
 
                 <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
                   <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text, margin: '0 0 14px' }}>Preferências de moradia</h3>
                   {[
-                    { label: 'Orçamento', value: meuPerfil ? `R$ ${meuPerfil.orcamento_min} – R$ ${meuPerfil.orcamento_max}` : MY_PROFILE.budget },
-                    { label: 'Tipo de imóvel', value: meuPerfil ? (IMOVEL_LABEL[meuPerfil.tipo_imovel] ?? meuPerfil.tipo_imovel) : IMOVEL_LABEL[MY_PROFILE.tipoImovel] },
-                    { label: 'Moradores', value: (() => { const n = meuPerfil?.qtd_moradores ?? MY_PROFILE.qtdMoradores; return `${n}${n === 4 ? '+' : ''} pessoa${n > 1 ? 's' : ''}`; })() },
-                    { label: 'Fumante', value: meuPerfil ? (meuPerfil.fumante ? 'Sim' : 'Não') : (MY_PROFILE.smoker ? 'Sim' : 'Não') },
-                    { label: 'Aceita pets', value: meuPerfil ? (meuPerfil.aceita_pets ? 'Sim' : 'Não') : (MY_PROFILE.pets ? 'Sim' : 'Não') },
+                    { label: 'Orçamento', value: `R$ ${meuPerfil.orcamento_min} – R$ ${meuPerfil.orcamento_max}` },
+                    { label: 'Tipo de imóvel', value: IMOVEL_LABEL[meuPerfil.tipo_imovel] ?? meuPerfil.tipo_imovel },
+                    { label: 'Moradores', value: (() => { const n = meuPerfil.qtd_moradores; return `${n}${n === 4 ? '+' : ''} pessoa${n > 1 ? 's' : ''}`; })() },
+                    { label: 'Fumante', value: meuPerfil.fumante ? 'Sim' : 'Não' },
+                    { label: 'Aceita pets', value: meuPerfil.aceita_pets ? 'Sim' : 'Não' },
                   ].map(row => (
                     <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                       <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>{row.label}</span>
@@ -3311,8 +3223,8 @@ function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExc
                 <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
                   <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text, margin: '0 0 14px' }}>Convivência</h3>
                   {[
-                    { label: 'Horário', value: HORARIO_LABEL[meuPerfil?.perfil_horario ?? MY_PROFILE.horario] },
-                    { label: 'Visitas', value: VISITAS_LABEL[meuPerfil?.aceita_visitas ?? MY_PROFILE.visitas] },
+                    { label: 'Horário', value: HORARIO_LABEL[meuPerfil.perfil_horario] },
+                    { label: 'Visitas', value: VISITAS_LABEL[meuPerfil.aceita_visitas] },
                   ].map(row => (
                     <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                       <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>{row.label}</span>
@@ -3324,10 +3236,10 @@ function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExc
                 <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
                   <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text, margin: '0 0 14px' }}>Hábitos</h3>
                   {([
-                    { label: 'Organização', value: meuPerfil?.nivel_organizacao ?? MY_PROFILE.organized },
-                    { label: 'Tolerância à bagunça', value: meuPerfil?.tolerancia_bagunca ?? MY_PROFILE.messy },
-                    { label: 'Tolerância a barulho', value: meuPerfil?.nivel_ruido ?? MY_PROFILE.ruido },
-                    { label: 'Perfil social', value: meuPerfil?.nivel_social ?? MY_PROFILE.social },
+                    { label: 'Organização', value: meuPerfil.nivel_organizacao },
+                    { label: 'Tolerância à bagunça', value: meuPerfil.tolerancia_bagunca },
+                    { label: 'Tolerância a barulho', value: meuPerfil.nivel_ruido },
+                    { label: 'Perfil social', value: meuPerfil.nivel_social },
                   ] as { label: string; value: number }[]).map(row => (
                     <div key={row.label} style={{ marginBottom: '12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -3358,7 +3270,7 @@ function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExc
 
                 {/* Tags on mobile */}
                 <div className="lg:hidden" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
-                  {MY_PROFILE.tags.map(t => <Tag key={t} label={t} />)}
+                  {buildTags(meuPerfil).map(t => <Tag key={t} label={t} />)}
                 </div>
               </>
             )}
@@ -3558,18 +3470,24 @@ function temSessao(): boolean {
   try { return !!sessionStorage.getItem('pm_access'); } catch { return false; }
 }
 
-function registrarTelaNaUrl(s: Screen, substituir: boolean) {
+function registrarTelaNaUrl(s: Screen, substituir: boolean, matchId?: number) {
   try {
     const url = new URL(window.location.href);
     url.searchParams.set('screen', s);
-    if (substituir) window.history.replaceState({ screen: s }, '', url);
-    else window.history.pushState({ screen: s }, '', url);
+    // O chat guarda o id do match na URL para a conversa poder ser reaberta ao recarregar.
+    if (s === 'chat' && matchId) url.searchParams.set('match', String(matchId));
+    else url.searchParams.delete('match');
+    const estado = { screen: s, match: s === 'chat' ? matchId : undefined };
+    if (substituir) window.history.replaceState(estado, '', url);
+    else window.history.pushState(estado, '', url);
   } catch { /* ambiente sem history */ }
 }
 
 export default function App() {
   const telaDaUrl = (getParam('screen') as Screen) || (temSessao() ? 'discovery' : 'welcome');
-  const initialScreen: Screen = temSessao() ? (TELA_SEM_ESTADO[telaDaUrl] ?? telaDaUrl) : telaDaUrl;
+  const initialScreen: Screen = temSessao()
+    ? (telaDaUrl === 'chat' && Number(getParam('match')) > 0 ? 'chat' : (TELA_SEM_ESTADO[telaDaUrl] ?? telaDaUrl))
+    : telaDaUrl;
   const [screen, setScreen] = useState<Screen>(initialScreen);
   const [restaurando, setRestaurando] = useState<boolean>(temSessao());
   const [tab, setTab] = useState<Tab>(
@@ -3577,12 +3495,16 @@ export default function App() {
       ? (initialScreen as Tab)
       : 'discovery'
   );
-  const [matchProfile, setMatchProfile] = useState<Profile>(PROFILES[0]);
-  const [selectedProfile, setSelectedProfile] = useState<Profile>(PROFILES[0]);
-  const [currentChat, setCurrentChat] = useState<Profile>(PROFILES[0]);
-  const [activeChatMatchId, setActiveChatMatchId] = useState<number>(0);
-  const [showFilters, setShowFilters] = useState(getParam('filters') === '1');
-  const [showReport, setShowReport] = useState(getParam('report') === '1');
+  const [matchProfile, setMatchProfile] = useState<Profile>(PERFIL_VAZIO);
+  const [selectedProfile, setSelectedProfile] = useState<Profile>(PERFIL_VAZIO);
+  const [currentChat, setCurrentChat] = useState<Profile>(PERFIL_VAZIO);
+  const matchNaUrl = Number(getParam('match')) || 0;
+  const matchRef = useRef<number>(0);
+  const [activeChatMatchId, setActiveChatMatchIdState] = useState<number>(0);
+  // Atualiza a ref de forma síncrona: a URL do chat é gravada logo depois, no mesmo clique.
+  const setActiveChatMatchId = (id: number) => { matchRef.current = id; setActiveChatMatchIdState(id); };
+  const [showFilters, setShowFilters] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [meuPerfil, setMeuPerfil] = useState<PerfilAPI | null>(null);
   const [meuTipo, setMeuTipo] = useState('');
   const [matchesKey, setMatchesKey] = useState(0);
@@ -3593,7 +3515,7 @@ export default function App() {
 
   const nav = (s: Screen) => {
     setScreen(s);
-    if (s !== screen) registrarTelaNaUrl(s, false);
+    if (s !== screen) registrarTelaNaUrl(s, false, matchRef.current);
     if (s === 'discovery' || s === 'notifications' || s === 'matches' || s === 'profile') setTab(s as Tab);
     if (s === 'matches') setMatchesKey(k => k + 1);
     if (s === 'notifications') { setNotifsKey(k => k + 1); setNotifsCount(0); }
@@ -3615,8 +3537,8 @@ export default function App() {
     setMeuTipo('');
     setNotifsCount(0);
     setActiveChatMatchId(0);
-    setCurrentChat(PROFILES[0]);
-    setSelectedProfile(PROFILES[0]);
+    setCurrentChat(PERFIL_VAZIO);
+    setSelectedProfile(PERFIL_VAZIO);
     setSessionExpiredMsg('');
     nav('welcome');
   };
@@ -3627,8 +3549,8 @@ export default function App() {
       setMeuTipo('');
       setNotifsCount(0);
       setActiveChatMatchId(0);
-      setCurrentChat(PROFILES[0]);
-      setSelectedProfile(PROFILES[0]);
+      setCurrentChat(PERFIL_VAZIO);
+      setSelectedProfile(PERFIL_VAZIO);
       setSessionExpiredMsg('Sua sessão expirou. Entre novamente.');
       setScreen('login');
       registrarTelaNaUrl('login', true);
@@ -3638,9 +3560,16 @@ export default function App() {
 
   // Estado inicial da URL no histórico + botão voltar/avançar do navegador.
   useEffect(() => {
-    registrarTelaNaUrl(initialScreen, true);
+    registrarTelaNaUrl(initialScreen, true, matchNaUrl);
     const onPop = (e: PopStateEvent) => {
-      const s = ((e.state as { screen?: Screen } | null)?.screen ?? (getParam('screen') as Screen | null) ?? 'welcome') as Screen;
+      const est = e.state as { screen?: Screen; match?: number } | null;
+      const s = (est?.screen ?? (getParam('screen') as Screen | null) ?? 'welcome') as Screen;
+      // Um item de chat do histórico só vale se for a conversa que está carregada; senão, volta aos matches.
+      if (s === 'chat' && est?.match !== matchRef.current) {
+        setScreen('matches');
+        registrarTelaNaUrl('matches', true);
+        return;
+      }
       setScreen(s);
     };
     window.addEventListener('popstate', onPop);
@@ -3674,6 +3603,25 @@ export default function App() {
             if (!perfil) return 'profile-create';
             return s === 'profile-create' || s === 'admin' ? 'discovery' : s;
           });
+          // Chat aberto direto pela URL (?screen=chat&match=<id>): recarrega a conversa do match.
+          if (perfil && telaDaUrl === 'chat' && matchNaUrl > 0) {
+            try {
+              const ms = await listarMatches();
+              const m = ms.find(x => x.id === matchNaUrl);
+              if (!ativo) return;
+              if (m) {
+                const outro = m.perfil_a.id === perfil.id ? m.perfil_b : m.perfil_a;
+                setCurrentChat(perfilBasicoParaProfile(outro, m.score));
+                setActiveChatMatchId(m.id);
+              } else {
+                setScreen('matches');
+                registrarTelaNaUrl('matches', true);
+              }
+            } catch {
+              setScreen('matches');
+              registrarTelaNaUrl('matches', true);
+            }
+          }
         }
       } catch { /* 401: a sessão inválida já foi tratada por onOn401 (volta ao login) */ }
       finally { if (ativo) setRestaurando(false); }

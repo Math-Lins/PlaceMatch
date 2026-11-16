@@ -101,7 +101,7 @@ Regras de acesso do `GET /{id}/`: o próprio perfil, perfis do **tipo oposto** (
 | `tipo_imovel` | escolha | não (`indiferente`) | `apartamento`, `casa`, `republica`, `indiferente` |
 | `qtd_moradores` | inteiro | não (2) | 1 a 4 |
 | `titulo_anuncio` | texto | não | até 120 caracteres |
-| `descricao_imovel` | texto | não | sem limite no backend |
+| `descricao_imovel` | texto | não | até 1000 caracteres |
 | `fotos_imovel` | lista de URLs | não (`[]`) | até 5 itens; cada URL `http://` ou `https://`, até 500 caracteres |
 | `foto_perfil_url` | URL | não | `http://` ou `https://`, até 500 caracteres |
 
@@ -181,7 +181,7 @@ Corpo: `{"perfil_destino": <id do perfil>, "tipo": "curtir" | "recusar"}`.
 **`POST /api/moderacao/denuncias/`** — corpo `{"denunciado": <id do USUÁRIO>, "motivo": "spam|ofensivo|falso|outro", "descricao": "até 500 caracteres"}` (`descricao` opcional). **201:** `{id, denunciado, motivo, status: "pendente", criada_em}`.
 **400:** `denunciado` ausente/inválido ("O campo \"denunciado\" é obrigatório." / "O campo \"denunciado\" inválido. Informe um número inteiro."), usuário inexistente, denunciar a si mesmo, motivo inválido, descrição acima de 500 ou que não é texto, administrador denunciando.
 
-**`GET /api/admin/moderacao/denuncias/`** — filtros `status` (`pendente|resolvida|descartada`), `denunciado` (id do usuário), `motivo`. Valor inválido → 400. **200:** lista de `{id, denunciante: {id, email}, denunciado: {id, email}, motivo, motivo_display, descricao, status, resolvida_por, resolucao, criada_em, atualizada_em}`.
+**`GET /api/admin/moderacao/denuncias/`** — filtros `status` (`pendente|resolvida|descartada`), `denunciado` (id do usuário), `motivo`, `data_inicio` e `data_fim` (`AAAA-MM-DD`, sobre a data de criação da denúncia, ambas inclusivas). Valor inválido, formato de data inválido ou período invertido → 400. **200:** lista de `{id, denunciante: {id, email}, denunciado: {id, email}, motivo, motivo_display, descricao, status, resolvida_por, resolucao, criada_em, atualizada_em}`.
 
 **`PATCH .../denuncias/{id}/`** — corpo `{"status": "resolvida" | "descartada", "resolucao": "até 500 caracteres"}`. **200:** `{id, status, resolucao, resolvida_por}`. **400:** status inválido, denúncia que não está pendente, `resolucao` longa ou que não é texto. **404:** inexistente.
 

@@ -1,5 +1,8 @@
 from django.db import models
 from django.conf import settings
+from django.db.models import CheckConstraint, F, Q
+from django.db.models.functions import Length
+from django.db.models.lookups import LessThanOrEqual
 
 
 class Denuncia(models.Model):
@@ -47,6 +50,13 @@ class Denuncia(models.Model):
         indexes = [
             models.Index(fields=['status', 'criada_em']),
             models.Index(fields=['denunciado', 'status']),
+        ]
+        constraints = [
+            CheckConstraint(condition=Q(motivo__in=['spam', 'ofensivo', 'falso', 'outro']), name='denuncia_motivo_valido_ck'),
+            CheckConstraint(condition=Q(status__in=['pendente', 'resolvida', 'descartada']), name='denuncia_status_valido_ck'),
+            CheckConstraint(condition=LessThanOrEqual(Length('descricao'), 500), name='denuncia_descricao_max_500_ck'),
+            CheckConstraint(condition=LessThanOrEqual(Length('resolucao'), 500), name='denuncia_resolucao_max_500_ck'),
+            CheckConstraint(condition=~Q(denunciante=F('denunciado')), name='denuncia_nao_a_si_mesmo_ck'),
         ]
 
     def __str__(self):

@@ -638,6 +638,8 @@ export interface DenunciasParams {
   status?: string;
   denunciado?: number;
   motivo?: string;
+  data_inicio?: string;
+  data_fim?: string;
 }
 
 export const MOTIVO_LABELS: Record<string, string> = {

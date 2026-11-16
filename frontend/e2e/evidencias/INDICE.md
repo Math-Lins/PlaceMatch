@@ -1,7 +1,7 @@
 # Evidências dos testes de navegação (Playwright)
 
-Prints da **rodada final** (15/11/2026), numerados como `Nxx-yy-descricao.png`
-(`Nxx` = roteiro, `yy` = ordem do passo). Total: **89 prints**. Desktop: 1366×768; mobile (somente N13): 375×812.
+Prints da **rodada final da Sprint 10** (16/11/2026), numerados como `Nxx-yy-descricao.png`
+(`Nxx` = roteiro, `yy` = ordem do passo). Total: **90 prints**. Desktop: 1366×768; mobile (somente N13): 375×812.
 
 ## Roteiros
 
@@ -70,7 +70,8 @@ Prints da **rodada final** (15/11/2026), numerados como `Nxx-yy-descricao.png`
 | N06-04-notificacoes-A.png | N06 | 4 | Sessão A: Notificações mostra o novo match. | desktop 1366×768 |
 | N06-05-chat-A-respondeu.png | N06 | 5 | Sessão A: conversa aberta e resposta enviada. | desktop 1366×768 |
 | N06-06-chat-B-recebeu.png | N06 | 6 | Sessão B: a resposta de A chega ao chat (atualização automática). | desktop 1366×768 |
-| N06-07-ver-perfil.png | N06 | 7 | Menu do chat > "Ver perfil": perfil real do outro participante (orçamento, convivência e hábitos), com o botão voltar. | desktop 1366×768 |
+| N06-07-ver-perfil.png | N06 | 7 | Menu do chat > "Ver perfil": perfil real do outro participante (orçamento, convivência e hábitos); sem foto, a capa usa a imagem de reserva. | desktop 1366×768 |
+| N06-08-chat-recarregado.png | N06 | 8 | Depois de recarregar a página no chat: a mesma conversa reabre (id do match na URL), com as mensagens. | desktop 1366×768 |
 | N07-01-editando.png | N07 | 1 | Meu Perfil em edição com todos os campos do perfil. | desktop 1366×768 |
 | N07-02-edicao-erros.png | N07 | 2 | Edição com idade 17 e mínimo maior que o máximo: mensagens junto aos campos. | desktop 1366×768 |
 | N07-03-dados-atualizados.png | N07 | 3 | Perfil depois de salvar: nome, idade, região, orçamento, moradores, visitas e hábitos atualizados. | desktop 1366×768 |
@@ -115,7 +116,7 @@ Prints da **rodada final** (15/11/2026), numerados como `Nxx-yy-descricao.png`
 
 ## Observações
 
-1. **Resultado da rodada final (15/11/2026):** os 25 testes passaram (23 em desktop e 2 em mobile, N13 e N13b),
+1. **Resultado da rodada final (16/11/2026):** os 25 testes passaram (24 em desktop, 2 em mobile somando o N13/N13b — ver tabela do relatório),
    um roteiro por vez, com 1 worker, sem trace e sem vídeo. Os prints são desta rodada; nenhum print de rodada anterior foi mantido.
 2. **Banco limpo:** N02, N03, N04 e N05 rodaram em banco de e2e recriado do zero antes de cada um, então a Descoberta mostra só os
    anúncios/interessados criados no próprio roteiro. Os demais roteiros rodaram em sequência no mesmo banco.

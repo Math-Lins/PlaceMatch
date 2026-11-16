@@ -56,7 +56,7 @@ Dependências exatas: [`backend/requirements.txt`](./backend/requirements.txt) e
 Frontend desacoplado: uma SPA em **React** consome a **API REST** em **Django REST Framework**, que concentra as regras de negócio e o cálculo de compatibilidade, trocando JSON com autenticação por **JWT**.
 
 - O frontend guarda os tokens em `sessionStorage` (**uma sessão por aba**), renova o access automaticamente quando ele expira (uma única renovação por vez) e, se a renovação falhar, leva ao login com "Sua sessão expirou. Entre novamente.".
-- A tela atual fica na URL (`?screen=...`) e no histórico do navegador: o botão voltar e o recarregar funcionam, e a sessão é restaurada a partir de `/api/auth/me/`.
+- A tela atual fica na URL (`?screen=...`) e no histórico do navegador: o botão voltar e o recarregar funcionam, e a sessão é restaurada a partir de `/api/auth/me/`. O chat guarda o id do match (`?screen=chat&match=<id>`) e reabre a mesma conversa ao recarregar.
 - Documentação detalhada: [`docs/`](./docs) (veja [Documentação](#documentação)).
 
 ## Estrutura do projeto
@@ -70,7 +70,7 @@ PlaceMatch/
 │   ├── matches/                 # compatibilidade (algoritmo/), curtidas, matches, descoberta, seeds e benchmark
 │   ├── chat/                    # mensagens e conversas, comando seed_mensagens
 │   ├── logs/                    # histórico de operações (modelo, serviço de registro, listagem e CSV)
-│   ├── painel/                  # dashboard, relatórios, lista de usuários, filtros e exportação CSV
+│   ├── painel/                  # dashboard, relatórios, lista de usuários, filtros, exportação CSV e comando verificar_banco
 │   ├── moderacao/               # denúncias, suspensão e reativação de contas
 │   ├── seed.py                  # script de dados de demonstração completos (apenas desenvolvimento)
 │   ├── manage.py
@@ -204,9 +204,17 @@ Depois de subir backend e frontend, abra `http://localhost:5173`, crie uma conta
 
 ```powershell
 cd backend
-python manage.py test --settings=placematch.test_settings           # 531 testes
+python manage.py test --settings=placematch.test_settings           # 560 testes
 python manage.py matriz_permissoes --settings=placematch.test_settings   # matriz rota x perfil (anônimo, buscando, oferecendo, admin)
 python manage.py makemigrations --check --dry-run --settings=placematch.test_settings   # deve dizer "No changes detected"
+```
+
+**Consistência dos dados** (somente leitura; use no banco que quiser conferir — no Docker: `docker exec placematch_backend python manage.py verificar_banco`):
+
+```powershell
+python manage.py verificar_banco               # relatório com contagens (órfãos, matches sem curtida mútua, pares duplicados/invertidos, compatibilidade faltando, mensagens de não participantes, perfis x tipo de usuário)
+python manage.py verificar_banco --detalhes    # lista também os ids afetados
+python manage.py verificar_banco --falhar      # termina com erro se houver problema de gravidade ERRO
 ```
 
 **Frontend** (verificação de tipos e build):
@@ -239,6 +247,8 @@ O Playwright sobe sozinho a API (porta 8001) e o frontend (porta 5173), então *
 | [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md) | Fórmulas, pesos, tabelas de similaridade e benchmark do score |
 | [`docs/modulo-chat.md`](./docs/modulo-chat.md) | Chat: modelo, endpoints, regras de acesso e polling |
 | [`docs/runbook-docker.md`](./docs/runbook-docker.md) | Operação com Docker e solução de problemas |
+| [`docs/banco-de-dados.md`](./docs/banco-de-dados.md) | Dicionário de dados final (tabelas, colunas, tipos, restrições, índices) e as regras protegidas no banco |
+| [`docs/esquema.sql`](./docs/esquema.sql) | Esquema real extraído do PostgreSQL (`pg_dump --schema-only`) |
 | [`docs/testes-sprint9.md`](./docs/testes-sprint9.md) | Campanha de testes funcionais, de validação e de navegação, e bugs corrigidos |
 
 ## Desempenho
@@ -276,4 +286,5 @@ python manage.py benchmark_compatibilidade               # completo (usa o banco
 | D1 | Painel administrativo: dashboard, relatórios e registro automático de logs |
 | D2 | Logs e usuários no painel, busca e filtros na descoberta, busca de conversas, anúncio do imóvel |
 | Moderação | Denúncias, suspensão/reativação de contas e relatório de denúncias |
+| 10 | Release candidate: restrições de integridade no banco (28 `CHECK` e e-mail único sem diferenciar maiúsculas), comando `verificar_banco`, dicionário de dados e esquema, filtro de datas das denúncias no backend, limite da descrição do imóvel, chat restaurado pela URL e remoção de dados fictícios das telas — veja [`docs/banco-de-dados.md`](./docs/banco-de-dados.md) |
 | 9 | Campanha de testes (funcionais, validação e navegação), correção de 21 bugs do backend e dos defeitos de navegação do frontend, renovação de sessão, edição completa de perfil, formulário de anúncio e documentação atualizada — veja [`docs/testes-sprint9.md`](./docs/testes-sprint9.md) |
