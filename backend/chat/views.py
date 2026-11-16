@@ -8,6 +8,8 @@ from painel.filtros import corpo_invalido, resposta_400
 from placematch import validacao
 from .models import Mensagem
 from .serializers import MensagemSerializer
+from drf_spectacular.utils import extend_schema
+from placematch.api_docs import doc
 
 
 def _get_perfil(user):
@@ -20,6 +22,7 @@ def _get_perfil(user):
 class ConversasView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(**doc('chat_conversas'))
     def get(self, request):
         if request.user.tipo == 'administrador':
             return Response(
@@ -136,6 +139,7 @@ class MensagensView(APIView):
         outro_id = match.perfil_b_id if match.perfil_a_id == meu_perfil.id else match.perfil_a_id
         return match, meu_perfil, outro_id
 
+    @extend_schema(**doc('chat_mensagens_listar'))
     def get(self, request, match_id):
         match, meu_perfil_ou_erro, outro_id = self._verificar_participacao(request, match_id)
         if match is None:
@@ -157,6 +161,7 @@ class MensagensView(APIView):
 
         return Response(MensagemSerializer(qs, many=True).data)
 
+    @extend_schema(**doc('chat_mensagens_enviar'))
     def post(self, request, match_id):
         match, meu_perfil_ou_erro, _ = self._verificar_participacao(request, match_id)
         if match is None:

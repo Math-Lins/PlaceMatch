@@ -21,12 +21,12 @@ def corpo_invalido(request):
     return None
 
 
-def validar_escolha_param(valor, validos, rotulo):
+def validar_escolha_param(valor, validos, rotulo, feminino=False):
     """Valida `valor` (None/'' = não informado) contra `validos`. Retorna Response ou None."""
     if valor in (None, ''):
         return None
     try:
-        validacao.escolha(valor, list(validos), rotulo)
+        validacao.escolha(valor, list(validos), rotulo, feminino)
     except ValueError as e:
         return resposta_400(str(e))
     return None

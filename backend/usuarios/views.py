@@ -2,15 +2,21 @@ from rest_framework import generics, permissions, status
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .models import Usuario
 from .serializers import RegistrarSerializer, UsuarioSerializer
+from drf_spectacular.utils import extend_schema
+from placematch.api_docs import doc
 
 
 class RegistrarView(generics.CreateAPIView):
     queryset = Usuario.objects.all()
     serializer_class = RegistrarSerializer
     permission_classes = [permissions.AllowAny]
+
+    @extend_schema(**doc('auth_registrar'))
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         from logs.servicos import registrar
@@ -42,6 +48,7 @@ def _validar_corpo_login(data):
 
 
 class LoginView(TokenObtainPairView):
+    @extend_schema(**doc('auth_login'))
     def post(self, request, *args, **kwargs):
         from logs.servicos import registrar
 
@@ -84,9 +91,21 @@ class LoginView(TokenObtainPairView):
         return response
 
 
+class RenovarTokenView(TokenRefreshView):
+    """Renovação do access (SimpleJWT) com a documentação da API."""
+
+    @extend_schema(**doc('auth_refresh'))
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+
 class MeView(generics.RetrieveAPIView):
     serializer_class = UsuarioSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(**doc('auth_me'))
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
     def get_object(self):
         return self.request.user

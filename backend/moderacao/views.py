@@ -10,6 +10,8 @@ from painel.permissoes import AdminPermission
 from placematch import validacao
 from .models import Denuncia
 from .servicos import criar_denuncia, resolver_denuncia, suspender_usuario, reativar_usuario
+from drf_spectacular.utils import extend_schema
+from placematch.api_docs import doc
 
 
 User = get_user_model()
@@ -21,6 +23,7 @@ class DenunciaCreateView(APIView):
     """POST /api/moderacao/denuncias/ — qualquer usuário autenticado (não-admin)."""
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(**doc('moderacao_denunciar'))
     def post(self, request):
         erro = corpo_invalido(request)
         if erro:
@@ -64,6 +67,7 @@ class AdminDenunciaListView(APIView):
     """GET /api/admin/moderacao/denuncias/ — lista com filtros opcionais."""
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
+    @extend_schema(**doc('moderacao_denuncias_listar'))
     def get(self, request):
         qs = Denuncia.objects.select_related('denunciante', 'denunciado', 'resolvida_por')
 
@@ -127,6 +131,7 @@ class AdminDenunciaResolverView(APIView):
     """PATCH /api/admin/moderacao/denuncias/<id>/ — resolve ou descarta."""
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
+    @extend_schema(**doc('moderacao_denuncia_resolver'))
     def patch(self, request, denuncia_id):
         erro = corpo_invalido(request)
         if erro:
@@ -159,6 +164,7 @@ class AdminSuspenderUsuarioView(APIView):
     """POST /api/admin/moderacao/usuarios/<id>/suspender/"""
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
+    @extend_schema(**doc('moderacao_usuario_suspender'))
     def post(self, request, usuario_id):
         erro = corpo_invalido(request)
         if erro:
@@ -189,6 +195,7 @@ class AdminReativarUsuarioView(APIView):
     """POST /api/admin/moderacao/usuarios/<id>/reativar/"""
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
+    @extend_schema(**doc('moderacao_usuario_reativar'))
     def post(self, request, usuario_id):
         try:
             usuario = User.objects.get(id=usuario_id)

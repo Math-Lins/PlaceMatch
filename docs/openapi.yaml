@@ -1,0 +1,4539 @@
+openapi: 3.0.3
+info:
+  title: API do PlaceMatch
+  version: 1.0.0-rc1
+  description: |-
+    API REST do PlaceMatch: plataforma que conecta pessoas compatíveis para dividir moradia.
+
+    **Autenticação:** faça `POST /api/auth/login/` e envie o `access` no cabeçalho `Authorization: Bearer <access>` (botão **Authorize**). O access dura 1 hora; renove com `POST /api/auth/login/refresh/`.
+
+    **Erros:** sempre em português — `{"detail": "mensagem"}` ou `{"campo": ["mensagem"]}`.
+
+    Os exemplos são respostas reais da API em um banco de teste (listas longas abreviadas).
+paths:
+  /api/admin/dashboard/:
+    get:
+      operationId: painel_dashboard
+      description: 'KPIs, séries diárias (matches, curtidas e mensagens), top regiões
+        e distribuição de score. Período padrão: últimos 30 dias.'
+      summary: Dashboard
+      parameters:
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
+        description: Fim do período. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio`
+          maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-30'
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
+        description: Início do período. Formato `AAAA-MM-DD`. Formato inválido ou
+          `data_inicio` maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-01'
+      - in: query
+        name: regiao
+        schema:
+          type: string
+        description: Filtra pelos perfis desta região.
+        examples:
+          Exemplo:
+            value: Boa Viagem
+      - in: query
+        name: tipo
+        schema:
+          type: string
+          enum:
+          - administrador
+          - buscando_vaga
+          - oferecendo_vaga
+        description: Filtra pelo tipo de usuário.
+      tags:
+      - Painel administrativo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+              examples:
+                ExemploReal:
+                  value:
+                    kpis:
+                      usuarios_total: 5
+                      usuarios_por_tipo:
+                        oferecendo_vaga: 2
+                        buscando_vaga: 2
+                        administrador: 1
+                      usuarios_suspensos: 0
+                      perfis_total: 3
+                      curtidas_total: 2
+                      recusas_total: 1
+                      matches_total: 1
+                      taxa_match: 100.0
+                      mensagens_total: 2
+                      conversas_ativas: 1
+                      score_medio: 0.9295
+                      denuncias_pendentes: 0
+                    series:
+                      matches_por_dia:
+                      - data: '2026-10-18'
+                        total: 0
+                      - data: '2026-10-19'
+                        total: 0
+                      - data: '2026-10-20'
+                        total: 0
+                      curtidas_por_dia:
+                      - data: '2026-10-18'
+                        total: 0
+                      - data: '2026-10-19'
+                        total: 0
+                      - data: '2026-10-20'
+                        total: 0
+                      mensagens_por_dia:
+                      - data: '2026-10-18'
+                        total: 0
+                      - data: '2026-10-19'
+                        total: 0
+                      - data: '2026-10-20'
+                        total: 0
+                    top_regioes:
+                    - regiao: Boa Viagem
+                      perfis: 2
+                      matches: 1
+                      score_medio: 0.9295
+                    - regiao: Casa Forte
+                      perfis: 1
+                      matches: 0
+                      score_medio: null
+                    distribuicao_score:
+                    - faixa: 0-20
+                      total: 0
+                    - faixa: 20-40
+                      total: 0
+                    - faixa: 40-60
+                      total: 0
+                    filtros_aplicados: {}
+                  summary: Exemplo real
+                ComFiltros:
+                  value:
+                    kpis:
+                      usuarios_total: 5
+                      usuarios_por_tipo:
+                        oferecendo_vaga: 2
+                      usuarios_suspensos: 0
+                      perfis_total: 1
+                      curtidas_total: 1
+                      recusas_total: 0
+                      matches_total: 1
+                      taxa_match: 200.0
+                      mensagens_total: 2
+                      conversas_ativas: 1
+                      score_medio: 0.9295
+                      denuncias_pendentes: 0
+                    series:
+                      matches_por_dia:
+                      - data: '2026-10-18'
+                        total: 0
+                      - data: '2026-10-19'
+                        total: 0
+                      - data: '2026-10-20'
+                        total: 0
+                      curtidas_por_dia:
+                      - data: '2026-10-18'
+                        total: 0
+                      - data: '2026-10-19'
+                        total: 0
+                      - data: '2026-10-20'
+                        total: 0
+                      mensagens_por_dia:
+                      - data: '2026-10-18'
+                        total: 0
+                      - data: '2026-10-19'
+                        total: 0
+                      - data: '2026-10-20'
+                        total: 0
+                    top_regioes:
+                    - regiao: Boa Viagem
+                      perfis: 2
+                      matches: 1
+                      score_medio: 0.9295
+                    - regiao: Casa Forte
+                      perfis: 1
+                      matches: 0
+                      score_medio: null
+                    distribuicao_score:
+                    - faixa: 0-20
+                      total: 0
+                    - faixa: 20-40
+                      total: 0
+                    - faixa: 40-60
+                      total: 0
+                    filtros_aplicados:
+                      regiao: Boa Viagem
+                      tipo: oferecendo_vaga
+                  summary: Com filtros
+          description: Indicadores.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                PeríodoInvertido:
+                  value:
+                    detail: data_inicio não pode ser maior que data_fim.
+                  summary: Período invertido
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                UsuárioComum:
+                  value:
+                    detail: Você não tem permissão para executar essa ação.
+                  summary: Usuário comum
+          description: Sem permissão para este recurso.
+      x-quem-pode: Somente administrador
+  /api/admin/logs/:
+    get:
+      operationId: logs_listar
+      description: Histórico de operações, do mais recente para o mais antigo. O texto
+        das mensagens e as senhas nunca são gravados; o log de falha de login guarda
+        só o motivo (`credenciais` ou `conta_inativa`).
+      summary: Listar logs de operações
+      parameters:
+      - in: query
+        name: acao
+        schema:
+          type: string
+          enum:
+          - CADASTRO
+          - CURTIDA
+          - DENUNCIA_CRIADA
+          - DENUNCIA_RESOLVIDA
+          - LOGIN
+          - LOGIN_FALHA
+          - MATCH_CRIADO
+          - MENSAGEM_ENVIADA
+          - PERFIL_CRIADO
+          - PERFIL_EDITADO
+          - PERFIL_EXCLUIDO
+          - RECUSA
+          - RELATORIO_EXPORTADO
+          - USUARIO_REATIVADO
+          - USUARIO_SUSPENSO
+        description: Ação registrada.
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
+        description: Até esta data. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio`
+          maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-30'
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
+        description: A partir desta data. Formato `AAAA-MM-DD`. Formato inválido ou
+          `data_inicio` maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-01'
+      - in: query
+        name: entidade
+        schema:
+          type: string
+        description: Tipo de objeto afetado (`usuario`, `perfil`, `match`...).
+        examples:
+          Exemplo:
+            value: perfil
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: 'Página (padrão 1). Valor inválido volta à página 1; página além
+          do fim devolve `results: []`.'
+        examples:
+          Exemplo:
+            value: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Itens por página (padrão 20, máximo 100).
+        examples:
+          Exemplo:
+            value: 20
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Busca em e-mail, nome, username ou entidade.
+        examples:
+          Exemplo:
+            value: ana
+      - in: query
+        name: usuario
+        schema:
+          type: string
+        description: Id, e-mail ou parte do nome do usuário.
+        examples:
+          Exemplo:
+            value: ana.souza@exemplo.com
+      tags:
+      - Logs
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogsPagina'
+              examples:
+                ExemploReal:
+                  value:
+                    count: 1
+                    page: 1
+                    results:
+                    - id: 19
+                      data_hora: '2026-11-16T04:02:32.515574Z'
+                      usuario:
+                        id: 3
+                        nome: Bruno Lima
+                        email: bruno.lima@exemplo.com
+                      acao: MATCH_CRIADO
+                      acao_label: Match criado
+                      entidade: match
+                      entidade_id: 1
+                      detalhes:
+                        score: 0.9295
+                        match_id: 1
+                      ip: 127.0.0.1
+                  summary: Exemplo real
+                FiltradoPorE-mailDoUsuário:
+                  value:
+                    count: 9
+                    page: 1
+                    results:
+                    - id: 22
+                      data_hora: '2026-11-16T04:02:35.236404Z'
+                      usuario:
+                        id: 2
+                        nome: Ana Souza
+                        email: ana.souza@exemplo.com
+                      acao: DENUNCIA_CRIADA
+                      acao_label: Denúncia criada
+                      entidade: denuncia
+                      entidade_id: 1
+                      detalhes:
+                        motivo: spam
+                        denunciado_id: 4
+                      ip: 127.0.0.1
+                  summary: Filtrado por e-mail do usuário
+          description: Página de logs.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                AçãoInválida:
+                  value:
+                    detail: 'Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO,
+                      PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO,
+                      MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA,
+                      USUARIO_SUSPENSO, USUARIO_REATIVADO.'
+                  summary: Ação inválida
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+      x-quem-pode: Somente administrador
+  /api/admin/logs/exportar/:
+    get:
+      operationId: logs_exportar
+      description: Mesmos filtros da listagem (sem paginação). CSV com BOM e separador
+        `;`. Registra o log `RELATORIO_EXPORTADO`.
+      summary: Exportar logs (CSV)
+      parameters:
+      - in: query
+        name: acao
+        schema:
+          type: string
+          enum:
+          - CADASTRO
+          - CURTIDA
+          - DENUNCIA_CRIADA
+          - DENUNCIA_RESOLVIDA
+          - LOGIN
+          - LOGIN_FALHA
+          - MATCH_CRIADO
+          - MENSAGEM_ENVIADA
+          - PERFIL_CRIADO
+          - PERFIL_EDITADO
+          - PERFIL_EXCLUIDO
+          - RECUSA
+          - RELATORIO_EXPORTADO
+          - USUARIO_REATIVADO
+          - USUARIO_SUSPENSO
+        description: Ação registrada.
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
+        description: Até esta data. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio`
+          maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-30'
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
+        description: A partir desta data. Formato `AAAA-MM-DD`. Formato inválido ou
+          `data_inicio` maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-01'
+      - in: query
+        name: entidade
+        schema:
+          type: string
+        description: Tipo de objeto afetado.
+        examples:
+          Exemplo:
+            value: perfil
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Busca em e-mail, nome, username ou entidade.
+        examples:
+          Exemplo:
+            value: ana
+      - in: query
+        name: usuario
+        schema:
+          type: string
+        description: Id, e-mail ou parte do nome do usuário.
+        examples:
+          Exemplo:
+            value: ana.souza@exemplo.com
+      tags:
+      - Logs
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            text/csv:
+              schema:
+                type: string
+              examples:
+                ExemploReal(primeirasLinhas):
+                  value: "\uFEFFID;Data/Hora;Usuário ID;Usuário Nome;Usuário E-mail;Ação;Descrição
+                    da Ação;Entidade;ID da Entidade;Detalhes;IP\n10;2026-11-16 04:02:29;1;admin@exemplo.com;admin@exemplo.com;LOGIN;Login;usuario;1;{};127.0.0.1\n9;2026-11-16
+                    04:02:26;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;{};127.0.0.1\n8;2026-11-16
+                    04:02:23;4;Carla Dias;carla.dias@exemplo.com;LOGIN;Login;usuario;4;{};127.0.0.1"
+                  summary: Exemplo real (primeiras linhas)
+          description: Arquivo CSV de logs.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                AçãoInválida:
+                  value:
+                    detail: 'Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO,
+                      PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO,
+                      MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA,
+                      USUARIO_SUSPENSO, USUARIO_REATIVADO.'
+                  summary: Ação inválida
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+      x-quem-pode: Somente administrador
+  /api/admin/moderacao/denuncias/:
+    get:
+      operationId: moderacao_denuncias_listar
+      description: Denúncias da mais recente para a mais antiga. Valores inválidos
+        nos filtros → 400.
+      summary: Listar denúncias
+      parameters:
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
+        description: Criadas até esta data (inclusive). Formato `AAAA-MM-DD`. Formato
+          inválido ou `data_inicio` maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-30'
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
+        description: Criadas a partir desta data (inclusive). Formato `AAAA-MM-DD`.
+          Formato inválido ou `data_inicio` maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-01'
+      - in: query
+        name: denunciado
+        schema:
+          type: integer
+        description: Id do usuário denunciado.
+        examples:
+          Exemplo:
+            value: 4
+      - in: query
+        name: motivo
+        schema:
+          type: string
+          enum:
+          - falso
+          - ofensivo
+          - outro
+          - spam
+        description: Motivo.
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - descartada
+          - pendente
+          - resolvida
+        description: Situação.
+      tags:
+      - Moderação
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DenunciaAdmin'
+              examples:
+                ExemploReal:
+                  value:
+                  - - id: 1
+                      denunciante:
+                        id: 2
+                        email: ana.souza@exemplo.com
+                      denunciado:
+                        id: 4
+                        email: carla.dias@exemplo.com
+                      motivo: spam
+                      motivo_display: Spam
+                      descricao: Anúncio repetido várias vezes.
+                      status: pendente
+                      resolvida_por: null
+                      resolucao: ''
+                      criada_em: '2026-11-16T04:02:35.219764Z'
+                      atualizada_em: '2026-11-16T04:02:35.219806Z'
+                  summary: Exemplo real
+          description: Denúncias.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                FiltroInválido:
+                  value:
+                    detail: 'Status inválido. Use: pendente, resolvida, descartada.'
+                  summary: Filtro inválido
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                UsuárioComum:
+                  value:
+                    detail: Você não tem permissão para executar essa ação.
+                  summary: Usuário comum
+          description: Sem permissão para este recurso.
+      x-quem-pode: Somente administrador
+  /api/admin/moderacao/denuncias/{denuncia_id}/:
+    patch:
+      operationId: moderacao_denuncia_resolver
+      description: Só denúncias `pendente` podem ser decididas. `resolucao` é opcional
+        (até 500 caracteres). Para suspender o usuário, use a rota de suspensão.
+      summary: Resolver ou descartar uma denúncia
+      parameters:
+      - in: path
+        name: denuncia_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Moderação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedResolverDenunciaRequisicaoRequest'
+            examples:
+              Procedente:
+                value:
+                  status: resolvida
+                  resolucao: Anúncio duplicado; conta suspensa.
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedResolverDenunciaRequisicaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedResolverDenunciaRequisicaoRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResolverDenunciaResposta'
+              examples:
+                ExemploReal:
+                  value:
+                    id: 1
+                    status: resolvida
+                    resolucao: Anúncio duplicado; conta suspensa.
+                    resolvida_por: admin@exemplo.com
+                  summary: Exemplo real
+          description: Denúncia decidida.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                DenúnciaJáDecidida:
+                  value:
+                    detail: Apenas denúncias pendentes podem ser resolvidas.
+                  summary: Denúncia já decidida
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                UsuárioComum:
+                  value:
+                    detail: Você não tem permissão para executar essa ação.
+                  summary: Usuário comum
+          description: Sem permissão para este recurso.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                DenúnciaInexistente:
+                  value:
+                    detail: Denúncia não encontrada.
+                  summary: Denúncia inexistente
+          description: Recurso não encontrado.
+      x-quem-pode: Somente administrador
+  /api/admin/moderacao/usuarios/{usuario_id}/reativar/:
+    post:
+      operationId: moderacao_usuario_reativar
+      description: Reativa a conta suspensa (`is_active=true`).
+      summary: Reativar uma conta
+      parameters:
+      - in: path
+        name: usuario_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Moderação
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContaResposta'
+              examples:
+                ExemploReal:
+                  value:
+                    id: 4
+                    email: carla.dias@exemplo.com
+                    ativo: true
+                  summary: Exemplo real
+          description: Conta reativada.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                JáEstavaAtiva:
+                  value:
+                    detail: Este usuário já está ativo.
+                  summary: Já estava ativa
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                UsuárioComum:
+                  value:
+                    detail: Você não tem permissão para executar essa ação.
+                  summary: Usuário comum
+          description: Sem permissão para este recurso.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                UsuárioInexistente:
+                  value:
+                    detail: Usuário não encontrado.
+                  summary: Usuário inexistente
+          description: Recurso não encontrado.
+      x-quem-pode: Somente administrador
+  /api/admin/moderacao/usuarios/{usuario_id}/suspender/:
+    post:
+      operationId: moderacao_usuario_suspender
+      description: Desativa a conta (`is_active=false`). O usuário não consegue entrar,
+        some da Descoberta, dos matches e do chat, e não recebe curtidas nem mensagens.
+        Não é possível suspender um administrador.
+      summary: Suspender uma conta
+      parameters:
+      - in: path
+        name: usuario_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Moderação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuspenderRequisicaoRequest'
+            examples:
+              SuspensãoComMotivo:
+                value:
+                  motivo: Anúncios duplicados (denúncia procedente).
+                summary: Suspensão com motivo
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SuspenderRequisicaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SuspenderRequisicaoRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContaResposta'
+              examples:
+                ExemploReal:
+                  value:
+                    id: 4
+                    email: carla.dias@exemplo.com
+                    ativo: false
+                  summary: Exemplo real
+          description: Conta suspensa.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                JáEstavaSuspensa:
+                  value:
+                    detail: Este usuário já está suspenso.
+                  summary: Já estava suspensa
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                UsuárioComum:
+                  value:
+                    detail: Você não tem permissão para executar essa ação.
+                  summary: Usuário comum
+          description: Sem permissão para este recurso.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                UsuárioInexistente:
+                  value:
+                    detail: Usuário não encontrado.
+                  summary: Usuário inexistente
+          description: Recurso não encontrado.
+      x-quem-pode: Somente administrador
+  /api/admin/relatorios/:
+    get:
+      operationId: painel_relatorios_catalogo
+      description: Os 5 relatórios disponíveis e os filtros que cada um aceita.
+      summary: Catálogo de relatórios
+      tags:
+      - Painel administrativo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RelatorioCatalogo'
+              examples:
+                ExemploReal:
+                  value:
+                  - - id: matches
+                      titulo: Matches
+                      descricao: Listagem de matches no período com métricas de engajamento.
+                      filtros:
+                      - data_inicio
+                      - data_fim
+                      - regiao
+                    - id: compatibilidade-regiao
+                      titulo: Compatibilidade por Região
+                      descricao: Estatísticas de compatibilidade e matches agrupados
+                        por região.
+                      filtros:
+                      - regiao
+                      - tipo
+                    - id: atividade
+                      titulo: Atividade por Dia
+                      descricao: Curtidas, recusas, matches e mensagens agrupados
+                        por dia.
+                      filtros:
+                      - data_inicio
+                      - data_fim
+                      - regiao
+                  summary: Exemplo real
+          description: Relatórios.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+      x-quem-pode: Somente administrador
+  /api/admin/relatorios/{rel_id}/:
+    get:
+      operationId: painel_relatorio_detalhe
+      description: 'Filtros por relatório — `matches` e `atividade`: data_inicio,
+        data_fim, regiao, tipo; `compatibilidade-regiao`: regiao, tipo; `usuarios`:
+        data_inicio, data_fim, tipo; `denuncias`: data_inicio, data_fim. Com `formato=csv`
+        devolve o arquivo (UTF-8 com BOM, separador `;`) e registra o log `RELATORIO_EXPORTADO`.'
+      summary: Gerar um relatório (JSON ou CSV)
+      parameters:
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
+        description: Fim do período. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio`
+          maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-30'
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
+        description: Início do período. Formato `AAAA-MM-DD`. Formato inválido ou
+          `data_inicio` maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-01'
+      - in: query
+        name: formato
+        schema:
+          type: string
+          enum:
+          - csv
+          - json
+        description: Formato de saída (padrão `json`).
+      - in: query
+        name: regiao
+        schema:
+          type: string
+        description: Região do perfil.
+        examples:
+          Exemplo:
+            value: Boa Viagem
+      - in: path
+        name: rel_id
+        schema:
+          type: string
+          enum:
+          - atividade
+          - compatibilidade-regiao
+          - denuncias
+          - matches
+          - usuarios
+        description: Identificador do relatório.
+        required: true
+      - in: query
+        name: tipo
+        schema:
+          type: string
+          enum:
+          - administrador
+          - buscando_vaga
+          - oferecendo_vaga
+        description: Tipo de usuário.
+      tags:
+      - Painel administrativo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelatorioResposta'
+              examples:
+                ExemploReal:
+                  value:
+                    titulo: Matches
+                    colunas:
+                    - Data
+                    - Perfil A
+                    - Perfil B
+                    linhas:
+                    - - '2026-11-16'
+                      - Ana Souza
+                      - Bruno Lima
+                    totais:
+                      matches: 1
+                      mensagens: 2
+                    filtros_aplicados: {}
+                    gerado_em: '2026-11-16T04:02:43.545600Z'
+                  summary: Exemplo real
+            text/csv:
+              schema:
+                type: string
+              examples:
+                RelatórioDeUsuáriosEmCSV:
+                  value: "\uFEFFData de Cadastro;Nome;E-mail;Tipo;Região;Tem Perfil\n2026-11-16;admin@exemplo.com;admin@exemplo.com;administrador;;não\n2026-11-16;Ana
+                    Souza;ana.souza@exemplo.com;buscando_vaga;Boa Viagem;sim\n2026-11-16;Bruno
+                    Lima;bruno.lima@exemplo.com;oferecendo_vaga;Boa Viagem;sim"
+                  summary: Relatório de usuários em CSV
+          description: Relatório em JSON (ou CSV com `formato=csv`).
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                FiltroOuFormatoInválido:
+                  value:
+                    detail: 'Tipo inválido. Use: buscando_vaga, oferecendo_vaga, administrador.'
+                  summary: Filtro ou formato inválido
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                RelatórioInexistente:
+                  value:
+                    detail: Relatório "nao-existe" não encontrado.
+                  summary: Relatório inexistente
+          description: Recurso não encontrado.
+      x-quem-pode: Somente administrador
+  /api/admin/usuarios/:
+    get:
+      operationId: painel_usuarios_listar
+      description: Usuários paginados, do mais recente para o mais antigo.
+      summary: Listar usuários
+      parameters:
+      - in: query
+        name: ativo
+        schema:
+          type: string
+          enum:
+          - 'false'
+          - 'true'
+        description: '`true` = contas ativas; `false` = suspensas.'
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
+        description: Cadastro até esta data. Formato `AAAA-MM-DD`. Formato inválido
+          ou `data_inicio` maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-30'
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
+        description: Cadastro a partir desta data. Formato `AAAA-MM-DD`. Formato inválido
+          ou `data_inicio` maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-01'
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: 'Página (padrão 1). Valor inválido volta à página 1; página além
+          do fim devolve `results: []`.'
+        examples:
+          Exemplo:
+            value: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Itens por página (padrão 20, máximo 100).
+        examples:
+          Exemplo:
+            value: 20
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Nome, e-mail ou username.
+        examples:
+          Exemplo:
+            value: ana
+      - in: query
+        name: regiao
+        schema:
+          type: string
+        description: Região do perfil.
+        examples:
+          Exemplo:
+            value: Boa Viagem
+      - in: query
+        name: tipo
+        schema:
+          type: string
+          enum:
+          - administrador
+          - buscando_vaga
+          - oferecendo_vaga
+        description: Tipo de usuário.
+      tags:
+      - Painel administrativo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuariosPagina'
+              examples:
+                ExemploReal:
+                  value:
+                    count: 2
+                    page: 1
+                    results:
+                    - id: 5
+                      nome: Diego Alves
+                      email: diego.alves@exemplo.com
+                      tipo: buscando_vaga
+                      regiao: null
+                      data_cadastro: '2026-11-16T04:02:07.078611Z'
+                      tem_perfil: false
+                      ativo: true
+                    - id: 2
+                      nome: Ana Souza
+                      email: ana.souza@exemplo.com
+                      tipo: buscando_vaga
+                      regiao: Boa Viagem
+                      data_cadastro: '2026-11-16T04:01:59.322201Z'
+                      tem_perfil: true
+                      ativo: true
+                  summary: Exemplo real
+          description: Página de usuários.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                FiltroInválido:
+                  value:
+                    detail: 'Tipo inválido. Use: buscando_vaga, oferecendo_vaga, administrador.'
+                  summary: Filtro inválido
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+      x-quem-pode: Somente administrador
+  /api/admin/usuarios/exportar/:
+    get:
+      operationId: painel_usuarios_exportar
+      description: Mesmos filtros da listagem (sem paginação). CSV com BOM e separador
+        `;`. Registra o log `RELATORIO_EXPORTADO`.
+      summary: Exportar usuários (CSV)
+      parameters:
+      - in: query
+        name: ativo
+        schema:
+          type: string
+          enum:
+          - 'false'
+          - 'true'
+        description: '`true` = ativas; `false` = suspensas.'
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
+        description: Cadastro até esta data. Formato `AAAA-MM-DD`. Formato inválido
+          ou `data_inicio` maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-30'
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
+        description: Cadastro a partir desta data. Formato `AAAA-MM-DD`. Formato inválido
+          ou `data_inicio` maior que `data_fim` → 400.
+        examples:
+          Exemplo:
+            value: '2026-11-01'
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Nome, e-mail ou username.
+        examples:
+          Exemplo:
+            value: ana
+      - in: query
+        name: regiao
+        schema:
+          type: string
+        description: Região do perfil.
+        examples:
+          Exemplo:
+            value: Boa Viagem
+      - in: query
+        name: tipo
+        schema:
+          type: string
+          enum:
+          - administrador
+          - buscando_vaga
+          - oferecendo_vaga
+        description: Tipo de usuário.
+      tags:
+      - Painel administrativo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            text/csv:
+              schema:
+                type: string
+              examples:
+                ExemploReal(primeirasLinhas):
+                  value: "\uFEFFID;Nome;E-mail;Tipo;Região;Data de Cadastro;Tem Perfil\n5;Diego
+                    Alves;diego.alves@exemplo.com;buscando_vaga;;2026-11-16;não\n4;Carla
+                    Dias;carla.dias@exemplo.com;oferecendo_vaga;Casa Forte;2026-11-16;sim\n3;Bruno
+                    Lima;bruno.lima@exemplo.com;oferecendo_vaga;Boa Viagem;2026-11-16;sim"
+                  summary: Exemplo real (primeiras linhas)
+          description: Arquivo CSV de usuários.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+      x-quem-pode: Somente administrador
+  /api/auth/login/:
+    post:
+      operationId: auth_login
+      description: 'Autentica por e-mail e senha (e-mail sem diferenciar maiúsculas)
+        e devolve os tokens JWT. Envie o `access` no cabeçalho `Authorization: Bearer
+        <access>` das demais chamadas. Contas suspensas recebem 401 com a mensagem
+        "Conta suspensa. Procure o suporte.".'
+      summary: Entrar (login por e-mail)
+      tags:
+      - Autenticação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequisicaoRequest'
+            examples:
+              Login:
+                value:
+                  email: Ana.Souza@exemplo.com
+                  password: <SENHA>
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequisicaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequisicaoRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokensResposta'
+              examples:
+                ExemploReal:
+                  value:
+                    refresh: <REFRESH>
+                    access: <TOKEN>
+                  summary: Exemplo real
+          description: Tokens de acesso e de renovação.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                E-mailESenhaAusentes:
+                  value:
+                    email:
+                    - Informe o e-mail.
+                    password:
+                    - Informe a senha.
+                  summary: E-mail e senha ausentes
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SenhaIncorretaOuUsuárioInexistente:
+                  value:
+                    detail: E-mail ou senha incorretos.
+                  summary: Senha incorreta ou usuário inexistente
+                ContaSuspensa:
+                  value:
+                    detail: Conta suspensa. Procure o suporte.
+                  summary: Conta suspensa
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+      x-quem-pode: Público (sem login)
+  /api/auth/login/refresh/:
+    post:
+      operationId: auth_refresh
+      description: 'Troca um `refresh` válido por um novo `access` e por um **novo
+        `refresh`** (o refresh é rotacionado: guarde o novo). O `access` dura 1 hora;
+        o `refresh`, 7 dias.'
+      summary: Renovar o token de acesso
+      tags:
+      - Autenticação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequisicaoRequest'
+            examples:
+              Renovação:
+                value:
+                  refresh: <REFRESH>
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RefreshRequisicaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefreshRequisicaoRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokensResposta'
+              examples:
+                ExemploReal:
+                  value:
+                    access: <TOKEN>
+                    refresh: <REFRESH>
+                  summary: Exemplo real
+          description: Novo access e novo refresh.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                RefreshInválido,ExpiradoOuDeContaSuspensa:
+                  value:
+                    detail: O token é inválido
+                    code: token_not_valid
+                  summary: Refresh inválido, expirado ou de conta suspensa
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+      x-quem-pode: Público (sem login)
+  /api/auth/me/:
+    get:
+      operationId: auth_me
+      description: Devolve o usuário do token. `username` e `nome` trazem o nome de
+        exibição (o nome informado no cadastro).
+      summary: Dados do usuário logado
+      tags:
+      - Autenticação
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+              examples:
+                ExemploReal:
+                  value:
+                    id: 2
+                    username: Ana Souza
+                    nome: Ana Souza
+                    email: ana.souza@exemplo.com
+                    tipo: buscando_vaga
+                  summary: Exemplo real
+          description: Usuário logado.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+      x-quem-pode: Qualquer usuário logado
+  /api/auth/registrar/:
+    post:
+      operationId: auth_registrar
+      description: Cria uma conta de usuário comum. O campo `username` recebe o **nome
+        da pessoa** (2 a 150 caracteres; aceita espaços e acentos). O e-mail é gravado
+        em minúsculas e é único sem diferenciar maiúsculas. A senha segue os validadores
+        do Django (mínimo 8 caracteres, não só números, não muito comum). `administrador`
+        não pode ser escolhido aqui (use `python manage.py criar_admin`). Depois do
+        cadastro, faça o login e crie o perfil.
+      summary: Cadastrar usuário
+      tags:
+      - Autenticação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarRequest'
+            examples:
+              CadastroDeQuemProcuraVaga:
+                value:
+                  username: Ana Souza
+                  email: ana.souza@exemplo.com
+                  password: <SENHA>
+                  tipo: buscando_vaga
+                summary: Cadastro de quem procura vaga
+              CadastroDeQuemOfereceVaga:
+                value:
+                  username: Bruno Lima
+                  email: bruno.lima@exemplo.com
+                  password: <SENHA>
+                  tipo: oferecendo_vaga
+                summary: Cadastro de quem oferece vaga
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegistrarRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegistrarRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Registrar'
+              examples:
+                ExemploReal:
+                  value:
+                    username: Ana Souza
+                    email: ana.souza@exemplo.com
+                    tipo: buscando_vaga
+                  summary: Exemplo real
+          description: Usuário criado (a senha nunca é devolvida).
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                E-mailJáCadastrado(semDiferenciarMaiúsculas):
+                  value:
+                    email:
+                    - Este e-mail já está cadastrado.
+                  summary: E-mail já cadastrado (sem diferenciar maiúsculas)
+                VáriosCamposInválidos:
+                  value:
+                    username:
+                    - O nome deve ter pelo menos 2 caracteres.
+                    email:
+                    - Informe um e-mail válido.
+                    password:
+                    - A senha deve ter no mínimo 8 caracteres.
+                    tipo:
+                    - Tipo de conta inválido. Use "buscando_vaga" ou "oferecendo_vaga".
+                  summary: Vários campos inválidos
+                CorpoVazio:CamposObrigatórios:
+                  value:
+                    username:
+                    - O nome é obrigatório.
+                    email:
+                    - O e-mail é obrigatório.
+                    password:
+                    - A senha é obrigatória.
+                    tipo:
+                    - O tipo de conta é obrigatório.
+                  summary: 'Corpo vazio: campos obrigatórios'
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+      x-quem-pode: Público (sem login)
+  /api/conversas/:
+    get:
+      operationId: chat_conversas
+      description: Uma conversa por match, da atividade mais recente para a mais antiga,
+        com a última mensagem e a contagem de não lidas.
+      summary: Listar conversas
+      parameters:
+      - in: query
+        name: nao_lidas
+        schema:
+          type: string
+          enum:
+          - 'false'
+          - 'true'
+        description: Com `true`, só conversas com mensagens não lidas.
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Nome ou título do anúncio do outro perfil (sem diferenciar maiúsculas).
+        examples:
+          Exemplo:
+            value: bruno
+      tags:
+      - Chat
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Conversa'
+              examples:
+                ExemploReal:
+                  value:
+                  - - match_id: 1
+                      outro_perfil:
+                        id: 2
+                        usuario_id: 3
+                        nome: Bruno Lima
+                        idade: 29
+                        regiao: Boa Viagem
+                        tipo: oferecendo_vaga
+                        titulo_anuncio: Quarto amplo a 5 minutos da praia
+                        descricao_imovel: Apartamento mobiliado, 2 quartos, varanda
+                          e vaga de garagem.
+                        fotos_imovel:
+                        - https://exemplo.com/fotos/quarto.jpg
+                        - https://exemplo.com/fotos/sala.jpg
+                        foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
+                        tipo_imovel: apartamento
+                        qtd_moradores: 2
+                        orcamento_min: '800.00'
+                        orcamento_max: '1300.00'
+                        aceita_pets: true
+                        fumante: false
+                      score: 0.9295
+                      ultima_mensagem:
+                        conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
+                        data_envio: '2026-11-16T04:02:33.118027Z'
+                        remetente_id: 2
+                      nao_lidas: 1
+                  summary: Exemplo real
+                ComFiltros:
+                  value:
+                  - - match_id: 1
+                      outro_perfil:
+                        id: 2
+                        usuario_id: 3
+                        nome: Bruno Lima
+                        idade: 29
+                        regiao: Boa Viagem
+                        tipo: oferecendo_vaga
+                        titulo_anuncio: Quarto amplo a 5 minutos da praia
+                        descricao_imovel: Apartamento mobiliado, 2 quartos, varanda
+                          e vaga de garagem.
+                        fotos_imovel:
+                        - https://exemplo.com/fotos/quarto.jpg
+                        - https://exemplo.com/fotos/sala.jpg
+                        foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
+                        tipo_imovel: apartamento
+                        qtd_moradores: 2
+                        orcamento_min: '800.00'
+                        orcamento_max: '1300.00'
+                        aceita_pets: true
+                        fumante: false
+                      score: 0.9295
+                      ultima_mensagem:
+                        conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
+                        data_envio: '2026-11-16T04:02:33.118027Z'
+                        remetente_id: 2
+                      nao_lidas: 1
+                  summary: Com filtros
+          description: Conversas.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                Administrador:
+                  value:
+                    detail: O administrador não participa deste recurso.
+          description: Sem permissão para este recurso.
+      x-quem-pode: Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador
+        recebe 403
+  /api/curtidas/:
+    post:
+      operationId: curtidas_criar
+      description: 'Registra a avaliação. Se a outra pessoa já tinha curtido você,
+        o **match é criado** e a resposta traz `match: true` com `match_data`. Só
+        vale para perfis do tipo oposto, uma vez por perfil. Perfil de conta suspensa
+        → 404.'
+      summary: Curtir ou recusar um perfil
+      tags:
+      - Descoberta e Matches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CurtidaRequisicaoRequest'
+            examples:
+              Curtir:
+                value:
+                  perfil_destino: 2
+                  tipo: curtir
+              Recusar:
+                value:
+                  perfil_destino: 3
+                  tipo: recusar
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CurtidaRequisicaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CurtidaRequisicaoRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurtidaResposta'
+              examples:
+                ExemploReal:
+                  value:
+                    match: false
+                  summary: Exemplo real
+                CurtidaMútua:MatchCriado:
+                  value:
+                    match: true
+                    match_data:
+                      id: 1
+                      perfil_a:
+                        id: 1
+                        nome: Ana Souza
+                        idade: 24
+                        regiao: Boa Viagem
+                        bio: Estudante de Computação, rotina tranquila e gosta de
+                          cozinhar.
+                        fumante: false
+                        aceita_pets: true
+                        tolerancia_bagunca: 2
+                        nivel_organizacao: 4
+                        orcamento_min: '700.00'
+                        orcamento_max: '1250.00'
+                        perfil_horario: flexivel
+                        nivel_ruido: 2
+                        nivel_social: 3
+                        aceita_visitas: as_vezes
+                        tipo_imovel: apartamento
+                        qtd_moradores: 2
+                        titulo_anuncio: ''
+                        descricao_imovel: ''
+                        fotos_imovel: []
+                        foto_perfil_url: ''
+                        tipo: buscando_vaga
+                        usuario_id: 2
+                      perfil_b:
+                        id: 2
+                        nome: Bruno Lima
+                        idade: 29
+                        regiao: Boa Viagem
+                        bio: Dono do apartamento, trabalho em home office.
+                        fumante: false
+                        aceita_pets: true
+                        tolerancia_bagunca: 2
+                        nivel_organizacao: 4
+                        orcamento_min: '800.00'
+                        orcamento_max: '1300.00'
+                        perfil_horario: flexivel
+                        nivel_ruido: 2
+                        nivel_social: 3
+                        aceita_visitas: as_vezes
+                        tipo_imovel: apartamento
+                        qtd_moradores: 2
+                        titulo_anuncio: Quarto amplo a 5 minutos da praia
+                        descricao_imovel: Apartamento mobiliado, 2 quartos, varanda
+                          e vaga de garagem.
+                        fotos_imovel:
+                        - https://exemplo.com/fotos/quarto.jpg
+                        - https://exemplo.com/fotos/sala.jpg
+                        foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
+                        tipo: oferecendo_vaga
+                        usuario_id: 3
+                      score: 0.9295
+                      data_match: '2026-11-16T01:02:32.508503-03:00'
+                  summary: 'Curtida mútua: match criado'
+          description: Avaliação registrada (sem match ainda).
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                PerfilInexistente:
+                  value:
+                    perfil_destino:
+                    - O identificador "999999" não existe.
+                  summary: Perfil inexistente
+                PróprioPerfil:
+                  value:
+                    detail: Você não pode curtir o seu próprio perfil.
+                  summary: Próprio perfil
+                JáAvaliado:
+                  value:
+                    detail: Você já avaliou este perfil.
+                  summary: Já avaliado
+                CamposAusentes:
+                  value:
+                    perfil_destino:
+                    - Este campo é obrigatório.
+                    tipo:
+                    - Este campo é obrigatório.
+                  summary: Campos ausentes
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                Administrador:
+                  value:
+                    detail: Administradores não podem avaliar perfis.
+          description: Sem permissão para este recurso.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                PerfilDeContaSuspensa:
+                  value:
+                    detail: Perfil não encontrado.
+                  summary: Perfil de conta suspensa
+          description: Recurso não encontrado.
+      x-quem-pode: Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador
+        recebe 403
+  /api/descoberta/:
+    get:
+      operationId: descoberta_listar
+      description: 'Lista os perfis do **tipo oposto** com o score de compatibilidade
+        (0 a 1), por score decrescente. Exige perfil criado. Não aparecem: o próprio
+        perfil, perfis já avaliados, perfis já em match e contas suspensas.'
+      summary: Descobrir perfis compatíveis
+      parameters:
+      - in: query
+        name: aceita_pets
+        schema:
+          type: string
+          enum:
+          - 'false'
+          - 'true'
+        description: Só perfis que aceitam (`true`) ou não (`false`) pets.
+      - in: query
+        name: fumante
+        schema:
+          type: string
+          enum:
+          - 'false'
+          - 'true'
+        description: Só perfis fumantes (`true`) ou não (`false`).
+      - in: query
+        name: orcamento_max
+        schema:
+          type: number
+          format: double
+        description: Orçamento máximo (mesmas regras).
+        examples:
+          Exemplo:
+            value: 1500
+      - in: query
+        name: orcamento_min
+        schema:
+          type: number
+          format: double
+        description: Orçamento mínimo (0 a 99999999.99; NaN, infinito e negativos
+          → 400). Filtra por interseção de faixas.
+        examples:
+          Exemplo:
+            value: 500
+      - in: query
+        name: ordenar
+        schema:
+          type: string
+          enum:
+          - orcamento_asc
+          - orcamento_desc
+          - score
+        description: Ordenação.
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: 'Texto: nome, região ou título do anúncio.'
+        examples:
+          Exemplo:
+            value: praia
+      - in: query
+        name: regiao
+        schema:
+          type: string
+        description: 'Região exata. Repetível: `?regiao=A&regiao=B`.'
+        examples:
+          Exemplo:
+            value: Boa Viagem
+      - in: query
+        name: score_min
+        schema:
+          type: number
+          format: float
+        description: Compatibilidade mínima em % (0 a 100).
+        examples:
+          Exemplo:
+            value: 50
+      - in: query
+        name: tipo_imovel
+        schema:
+          type: string
+          enum:
+          - apartamento
+          - casa
+          - indiferente
+          - republica
+        description: Tipo de imóvel.
+      tags:
+      - Descoberta e Matches
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PerfilDescoberto'
+              examples:
+                ExemploReal:
+                  value:
+                  - - id: 2
+                      nome: Bruno Lima
+                      idade: 29
+                      regiao: Boa Viagem
+                      bio: Dono do apartamento, trabalho em home office.
+                      orcamento_min: '800.00'
+                      orcamento_max: '1300.00'
+                      fumante: false
+                      aceita_pets: true
+                      tolerancia_bagunca: 2
+                      nivel_organizacao: 4
+                      perfil_horario: flexivel
+                      nivel_ruido: 2
+                      nivel_social: 3
+                      aceita_visitas: as_vezes
+                      tipo_imovel: apartamento
+                      qtd_moradores: 2
+                      titulo_anuncio: Quarto amplo a 5 minutos da praia
+                      descricao_imovel: Apartamento mobiliado, 2 quartos, varanda
+                        e vaga de garagem.
+                      fotos_imovel:
+                      - https://exemplo.com/fotos/quarto.jpg
+                      - https://exemplo.com/fotos/sala.jpg
+                      foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
+                      tipo: oferecendo_vaga
+                      score: 0.9295
+                      usuario_id: 3
+                    - id: 3
+                      nome: Carla Dias
+                      idade: 29
+                      regiao: Casa Forte
+                      bio: Dono do apartamento, trabalho em home office.
+                      orcamento_min: '800.00'
+                      orcamento_max: '1300.00'
+                      fumante: false
+                      aceita_pets: true
+                      tolerancia_bagunca: 2
+                      nivel_organizacao: 4
+                      perfil_horario: flexivel
+                      nivel_ruido: 2
+                      nivel_social: 3
+                      aceita_visitas: as_vezes
+                      tipo_imovel: casa
+                      qtd_moradores: 2
+                      titulo_anuncio: Casa com quintal
+                      descricao_imovel: Apartamento mobiliado, 2 quartos, varanda
+                        e vaga de garagem.
+                      fotos_imovel: []
+                      foto_perfil_url: ''
+                      tipo: oferecendo_vaga
+                      score: 0.7295
+                      usuario_id: 4
+                  summary: Exemplo real
+                ComFiltros:
+                  value:
+                  - - id: 2
+                      nome: Bruno Lima
+                      idade: 29
+                      regiao: Boa Viagem
+                      bio: Dono do apartamento, trabalho em home office.
+                      orcamento_min: '800.00'
+                      orcamento_max: '1300.00'
+                      fumante: false
+                      aceita_pets: true
+                      tolerancia_bagunca: 2
+                      nivel_organizacao: 4
+                      perfil_horario: flexivel
+                      nivel_ruido: 2
+                      nivel_social: 3
+                      aceita_visitas: as_vezes
+                      tipo_imovel: apartamento
+                      qtd_moradores: 2
+                      titulo_anuncio: Quarto amplo a 5 minutos da praia
+                      descricao_imovel: Apartamento mobiliado, 2 quartos, varanda
+                        e vaga de garagem.
+                      fotos_imovel:
+                      - https://exemplo.com/fotos/quarto.jpg
+                      - https://exemplo.com/fotos/sala.jpg
+                      foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
+                      tipo: oferecendo_vaga
+                      score: 0.9295
+                      usuario_id: 3
+                  summary: Com filtros
+          description: Perfis compatíveis (`score` de 0 a 1).
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                UsuárioAindaSemPerfil:
+                  value:
+                    detail: Você precisa criar um perfil antes de acessar a descoberta.
+                  summary: Usuário ainda sem perfil
+                FiltroInválido:
+                  value:
+                    detail: Valor inválido para aceita_pets. Use true ou false.
+                  summary: Filtro inválido
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                Administrador:
+                  value:
+                    detail: O administrador não participa deste recurso.
+          description: Sem permissão para este recurso.
+      x-quem-pode: Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador
+        recebe 403
+  /api/matches/:
+    get:
+      operationId: matches_listar
+      description: Matches do usuário logado, por score decrescente. Matches com conta
+        suspensa não aparecem. Sem perfil → lista vazia.
+      summary: Listar os matches
+      tags:
+      - Descoberta e Matches
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Match'
+              examples:
+                ExemploReal:
+                  value:
+                  - - id: 1
+                      perfil_a:
+                        id: 1
+                        nome: Ana Souza
+                        idade: 24
+                        regiao: Boa Viagem
+                        bio: Estudante de Computação, rotina tranquila e gosta de
+                          cozinhar.
+                        fumante: false
+                        aceita_pets: true
+                        tolerancia_bagunca: 2
+                        nivel_organizacao: 4
+                        orcamento_min: '700.00'
+                        orcamento_max: '1250.00'
+                        perfil_horario: flexivel
+                        nivel_ruido: 2
+                        nivel_social: 3
+                        aceita_visitas: as_vezes
+                        tipo_imovel: apartamento
+                        qtd_moradores: 2
+                        titulo_anuncio: ''
+                        descricao_imovel: ''
+                        fotos_imovel: []
+                        foto_perfil_url: ''
+                        tipo: buscando_vaga
+                        usuario_id: 2
+                      perfil_b:
+                        id: 2
+                        nome: Bruno Lima
+                        idade: 29
+                        regiao: Boa Viagem
+                        bio: Dono do apartamento, trabalho em home office.
+                        fumante: false
+                        aceita_pets: true
+                        tolerancia_bagunca: 2
+                        nivel_organizacao: 4
+                        orcamento_min: '800.00'
+                        orcamento_max: '1300.00'
+                        perfil_horario: flexivel
+                        nivel_ruido: 2
+                        nivel_social: 3
+                        aceita_visitas: as_vezes
+                        tipo_imovel: apartamento
+                        qtd_moradores: 2
+                        titulo_anuncio: Quarto amplo a 5 minutos da praia
+                        descricao_imovel: Apartamento mobiliado, 2 quartos, varanda
+                          e vaga de garagem.
+                        fotos_imovel:
+                        - https://exemplo.com/fotos/quarto.jpg
+                        - https://exemplo.com/fotos/sala.jpg
+                        foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
+                        tipo: oferecendo_vaga
+                        usuario_id: 3
+                      score: 0.9295
+                      data_match: '2026-11-16T01:02:32.508503-03:00'
+                  summary: Exemplo real
+          description: Matches (cada perfil traz os campos públicos).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+      x-quem-pode: Qualquer usuário logado
+  /api/matches/{match_id}/mensagens/:
+    get:
+      operationId: chat_mensagens_listar
+      description: 'Mensagens em ordem cronológica. As mensagens do **outro** participante
+        passam a `lida: true`. Contas suspensas continuam legíveis.'
+      summary: Listar mensagens de um match
+      parameters:
+      - in: query
+        name: apos
+        schema:
+          type: integer
+        description: Devolve só mensagens com id maior que este (polling). Inteiro
+          ≥ 0; outro valor → 400.
+        examples:
+          Exemplo:
+            value: 1
+      - in: path
+        name: match_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Chat
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Mensagem'
+              examples:
+                ExemploReal:
+                  value:
+                  - - id: 1
+                      match_id: 1
+                      remetente_id: 1
+                      conteudo: Oi, Bruno! O quarto ainda está disponível?
+                      data_envio: '2026-11-16T01:02:33.019723-03:00'
+                      lida: false
+                    - id: 2
+                      match_id: 1
+                      remetente_id: 2
+                      conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
+                      data_envio: '2026-11-16T01:02:33.118027-03:00'
+                      lida: true
+                  summary: Exemplo real
+                SóAsNovas(`?apos=1`):
+                  value:
+                  - - id: 2
+                      match_id: 1
+                      remetente_id: 2
+                      conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
+                      data_envio: '2026-11-16T01:02:33.118027-03:00'
+                      lida: true
+                  summary: Só as novas (`?apos=1`)
+          description: Mensagens.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                '`apos`Inválido':
+                  value:
+                    detail: O parâmetro "apos" inválido. Informe um número inteiro.
+                      Informe o número da última mensagem já recebida.
+                  summary: '`apos` inválido'
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                NãoParticipaDoMatch:
+                  value:
+                    detail: Você não tem acesso a este match.
+                  summary: Não participa do match
+          description: Sem permissão para este recurso.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                MatchInexistente:
+                  value:
+                    detail: Match não encontrado.
+                  summary: Match inexistente
+          description: Recurso não encontrado.
+      x-quem-pode: Participante do match
+    post:
+      operationId: chat_mensagens_enviar
+      description: Envia uma mensagem de texto (1 a 1000 caracteres). Recusa conteúdo
+        vazio, só espaços ou que não seja texto. Se o outro participante estiver com
+        a conta suspensa → 403.
+      summary: Enviar mensagem
+      parameters:
+      - in: path
+        name: match_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Chat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MensagemRequisicaoRequest'
+            examples:
+              Mensagem:
+                value:
+                  conteudo: Oi, Bruno! O quarto ainda está disponível?
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MensagemRequisicaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MensagemRequisicaoRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mensagem'
+              examples:
+                ExemploReal:
+                  value:
+                    id: 1
+                    match_id: 1
+                    remetente_id: 1
+                    conteudo: Oi, Bruno! O quarto ainda está disponível?
+                    data_envio: '2026-11-16T01:02:33.019723-03:00'
+                    lida: false
+                  summary: Exemplo real
+                RespostaDaOutraPessoa:
+                  value:
+                    id: 2
+                    match_id: 1
+                    remetente_id: 2
+                    conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
+                    data_envio: '2026-11-16T01:02:33.118027-03:00'
+                    lida: false
+                  summary: Resposta da outra pessoa
+          description: Mensagem criada.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                ConteúdoVazioOuSóEspaços:
+                  value:
+                    detail: O conteúdo da mensagem não pode ser vazio.
+                  summary: Conteúdo vazio ou só espaços
+                MaisDe1000Caracteres:
+                  value:
+                    detail: O conteúdo da mensagem não pode ter mais de 1000 caracteres.
+                  summary: Mais de 1000 caracteres
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                NãoParticipaDoMatch:
+                  value:
+                    detail: Você não tem acesso a este match.
+                  summary: Não participa do match
+          description: Sem permissão para este recurso.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                MatchInexistente:
+                  value:
+                    detail: Match não encontrado.
+                  summary: Match inexistente
+          description: Recurso não encontrado.
+      x-quem-pode: Participante do match
+  /api/moderacao/denuncias/:
+    post:
+      operationId: moderacao_denunciar
+      description: Cria uma denúncia `pendente`. `denunciado` é o id do **usuário**
+        (campo `usuario_id` dos perfis). Não vale denunciar a si mesmo.
+      summary: Denunciar um usuário
+      tags:
+      - Moderação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DenunciaRequisicaoRequest'
+            examples:
+              DenúnciaPorSpam:
+                value:
+                  denunciado: 4
+                  motivo: spam
+                  descricao: Anúncio repetido várias vezes.
+                summary: Denúncia por spam
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DenunciaRequisicaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DenunciaRequisicaoRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DenunciaCriada'
+              examples:
+                ExemploReal:
+                  value:
+                    id: 1
+                    denunciado: 4
+                    motivo: spam
+                    status: pendente
+                    criada_em: '2026-11-16T04:02:35.219764Z'
+                  summary: Exemplo real
+          description: Denúncia criada.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                IdEMotivoInválidos:
+                  value:
+                    detail: O campo "denunciado" inválido. Informe um número inteiro.
+                  summary: Id e motivo inválidos
+                UsuárioInexistente:
+                  value:
+                    detail: Usuário denunciado não encontrado.
+                  summary: Usuário inexistente
+                Autodenúncia:
+                  value:
+                    detail: Você não pode denunciar a si mesmo.
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+      x-quem-pode: Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador
+        recebe 403
+  /api/perfis/:
+    get:
+      operationId: perfis_listar
+      description: Devolve uma lista com o **próprio** perfil do usuário (vazia se
+        ainda não criou). O administrador recebe todos os perfis.
+      summary: Listar o próprio perfil
+      tags:
+      - Perfis
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Perfil'
+              examples:
+                ExemploReal:
+                  value:
+                  - - id: 1
+                      usuario: 2
+                      nome: Ana Souza
+                      idade: 24
+                      regiao: Boa Viagem
+                      bio: Estudante de Computação, rotina tranquila.
+                      orcamento_min: '700.00'
+                      orcamento_max: '1200.00'
+                      fumante: false
+                      aceita_pets: true
+                      tolerancia_bagunca: 2
+                      nivel_organizacao: 4
+                      perfil_horario: flexivel
+                      nivel_ruido: 2
+                      nivel_social: 3
+                      aceita_visitas: as_vezes
+                      tipo_imovel: apartamento
+                      qtd_moradores: 2
+                      titulo_anuncio: ''
+                      descricao_imovel: ''
+                      fotos_imovel: []
+                      foto_perfil_url: ''
+                  summary: Exemplo real
+          description: Lista de perfis.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+      x-quem-pode: Qualquer usuário logado
+    post:
+      operationId: perfis_criar
+      description: Cria o perfil do usuário logado (um por usuário). Quem oferece
+        vaga pode enviar também os campos do anúncio (`titulo_anuncio`, `descricao_imovel`,
+        `fotos_imovel`, `foto_perfil_url`). Ao salvar, as compatibilidades com os
+        perfis do tipo oposto são recalculadas.
+      summary: Criar o perfil
+      tags:
+      - Perfis
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerfilRequest'
+            examples:
+              PerfilDeQuemProcuraVaga:
+                value:
+                  nome: Ana Souza
+                  idade: 24
+                  regiao: Boa Viagem
+                  bio: Estudante de Computação, rotina tranquila.
+                  orcamento_min: 700
+                  orcamento_max: 1200
+                  fumante: false
+                  aceita_pets: true
+                  tolerancia_bagunca: 2
+                  nivel_organizacao: 4
+                  perfil_horario: flexivel
+                  nivel_ruido: 2
+                  nivel_social: 3
+                  aceita_visitas: as_vezes
+                  tipo_imovel: apartamento
+                  qtd_moradores: 2
+                summary: Perfil de quem procura vaga
+              PerfilComAnúncio(oferecendoVaga):
+                value:
+                  nome: Bruno Lima
+                  idade: 29
+                  regiao: Boa Viagem
+                  bio: Dono do apartamento, trabalho em home office.
+                  orcamento_min: 800
+                  orcamento_max: 1300
+                  fumante: false
+                  aceita_pets: true
+                  tolerancia_bagunca: 2
+                  nivel_organizacao: 4
+                  perfil_horario: flexivel
+                  nivel_ruido: 2
+                  nivel_social: 3
+                  aceita_visitas: as_vezes
+                  tipo_imovel: apartamento
+                  qtd_moradores: 2
+                  titulo_anuncio: Quarto amplo a 5 minutos da praia
+                  descricao_imovel: Apartamento mobiliado, 2 quartos, varanda e vaga
+                    de garagem.
+                  fotos_imovel:
+                  - https://exemplo.com/fotos/quarto.jpg
+                  - https://exemplo.com/fotos/sala.jpg
+                  foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
+                summary: Perfil com anúncio (oferecendo vaga)
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PerfilRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PerfilRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Perfil'
+              examples:
+                ExemploReal:
+                  value:
+                    id: 1
+                    usuario: 2
+                    nome: Ana Souza
+                    idade: 24
+                    regiao: Boa Viagem
+                    bio: Estudante de Computação, rotina tranquila.
+                    orcamento_min: '700.00'
+                    orcamento_max: '1200.00'
+                    fumante: false
+                    aceita_pets: true
+                    tolerancia_bagunca: 2
+                    nivel_organizacao: 4
+                    perfil_horario: flexivel
+                    nivel_ruido: 2
+                    nivel_social: 3
+                    aceita_visitas: as_vezes
+                    tipo_imovel: apartamento
+                    qtd_moradores: 2
+                    titulo_anuncio: ''
+                    descricao_imovel: ''
+                    fotos_imovel: []
+                    foto_perfil_url: ''
+                  summary: Exemplo real
+                PerfilComAnúncio:
+                  value:
+                    id: 2
+                    usuario: 3
+                    nome: Bruno Lima
+                    idade: 29
+                    regiao: Boa Viagem
+                    bio: Dono do apartamento, trabalho em home office.
+                    orcamento_min: '800.00'
+                    orcamento_max: '1300.00'
+                    fumante: false
+                    aceita_pets: true
+                    tolerancia_bagunca: 2
+                    nivel_organizacao: 4
+                    perfil_horario: flexivel
+                    nivel_ruido: 2
+                    nivel_social: 3
+                    aceita_visitas: as_vezes
+                    tipo_imovel: apartamento
+                    qtd_moradores: 2
+                    titulo_anuncio: Quarto amplo a 5 minutos da praia
+                    descricao_imovel: Apartamento mobiliado, 2 quartos, varanda e
+                      vaga de garagem.
+                    fotos_imovel:
+                    - https://exemplo.com/fotos/quarto.jpg
+                    - https://exemplo.com/fotos/sala.jpg
+                    foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
+                  summary: Perfil com anúncio
+          description: Perfil criado.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                CamposInválidos:
+                  value:
+                    idade:
+                    - A idade mínima permitida é 18 anos.
+                    bio:
+                    - 'A bio deve ter no máximo 500 caracteres (enviados: 501).'
+                    nivel_ruido:
+                    - Certifique-se de que este valor seja inferior ou igual a 5.
+                  summary: Campos inválidos
+                UsuárioJáTemPerfil:
+                  value:
+                    detail: Você já possui um perfil.
+                  summary: Usuário já tem perfil
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                AdministradorNãoCriaPerfil:
+                  value:
+                    detail: O administrador não participa deste recurso.
+                  summary: Administrador não cria perfil
+          description: Sem permissão para este recurso.
+      x-quem-pode: Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador
+        recebe 403
+  /api/perfis/{id}/:
+    get:
+      operationId: perfis_consultar
+      description: 'Permitido para: o próprio perfil, perfis do **tipo oposto** (os
+        da Descoberta), perfis de quem tem match com você e o administrador. Qualquer
+        outro caso → 403.'
+      summary: Consultar um perfil
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este perfil.
+        required: true
+      tags:
+      - Perfis
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Perfil'
+              examples:
+                ExemploReal:
+                  value:
+                    id: 2
+                    usuario: 3
+                    nome: Bruno Lima
+                    idade: 29
+                    regiao: Boa Viagem
+                    bio: Dono do apartamento, trabalho em home office.
+                    orcamento_min: '800.00'
+                    orcamento_max: '1300.00'
+                    fumante: false
+                    aceita_pets: true
+                    tolerancia_bagunca: 2
+                    nivel_organizacao: 4
+                    perfil_horario: flexivel
+                    nivel_ruido: 2
+                    nivel_social: 3
+                    aceita_visitas: as_vezes
+                    tipo_imovel: apartamento
+                    qtd_moradores: 2
+                    titulo_anuncio: Quarto amplo a 5 minutos da praia
+                    descricao_imovel: Apartamento mobiliado, 2 quartos, varanda e
+                      vaga de garagem.
+                    fotos_imovel:
+                    - https://exemplo.com/fotos/quarto.jpg
+                    - https://exemplo.com/fotos/sala.jpg
+                    foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
+                  summary: Exemplo real
+          description: Perfil.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                PerfilDoMesmoTipo,SemMatch:
+                  value:
+                    detail: Você não tem permissão para acessar este perfil.
+                  summary: Perfil do mesmo tipo, sem match
+          description: Sem permissão para este recurso.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                PerfilInexistente:
+                  value:
+                    detail: Perfil não encontrado.
+                  summary: Perfil inexistente
+          description: Recurso não encontrado.
+      x-quem-pode: Qualquer usuário logado
+    put:
+      operationId: perfis_atualizar
+      description: Substitui todos os campos do perfil. Somente o dono (outro usuário
+        recebe 403).
+      summary: Atualizar o perfil (completo)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este perfil.
+        required: true
+      tags:
+      - Perfis
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerfilRequest'
+            examples:
+              AtualizaçãoCompleta:
+                value:
+                  nome: Ana Souza
+                  idade: 24
+                  regiao: Boa Viagem
+                  bio: Estudante de Computação, rotina tranquila e gosta de cozinhar.
+                  orcamento_min: 700
+                  orcamento_max: 1250
+                  fumante: false
+                  aceita_pets: true
+                  tolerancia_bagunca: 2
+                  nivel_organizacao: 4
+                  perfil_horario: flexivel
+                  nivel_ruido: 2
+                  nivel_social: 3
+                  aceita_visitas: as_vezes
+                  tipo_imovel: apartamento
+                  qtd_moradores: 2
+                summary: Atualização completa
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PerfilRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PerfilRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Perfil'
+              examples:
+                ExemploReal:
+                  value:
+                    id: 1
+                    usuario: 2
+                    nome: Ana Souza
+                    idade: 24
+                    regiao: Boa Viagem
+                    bio: Estudante de Computação, rotina tranquila e gosta de cozinhar.
+                    orcamento_min: '700.00'
+                    orcamento_max: '1250.00'
+                    fumante: false
+                    aceita_pets: true
+                    tolerancia_bagunca: 2
+                    nivel_organizacao: 4
+                    perfil_horario: flexivel
+                    nivel_ruido: 2
+                    nivel_social: 3
+                    aceita_visitas: as_vezes
+                    tipo_imovel: apartamento
+                    qtd_moradores: 2
+                    titulo_anuncio: ''
+                    descricao_imovel: ''
+                    fotos_imovel: []
+                    foto_perfil_url: ''
+                  summary: Exemplo real
+          description: Perfil atualizado.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                CampoInválido:
+                  value:
+                    idade:
+                    - A idade mínima permitida é 18 anos.
+                  summary: Campo inválido
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                PerfilDeOutraPessoa:
+                  value:
+                    detail: Você não tem permissão para executar essa ação.
+                  summary: Perfil de outra pessoa
+          description: Sem permissão para este recurso.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                PerfilInexistente:
+                  value:
+                    detail: Perfil não encontrado.
+                  summary: Perfil inexistente
+          description: Recurso não encontrado.
+      x-quem-pode: Dono do perfil
+    patch:
+      operationId: perfis_atualizar_parcial
+      description: 'Altera só os campos enviados. As regras cruzadas valem com os
+        dados atuais (ex.: `orcamento_min` não pode passar de `orcamento_max`).'
+      summary: Atualizar o perfil (parcial)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este perfil.
+        required: true
+      tags:
+      - Perfis
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPerfilRequest'
+            examples:
+              AlterarBioEOrçamentoMáximo:
+                value:
+                  bio: Estudante de Computação, rotina tranquila e gosta de cozinhar.
+                  orcamento_max: 1250
+                summary: Alterar bio e orçamento máximo
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPerfilRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPerfilRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Perfil'
+              examples:
+                ExemploReal:
+                  value:
+                    id: 1
+                    usuario: 2
+                    nome: Ana Souza
+                    idade: 24
+                    regiao: Boa Viagem
+                    bio: Estudante de Computação, rotina tranquila e gosta de cozinhar.
+                    orcamento_min: '700.00'
+                    orcamento_max: '1250.00'
+                    fumante: false
+                    aceita_pets: true
+                    tolerancia_bagunca: 2
+                    nivel_organizacao: 4
+                    perfil_horario: flexivel
+                    nivel_ruido: 2
+                    nivel_social: 3
+                    aceita_visitas: as_vezes
+                    tipo_imovel: apartamento
+                    qtd_moradores: 2
+                    titulo_anuncio: ''
+                    descricao_imovel: ''
+                    fotos_imovel: []
+                    foto_perfil_url: ''
+                  summary: Exemplo real
+          description: Perfil atualizado.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                CampoInválido:
+                  value:
+                    idade:
+                    - A idade mínima permitida é 18 anos.
+                  summary: Campo inválido
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                PerfilDeOutraPessoa:
+                  value:
+                    detail: Você não tem permissão para executar essa ação.
+                  summary: Perfil de outra pessoa
+          description: Sem permissão para este recurso.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                PerfilInexistente:
+                  value:
+                    detail: Perfil não encontrado.
+                  summary: Perfil inexistente
+          description: Recurso não encontrado.
+      x-quem-pode: Dono do perfil
+    delete:
+      operationId: perfis_excluir
+      description: Exclui o perfil e, em cascata, suas curtidas, compatibilidades,
+        matches e mensagens. Não há desfazer.
+      summary: Excluir o perfil
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este perfil.
+        required: true
+      tags:
+      - Perfis
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: Perfil excluído (sem corpo).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                PerfilDeOutraPessoa:
+                  value:
+                    detail: Você não tem permissão para executar essa ação.
+                  summary: Perfil de outra pessoa
+          description: Sem permissão para este recurso.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                PerfilInexistente:
+                  value:
+                    detail: Perfil não encontrado.
+                  summary: Perfil inexistente
+          description: Recurso não encontrado.
+      x-quem-pode: Dono do perfil
+components:
+  schemas:
+    AceitaVisitasEnum:
+      enum:
+      - raramente
+      - as_vezes
+      - frequentemente
+      type: string
+      description: |-
+        * `raramente` - Raramente
+        * `as_vezes` - Às vezes
+        * `frequentemente` - Frequentemente
+    ContaResposta:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        ativo:
+          type: boolean
+          description: false = conta suspensa.
+      required:
+      - ativo
+      - email
+      - id
+    Conversa:
+      type: object
+      properties:
+        match_id:
+          type: integer
+        outro_perfil:
+          $ref: '#/components/schemas/ConversaOutroPerfil'
+        score:
+          type: number
+          format: double
+          description: De 0 a 1.
+        ultima_mensagem:
+          allOf:
+          - $ref: '#/components/schemas/ConversaUltimaMensagem'
+          nullable: true
+        nao_lidas:
+          type: integer
+          description: Mensagens do outro participante ainda não lidas.
+      required:
+      - match_id
+      - nao_lidas
+      - outro_perfil
+      - score
+      - ultima_mensagem
+    ConversaOutroPerfil:
+      type: object
+      properties:
+        id:
+          type: integer
+        usuario_id:
+          type: integer
+        nome:
+          type: string
+        idade:
+          type: integer
+        regiao:
+          type: string
+        tipo:
+          type: string
+          description: Tipo do usuário do outro perfil.
+        titulo_anuncio:
+          type: string
+        descricao_imovel:
+          type: string
+        fotos_imovel:
+          type: array
+          items:
+            type: string
+        foto_perfil_url:
+          type: string
+        tipo_imovel:
+          type: string
+        qtd_moradores:
+          type: integer
+        orcamento_min:
+          type: string
+          description: Decimal em texto.
+        orcamento_max:
+          type: string
+          description: Decimal em texto.
+        aceita_pets:
+          type: boolean
+        fumante:
+          type: boolean
+      required:
+      - aceita_pets
+      - descricao_imovel
+      - foto_perfil_url
+      - fotos_imovel
+      - fumante
+      - id
+      - idade
+      - nome
+      - orcamento_max
+      - orcamento_min
+      - qtd_moradores
+      - regiao
+      - tipo
+      - tipo_imovel
+      - titulo_anuncio
+      - usuario_id
+    ConversaUltimaMensagem:
+      type: object
+      properties:
+        conteudo:
+          type: string
+        data_envio:
+          type: string
+          format: date-time
+        remetente_id:
+          type: integer
+          description: Id do PERFIL remetente.
+      required:
+      - conteudo
+      - data_envio
+      - remetente_id
+    CurtidaRequisicaoRequest:
+      type: object
+      properties:
+        perfil_destino:
+          type: integer
+          description: Id do PERFIL (não do usuário) a avaliar.
+        tipo:
+          allOf:
+          - $ref: '#/components/schemas/CurtidaRequisicaoTipoEnum'
+          description: |-
+            Ação.
+
+            * `curtir` - curtir
+            * `recusar` - recusar
+      required:
+      - perfil_destino
+      - tipo
+    CurtidaRequisicaoTipoEnum:
+      enum:
+      - curtir
+      - recusar
+      type: string
+      description: |-
+        * `curtir` - curtir
+        * `recusar` - recusar
+    CurtidaResposta:
+      type: object
+      properties:
+        match:
+          type: boolean
+          description: true quando a outra pessoa já tinha curtido (match criado).
+        match_data:
+          allOf:
+          - $ref: '#/components/schemas/Match'
+          description: Presente só quando `match` é true.
+      required:
+      - match
+    Dashboard:
+      type: object
+      properties:
+        kpis:
+          $ref: '#/components/schemas/DashboardKpis'
+        series:
+          $ref: '#/components/schemas/DashboardSeries'
+        top_regioes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopRegiao'
+        distribuicao_score:
+          type: array
+          items:
+            $ref: '#/components/schemas/FaixaScore'
+        filtros_aplicados:
+          type: object
+          additionalProperties:
+            type: string
+            nullable: true
+      required:
+      - distribuicao_score
+      - filtros_aplicados
+      - kpis
+      - series
+      - top_regioes
+    DashboardKpis:
+      type: object
+      properties:
+        usuarios_total:
+          type: integer
+        usuarios_por_tipo:
+          type: object
+          additionalProperties:
+            type: integer
+        usuarios_suspensos:
+          type: integer
+        perfis_total:
+          type: integer
+        curtidas_total:
+          type: integer
+        recusas_total:
+          type: integer
+        matches_total:
+          type: integer
+        taxa_match:
+          type: number
+          format: double
+          description: Em %.
+        mensagens_total:
+          type: integer
+        conversas_ativas:
+          type: integer
+        score_medio:
+          type: number
+          format: double
+          nullable: true
+          description: De 0 a 1.
+        denuncias_pendentes:
+          type: integer
+      required:
+      - conversas_ativas
+      - curtidas_total
+      - denuncias_pendentes
+      - matches_total
+      - mensagens_total
+      - perfis_total
+      - recusas_total
+      - score_medio
+      - taxa_match
+      - usuarios_por_tipo
+      - usuarios_suspensos
+      - usuarios_total
+    DashboardSeries:
+      type: object
+      properties:
+        matches_por_dia:
+          type: array
+          items:
+            $ref: '#/components/schemas/PontoSerie'
+        curtidas_por_dia:
+          type: array
+          items:
+            $ref: '#/components/schemas/PontoSerie'
+        mensagens_por_dia:
+          type: array
+          items:
+            $ref: '#/components/schemas/PontoSerie'
+      required:
+      - curtidas_por_dia
+      - matches_por_dia
+      - mensagens_por_dia
+    DenunciaAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+        denunciante:
+          $ref: '#/components/schemas/PessoaResumo'
+        denunciado:
+          $ref: '#/components/schemas/PessoaResumo'
+        motivo:
+          type: string
+        motivo_display:
+          type: string
+        descricao:
+          type: string
+        status:
+          $ref: '#/components/schemas/DenunciaAdminStatusEnum'
+        resolvida_por:
+          type: string
+          nullable: true
+          description: E-mail do administrador que decidiu.
+        resolucao:
+          type: string
+        criada_em:
+          type: string
+          format: date-time
+        atualizada_em:
+          type: string
+          format: date-time
+      required:
+      - atualizada_em
+      - criada_em
+      - denunciado
+      - denunciante
+      - descricao
+      - id
+      - motivo
+      - motivo_display
+      - resolucao
+      - resolvida_por
+      - status
+    DenunciaAdminStatusEnum:
+      enum:
+      - pendente
+      - resolvida
+      - descartada
+      type: string
+      description: |-
+        * `pendente` - pendente
+        * `resolvida` - resolvida
+        * `descartada` - descartada
+    DenunciaCriada:
+      type: object
+      properties:
+        id:
+          type: integer
+        denunciado:
+          type: integer
+        motivo:
+          type: string
+        status:
+          type: string
+          description: Sempre `pendente` ao criar.
+        criada_em:
+          type: string
+          format: date-time
+      required:
+      - criada_em
+      - denunciado
+      - id
+      - motivo
+      - status
+    DenunciaRequisicaoRequest:
+      type: object
+      properties:
+        denunciado:
+          type: integer
+          description: Id do USUÁRIO denunciado (não do perfil).
+        motivo:
+          $ref: '#/components/schemas/MotivoEnum'
+        descricao:
+          type: string
+          minLength: 1
+          description: Detalhes (até 500 caracteres).
+          maxLength: 500
+      required:
+      - denunciado
+      - motivo
+    ErroDetalhe:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Mensagem de erro em português.
+      required:
+      - detail
+    FaixaScore:
+      type: object
+      properties:
+        faixa:
+          type: string
+          description: 'Ex.: "0-20".'
+        total:
+          type: integer
+      required:
+      - faixa
+      - total
+    LogItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        data_hora:
+          type: string
+          format: date-time
+        usuario:
+          allOf:
+          - $ref: '#/components/schemas/LogUsuario'
+          nullable: true
+        acao:
+          type: string
+        acao_label:
+          type: string
+        entidade:
+          type: string
+        entidade_id:
+          type: integer
+          nullable: true
+        detalhes:
+          type: object
+          additionalProperties: {}
+        ip:
+          type: string
+          nullable: true
+      required:
+      - acao
+      - acao_label
+      - data_hora
+      - detalhes
+      - entidade
+      - entidade_id
+      - id
+      - ip
+      - usuario
+    LogUsuario:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        email:
+          type: string
+      required:
+      - email
+      - id
+      - nome
+    LoginRequisicaoRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          minLength: 1
+          description: E-mail do usuário (sem diferenciar maiúsculas).
+        password:
+          type: string
+          minLength: 1
+          description: Senha.
+      required:
+      - email
+      - password
+    LogsPagina:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LogItem'
+      required:
+      - count
+      - page
+      - results
+    Match:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        perfil_a:
+          allOf:
+          - $ref: '#/components/schemas/PerfilBasico'
+          readOnly: true
+        perfil_b:
+          allOf:
+          - $ref: '#/components/schemas/PerfilBasico'
+          readOnly: true
+        score:
+          type: number
+          format: double
+        data_match:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - data_match
+      - id
+      - perfil_a
+      - perfil_b
+      - score
+    Mensagem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        match_id:
+          type: integer
+          readOnly: true
+        remetente_id:
+          type: integer
+          readOnly: true
+        conteudo:
+          type: string
+        data_envio:
+          type: string
+          format: date-time
+          readOnly: true
+        lida:
+          type: boolean
+          readOnly: true
+      required:
+      - conteudo
+      - data_envio
+      - id
+      - lida
+      - match_id
+      - remetente_id
+    MensagemRequisicaoRequest:
+      type: object
+      properties:
+        conteudo:
+          type: string
+          minLength: 1
+          description: Texto da mensagem (1 a 1000 caracteres; não pode ser só espaços).
+          maxLength: 1000
+      required:
+      - conteudo
+    MotivoEnum:
+      enum:
+      - spam
+      - ofensivo
+      - falso
+      - outro
+      type: string
+      description: |-
+        * `spam` - spam
+        * `ofensivo` - ofensivo
+        * `falso` - falso
+        * `outro` - outro
+    PatchedPerfilRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 150
+        idade:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        regiao:
+          type: string
+          minLength: 1
+          maxLength: 200
+        bio:
+          type: string
+        orcamento_min:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        orcamento_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        fumante:
+          type: boolean
+        aceita_pets:
+          type: boolean
+        tolerancia_bagunca:
+          type: integer
+          maximum: 5
+          minimum: 1
+        nivel_organizacao:
+          type: integer
+          maximum: 5
+          minimum: 1
+        perfil_horario:
+          $ref: '#/components/schemas/PerfilHorarioEnum'
+        nivel_ruido:
+          type: integer
+          maximum: 5
+          minimum: 1
+        nivel_social:
+          type: integer
+          maximum: 5
+          minimum: 1
+        aceita_visitas:
+          $ref: '#/components/schemas/AceitaVisitasEnum'
+        tipo_imovel:
+          $ref: '#/components/schemas/TipoImovelEnum'
+        qtd_moradores:
+          type: integer
+          maximum: 4
+          minimum: 1
+        titulo_anuncio:
+          type: string
+          maxLength: 120
+        descricao_imovel:
+          type: string
+        fotos_imovel: {}
+        foto_perfil_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+    PatchedResolverDenunciaRequisicaoRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ResolverDenunciaRequisicaoStatusEnum'
+        resolucao:
+          type: string
+          minLength: 1
+          description: Observação (até 500 caracteres).
+          maxLength: 500
+    Perfil:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        usuario:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 150
+        idade:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        regiao:
+          type: string
+          maxLength: 200
+        bio:
+          type: string
+        orcamento_min:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        orcamento_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        fumante:
+          type: boolean
+        aceita_pets:
+          type: boolean
+        tolerancia_bagunca:
+          type: integer
+          maximum: 5
+          minimum: 1
+        nivel_organizacao:
+          type: integer
+          maximum: 5
+          minimum: 1
+        perfil_horario:
+          $ref: '#/components/schemas/PerfilHorarioEnum'
+        nivel_ruido:
+          type: integer
+          maximum: 5
+          minimum: 1
+        nivel_social:
+          type: integer
+          maximum: 5
+          minimum: 1
+        aceita_visitas:
+          $ref: '#/components/schemas/AceitaVisitasEnum'
+        tipo_imovel:
+          $ref: '#/components/schemas/TipoImovelEnum'
+        qtd_moradores:
+          type: integer
+          maximum: 4
+          minimum: 1
+        titulo_anuncio:
+          type: string
+          maxLength: 120
+        descricao_imovel:
+          type: string
+        fotos_imovel: {}
+        foto_perfil_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+      required:
+      - id
+      - idade
+      - nome
+      - orcamento_max
+      - orcamento_min
+      - regiao
+      - usuario
+    PerfilBasico:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 150
+        idade:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        regiao:
+          type: string
+          maxLength: 200
+        bio:
+          type: string
+        fumante:
+          type: boolean
+        aceita_pets:
+          type: boolean
+        tolerancia_bagunca:
+          type: integer
+          maximum: 5
+          minimum: 1
+        nivel_organizacao:
+          type: integer
+          maximum: 5
+          minimum: 1
+        orcamento_min:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        orcamento_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        perfil_horario:
+          $ref: '#/components/schemas/PerfilHorarioEnum'
+        nivel_ruido:
+          type: integer
+          maximum: 5
+          minimum: 1
+        nivel_social:
+          type: integer
+          maximum: 5
+          minimum: 1
+        aceita_visitas:
+          $ref: '#/components/schemas/AceitaVisitasEnum'
+        tipo_imovel:
+          $ref: '#/components/schemas/TipoImovelEnum'
+        qtd_moradores:
+          type: integer
+          maximum: 4
+          minimum: 1
+        titulo_anuncio:
+          type: string
+          maxLength: 120
+        descricao_imovel:
+          type: string
+        fotos_imovel: {}
+        foto_perfil_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        tipo:
+          type: string
+          readOnly: true
+        usuario_id:
+          type: integer
+          readOnly: true
+      required:
+      - id
+      - idade
+      - nome
+      - orcamento_max
+      - orcamento_min
+      - regiao
+      - tipo
+      - usuario_id
+    PerfilDescoberto:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 150
+        idade:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        regiao:
+          type: string
+          maxLength: 200
+        bio:
+          type: string
+        orcamento_min:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        orcamento_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        fumante:
+          type: boolean
+        aceita_pets:
+          type: boolean
+        tolerancia_bagunca:
+          type: integer
+          maximum: 5
+          minimum: 1
+        nivel_organizacao:
+          type: integer
+          maximum: 5
+          minimum: 1
+        perfil_horario:
+          $ref: '#/components/schemas/PerfilHorarioEnum'
+        nivel_ruido:
+          type: integer
+          maximum: 5
+          minimum: 1
+        nivel_social:
+          type: integer
+          maximum: 5
+          minimum: 1
+        aceita_visitas:
+          $ref: '#/components/schemas/AceitaVisitasEnum'
+        tipo_imovel:
+          $ref: '#/components/schemas/TipoImovelEnum'
+        qtd_moradores:
+          type: integer
+          maximum: 4
+          minimum: 1
+        titulo_anuncio:
+          type: string
+          maxLength: 120
+        descricao_imovel:
+          type: string
+        fotos_imovel: {}
+        foto_perfil_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        tipo:
+          type: string
+          readOnly: true
+        score:
+          type: number
+          format: double
+          readOnly: true
+        usuario_id:
+          type: integer
+          readOnly: true
+      required:
+      - id
+      - idade
+      - nome
+      - orcamento_max
+      - orcamento_min
+      - regiao
+      - score
+      - tipo
+      - usuario_id
+    PerfilHorarioEnum:
+      enum:
+      - madrugador
+      - noturno
+      - flexivel
+      type: string
+      description: |-
+        * `madrugador` - Madrugador (acorda cedo)
+        * `noturno` - Noturno (dorme/acorda tarde)
+        * `flexivel` - Flexível
+    PerfilRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 150
+        idade:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        regiao:
+          type: string
+          minLength: 1
+          maxLength: 200
+        bio:
+          type: string
+        orcamento_min:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        orcamento_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        fumante:
+          type: boolean
+        aceita_pets:
+          type: boolean
+        tolerancia_bagunca:
+          type: integer
+          maximum: 5
+          minimum: 1
+        nivel_organizacao:
+          type: integer
+          maximum: 5
+          minimum: 1
+        perfil_horario:
+          $ref: '#/components/schemas/PerfilHorarioEnum'
+        nivel_ruido:
+          type: integer
+          maximum: 5
+          minimum: 1
+        nivel_social:
+          type: integer
+          maximum: 5
+          minimum: 1
+        aceita_visitas:
+          $ref: '#/components/schemas/AceitaVisitasEnum'
+        tipo_imovel:
+          $ref: '#/components/schemas/TipoImovelEnum'
+        qtd_moradores:
+          type: integer
+          maximum: 4
+          minimum: 1
+        titulo_anuncio:
+          type: string
+          maxLength: 120
+        descricao_imovel:
+          type: string
+        fotos_imovel: {}
+        foto_perfil_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+      required:
+      - idade
+      - nome
+      - orcamento_max
+      - orcamento_min
+      - regiao
+    PessoaResumo:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        email:
+          type: string
+          nullable: true
+      required:
+      - email
+      - id
+    PontoSerie:
+      type: object
+      properties:
+        data:
+          type: string
+          format: date
+        total:
+          type: integer
+      required:
+      - data
+      - total
+    RefreshRequisicaoRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+          description: Token de renovação recebido no login.
+      required:
+      - refresh
+    Registrar:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+        tipo:
+          $ref: '#/components/schemas/RegistrarTipoEnum'
+      required:
+      - email
+      - tipo
+      - username
+    RegistrarRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        tipo:
+          $ref: '#/components/schemas/RegistrarTipoEnum'
+      required:
+      - email
+      - password
+      - tipo
+      - username
+    RegistrarTipoEnum:
+      enum:
+      - buscando_vaga
+      - oferecendo_vaga
+      type: string
+      description: |-
+        * `buscando_vaga` - buscando_vaga
+        * `oferecendo_vaga` - oferecendo_vaga
+    RelatorioCatalogo:
+      type: object
+      properties:
+        id:
+          type: string
+        titulo:
+          type: string
+        descricao:
+          type: string
+        filtros:
+          type: array
+          items:
+            type: string
+      required:
+      - descricao
+      - filtros
+      - id
+      - titulo
+    RelatorioResposta:
+      type: object
+      properties:
+        titulo:
+          type: string
+        colunas:
+          type: array
+          items:
+            type: string
+        linhas:
+          type: array
+          items:
+            type: array
+            items: {}
+        totais:
+          type: object
+          additionalProperties: {}
+        filtros_aplicados:
+          type: object
+          additionalProperties:
+            type: string
+        gerado_em:
+          type: string
+          format: date-time
+      required:
+      - colunas
+      - filtros_aplicados
+      - gerado_em
+      - linhas
+      - titulo
+      - totais
+    ResolverDenunciaRequisicaoStatusEnum:
+      enum:
+      - resolvida
+      - descartada
+      type: string
+      description: |-
+        * `resolvida` - resolvida
+        * `descartada` - descartada
+    ResolverDenunciaResposta:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        resolucao:
+          type: string
+        resolvida_por:
+          type: string
+          description: E-mail do administrador.
+      required:
+      - id
+      - resolucao
+      - resolvida_por
+      - status
+    SuspenderRequisicaoRequest:
+      type: object
+      properties:
+        motivo:
+          type: string
+          minLength: 1
+          description: Motivo (até 500 caracteres).
+          maxLength: 500
+    TipoImovelEnum:
+      enum:
+      - apartamento
+      - casa
+      - republica
+      - indiferente
+      type: string
+      description: |-
+        * `apartamento` - Apartamento
+        * `casa` - Casa
+        * `republica` - República
+        * `indiferente` - Indiferente
+    TokensResposta:
+      type: object
+      properties:
+        access:
+          type: string
+          description: Token de acesso (JWT), válido por 1 hora.
+        refresh:
+          type: string
+          description: Token de renovação, válido por 7 dias (rotacionado a cada renovação).
+      required:
+      - access
+      - refresh
+    TopRegiao:
+      type: object
+      properties:
+        regiao:
+          type: string
+        perfis:
+          type: integer
+        matches:
+          type: integer
+        score_medio:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - matches
+      - perfis
+      - regiao
+      - score_medio
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+        nome:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        tipo:
+          $ref: '#/components/schemas/UsuarioTipoEnum'
+      required:
+      - email
+      - id
+      - nome
+      - username
+    UsuarioAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        email:
+          type: string
+        tipo:
+          type: string
+        regiao:
+          type: string
+          nullable: true
+        data_cadastro:
+          type: string
+          format: date-time
+        tem_perfil:
+          type: boolean
+        ativo:
+          type: boolean
+      required:
+      - ativo
+      - data_cadastro
+      - email
+      - id
+      - nome
+      - regiao
+      - tem_perfil
+      - tipo
+    UsuarioTipoEnum:
+      enum:
+      - buscando_vaga
+      - oferecendo_vaga
+      - administrador
+      type: string
+      description: |-
+        * `buscando_vaga` - Buscando Vaga
+        * `oferecendo_vaga` - Oferecendo Vaga
+        * `administrador` - Administrador
+    UsuariosPagina:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsuarioAdmin'
+      required:
+      - count
+      - page
+      - results
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+servers:
+- url: http://localhost:8000
+  description: Desenvolvimento local
+tags:
+- name: Autenticação
+  description: Cadastro, login por e-mail, renovação do token e usuário logado.
+- name: Perfis
+  description: Perfil de matching e anúncio do imóvel (um perfil por usuário).
+- name: Descoberta e Matches
+  description: Perfis compatíveis, curtidas (curtir/recusar) e matches.
+- name: Chat
+  description: Conversas e mensagens entre as duas pessoas de um match.
+- name: Moderação
+  description: Denúncias de usuários, análise pelo administrador e suspensão de contas.
+- name: Painel administrativo
+  description: Dashboard, relatórios, lista de usuários e exportações CSV (somente
+    administrador).
+- name: Logs
+  description: Histórico de operações do sistema (somente administrador).

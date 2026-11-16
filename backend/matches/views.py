@@ -7,6 +7,8 @@ from rest_framework import status, permissions
 from perfis.models import Perfil
 from .models import Compatibilidade, Curtida, Match
 from .serializers import PerfilDescobertoSerializer, CurtidaSerializer, MatchSerializer
+from drf_spectacular.utils import extend_schema
+from placematch.api_docs import doc
 
 
 def _get_perfil(user):
@@ -74,6 +76,7 @@ _ORDENAR_CHOICES = ('score', 'orcamento_asc', 'orcamento_desc')
 class DescobertaView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(**doc('descoberta_listar'))
     def get(self, request):
         if request.user.tipo == 'administrador':
             return Response(
@@ -211,6 +214,7 @@ class DescobertaView(APIView):
 class CurtidaView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(**doc('curtidas_criar'))
     def post(self, request):
         if request.user.tipo == 'administrador':
             return Response(
@@ -319,6 +323,7 @@ class CurtidaView(APIView):
 class MatchListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(**doc('matches_listar'))
     def get(self, request):
         meu_perfil = _get_perfil(request.user)
         if meu_perfil is None:

@@ -9,12 +9,14 @@ from painel.exportacao import gerar_csv_response
 from painel.filtros import validar_e_parsear_datas, validar_escolha_param
 from painel.permissoes import AdminPermission
 from placematch import validacao
+from drf_spectacular.utils import extend_schema
+from placematch.api_docs import doc
 
 
 def _aplicar_filtros(qs, params):
     """Aplica os filtros da query string. Retorna (qs, erro_response|None)."""
     acao = params.get('acao')
-    erro = validar_escolha_param(acao, [c for c, _ in LogOperacao.ACAO_CHOICES], 'Ação')
+    erro = validar_escolha_param(acao, [c for c, _ in LogOperacao.ACAO_CHOICES], 'Ação', feminino=True)
     if erro:
         return qs, erro
     if acao:
@@ -83,6 +85,7 @@ def _serializar_log(log):
 class LogListView(APIView):
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
+    @extend_schema(**doc('logs_listar'))
     def get(self, request):
         qs = LogOperacao.objects.select_related('usuario').order_by('-data_hora', '-id')
         qs, erro = _aplicar_filtros(qs, request.query_params)
@@ -113,6 +116,7 @@ class LogListView(APIView):
 class LogExportarView(APIView):
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
+    @extend_schema(**doc('logs_exportar'))
     def get(self, request):
         qs = LogOperacao.objects.select_related('usuario').order_by('-data_hora', '-id')
         qs, erro = _aplicar_filtros(qs, request.query_params)

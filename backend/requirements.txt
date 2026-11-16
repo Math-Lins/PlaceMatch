@@ -9,3 +9,10 @@ PyJWT==2.14.0
 python-dotenv==1.2.3
 sqlparse==0.6.0
 tzdata==2026.4
+# Documentação da API (OpenAPI 3 + Swagger UI)
+drf-spectacular==0.30.0
+inflection==0.5.1
+jsonschema==4.26.0
+PyYAML==6.0.3
+uritemplate==4.2.0
+attrs==26.1.0

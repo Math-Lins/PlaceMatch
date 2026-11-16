@@ -4,6 +4,8 @@ from rest_framework import viewsets, permissions
 from rest_framework.exceptions import ValidationError
 from .models import Perfil
 from .serializers import PerfilSerializer
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from placematch.api_docs import doc
 
 
 class IsOwner(permissions.BasePermission):
@@ -28,8 +30,17 @@ _TIPO_OPOSTO = {
 }
 
 
+@extend_schema_view(
+    list=extend_schema(**doc('perfis_listar')),
+    create=extend_schema(**doc('perfis_criar')),
+    retrieve=extend_schema(**doc('perfis_consultar')),
+    update=extend_schema(**doc('perfis_atualizar')),
+    partial_update=extend_schema(**doc('perfis_atualizar_parcial')),
+    destroy=extend_schema(**doc('perfis_excluir')),
+)
 class PerfilViewSet(viewsets.ModelViewSet):
     serializer_class = PerfilSerializer
+    queryset = Perfil.objects.none()  # o queryset real depende do usuário (get_queryset); isto só alimenta o schema
 
     def get_queryset(self):
         user = self.request.user

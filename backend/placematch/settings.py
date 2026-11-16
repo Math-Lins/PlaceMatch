@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     # terceiros
     'rest_framework',
     'rest_framework_simplejwt',
+    'drf_spectacular',
     'corsheaders',
     # projeto
     'usuarios',
@@ -128,6 +129,41 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'EXCEPTION_HANDLER': 'placematch.excecoes.tratar_excecao',
+}
+
+# ─── Documentação da API (drf-spectacular) ────────────────────────────────────
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'API do PlaceMatch',
+    'DESCRIPTION': (
+        'API REST do PlaceMatch: plataforma que conecta pessoas compatíveis para dividir moradia.\n\n'
+        '**Autenticação:** faça `POST /api/auth/login/` e envie o `access` no cabeçalho `Authorization: Bearer <access>` '
+        '(botão **Authorize**). O access dura 1 hora; renove com `POST /api/auth/login/refresh/`.\n\n'
+        '**Erros:** sempre em português — `{"detail": "mensagem"}` ou `{"campo": ["mensagem"]}`.\n\n'
+        'Os exemplos são respostas reais da API em um banco de teste (listas longas abreviadas).'
+    ),
+    'VERSION': '1.0.0-rc1',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': r'/api',
+    'TAGS': [
+        {'name': 'Autenticação', 'description': 'Cadastro, login por e-mail, renovação do token e usuário logado.'},
+        {'name': 'Perfis', 'description': 'Perfil de matching e anúncio do imóvel (um perfil por usuário).'},
+        {'name': 'Descoberta e Matches', 'description': 'Perfis compatíveis, curtidas (curtir/recusar) e matches.'},
+        {'name': 'Chat', 'description': 'Conversas e mensagens entre as duas pessoas de um match.'},
+        {'name': 'Moderação', 'description': 'Denúncias de usuários, análise pelo administrador e suspensão de contas.'},
+        {'name': 'Painel administrativo', 'description': 'Dashboard, relatórios, lista de usuários e exportações CSV (somente administrador).'},
+        {'name': 'Logs', 'description': 'Histórico de operações do sistema (somente administrador).'},
+    ],
+    'SERVERS': [{'url': 'http://localhost:8000', 'description': 'Desenvolvimento local'}],
+    'SERVE_PERMISSIONS': ['placematch.permissoes.PermissaoDocs'],
+    'SERVE_AUTHENTICATION': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'SWAGGER_UI_SETTINGS': {'persistAuthorization': True, 'displayRequestDuration': True, 'docExpansion': 'list'},
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 
 # ─── JWT ──────────────────────────────────────────────────────────────────────

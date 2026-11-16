@@ -33,7 +33,8 @@ def texto(valor, rotulo, maximo=None, obrigatorio=False):
     return valor
 
 
-def escolha(valor, validos, rotulo):
+def escolha(valor, validos, rotulo, feminino=False):
     if valor not in validos:
-        raise ValueError(f'{rotulo} inválido. Use: {", ".join(validos)}.')
+        adjetivo = 'inválida' if feminino else 'inválido'
+        raise ValueError(f'{rotulo} {adjetivo}. Use: {", ".join(validos)}.')
     return valor

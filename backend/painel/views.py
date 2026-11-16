@@ -18,6 +18,8 @@ from .filtros import (
     TIPOS_USUARIO, validar_bool_param, validar_e_parsear_datas, validar_escolha_param,
 )
 from .permissoes import AdminPermission
+from drf_spectacular.utils import extend_schema
+from placematch.api_docs import doc
 
 # ─── Catálogo de relatórios ───────────────────────────────────────────────────
 
@@ -95,6 +97,7 @@ def _gerar_serie_datas(periodo_inicio, periodo_fim, dados_qs):
 class DashboardView(APIView):
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
+    @extend_schema(**doc('painel_dashboard'))
     def get(self, request):
         params = request.query_params
         data_inicio, data_fim, erro = validar_e_parsear_datas(params)
@@ -550,6 +553,7 @@ def _obter_dados_relatorio(rel_id, data_inicio, data_fim, regiao, tipo):
 class RelatoriosCatalogoView(APIView):
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
+    @extend_schema(**doc('painel_relatorios_catalogo'))
     def get(self, request):
         catalogo = [
             {'id': rid, **info}
@@ -561,6 +565,7 @@ class RelatoriosCatalogoView(APIView):
 class RelatorioDetalheView(APIView):
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
+    @extend_schema(**doc('painel_relatorio_detalhe'))
     def get(self, request, rel_id):
         if rel_id not in RELATORIOS:
             return Response(
@@ -678,6 +683,7 @@ def _filtrar_usuarios(params, data_inicio, data_fim):
 class AdminUsuariosView(APIView):
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
+    @extend_schema(**doc('painel_usuarios_listar'))
     def get(self, request):
         params = request.query_params
         data_inicio, data_fim, erro = validar_e_parsear_datas(params)
@@ -713,6 +719,7 @@ class AdminUsuariosView(APIView):
 class AdminUsuariosExportarView(APIView):
     permission_classes = [permissions.IsAuthenticated, AdminPermission]
 
+    @extend_schema(**doc('painel_usuarios_exportar'))
     def get(self, request):
         params = request.query_params
         data_inicio, data_fim, erro = validar_e_parsear_datas(params)
