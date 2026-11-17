@@ -18,7 +18,7 @@ test.describe('N01 Visitante', () => {
 
     await test.step('3. Voltar leva à tela inicial', async () => {
       await page.getByRole('button', { name: 'Voltar' }).click();
-      await expect(page.getByRole('heading', { name: 'Bem-vindo!' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Boas-vindas!' })).toBeVisible();
       await print(page, 'N01', 3, 'voltou-inicio');
     });
 

@@ -95,7 +95,7 @@ export function novoPerfil(prefixo: string, tipo: 'busca' | 'oferece', extra: Pa
 
 export async function irParaInicio(page: Page) {
   await page.goto('/');
-  // O título "Bem-vindo!" só aparece em telas largas; os dois botões existem em qualquer largura.
+  // O título "Boas-vindas!" só aparece em telas largas; os dois botões existem em qualquer largura.
   await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Criar conta' })).toBeVisible();
 }
@@ -127,7 +127,7 @@ function grupo(page: Page, titulo: string): Locator {
 export async function preencherEtapa1(page: Page, p: Perfil) {
   await page.getByPlaceholder('Seu nome completo').fill(p.nome);
   await page.getByPlaceholder('Sua idade').fill(p.idade ?? '28');
-  await page.getByPlaceholder('Ex: Vila Madalena, SP').fill(p.regiao);
+  await page.getByPlaceholder('Ex: Boa Viagem, Recife').fill(p.regiao);
 }
 export async function preencherEtapa2(page: Page, p: Perfil) {
   await page.getByPlaceholder('700').fill(p.min ?? '800');

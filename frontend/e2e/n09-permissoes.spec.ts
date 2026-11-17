@@ -16,7 +16,7 @@ test.describe('N09 Permissões na navegação', () => {
       await expect(page.getByText('Painel Admin'), 'o painel admin não pode aparecer para usuário comum').toHaveCount(0, { timeout: 10_000 });
       await expect(page.getByRole('button', { name: 'Logs' })).toHaveCount(0);
       // espera a restauração da sessão terminar: o usuário comum deve parar numa tela dele, nunca no painel
-      await expect(page.getByText('Carregando...')).toHaveCount(0, { timeout: 30_000 });
+      await expect(page.getByText(/^Carregando/)).toHaveCount(0, { timeout: 30_000 });
       await expect(page.getByRole('heading', { name: /^(Descoberta|Vagas para você|Interessados na sua vaga)$/ })).toBeVisible({ timeout: 30_000 });
       await expect(page.getByText('Painel Admin')).toHaveCount(0);
       await print(page, 'N09', 2, 'url-admin-bloqueada');

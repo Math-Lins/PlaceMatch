@@ -71,7 +71,7 @@ test('N06 Match e chat com duas sessões isoladas', async ({ browser }) => {
       await expect(B.page.getByRole('heading', { name: new RegExp(A.perfil.nome.split(' ').slice(0, 3).join(' ')) }).first()).toBeVisible();
       await expect(B.page.getByText(/R\$\s*800/), 'o perfil aberto pelo chat deve mostrar o orçamento real').toBeVisible();
       // a capa usa imagem de reserva: sem foto, nada de imagem quebrada com texto alternativo
-      await expect(B.page.getByRole('img', { name: A.perfil.nome }), 'sem foto, a capa deve mostrar a reserva (iniciais), não uma imagem quebrada').toHaveCount(0);
+      await expect(B.page.locator(`img[alt="${A.perfil.nome}"]`), 'sem foto, a capa deve mostrar a reserva (iniciais), não uma imagem quebrada').toHaveCount(0);
       await print(B.page, 'N06', 7, 'ver-perfil');
       await B.page.getByRole('button', { name: 'Voltar' }).click();
       await expect(B.page.getByPlaceholder('Digite uma mensagem...'), 'voltar do perfil deveria retornar ao chat').toBeVisible();

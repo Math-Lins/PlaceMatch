@@ -41,3 +41,7 @@ desktop.ini
 .mypy_cache/
 htmlcov/
 .coverage
+
+# --- Evidências geradas (e2e) ---
+frontend/evidencias-rc.zip
+frontend/e2e/resultados-tour/

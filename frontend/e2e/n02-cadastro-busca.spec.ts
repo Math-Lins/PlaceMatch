@@ -79,7 +79,7 @@ test('N02 Cadastro "Maria José da Silva" (buscando vaga) → perfil em etapas �
     await expect(page.getByText('Etapa 1 de 4')).toBeVisible();
     await expect(page.getByPlaceholder('Seu nome completo')).toHaveValue(p.nome);
     await expect(page.getByPlaceholder('Sua idade')).toHaveValue('28');
-    await expect(page.getByPlaceholder('Ex: Vila Madalena, SP')).toHaveValue('Recife');
+    await expect(page.getByPlaceholder('Ex: Boa Viagem, Recife')).toHaveValue('Recife');
     await print(page, 'N02', 6, 'voltou-dados-mantidos');
   });
 

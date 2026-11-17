@@ -22,28 +22,28 @@ SEED_TAG = '__seed__'
 # (email_a, email_b, [(remetente, conteudo), ...])
 SEED_CONVERSAS = [
     ('ana@seed.pm', 'joao@seed.pm', [
-        ('ana@seed.pm',  'Oi João! Vi que você tem um quarto em Pinheiros. Ainda está disponível?'),
-        ('joao@seed.pm', 'Olá Ana! Sim, ainda está. Você é madrugadora também, né? Ótimo perfil!'),
-        ('ana@seed.pm',  'Que bom! Podemos marcar uma visita essa semana?'),
-        ('joao@seed.pm', 'Com certeza! Que tal quinta de manhã?'),
+        ('ana@seed.pm',  'Oi, João! Vi que você tem um quarto nas Graças. Ainda está disponível?'),
+        ('joao@seed.pm', 'Olá, Ana! Sim, ainda está. Você também é madrugadora, né? Ótimo perfil!'),
+        ('ana@seed.pm',  'Que bom! Podemos marcar uma visita esta semana?'),
+        ('joao@seed.pm', 'Com certeza! Que tal quinta de manhã, às 9h?'),
     ]),
     ('mariana@seed.pm', 'beatriz@seed.pm', [
-        ('beatriz@seed.pm', 'Oi Mariana! Vi o seu perfil e acho que combinamos muito bem.'),
-        ('mariana@seed.pm', 'Oi Beatriz! Também achei. Você aceita pets e eu tenho um gato.'),
+        ('beatriz@seed.pm', 'Oi, Mariana! Vi o seu perfil e acho que combinamos muito bem.'),
+        ('mariana@seed.pm', 'Oi, Beatriz! Também achei. Você aceita pets e eu tenho um gato.'),
         ('beatriz@seed.pm', 'Adoro! O quarto tem bastante sol. Te mando as fotos.'),
     ]),
     ('pedro@seed.pm', 'renato@seed.pm', [
-        ('pedro@seed.pm',  'E aí Renato, tu trabalha remoto também?'),
-        ('renato@seed.pm', 'Sim! Internet 1Gb aqui, pode chegar. Rs'),
+        ('pedro@seed.pm',  'E aí, Renato! Você também trabalha remoto?'),
+        ('renato@seed.pm', 'Sim! A internet aqui é de 1 Gb, pode ficar tranquilo.'),
         ('pedro@seed.pm',  'Ótimo! Sou dev também, vou precisar de boa conexão.'),
     ]),
     ('rafael@seed.pm', 'clara@seed.pm', [
-        ('clara@seed.pm', 'Olá Rafael! Vi que você preza muito pela organização. Eu também!'),
-        ('rafael@seed.pm', 'Oi Clara! É fundamental pra mim. O studio parece perfeito.'),
+        ('clara@seed.pm', 'Olá, Rafael! Vi que você preza muito pela organização. Eu também!'),
+        ('rafael@seed.pm', 'Oi, Clara! É fundamental para mim. O studio parece perfeito.'),
     ]),
     ('liz@seed.pm', 'thiago@seed.pm', [
-        ('liz@seed.pm',   'Thiago! Aquela casa com quintal me chamou muito atenção.'),
-        ('thiago@seed.pm', 'Oi Liz! É um ambiente super criativo. Rola bastante música aqui.'),
+        ('liz@seed.pm',   'Thiago! Aquela casa com quintal me chamou muita atenção.'),
+        ('thiago@seed.pm', 'Oi, Liz! É um ambiente bem criativo, rola bastante música aqui.'),
         ('liz@seed.pm',   'Perfeito para mim. Posso aparecer no fim de semana?'),
         ('thiago@seed.pm', 'Claro! Vou ter uma rodinha de música sábado à noite, pode vir antes!'),
     ]),

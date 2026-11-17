@@ -23,12 +23,12 @@ for (const k of ['E2E_ADMIN_EMAIL', 'E2E_ADMIN_SENHA', 'E2E_DB_PASSWORD']) {
   if (!env[k]) throw new Error(`Faltou ${k}. Crie frontend/e2e/.env.e2e (veja e2e/README.md).`);
 }
 
-const WEB = env.E2E_WEB_PORT || '5173';
-const API = env.E2E_API_PORT || '8001';
-const PY = env.E2E_PYTHON || 'python';
+export const WEB = env.E2E_WEB_PORT || '5173';
+export const API = env.E2E_API_PORT || '8001';
+export const PY = env.E2E_PYTHON || 'python';
 
 // Variáveis repassadas ao Django (banco descartável do e2e; nunca o banco de desenvolvimento).
-const envBackend = {
+export const envBackend = {
   DB_NAME: env.E2E_DB_NAME || 'pm_e2e',
   DB_USER: env.E2E_DB_USER || 'pm_e2e',
   DB_PASSWORD: env.E2E_DB_PASSWORD,
@@ -43,6 +43,7 @@ const envBackend = {
 
 export default defineConfig({
   testDir: aqui,
+  // Só os 13 roteiros nXX. O roteiro de prints (tour-rc) tem configuração própria: playwright.tour.config.ts.
   testMatch: /n\d\d-.*\.spec\.ts/,
   outputDir: path.join(aqui, 'resultados'),
   // Os roteiros compartilham o mesmo banco e criam usuários próprios: rodar em série evita ruído.

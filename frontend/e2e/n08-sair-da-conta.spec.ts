@@ -14,7 +14,7 @@ test('N08 Sair da conta: volta ao início, voltar do navegador não reabre tela 
 
     await test.step('1. Sair da conta leva à tela inicial e apaga a sessão', async () => {
       await sair(page);
-      await expect(page.getByRole('heading', { name: 'Bem-vindo!' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Boas-vindas!' })).toBeVisible();
       const t = await tokens(page);
       expect(t.access).toBeNull();
       expect(t.refresh).toBeNull();
@@ -25,13 +25,13 @@ test('N08 Sair da conta: volta ao início, voltar do navegador não reabre tela 
       await page.goBack();
       await expect(page.getByRole('heading', { name: 'Seus Matches' }), 'tela interna não pode reabrir sem sessão').toHaveCount(0);
       await expect(page.getByRole('navigation')).toHaveCount(0);
-      await expect(page.getByRole('heading', { name: /^(Bem-vindo!|Boas-vindas de volta!)$/ })).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByRole('heading', { name: /^(Boas-vindas!|Boas-vindas de volta!)$/ })).toBeVisible({ timeout: 5_000 });
       await print(page, 'N08', 2, 'voltar-apos-sair');
     });
 
     await test.step('3. recarregar depois de sair continua deslogado', async () => {
       await page.reload();
-      await expect(page.getByRole('heading', { name: /^(Bem-vindo!|Boas-vindas de volta!)$/ })).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByRole('heading', { name: /^(Boas-vindas!|Boas-vindas de volta!)$/ })).toBeVisible({ timeout: 10_000 });
     });
 
     await test.step('4. a segunda aba continua com a própria sessão', async () => {

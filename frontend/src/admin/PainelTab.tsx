@@ -2,17 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getDashboard, validarPeriodo, ApiError } from '../api';
 import type { DashboardData, SeriePonto, AdminFiltros } from '../api';
 import { LineAreaChart, HorizontalBars, ScoreDistChart } from './graficos';
-
-const C = {
-  primary: '#E06B45',
-  mint: '#5DBF96',
-  bg: '#FBF8F5',
-  card: '#FFFFFF',
-  text: '#2A2420',
-  muted: '#8A7E78',
-  border: '#EDE8E3',
-  danger: '#E05555',
-};
+import { C, FONTE_TITULO, FONTE_TEXTO, Botao, Campo, CamposPeriodo, BarraFiltros, EstadoCarregando, EstadoErro, EstadoVazio, estiloCampo, descreverFiltros, numeroBR } from '../ui';
 
 // ─── KPI definitions ──────────────────────────────────────────────────────────
 
@@ -34,49 +24,9 @@ const KPI_DEFS: { key: keyof import('../api').DashboardKPIs; label: string; fmt:
 function fmtKpi(val: number | undefined | null, fmt: KpiFmt): string {
   if (val == null || isNaN(Number(val))) return '—';
   const n = Number(val);
-  if (fmt === 'pct')   return `${n.toFixed(1).replace('.', ',')}%`;
-  if (fmt === 'pct01') return `${(n * 100).toFixed(1).replace('.', ',')}%`;
-  return n.toLocaleString('pt-BR');
-}
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function Sk({ h = 20, w = '100%' }: { h?: number; w?: string | number }) {
-  return (
-    <div style={{
-      width: w, height: h, borderRadius: 8, background: '#EDE8E3',
-      flexShrink: 0,
-    }} />
-  );
-}
-
-function SkeletonDash() {
-  return (
-    <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px' }}>
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} style={{ background: C.card, borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <Sk h={12} w="60%" />
-            <Sk h={28} w="80%" />
-          </div>
-        ))}
-      </div>
-      <div style={{ background: C.card, borderRadius: '16px', padding: '20px' }}>
-        <Sk h={14} w="180px" />
-        <div style={{ marginTop: '16px' }}><Sk h={220} /></div>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <div style={{ background: C.card, borderRadius: '16px', padding: '20px' }}>
-          <Sk h={14} w="140px" />
-          <div style={{ marginTop: '16px' }}><Sk h={160} /></div>
-        </div>
-        <div style={{ background: C.card, borderRadius: '16px', padding: '20px' }}>
-          <Sk h={14} w="180px" />
-          <div style={{ marginTop: '16px' }}><Sk h={160} /></div>
-        </div>
-      </div>
-    </div>
-  );
+  if (fmt === 'pct')   return `${numeroBR(n, 1)}%`;
+  if (fmt === 'pct01') return `${numeroBR(n * 100, 1)}%`;
+  return numeroBR(n);
 }
 
 // ─── Filter bar ───────────────────────────────────────────────────────────────
@@ -92,73 +42,29 @@ function FilterBar({
   onApply: () => void;
   onClear: () => void;
 }) {
-  const inputStyle: React.CSSProperties = {
-    padding: '8px 10px', borderRadius: '10px', border: `1.5px solid ${C.border}`,
-    fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.text, background: C.card,
-    outline: 'none', minWidth: 0,
-  };
   const erroPeriodo = validarPeriodo(draft.data_inicio, draft.data_fim);
-  const inputData: React.CSSProperties = erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle;
+  const campo = estiloCampo({ compacto: true });
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end', marginBottom: '20px' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ display: 'flex', gap: '10px' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>De</label>
-        <input
-          type="date" value={draft.data_inicio ?? ''}
-          onChange={e => setDraft(d => ({ ...d, data_inicio: e.target.value || undefined }))}
-          aria-invalid={!!erroPeriodo}
-          style={inputData}
-        />
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Até</label>
-        <input
-          type="date" value={draft.data_fim ?? ''}
-          onChange={e => setDraft(d => ({ ...d, data_fim: e.target.value || undefined }))}
-          aria-invalid={!!erroPeriodo}
-          style={inputData}
-        />
-      </div>
-        </div>
-        {erroPeriodo && <span role="alert" style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.danger }}>{erroPeriodo}</span>}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
-        <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Região</label>
-        <input
-          placeholder="Ex: São Paulo"
-          value={draft.regiao ?? ''}
-          onChange={e => setDraft(d => ({ ...d, regiao: e.target.value || undefined }))}
-          style={inputStyle}
-        />
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '150px' }}>
-        <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Tipo</label>
-        <select
-          value={draft.tipo ?? ''}
-          onChange={e => setDraft(d => ({ ...d, tipo: e.target.value || undefined }))}
-          style={inputStyle}
-        >
+    <BarraFiltros>
+      <CamposPeriodo
+        inicio={draft.data_inicio ?? ''} fim={draft.data_fim ?? ''} erro={erroPeriodo}
+        onInicio={v => setDraft(d => ({ ...d, data_inicio: v || undefined }))}
+        onFim={v => setDraft(d => ({ ...d, data_fim: v || undefined }))}
+      />
+      <Campo rotulo="Região" minWidth="160px">
+        <input placeholder="Ex: Boa Viagem" value={draft.regiao ?? ''} onChange={e => setDraft(d => ({ ...d, regiao: e.target.value || undefined }))} style={campo} />
+      </Campo>
+      <Campo rotulo="Tipo" minWidth="170px">
+        <select value={draft.tipo ?? ''} onChange={e => setDraft(d => ({ ...d, tipo: e.target.value || undefined }))} style={campo}>
           <option value="">Todos</option>
           <option value="buscando_vaga">Buscando vaga</option>
           <option value="oferecendo_vaga">Oferecendo vaga</option>
         </select>
-      </div>
-      <button
-        onClick={onApply}
-        style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-end' }}
-      >
-        Aplicar
-      </button>
-      <button
-        onClick={onClear}
-        style={{ padding: '8px 14px', borderRadius: '10px', border: `1.5px solid ${C.border}`, background: C.card, color: C.muted, fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-end' }}
-      >
-        Limpar
-      </button>
-    </div>
+      </Campo>
+      <Botao tamanho="compacto" onClick={onApply}>Aplicar</Botao>
+      <Botao tamanho="compacto" variante="neutro" onClick={onClear}>Limpar</Botao>
+    </BarraFiltros>
   );
 }
 
@@ -167,7 +73,7 @@ function FilterBar({
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ background: C.card, borderRadius: '16px', padding: '20px', border: `1px solid ${C.border}` }}>
-      <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 800, color: C.text, margin: '0 0 16px' }}>
+      <h3 style={{ fontFamily: FONTE_TITULO, fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 16px' }}>
         {title}
       </h3>
       {children}
@@ -225,32 +131,9 @@ export default function PainelTab() {
     carregar(empty);
   };
 
-  // ── loading ──
-  if (loading) return <SkeletonDash />;
-
-  // ── error ──
-  if (erro) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 24px', gap: '16px' }}>
-        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.danger, textAlign: 'center' }}>{erro}</p>
-        <button
-          onClick={() => carregar(filtros)}
-          style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
-        >
-          Tentar novamente
-        </button>
-      </div>
-    );
-  }
-
-  // ── empty ──
-  if (!data) {
-    return (
-      <div style={{ textAlign: 'center', padding: '60px 24px', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '14px' }}>
-        Sem dados para o período selecionado.
-      </div>
-    );
-  }
+  if (loading) return <EstadoCarregando texto="Carregando indicadores…" altura="320px" />;
+  if (erro) return <EstadoErro mensagem={erro} onTentarNovamente={() => carregar(filtros)} />;
+  if (!data) return <EstadoVazio titulo="Sem dados para o período selecionado." />;
 
   const hasData = series.length > 0 || (data.kpis.matches_total ?? 0) > 0 || (data.kpis.usuarios_total ?? 0) > 0;
   const vazio = !hasData;
@@ -262,16 +145,13 @@ export default function PainelTab() {
 
       {/* Filtros aplicados info */}
       {Object.keys(data.filtros_aplicados).length > 0 && (
-        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted, margin: 0 }}>
-          Filtros ativos:{' '}
-          {Object.entries(data.filtros_aplicados).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+        <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '-8px 0 0' }}>
+          Filtros ativos: {descreverFiltros(data.filtros_aplicados as Record<string, unknown>)}
         </p>
       )}
 
       {vazio ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '14px' }}>
-          Sem dados para o período selecionado.
-        </div>
+        <EstadoVazio titulo="Sem dados para o período selecionado." descricao="Ajuste as datas ou limpe os filtros." />
       ) : (
         <>
           {/* KPI cards */}
@@ -281,10 +161,10 @@ export default function PainelTab() {
                 background: C.card, borderRadius: '16px', padding: '18px 20px',
                 border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: '6px',
               }}>
-                <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted, fontWeight: 600 }}>
+                <span style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted, fontWeight: 700 }}>
                   {label}
                 </span>
-                <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '28px', fontWeight: 800, color: C.text, lineHeight: 1 }}>
+                <span style={{ fontFamily: FONTE_TITULO, fontSize: '28px', fontWeight: 800, color: C.text, lineHeight: 1 }}>
                   {fmtKpi(data.kpis[key] as number, fmt)}
                 </span>
               </div>

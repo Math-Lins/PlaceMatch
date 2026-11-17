@@ -285,6 +285,23 @@ class DashboardView(APIView):
 
 # ─── Relatórios ───────────────────────────────────────────────────────────────
 
+# Rótulos exibidos nos relatórios (tela e CSV): nunca os códigos internos.
+ROTULO_TIPO_USUARIO = {
+    'buscando_vaga': 'Buscando vaga',
+    'oferecendo_vaga': 'Oferecendo vaga',
+    'administrador': 'Administrador',
+}
+ROTULO_STATUS_DENUNCIA = {
+    'pendente': 'Pendente',
+    'resolvida': 'Procedente',
+    'descartada': 'Improcedente',
+}
+
+
+def _sim_nao(valor):
+    return 'Sim' if valor else 'Não'
+
+
 def _dados_relatorio_matches(data_inicio, data_fim, regiao, tipo):
     qs = Match.objects.select_related(
         'perfil_a', 'perfil_a__usuario',
@@ -312,9 +329,9 @@ def _dados_relatorio_matches(data_inicio, data_fim, regiao, tipo):
     totais = {'matches': 0, 'mensagens': 0}
 
     for m in qs.order_by('-data_match'):
-        ativa = 'sim' if m.qtd_mensagens > 0 else 'não'
+        ativa = _sim_nao(m.qtd_mensagens > 0)
         linhas.append([
-            str(m.data_match.date()),
+            timezone.localdate(m.data_match),
             m.perfil_a.nome,
             m.perfil_b.nome,
             m.perfil_a.regiao,
@@ -455,7 +472,7 @@ def _dados_relatorio_atividade(data_inicio, data_fim, regiao, tipo):
         r = recusas_dia.get(d, 0)
         m = matches_dia.get(d, 0)
         msg = msgs_dia.get(d, 0)
-        linhas.append([str(d), c, r, m, msg])
+        linhas.append([d, c, r, m, msg])
         totais['curtidas'] += c
         totais['recusas'] += r
         totais['matches'] += m
@@ -485,17 +502,17 @@ def _dados_relatorio_usuarios(data_inicio, data_fim, tipo):
         try:
             p = u.perfil
             regiao = p.regiao
-            tem_perfil = 'sim'
+            tem_perfil = _sim_nao(True)
             totais['com_perfil'] += 1
         except Exception:
             regiao = ''
-            tem_perfil = 'não'
+            tem_perfil = _sim_nao(False)
 
         linhas.append([
-            str(u.date_joined.date()),
+            timezone.localdate(u.date_joined),
             u.get_full_name() or u.username,
             u.email,
-            u.tipo,
+            ROTULO_TIPO_USUARIO.get(u.tipo, u.tipo),
             regiao,
             tem_perfil,
         ])
@@ -518,11 +535,11 @@ def _dados_relatorio_denuncias(data_inicio, data_fim):
 
     for d in qs.order_by('-criada_em'):
         linhas.append([
-            str(d.criada_em.date()),
+            timezone.localdate(d.criada_em),
             d.denunciante.email if d.denunciante else '',
             d.denunciado.email,
             d.get_motivo_display(),
-            d.status,
+            ROTULO_STATUS_DENUNCIA.get(d.status, d.status),
             d.resolvida_por.email if d.resolvida_por else '',
         ])
         totais['total'] += 1
@@ -740,17 +757,17 @@ class AdminUsuariosExportarView(APIView):
         for u in qs:
             try:
                 regiao = u.perfil.regiao
-                tem_perfil = 'sim'
+                tem_perfil = _sim_nao(True)
             except Exception:
                 regiao = ''
-                tem_perfil = 'não'
+                tem_perfil = _sim_nao(False)
             linhas.append([
                 u.id,
                 u.get_full_name() or u.username,
                 u.email,
-                u.tipo,
+                ROTULO_TIPO_USUARIO.get(u.tipo, u.tipo),
                 regiao,
-                str(u.date_joined.date()),
+                timezone.localdate(u.date_joined),
                 tem_perfil,
             ])
 

@@ -352,7 +352,7 @@ class RelatorioMatchesTest(PainelBaseTestCase):
     def test_linha_tem_ativa_sim(self):
         d = self._dados()
         ativas = [l[-1] for l in d['linhas']]
-        self.assertIn('sim', ativas)
+        self.assertIn('Sim', ativas)
 
     def test_csv_tem_cabecalho_e_linha(self):
         resp = self.client.get(

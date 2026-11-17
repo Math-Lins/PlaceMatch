@@ -44,7 +44,7 @@ test('N05 Descoberta: busca, filtros, chips, limpar, estado vazio e detalhe do a
     await dialogo.getByRole('button', { name: 'Casa', exact: true }).click();
     await dialogo.getByRole('button', { name: 'Aplicar filtros' }).click();
     await expect(dialogo).toBeHidden();
-    await expect(page.locator('span', { hasText: /^Casa\s*✕$/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remover filtro Casa', exact: true })).toBeVisible();
     await expect(a2()).toBeVisible();
     await expect(visiveis(page.getByText('Anuncio BoaViagem N05'))).toHaveCount(0);
     await print(page, 'N05', 4, 'filtro-casa-com-chip');
@@ -56,14 +56,14 @@ test('N05 Descoberta: busca, filtros, chips, limpar, estado vazio e detalhe do a
     await print(page, 'N05', 5, 'detalhe-do-anuncio');
     await page.getByRole('button', { name: 'Voltar' }).click();
     await expect(page.getByRole('heading', { name: 'Vagas para você' })).toBeVisible();
-    await expect(page.locator('span', { hasText: /^Casa\s*✕$/ }), 'o chip do filtro deveria continuar após voltar do detalhe').toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remover filtro Casa', exact: true }), 'o chip do filtro deveria continuar após voltar do detalhe').toBeVisible();
     await expect(visiveis(page.getByText('Anuncio BoaViagem N05'))).toHaveCount(0);
     await expect(a2()).toBeVisible();
   });
 
   await test.step('6. remover o chip limpa o filtro', async () => {
-    await page.locator('span', { hasText: /^Casa\s*✕$/ }).getByRole('button').click();
-    await expect(page.locator('span', { hasText: /^Casa\s*✕$/ })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Remover filtro Casa', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Remover filtro Casa', exact: true })).toHaveCount(0);
     await expect(a1()).toBeVisible();
     await expect(a2()).toBeVisible();
   });
@@ -76,12 +76,12 @@ test('N05 Descoberta: busca, filtros, chips, limpar, estado vazio e detalhe do a
     await dialogo.getByRole('button', { name: 'Aplicar filtros' }).click();
     await expect(dialogo).toBeHidden();
     await expect(page.getByText(/Valor inválido|inválido\. Use|Erro/)).toHaveCount(0);
-    await expect(page.locator('span', { hasText: /^Pets: Sim\s*✕$/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remover filtro Aceita pets: Sim', exact: true })).toBeVisible();
     await expect(a1(), 'só o anúncio que aceita pets deveria restar').toBeVisible();
     await expect(visiveis(page.getByText('Anuncio CasaForte N05'))).toHaveCount(0);
     await print(page, 'N05', 6, 'filtro-pets-ordenar');
-    await page.locator('span', { hasText: /^Pets: Sim\s*✕$/ }).getByRole('button').click();
-    await page.locator('span', { hasText: /^Menor preço\s*✕$/ }).getByRole('button').click();
+    await page.getByRole('button', { name: 'Remover filtro Aceita pets: Sim', exact: true }).click();
+    await page.getByRole('button', { name: 'Remover filtro Menor preço', exact: true }).click();
     await expect(a2()).toBeVisible();
   });
 

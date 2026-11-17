@@ -131,3 +131,18 @@ Mensagem amigável para erros 5xx e falha de rede; renovação automática do ac
 ## 7. Observação sobre os prints
 
 Os 89 prints de `frontend/e2e/evidencias/` (com `INDICE.md`) mostram a execução final. As imagens externas são bloqueadas nos testes, então os cards usam o ícone de casa no lugar da foto.
+
+## 8. Totais por etapa (Sprint 9 e Sprint 10)
+
+Esta seção só acrescenta os números por etapa; os registros acima ficam como foram escritos.
+
+| Etapa | Backend (`manage.py test`) | Navegação (Playwright) | Observação |
+|---|---|---|---|
+| Sprint 9 (fim) | **531** | 13 roteiros, 25 testes | Campanha descrita nas seções 1 a 7 |
+| Sprint 10, etapa 1 (restrições do banco, `verificar_banco`, datas) | **560** (+29 em `placematch/test_sprint10.py`) | 13 roteiros, 25 testes | |
+| Sprint 10, etapa 2 (documentação OpenAPI/Swagger) | **574** (+14 em `placematch/test_api_docs.py`) | 13 roteiros, 25 testes | |
+| Sprint 10, etapa 3 (interface final e evidências da RC) | **574** (nenhum teste novo; 1 asserção ajustada em `painel/tests_painel.py`, `'sim'` → `'Sim'`) | 13 roteiros, 25 testes, todos aprovados | 2 roteiros ajustados ao texto novo (n06, n07) e seletores atualizados nos demais |
+
+Verificações da etapa 3: `tsc --noEmit` e `npm run build` sem erros; `spectacular --validate` sem avisos; `matriz_permissoes` sem divergências; `verificar_banco --falhar` sobre os dados de demonstração: 13 verificações OK, 1 aviso esperado (matches de uma conta suspensa) e 0 erros.
+
+Os roteiros de navegação seguem em `frontend/e2e/` (`npm run e2e`). O roteiro de prints da Release Candidate, `e2e/tour-rc.spec.ts` (`npm run e2e:tour`), não faz parte da execução padrão: ele prepara os dados de demonstração (`manage.py seed_demo --remover-outros`) e salva 37 prints, com `INDICE.md`, em `frontend/e2e/evidencias-rc/` e no pacote `frontend/evidencias-rc.zip` (não versionado).

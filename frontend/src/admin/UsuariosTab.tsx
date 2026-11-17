@@ -1,42 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { listarAdminUsuarios, downloadCsv, suspenderUsuario, reativarUsuario, validarPeriodo, ApiError } from '../api';
 import type { UsuarioAdmin, PaginatedResponse } from '../api';
-
-const C = {
-  primary: '#E06B45',
-  mint: '#5DBF96',
-  bg: '#FBF8F5',
-  card: '#FFFFFF',
-  text: '#2A2420',
-  muted: '#8A7E78',
-  border: '#EDE8E3',
-  danger: '#E05555',
-};
+import {
+  C, FONTE_TEXTO, Botao, Campo, CamposPeriodo, BarraFiltros, CartaoTabela, Paginacao, Selo, Modal, MensagemErro,
+  EstadoCarregando, EstadoErro, EstadoVazio, ESTILO_TABELA, ESTILO_TH, ESTILO_TD,
+  estiloCampo, dataBR, ROTULO_TIPO_USUARIO,
+} from '../ui';
 
 const TIPOS: { value: string; label: string }[] = [
   { value: '', label: 'Todos os tipos' },
-  { value: 'buscando_vaga', label: 'Buscando vaga' },
-  { value: 'oferecendo_vaga', label: 'Oferecendo vaga' },
-  { value: 'administrador', label: 'Administrador' },
+  ...Object.entries(ROTULO_TIPO_USUARIO).map(([value, label]) => ({ value, label })),
 ];
 
-const TIPO_LABEL: Record<string, string> = {
-  buscando_vaga: 'Buscando vaga',
-  oferecendo_vaga: 'Oferecendo vaga',
-  administrador: 'Administrador',
-};
-
-function formatDateBR(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
-
-// ─── Suspender Modal ──────────────────────────────────────────────────────────
+// ─── Modal de suspensão ───────────────────────────────────────────────────────
 
 function SuspenderModal({ usuario, onClose, onConcluido }: {
   usuario: UsuarioAdmin;
@@ -47,12 +23,6 @@ function SuspenderModal({ usuario, onClose, onConcluido }: {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   const handleConfirmar = async () => {
     setErro('');
     setLoading(true);
@@ -60,42 +30,28 @@ function SuspenderModal({ usuario, onClose, onConcluido }: {
       await suspenderUsuario(usuario.id, motivo);
       onConcluido({ ...usuario, ativo: false });
     } catch (e: unknown) {
-      setErro(e instanceof ApiError ? e.message : 'Erro ao suspender.');
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível suspender a conta.');
       setLoading(false);
     }
   };
 
   return (
-    <div
-      role="dialog" aria-modal="true"
-      onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(42,36,32,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
-    >
-      <div onClick={e => e.stopPropagation()} style={{ background: C.card, borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '400px', boxShadow: '0 16px 48px rgba(0,0,0,0.18)' }}>
-        <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '18px', fontWeight: 800, color: C.text, margin: '0 0 8px' }}>Suspender conta</h3>
-        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: '0 0 20px' }}>{usuario.email}</p>
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, color: C.muted }}>Motivo (opcional)</label>
-            <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: motivo.length >= 500 ? C.danger : C.muted }}>{motivo.length}/500</span>
-          </div>
-          <input
-            value={motivo}
-            maxLength={500}
-            onChange={e => setMotivo(e.target.value)}
-            placeholder="Ex: Comportamento abusivo"
-            style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: `1.5px solid ${C.border}`, fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.text, background: C.bg, outline: 'none', boxSizing: 'border-box' }}
-          />
-        </div>
-        {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginBottom: '12px', textAlign: 'center' }}>{erro}</p>}
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: `1.5px solid ${C.border}`, background: C.card, color: C.text, fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
-          <button onClick={handleConfirmar} disabled={loading} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: C.danger, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1 }}>
-            {loading ? 'Suspendendo...' : 'Suspender'}
-          </button>
-        </div>
+    <Modal titulo="Suspender conta" onFechar={onClose} podeFechar={!loading} larguraMax="440px">
+      <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.text, margin: '0 0 4px', fontWeight: 700 }}>{usuario.nome}</p>
+      <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '0 0 20px' }}>{usuario.email}</p>
+      <div style={{ marginBottom: '20px' }}>
+        <Campo rotulo="Motivo (opcional)" contador={<span style={{ fontFamily: FONTE_TEXTO, fontSize: '12px', color: motivo.length >= 500 ? C.danger : C.muted }}>{motivo.length}/500</span>}>
+          <input value={motivo} maxLength={500} onChange={e => setMotivo(e.target.value)} placeholder="Ex: Comportamento abusivo" style={estiloCampo()} />
+        </Campo>
       </div>
-    </div>
+      {erro && <div style={{ marginBottom: '12px' }}><MensagemErro>{erro}</MensagemErro></div>}
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <Botao variante="secundario" larguraTotal onClick={onClose} disabled={loading}>Cancelar</Botao>
+        <Botao variante="destrutivo" larguraTotal onClick={handleConfirmar} disabled={loading}>
+          {loading ? 'Suspendendo…' : 'Suspender'}
+        </Botao>
+      </div>
+    </Modal>
   );
 }
 
@@ -110,7 +66,7 @@ export default function UsuariosTab() {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [actionErro, setActionErro] = useState('');
 
-  // Filters
+  // Filtros
   const [q, setQ] = useState('');
   const [tipo, setTipo] = useState('');
   const [regiao, setRegiao] = useState('');
@@ -156,7 +112,7 @@ export default function UsuariosTab() {
       const str = qs.toString();
       await downloadCsv(`/api/admin/usuarios/exportar/${str ? '?' + str : ''}`, 'usuarios.csv');
     } catch (e) {
-      setErro(e instanceof Error ? e.message : 'Erro ao exportar.');
+      setErro(e instanceof Error ? e.message : 'Não foi possível exportar o CSV.');
     } finally {
       setExporting(false);
     }
@@ -169,7 +125,7 @@ export default function UsuariosTab() {
       await reativarUsuario(u.id);
       setData(d => d ? { ...d, results: d.results.map(r => r.id === u.id ? { ...r, ativo: true } : r) } : d);
     } catch (e: unknown) {
-      setActionErro(e instanceof ApiError ? e.message : 'Erro ao reativar.');
+      setActionErro(e instanceof ApiError ? e.message : 'Não foi possível reativar a conta.');
     } finally {
       setActionLoading(null);
     }
@@ -180,94 +136,51 @@ export default function UsuariosTab() {
     setData(d => d ? { ...d, results: d.results.map(r => r.id === updated.id ? updated : r) } : d);
   };
 
-  const inputStyle: React.CSSProperties = {
-    padding: '8px 12px', borderRadius: '10px', border: `1.5px solid ${C.border}`,
-    fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.text, background: C.card,
-    outline: 'none', minWidth: 0,
-  };
-
+  const campo = estiloCampo({ compacto: true });
   const totalPages = data ? Math.ceil(data.count / 20) : 1;
 
   return (
     <div style={{ padding: '20px 24px' }}>
-      {/* Filter bar */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', alignItems: 'flex-end' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1 1 180px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Nome ou e-mail</label>
-          <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Pesquisar..." style={inputStyle} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '160px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Tipo</label>
-          <select value={tipo} onChange={e => setTipo(e.target.value)} style={inputStyle}>
+      <BarraFiltros>
+        <Campo rotulo="Nome ou e-mail" flex="1 1 200px">
+          <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Pesquisar..." style={campo} />
+        </Campo>
+        <Campo rotulo="Tipo" minWidth="170px">
+          <select value={tipo} onChange={e => setTipo(e.target.value)} style={campo}>
             {TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Região</label>
-          <input value={regiao} onChange={e => setRegiao(e.target.value)} placeholder="Ex: São Paulo" style={inputStyle} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '140px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Situação</label>
-          <select value={ativo} onChange={e => setAtivo(e.target.value)} style={inputStyle}>
+        </Campo>
+        <Campo rotulo="Região" minWidth="150px">
+          <input value={regiao} onChange={e => setRegiao(e.target.value)} placeholder="Ex: Boa Viagem" style={campo} />
+        </Campo>
+        <Campo rotulo="Situação" minWidth="130px">
+          <select value={ativo} onChange={e => setAtivo(e.target.value)} style={campo}>
             <option value="">Todas</option>
             <option value="true">Ativo</option>
             <option value="false">Suspenso</option>
           </select>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <div style={{ display: 'flex', gap: '10px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Cadastro de</label>
-          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} aria-invalid={!!erroPeriodo} style={erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Até</label>
-          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} aria-invalid={!!erroPeriodo} style={erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle} />
-        </div>
-          </div>
-          {erroPeriodo && <span role="alert" style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.danger }}>{erroPeriodo}</span>}
-        </div>
-        <button onClick={handleSearch} style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-end' }}>
-          Buscar
-        </button>
-        <button onClick={handleExport} disabled={exporting} style={{ padding: '8px 18px', borderRadius: '10px', border: `1.5px solid ${C.border}`, background: C.card, color: C.text, fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: exporting ? 'wait' : 'pointer', alignSelf: 'flex-end', opacity: exporting ? 0.7 : 1 }}>
-          {exporting ? 'Exportando...' : 'Exportar CSV'}
-        </button>
-      </div>
+        </Campo>
+        <CamposPeriodo inicio={dataInicio} fim={dataFim} onInicio={setDataInicio} onFim={setDataFim} erro={erroPeriodo} rotuloInicio="Cadastro de" />
+        <Botao tamanho="compacto" onClick={handleSearch}>Buscar</Botao>
+        <Botao tamanho="compacto" variante="neutro" onClick={handleExport} disabled={exporting}>
+          {exporting ? 'Exportando…' : 'Exportar CSV'}
+        </Botao>
+      </BarraFiltros>
 
-      {actionErro && (
-        <p style={{ color: C.danger, fontFamily: 'Nunito,sans-serif', fontSize: '13px', marginBottom: '12px' }}>{actionErro}</p>
-      )}
+      {actionErro && <div style={{ marginBottom: '12px' }}><MensagemErro>{actionErro}</MensagemErro></div>}
 
-      {/* States */}
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '40px', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '14px' }}>
-          Carregando usuários...
-        </div>
-      )}
-      {!loading && erro && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '40px' }}>
-          <p style={{ color: C.danger, fontFamily: 'Nunito,sans-serif', fontSize: '14px', textAlign: 'center' }}>{erro}</p>
-          <button onClick={() => carregar(page)} style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-            Tentar novamente
-          </button>
-        </div>
-      )}
+      {loading && <EstadoCarregando texto="Carregando usuários…" />}
+      {!loading && erro && <EstadoErro mensagem={erro} onTentarNovamente={() => carregar(page)} />}
       {!loading && !erro && data && data.results.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '14px' }}>
-          Nenhum usuário encontrado para os filtros aplicados.
-        </div>
+        <EstadoVazio titulo="Nenhum usuário encontrado." descricao="Ajuste os filtros e busque novamente." />
       )}
 
-      {/* Table */}
       {!loading && !erro && data && data.results.length > 0 && (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'Nunito,sans-serif', fontSize: '13px' }}>
+        <CartaoTabela>
+          <table style={ESTILO_TABELA}>
             <thead>
-              <tr style={{ background: C.bg, borderBottom: `2px solid ${C.border}` }}>
-                {['Nome', 'E-mail', 'Tipo', 'Situação', 'Região', 'Cadastro', 'Perfil', 'Ações'].map(h => (
-                  <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted, whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
+              <tr>
+                {['Nome', 'E-mail', 'Tipo', 'Situação', 'Região', 'Cadastro', 'Perfil', 'Ações'].map(h => <th key={h} style={ESTILO_TH}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -275,46 +188,28 @@ export default function UsuariosTab() {
                 const isAdmin = u.tipo === 'administrador';
                 const isLoading = actionLoading === u.id;
                 return (
-                  <tr key={u.id} style={{ borderBottom: `1px solid ${C.border}`, background: C.card, opacity: isLoading ? 0.7 : 1 }}>
-                    <td style={{ padding: '10px 12px', color: C.text, fontWeight: 600 }}>{u.nome}</td>
-                    <td style={{ padding: '10px 12px', color: C.muted }}>{u.email}</td>
-                    <td style={{ padding: '10px 12px' }}>
-                      <span style={{ padding: '2px 8px', borderRadius: '8px', background: `${C.primary}18`, color: C.text, fontWeight: 600, fontSize: '12px' }}>
-                        {TIPO_LABEL[u.tipo] ?? u.tipo}
-                      </span>
+                  <tr key={u.id} style={{ background: C.card, opacity: isLoading ? 0.7 : 1 }}>
+                    <td style={{ ...ESTILO_TD, fontWeight: 700 }}>{u.nome}</td>
+                    <td style={{ ...ESTILO_TD, color: C.muted }}>{u.email}</td>
+                    <td style={ESTILO_TD}>
+                      <Selo tom={u.tipo === 'oferecendo_vaga' ? 'mint' : u.tipo === 'buscando_vaga' ? 'coral' : 'neutro'}>{ROTULO_TIPO_USUARIO[u.tipo] ?? u.tipo}</Selo>
                     </td>
-                    <td style={{ padding: '10px 12px' }}>
-                      <span style={{
-                        padding: '2px 8px', borderRadius: '8px', fontWeight: 700, fontSize: '12px',
-                        background: u.ativo ? `${C.mint}20` : `${C.danger}18`,
-                        color: u.ativo ? '#3EA87A' : C.danger,
-                      }}>
-                        {u.ativo ? 'Ativo' : 'Suspenso'}
-                      </span>
+                    <td style={ESTILO_TD}>
+                      <Selo tom={u.ativo ? 'mint' : 'perigo'}>{u.ativo ? 'Ativo' : 'Suspenso'}</Selo>
                     </td>
-                    <td style={{ padding: '10px 12px', color: C.muted }}>{u.regiao ?? '—'}</td>
-                    <td style={{ padding: '10px 12px', color: C.muted, whiteSpace: 'nowrap' }}>{formatDateBR(u.data_cadastro)}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                      <span style={{ fontSize: '16px' }}>{u.tem_perfil ? '✅' : '—'}</span>
+                    <td style={{ ...ESTILO_TD, color: C.muted }}>{u.regiao ?? '—'}</td>
+                    <td style={{ ...ESTILO_TD, color: C.muted, whiteSpace: 'nowrap' }}>{dataBR(u.data_cadastro)}</td>
+                    <td style={ESTILO_TD}>
+                      <Selo tom={u.tem_perfil ? 'mint' : 'neutro'}>{u.tem_perfil ? 'Sim' : 'Não'}</Selo>
                     </td>
-                    <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
+                    <td style={{ ...ESTILO_TD, whiteSpace: 'nowrap' }}>
                       {!isAdmin && (
                         u.ativo ? (
-                          <button
-                            onClick={() => setSuspendendo(u)}
-                            disabled={isLoading}
-                            style={{ padding: '4px 10px', borderRadius: '8px', border: `1.5px solid ${C.danger}`, background: 'none', color: C.danger, fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
-                          >
-                            Suspender
-                          </button>
+                          <Botao variante="destrutivoContorno" tamanho="mini" onClick={() => setSuspendendo(u)} disabled={isLoading}>Suspender</Botao>
                         ) : (
-                          <button
-                            onClick={() => handleReativar(u)}
-                            disabled={isLoading}
-                            style={{ padding: '4px 10px', borderRadius: '8px', border: `1.5px solid ${C.mint}`, background: 'none', color: '#3EA87A', fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
-                          >
-                            {isLoading ? '...' : 'Reativar'}
-                          </button>
+                          <Botao variante="secundario" tamanho="mini" onClick={() => handleReativar(u)} disabled={isLoading}>
+                            {isLoading ? 'Reativando…' : 'Reativar'}
+                          </Botao>
                         )
                       )}
                     </td>
@@ -323,44 +218,16 @@ export default function UsuariosTab() {
               })}
             </tbody>
           </table>
-        </div>
+        </CartaoTabela>
       )}
 
-      {/* Pagination */}
       {!loading && !erro && data && data.count > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', flexWrap: 'wrap', gap: '8px' }}>
-          <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted }}>
-            {data.count} usuário{data.count !== 1 ? 's' : ''}
-          </span>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              style={{ padding: '6px 14px', borderRadius: '8px', border: `1.5px solid ${C.border}`, background: C.card, cursor: page === 1 ? 'not-allowed' : 'pointer', color: page === 1 ? C.muted : C.text, fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 600 }}
-            >
-              ← Anterior
-            </button>
-            <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.text }}>
-              Página {page} de {totalPages}
-            </span>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              style={{ padding: '6px 14px', borderRadius: '8px', border: `1.5px solid ${C.border}`, background: C.card, cursor: page >= totalPages ? 'not-allowed' : 'pointer', color: page >= totalPages ? C.muted : C.text, fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 600 }}
-            >
-              Próxima →
-            </button>
-          </div>
-        </div>
+        <Paginacao pagina={page} totalPaginas={totalPages} total={data.count}
+          rotuloTotal={n => `${n.toLocaleString('pt-BR')} usuário${n !== 1 ? 's' : ''}`} onPagina={setPage} />
       )}
 
-      {/* Suspender modal */}
       {suspendendo && (
-        <SuspenderModal
-          usuario={suspendendo}
-          onClose={() => setSuspendendo(null)}
-          onConcluido={handleSuspenderConcluido}
-        />
+        <SuspenderModal usuario={suspendendo} onClose={() => setSuspendendo(null)} onConcluido={handleSuspenderConcluido} />
       )}
     </div>
   );

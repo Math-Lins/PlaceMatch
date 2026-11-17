@@ -6,6 +6,7 @@ import PainelTab from './PainelTab';
 import RelatoriosTab from './RelatoriosTab';
 import ModeracaoTab from './ModeracaoTab';
 import { listarDenuncias } from '../api';
+import { C, FONTE_TITULO, FONTE_TEXTO, RAIO, Botao, EstadoErro } from '../ui';
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 
@@ -20,39 +21,21 @@ class AdminErrorBoundary extends Component<{ children: ReactNode }, EBState> {
     return { error };
   }
   componentDidCatch(error: Error, info: ErrorInfo) {
+    // O detalhe técnico fica só no console; a tela mostra uma mensagem simples.
     console.error('[AdminPanel] Uncaught error:', error, info.componentStack);
   }
   render() {
     if (this.state.error) {
       return (
-        <div style={{ padding: '40px 24px', textAlign: 'center', fontFamily: 'Nunito,sans-serif' }}>
-          <p style={{ color: '#E05555', fontSize: '14px', marginBottom: '8px', fontWeight: 700 }}>
-            Algo deu errado nesta seção.
-          </p>
-          <pre style={{ color: '#8A7E78', fontSize: '12px', whiteSpace: 'pre-wrap', textAlign: 'left', maxWidth: '600px', margin: '0 auto' }}>
-            {this.state.error.message}
-          </pre>
-          <button
-            onClick={() => this.setState({ error: null })}
-            style={{ marginTop: '16px', padding: '8px 18px', borderRadius: '10px', border: 'none', background: '#E06B45', color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
-          >
-            Tentar novamente
-          </button>
-        </div>
+        <EstadoErro
+          mensagem="Algo deu errado nesta seção. Tente novamente; se o problema continuar, recarregue a página."
+          onTentarNovamente={() => this.setState({ error: null })}
+        />
       );
     }
     return this.props.children;
   }
 }
-
-const C = {
-  primary: '#E06B45',
-  bg: '#FBF8F5',
-  card: '#FFFFFF',
-  text: '#2A2420',
-  muted: '#8A7E78',
-  border: '#EDE8E3',
-};
 
 type AdminTab = 'painel' | 'relatorios' | 'logs' | 'usuarios' | 'moderacao';
 
@@ -71,59 +54,61 @@ export default function AdminPanel({ nav, onLogout }: { nav: (s: 'welcome') => v
   useEffect(() => {
     listarDenuncias({ status: 'pendente' })
       .then(res => setPendingDenuncias(res.length))
-      .catch(() => { /* silent */ });
+      .catch(() => { /* o contador é só informativo */ });
   }, []);
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
+      {/* Cabeçalho */}
       <div style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: '0 24px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px' }}>
-          <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '22px', fontWeight: 800, color: C.text, margin: 0 }}>
-            Painel Admin
-          </h1>
-          <button
-            onClick={() => (onLogout ? onLogout() : nav('welcome'))}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '14px', padding: '8px 0',
-            }}
-          >
-            Sair
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', paddingTop: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src="/favicon.svg" alt="" width={36} height={36} style={{ borderRadius: '10px' }} />
+            <h1 style={{ fontFamily: FONTE_TITULO, fontSize: '24px', fontWeight: 800, color: C.text, margin: 0 }}>
+              Painel Admin
+            </h1>
+          </div>
+          <Botao variante="texto" tamanho="compacto" onClick={() => (onLogout ? onLogout() : nav('welcome'))}>
+            Sair da conta
+          </Botao>
         </div>
-        {/* Tabs */}
-        <div style={{ display: 'flex', marginTop: '12px', overflowX: 'auto' }}>
-          {(['painel', 'relatorios', 'logs', 'usuarios', 'moderacao'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setActiveTab(t)}
-              style={{
-                position: 'relative',
-                padding: '10px 20px', background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: 'Outfit,sans-serif', fontSize: '15px', whiteSpace: 'nowrap',
-                fontWeight: activeTab === t ? 800 : 500,
-                color: activeTab === t ? C.primary : C.muted,
-                borderBottom: activeTab === t ? `3px solid ${C.primary}` : '3px solid transparent',
-              }}
-            >
-              {TAB_LABELS[t]}
-              {t === 'moderacao' && pendingDenuncias > 0 && (
-                <span style={{
-                  position: 'absolute', top: '6px', right: '4px',
-                  background: C.primary, color: '#fff', borderRadius: '10px',
-                  padding: '0 5px', fontSize: '10px', fontWeight: 800,
-                  fontFamily: 'Outfit,sans-serif', lineHeight: '16px', minWidth: '16px', textAlign: 'center',
-                }}>
-                  {pendingDenuncias}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+        {/* Abas */}
+        <nav aria-label="Seções do painel" style={{ display: 'flex', marginTop: '8px', overflowX: 'auto' }}>
+          {(['painel', 'relatorios', 'logs', 'usuarios', 'moderacao'] as const).map((t) => {
+            const ativa = activeTab === t;
+            return (
+              <button
+                key={t}
+                aria-current={ativa ? 'page' : undefined}
+                onClick={() => setActiveTab(t)}
+                style={{
+                  position: 'relative',
+                  padding: '12px 22px', minHeight: '48px', background: 'none', border: 'none', cursor: 'pointer',
+                  fontFamily: FONTE_TITULO, fontSize: '15px', whiteSpace: 'nowrap',
+                  fontWeight: ativa ? 800 : 600,
+                  color: ativa ? C.primaryText : C.muted,
+                  borderBottom: `3px solid ${ativa ? C.primary : 'transparent'}`,
+                  borderRadius: `${RAIO.campo} ${RAIO.campo} 0 0`,
+                }}
+              >
+                {TAB_LABELS[t]}
+                {t === 'moderacao' && pendingDenuncias > 0 && (
+                  <span style={{
+                    position: 'absolute', top: '4px', right: '0',
+                    background: C.primaryDark, color: '#fff', borderRadius: '10px',
+                    padding: '0 6px', fontSize: '11px', fontWeight: 800,
+                    fontFamily: FONTE_TEXTO, lineHeight: '18px', minWidth: '18px', textAlign: 'center',
+                  }}>
+                    {pendingDenuncias}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Content */}
+      {/* Conteúdo */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
         <AdminErrorBoundary key={activeTab}>
           {activeTab === 'painel' && <PainelTab />}

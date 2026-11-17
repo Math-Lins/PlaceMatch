@@ -382,7 +382,10 @@ export interface UltimaMensagem {
 
 export interface Conversa {
   match_id: number;
-  outro_perfil: { id: number; usuario_id: number; nome: string; idade: number; regiao: string };
+  outro_perfil: {
+    id: number; usuario_id: number; nome: string; idade: number; regiao: string;
+    tipo?: string; titulo_anuncio?: string | null; fotos_imovel?: string[] | null; foto_perfil_url?: string | null;
+  };
   score: number;
   ultima_mensagem: UltimaMensagem | null;
   nao_lidas: number;

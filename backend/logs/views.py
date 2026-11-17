@@ -1,3 +1,4 @@
+import json
 from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -137,7 +138,7 @@ class LogExportarView(APIView):
                 usuario_email = log.usuario.email
             linhas.append([
                 log.id,
-                log.data_hora.strftime('%Y-%m-%d %H:%M:%S'),
+                log.data_hora,
                 usuario_id,
                 usuario_nome,
                 usuario_email,
@@ -145,7 +146,7 @@ class LogExportarView(APIView):
                 log.get_acao_display(),
                 log.entidade,
                 log.entidade_id or '',
-                str(log.detalhes),
+                json.dumps(log.detalhes, ensure_ascii=False) if log.detalhes else '',
                 log.ip or '',
             ])
 

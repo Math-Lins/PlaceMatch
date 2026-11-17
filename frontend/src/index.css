@@ -1,6 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
+/* Mesmos valores de src/ui.tsx (C). Texto usa os tons escuros, que passam no contraste AA. */
 @theme inline {
   --color-primary: #E06B45;
   --color-primary-light: #F0896A;
@@ -11,7 +12,7 @@
   --color-bg: #FBF8F5;
   --color-card: #FFFFFF;
   --color-text: #2A2420;
-  --color-muted: #8A7E78;
+  --color-muted: #6F645E;
   --color-border: #EDE8E3;
   --font-display: 'Outfit', sans-serif;
   --font-body: 'Nunito', sans-serif;
@@ -27,13 +28,36 @@ html, body, #root {
   padding: 0;
   background: var(--color-bg);
   font-family: 'Nunito', sans-serif;
+  color: #2A2420;
 }
 
 .font-display {
   font-family: 'Outfit', sans-serif;
 }
 
+/* Foco visível em todo elemento interativo (vale também onde o estilo em linha zera o outline). */
+:focus-visible {
+  outline: 3px solid #C4512E !important;
+  outline-offset: 2px !important;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: #E06B45 !important;
+}
+
+::placeholder {
+  color: #8A7E78;
+  opacity: 1;
+}
+
+.pm-botao:not(:disabled):hover {
+  filter: brightness(0.94);
+}
+
 ::-webkit-scrollbar {
   width: 0;
   background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; transition: none !important; animation-duration: 0.01ms !important; }
 }

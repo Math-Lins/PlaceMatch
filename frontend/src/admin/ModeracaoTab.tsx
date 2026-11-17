@@ -1,33 +1,26 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   listarDenuncias, resolverDenuncia, suspenderUsuario,
-  downloadRelatorioCSV, ApiError,
+  downloadRelatorioCSV, ApiError, validarPeriodo,
 } from '../api';
-import { validarPeriodo } from '../api';
 import type { DenunciaItem, AdminFiltros } from '../api';
-
-const C = {
-  primary: '#E06B45', mint: '#5DBF96', bg: '#FBF8F5', card: '#FFFFFF',
-  text: '#2A2420', muted: '#8A7E78', border: '#EDE8E3', danger: '#E05555',
-};
+import {
+  C, FONTE_TEXTO, RAIO, Botao, Campo, CamposPeriodo, BarraFiltros, CartaoTabela, Selo, Modal, MensagemErro,
+  EstadoCarregando, EstadoErro, EstadoVazio, ESTILO_TABELA, ESTILO_TH, ESTILO_TD, ESTILO_ROTULO,
+  estiloCampo, dataBR, dataHoraBR, ROTULO_STATUS_DENUNCIA,
+} from '../ui';
 
 const MOTIVO_LABELS: Record<string, string> = {
   spam: 'Spam', ofensivo: 'Conteúdo ofensivo', falso: 'Perfil falso', outro: 'Outro',
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  pendente: '#E0A445',
-  resolvida: '#5DBF96',
-  descartada: '#8A7E78',
+const TOM_STATUS: Record<string, 'coral' | 'mint' | 'neutro'> = {
+  pendente: 'coral',
+  resolvida: 'mint',
+  descartada: 'neutro',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  pendente: 'Pendente',
-  resolvida: 'Procedente',
-  descartada: 'Improcedente',
-};
-
-// Map frontend filter labels to backend status values
+// Rótulos da tela → status do backend
 const FILTRO_STATUS: { value: string; label: string }[] = [
   { value: '', label: 'Todas' },
   { value: 'pendente', label: 'Pendentes' },
@@ -37,19 +30,10 @@ const FILTRO_STATUS: { value: string; label: string }[] = [
 
 const MOTIVO_OPTS = [
   { value: '', label: 'Todos os motivos' },
-  { value: 'spam', label: 'Spam' },
-  { value: 'ofensivo', label: 'Conteúdo ofensivo' },
-  { value: 'falso', label: 'Perfil falso' },
-  { value: 'outro', label: 'Outro' },
+  ...Object.entries(MOTIVO_LABELS).map(([value, label]) => ({ value, label })),
 ];
 
-function formatDateBR(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso));
-  } catch { return iso; }
-}
-
-// ─── Analisar Modal ───────────────────────────────────────────────────────────
+// ─── Modal de análise ─────────────────────────────────────────────────────────
 
 interface AnalisarModalProps {
   denuncia: DenunciaItem;
@@ -64,12 +48,6 @@ function AnalisarModal({ denuncia, onClose, onConcluido }: AnalisarModalProps) {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   const handleConfirmar = async () => {
     if (!decisao) { setErro('Selecione uma decisão.'); return; }
     setErro('');
@@ -77,99 +55,81 @@ function AnalisarModal({ denuncia, onClose, onConcluido }: AnalisarModalProps) {
     try {
       await resolverDenuncia(denuncia.id, decisao, observacao);
       if (suspender && decisao === 'resolvida' && denuncia.denunciado.id) {
-        await suspenderUsuario(denuncia.denunciado.id, `Denúncia #${denuncia.id} procedente.`);
+        await suspenderUsuario(denuncia.denunciado.id, `Denúncia nº ${denuncia.id} procedente.`);
       }
       onConcluido();
     } catch (e: unknown) {
-      setErro(e instanceof ApiError ? e.message : 'Erro ao processar.');
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível registrar a decisão.');
       setLoading(false);
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    padding: '8px 12px', borderRadius: '10px', border: `1.5px solid ${C.border}`,
-    fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.text, background: C.card, outline: 'none', width: '100%', boxSizing: 'border-box',
-  };
+  const linha = (rotulo: string, valor: React.ReactNode) => (
+    <p style={{ margin: '0 0 6px' }}><strong>{rotulo}:</strong> {valor}</p>
+  );
 
   return (
-    <div
-      role="dialog" aria-modal="true" aria-label="Analisar denúncia"
-      onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(42,36,32,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
-    >
-      <div onClick={e => e.stopPropagation()} style={{ background: C.card, borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '480px', boxShadow: '0 16px 48px rgba(0,0,0,0.18)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '18px', fontWeight: 800, color: C.text, margin: 0 }}>Analisar denúncia #{denuncia.id}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '20px' }}>✕</button>
-        </div>
+    <Modal titulo={`Analisar denúncia nº ${denuncia.id}`} ariaLabel="Analisar denúncia" onFechar={onClose} podeFechar={!loading} larguraMax="500px">
+      <div style={{ background: C.bg, borderRadius: RAIO.campo, padding: '14px 16px', marginBottom: '20px', fontSize: '14px', fontFamily: FONTE_TEXTO, color: C.text, lineHeight: 1.5 }}>
+        {linha('Data', dataHoraBR(denuncia.criada_em))}
+        {linha('Denunciante', denuncia.denunciante.email ?? '—')}
+        {linha('Denunciado', denuncia.denunciado.email)}
+        {linha('Motivo', MOTIVO_LABELS[denuncia.motivo] ?? denuncia.motivo_display)}
+        {denuncia.descricao && linha('Descrição', denuncia.descricao)}
+      </div>
 
-        <div style={{ background: C.bg, borderRadius: '12px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', fontFamily: 'Nunito,sans-serif', color: C.text }}>
-          <p style={{ margin: '0 0 4px' }}><strong>Denunciante:</strong> {denuncia.denunciante.email ?? '—'}</p>
-          <p style={{ margin: '0 0 4px' }}><strong>Denunciado:</strong> {denuncia.denunciado.email}</p>
-          <p style={{ margin: '0 0 4px' }}><strong>Motivo:</strong> {MOTIVO_LABELS[denuncia.motivo] ?? denuncia.motivo_display}</p>
-          {denuncia.descricao && <p style={{ margin: '0' }}><strong>Descrição:</strong> {denuncia.descricao}</p>}
-        </div>
-
-        <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, color: C.muted, marginBottom: '8px' }}>Decisão</p>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-          {[
-            { value: 'resolvida' as const, label: 'Procedente' },
-            { value: 'descartada' as const, label: 'Improcedente' },
-          ].map(opt => (
-            <button key={opt.value} onClick={() => { setDecisao(opt.value); if (opt.value !== 'resolvida') setSuspender(false); }} style={{
-              flex: 1, padding: '10px', borderRadius: '12px', cursor: 'pointer',
-              border: `2px solid ${decisao === opt.value ? C.primary : C.border}`,
-              background: decisao === opt.value ? `${C.primary}12` : C.bg,
-              color: decisao === opt.value ? C.primary : C.muted,
-              fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 700,
+      <p style={{ ...ESTILO_ROTULO, margin: '0 0 8px' }}>Decisão</p>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        {[
+          { value: 'resolvida' as const, label: 'Procedente' },
+          { value: 'descartada' as const, label: 'Improcedente' },
+        ].map(opt => {
+          const ativo = decisao === opt.value;
+          return (
+            <button key={opt.value} type="button" aria-pressed={ativo} onClick={() => { setDecisao(opt.value); setErro(''); if (opt.value !== 'resolvida') setSuspender(false); }} style={{
+              flex: 1, padding: '10px', minHeight: '48px', borderRadius: RAIO.campo, cursor: 'pointer',
+              border: `2px solid ${ativo ? C.primary : C.borderStrong}`,
+              background: ativo ? C.primarySoft : C.card,
+              color: ativo ? C.primaryText : C.muted,
+              fontFamily: FONTE_TEXTO, fontSize: '15px', fontWeight: 700,
             }}>
               {opt.label}
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, color: C.muted }}>Observação (opcional)</label>
-            <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: observacao.length >= 500 ? C.danger : C.muted }}>{observacao.length}/500</span>
-          </div>
+      <div style={{ marginBottom: '16px' }}>
+        <Campo rotulo="Observação (opcional)" contador={<span style={{ fontFamily: FONTE_TEXTO, fontSize: '12px', color: observacao.length >= 500 ? C.danger : C.muted }}>{observacao.length}/500</span>}>
           <textarea
             value={observacao}
             maxLength={500}
             onChange={e => setObservacao(e.target.value)}
             placeholder="Observação interna sobre a decisão..."
-            style={{ ...inputStyle, resize: 'none', height: '72px' }}
+            style={{ ...estiloCampo(), width: '100%', resize: 'none', height: '80px' }}
           />
-        </div>
-
-        {decisao === 'resolvida' && (
-          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', cursor: 'pointer', fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.text, fontWeight: 600 }}>
-            <input
-              type="checkbox"
-              checked={suspender}
-              onChange={e => setSuspender(e.target.checked)}
-              style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: C.danger }}
-            />
-            Suspender a conta do denunciado
-          </label>
-        )}
-
-        {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginBottom: '12px', textAlign: 'center' }}>{erro}</p>}
-
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: `1.5px solid ${C.border}`, background: C.card, color: C.text, fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>
-            Cancelar
-          </button>
-          <button
-            onClick={handleConfirmar}
-            disabled={loading}
-            style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1 }}
-          >
-            {loading ? 'Confirmando...' : 'Confirmar'}
-          </button>
-        </div>
+        </Campo>
       </div>
-    </div>
+
+      {decisao === 'resolvida' && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', minHeight: '44px', cursor: 'pointer', fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.text, fontWeight: 700 }}>
+          <input
+            type="checkbox"
+            checked={suspender}
+            onChange={e => setSuspender(e.target.checked)}
+            style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: C.danger }}
+          />
+          Suspender a conta do denunciado
+        </label>
+      )}
+
+      {erro && <div style={{ marginBottom: '12px' }}><MensagemErro>{erro}</MensagemErro></div>}
+
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <Botao variante="secundario" larguraTotal onClick={onClose} disabled={loading}>Cancelar</Botao>
+        <Botao larguraTotal onClick={handleConfirmar} disabled={loading}>{loading ? 'Confirmando…' : 'Confirmar'}</Botao>
+      </div>
+    </Modal>
   );
 }
 
@@ -183,7 +143,7 @@ export default function ModeracaoTab() {
   const [expanded, setExpanded] = useState<number | null>(null);
   const [analisando, setAnalisando] = useState<DenunciaItem | null>(null);
 
-  // Filters
+  // Filtros
   const [status, setStatus] = useState('pendente');
   const [motivo, setMotivo] = useState('');
   const [busca, setBusca] = useState('');
@@ -219,7 +179,7 @@ export default function ModeracaoTab() {
       if (dataFim) filtros.data_fim = dataFim;
       await downloadRelatorioCSV('denuncias', filtros);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : 'Erro ao exportar.');
+      setErro(e instanceof Error ? e.message : 'Não foi possível exportar o CSV.');
     } finally {
       setExporting(false);
     }
@@ -231,148 +191,98 @@ export default function ModeracaoTab() {
     !busca || (d.denunciante.email ?? '').toLowerCase().includes(buscaLower) || d.denunciado.email.toLowerCase().includes(buscaLower),
   );
 
-  const inputStyle: React.CSSProperties = {
-    padding: '8px 12px', borderRadius: '10px', border: `1.5px solid ${C.border}`,
-    fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.text, background: C.card, outline: 'none', minWidth: 0,
-  };
+  const campo = estiloCampo({ compacto: true });
 
   return (
     <div style={{ padding: '20px 24px' }}>
-      {/* Filter bar */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', alignItems: 'flex-end' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '150px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Status</label>
-          <select value={status} onChange={e => setStatus(e.target.value)} style={inputStyle}>
+      <BarraFiltros>
+        <Campo rotulo="Status" minWidth="160px">
+          <select value={status} onChange={e => setStatus(e.target.value)} style={campo}>
             {FILTRO_STATUS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '160px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Motivo</label>
-          <select value={motivo} onChange={e => setMotivo(e.target.value)} style={inputStyle}>
+        </Campo>
+        <Campo rotulo="Motivo" minWidth="170px">
+          <select value={motivo} onChange={e => setMotivo(e.target.value)} style={campo}>
             {MOTIVO_OPTS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1 1 180px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Buscar (e-mail)</label>
-          <input value={busca} onChange={e => setBusca(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleBuscar()} placeholder="Buscar denunciante/denunciado..." style={inputStyle} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <div style={{ display: 'flex', gap: '10px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>De</label>
-          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} aria-invalid={!!erroPeriodo} style={erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label style={{ fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted }}>Até</label>
-          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} aria-invalid={!!erroPeriodo} style={erroPeriodo ? { ...inputStyle, borderColor: C.danger } : inputStyle} />
-        </div>
-          </div>
-          {erroPeriodo && <span role="alert" style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.danger }}>{erroPeriodo}</span>}
-        </div>
-        <button onClick={handleBuscar} style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-end' }}>
-          Buscar
-        </button>
-        <button onClick={handleExport} disabled={exporting} style={{ padding: '8px 18px', borderRadius: '10px', border: `1.5px solid ${C.border}`, background: C.card, color: C.text, fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: exporting ? 'wait' : 'pointer', alignSelf: 'flex-end', opacity: exporting ? 0.7 : 1 }}>
-          {exporting ? 'Exportando...' : 'Exportar CSV'}
-        </button>
-      </div>
+        </Campo>
+        <Campo rotulo="E-mail" flex="1 1 200px">
+          <input value={busca} onChange={e => setBusca(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleBuscar()} placeholder="Denunciante ou denunciado" style={campo} />
+        </Campo>
+        <CamposPeriodo inicio={dataInicio} fim={dataFim} onInicio={setDataInicio} onFim={setDataFim} erro={erroPeriodo} />
+        <Botao tamanho="compacto" onClick={handleBuscar}>Buscar</Botao>
+        <Botao tamanho="compacto" variante="neutro" onClick={handleExport} disabled={exporting}>
+          {exporting ? 'Exportando…' : 'Exportar CSV'}
+        </Botao>
+      </BarraFiltros>
 
-      {/* States */}
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '40px', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '14px' }}>Carregando denúncias...</div>
-      )}
-      {!loading && erro && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '40px' }}>
-          <p style={{ color: C.danger, fontFamily: 'Nunito,sans-serif', fontSize: '14px', textAlign: 'center' }}>{erro}</p>
-          <button onClick={handleBuscar} style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-            Tentar novamente
-          </button>
-        </div>
-      )}
+      {loading && <EstadoCarregando texto="Carregando denúncias…" />}
+      {!loading && erro && <EstadoErro mensagem={erro} onTentarNovamente={handleBuscar} />}
       {!loading && !erro && filtradas.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '14px' }}>Nenhuma denúncia encontrada.</div>
+        <EstadoVazio titulo="Nenhuma denúncia encontrada." descricao={status === 'pendente' ? 'Não há denúncias aguardando análise.' : 'Ajuste os filtros e busque novamente.'} />
       )}
 
-      {/* Table */}
       {!loading && !erro && filtradas.length > 0 && (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'Nunito,sans-serif', fontSize: '13px' }}>
+        <CartaoTabela>
+          <table style={ESTILO_TABELA}>
             <thead>
-              <tr style={{ background: C.bg, borderBottom: `2px solid ${C.border}` }}>
-                {['Data', 'Denunciante', 'Denunciado', 'Motivo', 'Status', 'Ação'].map(h => (
-                  <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, color: C.muted, whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
+              <tr>
+                {['Data', 'Denunciante', 'Denunciado', 'Motivo', 'Status', 'Ação'].map(h => <th key={h} style={ESTILO_TH}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {filtradas.map(d => {
                 const isExpanded = expanded === d.id;
-                const statusColor = STATUS_COLORS[d.status] ?? C.muted;
                 return (
-                  <>
+                  <React.Fragment key={d.id}>
                     <tr
-                      key={d.id}
-                      style={{ borderBottom: `1px solid ${C.border}`, background: isExpanded ? `${C.primary}06` : C.card, cursor: 'pointer' }}
+                      style={{ background: isExpanded ? C.primarySoft : C.card, cursor: 'pointer' }}
                       onClick={() => setExpanded(isExpanded ? null : d.id)}
+                      aria-expanded={isExpanded}
                     >
-                      <td style={{ padding: '10px 12px', color: C.muted, whiteSpace: 'nowrap' }}>{formatDateBR(d.criada_em)}</td>
-                      <td style={{ padding: '10px 12px', color: C.text }}>{d.denunciante.email ?? '—'}</td>
-                      <td style={{ padding: '10px 12px' }}>
-                        <span style={{ color: C.text }}>{d.denunciado.email}</span>
+                      <td style={{ ...ESTILO_TD, color: C.muted, whiteSpace: 'nowrap' }}>{dataBR(d.criada_em)}</td>
+                      <td style={ESTILO_TD}>{d.denunciante.email ?? '—'}</td>
+                      <td style={ESTILO_TD}>{d.denunciado.email}</td>
+                      <td style={{ ...ESTILO_TD, color: C.muted }}>{MOTIVO_LABELS[d.motivo] ?? d.motivo_display}</td>
+                      <td style={ESTILO_TD}>
+                        <Selo tom={TOM_STATUS[d.status] ?? 'neutro'}>{ROTULO_STATUS_DENUNCIA[d.status] ?? d.status}</Selo>
                       </td>
-                      <td style={{ padding: '10px 12px', color: C.muted }}>{MOTIVO_LABELS[d.motivo] ?? d.motivo_display}</td>
-                      <td style={{ padding: '10px 12px' }}>
-                        <span style={{ padding: '2px 8px', borderRadius: '8px', background: `${statusColor}20`, color: statusColor, fontWeight: 700, fontSize: '12px' }}>
-                          {STATUS_LABELS[d.status] ?? d.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '10px 12px' }} onClick={e => e.stopPropagation()}>
+                      <td style={ESTILO_TD} onClick={e => e.stopPropagation()}>
                         {d.status === 'pendente' && (
-                          <button
-                            onClick={() => setAnalisando(d)}
-                            style={{ padding: '5px 12px', borderRadius: '8px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
-                          >
-                            Analisar
-                          </button>
+                          <Botao tamanho="mini" onClick={() => setAnalisando(d)}>Analisar</Botao>
                         )}
                       </td>
                     </tr>
                     {isExpanded && (
-                      <tr key={`${d.id}-exp`} style={{ background: `${C.primary}06` }}>
-                        <td colSpan={6} style={{ padding: '12px 20px 16px', borderBottom: `1px solid ${C.border}` }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', fontFamily: 'Nunito,sans-serif', color: C.text }}>
-                            {d.descricao && (
-                              <p style={{ margin: 0 }}><strong>Descrição:</strong> {d.descricao}</p>
-                            )}
-                            {d.resolucao && (
-                              <p style={{ margin: 0 }}><strong>Observação:</strong> {d.resolucao}</p>
-                            )}
+                      <tr style={{ background: C.primarySoft }}>
+                        <td colSpan={6} style={{ ...ESTILO_TD, padding: '12px 20px 16px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '14px', fontFamily: FONTE_TEXTO, color: C.text }}>
+                            {d.descricao && <p style={{ margin: 0 }}><strong>Descrição:</strong> {d.descricao}</p>}
+                            {d.resolucao && <p style={{ margin: 0 }}><strong>Observação:</strong> {d.resolucao}</p>}
                             {d.resolvida_por && (
-                              <p style={{ margin: 0, color: C.muted }}><strong>Resolvida por:</strong> {d.resolvida_por} · {formatDateBR(d.atualizada_em)}</p>
+                              <p style={{ margin: 0, color: C.muted }}><strong>Analisada por:</strong> {d.resolvida_por} · {dataHoraBR(d.atualizada_em)}</p>
                             )}
                             {!d.descricao && !d.resolucao && !d.resolvida_por && (
-                              <p style={{ margin: 0, color: C.muted, fontStyle: 'italic' }}>Sem detalhes adicionais.</p>
+                              <p style={{ margin: 0, color: C.muted }}>Sem detalhes adicionais.</p>
                             )}
                           </div>
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 );
               })}
             </tbody>
           </table>
-        </div>
+        </CartaoTabela>
       )}
 
-      {/* Count */}
       {!loading && !erro && filtradas.length > 0 && (
-        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, marginTop: '12px' }}>
+        <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, marginTop: '12px' }}>
           {filtradas.length} denúncia{filtradas.length !== 1 ? 's' : ''}
         </p>
       )}
 
-      {/* Analisar modal */}
       {analisando && (
         <AnalisarModal
           denuncia={analisando}
@@ -383,3 +293,4 @@ export default function ModeracaoTab() {
     </div>
   );
 }
+

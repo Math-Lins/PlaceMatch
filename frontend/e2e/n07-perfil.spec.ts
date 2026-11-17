@@ -8,7 +8,7 @@ test('N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil'
 
   await test.step('1. Editar abre o formulário com TODOS os campos do perfil', async () => {
     await page.getByRole('button', { name: 'Editar' }).click();
-    for (const ph of ['Seu nome completo', 'Sua idade', 'Ex: Vila Madalena, SP', '700', '1500']) {
+    for (const ph of ['Seu nome completo', 'Sua idade', 'Ex: Boa Viagem, Recife', '700', '1500']) {
       await expect(page.getByPlaceholder(ph)).toBeVisible();
     }
     for (const t of ['Faixa de orçamento mensal', 'Tipo de imóvel preferido', 'Quantas pessoas no imóvel?', 'Você fuma?', 'Aceita pets?',
@@ -35,7 +35,7 @@ test('N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil'
   await test.step('3. editar todos os campos e salvar', async () => {
     await page.getByPlaceholder('Seu nome completo').fill(novo.nome);
     await page.getByPlaceholder('Sua idade').fill(novo.idade);
-    await page.getByPlaceholder('Ex: Vila Madalena, SP').fill(novo.regiao);
+    await page.getByPlaceholder('Ex: Boa Viagem, Recife').fill(novo.regiao);
     await page.getByPlaceholder('700').fill(novo.min);
     await page.getByPlaceholder('1500').fill(novo.max);
     await page.getByRole('button', { name: 'Casa', exact: true }).click();
@@ -54,7 +54,7 @@ test('N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil'
   await test.step('4. os dados atualizados aparecem na tela e persistem ao reabrir a edição', async () => {
     await expect(page.getByRole('heading', { name: novo.nome })).toBeVisible();
     await expect(page.getByText(`${novo.idade} anos · ${novo.regiao}`)).toBeVisible();
-    await expect(page.getByText(/R\$ 1000(\.00)? – R\$ 2000(\.00)?/)).toBeVisible();
+    await expect(page.getByText('R$ 1.000 – R$ 2.000', { exact: true })).toBeVisible();
     await expect(page.getByText('Casa', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('3 pessoas')).toBeVisible();
     await expect(page.getByText('Recebe visitas', { exact: true })).toBeVisible();

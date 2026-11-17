@@ -20,6 +20,13 @@ import {
 } from './api';
 import type { Perfil as PerfilAPI, PerfilPayload, PerfilDescoberto, PerfilBasico, MatchData, Conversa, MensagemAPI, DescobertaParams } from './api';
 import AdminPanel from './admin/AdminPanel';
+import {
+  C, RAIO, SOMBRA, FONTE_TEXTO, FONTE_TITULO, ESTILO_TITULO_TELA, ESTILO_ROTULO, ESTILO_ERRO_CAMPO,
+  Botao, BotaoIcone, IconeVoltar, IconeFechar, Selo, Chip, Modal, MensagemErro,
+  EstadoCarregando, EstadoVazio, EstadoErro, estiloCampo,
+  faixaMoedaBR, moedaBR, rotuloMoradores, dataBR,
+} from './ui';
+import capaInicio from './assets/capa-inicio.jpg';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -113,12 +120,13 @@ function buildTags(p: {
   return tags;
 }
 
+/** Foto que representa a pessoa: a foto de perfil; sem ela, a primeira foto do imóvel. */
+function fotoDaPessoa(p: { foto_perfil_url?: string | null; fotos_imovel?: string[] | null }): string {
+  return p.foto_perfil_url || p.fotos_imovel?.[0] || '';
+}
+
 function perfilDescobertoParaProfile(p: PerfilDescoberto): Profile {
-  const min = Number(p.orcamento_min);
-  const max = Number(p.orcamento_max);
-  const budget = min === max
-    ? `R$ ${min.toLocaleString('pt-BR')}`
-    : `R$ ${min.toLocaleString('pt-BR')} – ${max.toLocaleString('pt-BR')}`;
+  const budget = faixaMoedaBR(p.orcamento_min, p.orcamento_max);
   return {
     id: p.id,
     name: p.nome,
@@ -126,7 +134,7 @@ function perfilDescobertoParaProfile(p: PerfilDescoberto): Profile {
     region: p.regiao,
     bio: p.bio,
     compat: Math.round(p.score * 100),
-    photo: p.fotos_imovel?.[0] ?? '',
+    photo: fotoDaPessoa(p),
     tags: buildTags(p),
     budget,
     smoker: p.fumante,
@@ -150,11 +158,7 @@ function perfilDescobertoParaProfile(p: PerfilDescoberto): Profile {
 
 function perfilBasicoParaProfile(p: PerfilBasico | undefined, score: number): Profile {
   if (!p) return PERFIL_VAZIO;
-  const min = Number(p.orcamento_min);
-  const max = Number(p.orcamento_max);
-  const budget = min === max
-    ? `R$ ${min.toLocaleString('pt-BR')}`
-    : `R$ ${min.toLocaleString('pt-BR')} – ${max.toLocaleString('pt-BR')}`;
+  const budget = faixaMoedaBR(p.orcamento_min, p.orcamento_max);
   return {
     id: p.id,
     name: p.nome,
@@ -162,7 +166,7 @@ function perfilBasicoParaProfile(p: PerfilBasico | undefined, score: number): Pr
     region: p.regiao,
     bio: p.bio,
     compat: Math.round(score * 100),
-    photo: p.fotos_imovel?.[0] ?? '',
+    photo: fotoDaPessoa(p),
     tags: buildTags(p),
     budget,
     smoker: p.fumante,
@@ -185,117 +189,74 @@ function perfilBasicoParaProfile(p: PerfilBasico | undefined, score: number): Pr
 }
 
 
-// ─── Colors ───────────────────────────────────────────────────────────────────
-
-const C = {
-  primary: '#E06B45',
-  primaryLight: '#F0896A',
-  primaryDark: '#C4512E',
-  mint: '#5DBF96',
-  mintLight: '#80D4B0',
-  bg: '#FBF8F5',
-  card: '#FFFFFF',
-  text: '#2A2420',
-  muted: '#8A7E78',
-  border: '#EDE8E3',
-  danger: '#E05555',
-};
-
 // ─── Shared UI Components ─────────────────────────────────────────────────────
-
+// Cores, botões, selos e estados vêm de ./ui (padrão único com o painel admin).
 
 function Btn({ label, onClick, outline = false, danger = false, small = false, disabled = false, style: extraStyle }: {
   label: string; onClick?: () => void; outline?: boolean; danger?: boolean; small?: boolean; disabled?: boolean; style?: React.CSSProperties;
 }) {
-  const bg = danger ? C.danger : outline ? 'transparent' : C.primary;
-  const color = outline ? (danger ? C.danger : C.primary) : '#fff';
-  const border = outline ? `2px solid ${danger ? C.danger : C.primary}` : 'none';
+  const variante = danger ? (outline ? 'destrutivoContorno' : 'destrutivo') : outline ? 'secundario' : 'primario';
   return (
-    <button onClick={disabled ? undefined : onClick} disabled={disabled} style={{
-      width: '100%', padding: small ? '10px 16px' : '15px 16px',
-      background: bg, color, border, borderRadius: '16px',
-      fontSize: small ? '14px' : '16px', fontWeight: 700,
-      fontFamily: 'Outfit,sans-serif', cursor: disabled ? 'not-allowed' : 'pointer', minHeight: '44px',
-      transition: 'opacity 0.15s', opacity: disabled ? 0.6 : 1, ...extraStyle,
-    }}
-      className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-      onMouseDown={e => { if (!disabled) e.currentTarget.style.opacity = '0.8'; }}
-      onMouseUp={e => { if (!disabled) e.currentTarget.style.opacity = '1'; }}
-    >
+    <Botao variante={variante} tamanho={small ? 'compacto' : 'normal'} onClick={onClick} disabled={disabled} larguraTotal style={extraStyle}>
       {label}
-    </button>
+    </Botao>
   );
 }
 
-function Input({ label, type = 'text', placeholder, value, onChange, error, maxLength }: {
+function Input({ label, type = 'text', placeholder, value, onChange, error, maxLength, inputMode }: {
   label: string; type?: string; placeholder?: string; value?: string; onChange?: (v: string) => void; error?: string; maxLength?: number;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif' }}>{label}</label>
+    <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <span style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span style={ESTILO_ROTULO}>{label}</span>
         {maxLength !== undefined && (
-          <span style={{ fontSize: '12px', color: (value?.length ?? 0) >= maxLength ? C.danger : C.muted, fontFamily: 'Nunito,sans-serif' }}>{value?.length ?? 0}/{maxLength}</span>
+          <span style={{ fontSize: '12px', color: (value?.length ?? 0) >= maxLength ? C.danger : C.muted, fontFamily: FONTE_TEXTO }}>{value?.length ?? 0}/{maxLength}</span>
         )}
-      </div>
+      </span>
       <input
         type={type}
         placeholder={placeholder}
         value={value}
         maxLength={maxLength}
+        inputMode={inputMode}
         aria-invalid={!!error}
         onChange={e => onChange?.(e.target.value)}
-        className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{
-          padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${error ? C.danger : C.border}`,
-          background: C.card, fontSize: '15px', fontFamily: 'Nunito,sans-serif', color: C.text,
-          outline: 'none',
-        }}
-        onFocus={e => (e.currentTarget.style.borderColor = C.primary)}
-        onBlur={e => (e.currentTarget.style.borderColor = error ? C.danger : C.border)}
+        style={estiloCampo({ erro: !!error })}
       />
-      {error && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif' }}>{error}</span>}
-    </div>
+      {error && <span style={{ ...ESTILO_ERRO_CAMPO, marginTop: 0 }}>{error}</span>}
+    </label>
   );
 }
 
 function Tag({ label }: { label: string }) {
   const isMint = label.includes('Aceita') || label.includes('Organiz') || label.includes('Tranquil');
-  return (
-    <span style={{
-      padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
-      background: isMint ? '#E6F7F0' : '#FFF0EB',
-      color: isMint ? C.mint : C.primary,
-      fontFamily: 'Nunito,sans-serif', whiteSpace: 'nowrap',
-    }}>{label}</span>
-  );
+  return <Selo tom={isMint ? 'mint' : 'coral'}>{label}</Selo>;
 }
 
-function CompatBadge({ value, large = false }: { value: number; large?: boolean }) {
-  const color = value >= 85 ? C.mint : value >= 70 ? C.primary : '#E0A840';
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '4px',
-      padding: large ? '6px 14px' : '4px 10px',
-      borderRadius: '20px', background: `${color}20`,
-      fontSize: large ? '16px' : '13px', fontWeight: 700,
-      color, fontFamily: 'Outfit,sans-serif',
-    }}>
-      ❤️ {value}% compatível
-    </span>
-  );
-}
-
+// Faixas de compatibilidade: mesmas cores no selo, no medidor e nas listas.
+// `color` = barras/bordas (decorativo); `texto` = cor de texto com contraste AA.
 const COMPAT_LEVELS = [
-  { min: 0,  max: 20,  label: 'Baixa compatibilidade',    color: '#E05555' },
-  { min: 20, max: 40,  label: 'Compatibilidade regular',  color: '#E0A840' },
-  { min: 40, max: 60,  label: 'Boa compatibilidade',      color: C.primary },
-  { min: 60, max: 80,  label: 'Alta compatibilidade',     color: '#5DBF96' },
-  { min: 80, max: 101, label: 'Combinação perfeita',      color: '#2EA874' },
+  { min: 0,  max: 20,  label: 'Baixa compatibilidade',   color: '#B5ABA5',      texto: C.muted,       tom: 'neutro' as const },
+  { min: 20, max: 40,  label: 'Compatibilidade regular', color: C.primaryLight, texto: C.primaryText, tom: 'coral' as const },
+  { min: 40, max: 60,  label: 'Boa compatibilidade',     color: C.primary,      texto: C.primaryText, tom: 'coral' as const },
+  { min: 60, max: 80,  label: 'Alta compatibilidade',    color: C.mint,         texto: C.mintText,    tom: 'mint' as const },
+  { min: 80, max: 101, label: 'Combinação perfeita',     color: C.mintDark,     texto: C.mintText,    tom: 'mint' as const },
 ];
 
 function getCompatLevel(value: number) {
   return COMPAT_LEVELS.find(l => value >= l.min && value < l.max) ?? COMPAT_LEVELS[4];
+}
+
+function CompatBadge({ value, large = false, sobreFoto = false }: { value: number; large?: boolean; sobreFoto?: boolean }) {
+  const level = getCompatLevel(value);
+  // Sobre foto o selo ganha fundo branco sólido para manter o contraste.
+  return (
+    <Selo tom={level.tom} grande={large} style={{ fontFamily: FONTE_TITULO, ...(sobreFoto ? { background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' } : {}) }}>
+      ❤️ {value}% compatível
+    </Selo>
+  );
 }
 
 function CompatMeter({ value }: { value: number }) {
@@ -304,10 +265,10 @@ function CompatMeter({ value }: { value: number }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, color: level.color }}>
+        <span style={{ fontFamily: FONTE_TITULO, fontSize: '13px', fontWeight: 700, color: level.texto }}>
           {level.label}
         </span>
-        <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 800, color: level.color }}>
+        <span style={{ fontFamily: FONTE_TITULO, fontSize: '14px', fontWeight: 800, color: level.texto }}>
           {value}%
         </span>
       </div>
@@ -332,19 +293,24 @@ function ImagemComFallback({ src, alt, style, tipo = 'imovel', iniciais = '' }: 
   iniciais?: string;
 }) {
   const [erro, setErro] = useState(false);
+  useEffect(() => { setErro(false); }, [src]);
   const base: React.CSSProperties = {
     ...style,
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     background: `linear-gradient(135deg, ${C.primary} 0%, ${C.mint} 100%)`,
+    // A inicial acompanha o tamanho do espaço (avatar pequeno ou card inteiro).
+    containerType: 'size',
   };
   if (!src || erro) {
     return tipo === 'avatar' ? (
-      <div style={{ ...base, color: '#fff', fontFamily: 'Outfit,sans-serif', fontWeight: 700, fontSize: '11px' }}>
-        {(iniciais || alt.charAt(0) || '?').toUpperCase()}
+      <div role="img" aria-label={alt} style={base}>
+        <span aria-hidden="true" style={{ color: '#fff', fontFamily: FONTE_TITULO, fontWeight: 800, fontSize: 'max(11px, 38cqmin)', lineHeight: 1, textShadow: '0 1px 4px rgba(0,0,0,0.25)' }}>
+          {(iniciais || alt.charAt(0) || '?').toUpperCase()}
+        </span>
       </div>
     ) : (
-      <div style={base}>
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="rgba(255,255,255,0.85)">
+      <div role="img" aria-label={alt} style={base}>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="rgba(255,255,255,0.85)" aria-hidden="true">
           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
           <polyline points="9,22 9,12 15,12 15,22" fill="rgba(255,255,255,0)" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5"/>
         </svg>
@@ -356,7 +322,7 @@ function ImagemComFallback({ src, alt, style, tipo = 'imovel', iniciais = '' }: 
 
 function ScaleBar({ value }: { value: number }) {
   return (
-    <div style={{ display: 'flex', gap: '4px' }}>
+    <div style={{ display: 'flex', gap: '4px' }} aria-hidden="true">
       {[1,2,3,4,5].map(i => (
         <div key={i} style={{
           width: '32px', height: '6px', borderRadius: '3px',
@@ -364,6 +330,70 @@ function ScaleBar({ value }: { value: number }) {
         }}/>
       ))}
     </div>
+  );
+}
+
+/** Linha "rótulo — valor" dos cartões de detalhe (perfil, anúncio, Meu Perfil). */
+function LinhaInfo({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+      <span style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted }}>{label}</span>
+      <span style={{ fontFamily: FONTE_TITULO, fontSize: '14px', fontWeight: 700, color: C.text, textAlign: 'right' }}>{value}</span>
+    </div>
+  );
+}
+
+/** Escalas 1–5 de hábitos (detalhe do perfil e Meu Perfil). Ordem: organização, bagunça, barulho, social. */
+function ListaHabitos({ valores }: { valores: number[] }) {
+  const rotulos = ['Organização', 'Tolerância à bagunça', 'Tolerância a barulho', 'Perfil social'];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {rotulos.map((label, i) => (
+        <div key={label}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted }}>{label}</span>
+            <span style={{ fontFamily: FONTE_TITULO, fontSize: '13px', fontWeight: 700, color: C.primaryText }}>{valores[i]}/5</span>
+          </div>
+          <ScaleBar value={valores[i]} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Cartão branco com título (seções de detalhe e Meu Perfil). */
+function CartaoSecao({ titulo, children, style }: { titulo: string; children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{ background: C.card, borderRadius: RAIO.card, padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}`, ...style }}>
+      <h3 style={{ fontFamily: FONTE_TITULO, fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 14px' }}>{titulo}</h3>
+      {children}
+    </div>
+  );
+}
+
+/** Contador sobre ícone (notificações, filtros ativos, mensagens não lidas). */
+function Contador({ n, style }: { n: number; style?: React.CSSProperties }) {
+  return (
+    <span aria-hidden="true" style={{
+      background: C.primaryDark, color: '#fff', borderRadius: '10px',
+      padding: '0 5px', fontSize: '11px', fontWeight: 800,
+      fontFamily: FONTE_TITULO, lineHeight: '16px',
+      minWidth: '16px', textAlign: 'center', display: 'inline-block', ...style,
+    }}>
+      {n > 9 ? '9+' : n}
+    </span>
+  );
+}
+
+/** Chip de filtro aplicado, com botão de remover (área de toque de 32 px). */
+function ChipFiltro({ rotulo, onRemover }: { rotulo: string; onRemover: () => void }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', padding: '0 0 0 12px', borderRadius: RAIO.selo, background: C.primarySoft, fontFamily: FONTE_TEXTO, fontSize: '13px', fontWeight: 700, color: C.primaryText }}>
+      {rotulo}
+      <button type="button" onClick={onRemover} aria-label={`Remover filtro ${rotulo}`} style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'none', border: 'none', cursor: 'pointer', color: C.primaryText, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+        <IconeFechar tamanho={14} />
+      </button>
+    </span>
   );
 }
 
@@ -388,17 +418,7 @@ function BottomNav({ tab, setTab, notifsCount }: { tab: Tab; setTab: (t: Tab) =>
             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 01-3.46 0"/>
           </svg>
-          {notifsCount > 0 && (
-            <span style={{
-              position: 'absolute', top: '-4px', right: '-6px',
-              background: C.primary, color: '#fff', borderRadius: '10px',
-              padding: '0 4px', fontSize: '9px', fontWeight: 800,
-              fontFamily: 'Outfit,sans-serif', lineHeight: '14px',
-              minWidth: '14px', textAlign: 'center',
-            }}>
-              {notifsCount > 9 ? '9+' : notifsCount}
-            </span>
-          )}
+          {notifsCount > 0 && <Contador n={notifsCount} style={{ position: 'absolute', top: '-6px', right: '-9px' }} />}
         </div>
       ),
     },
@@ -427,12 +447,12 @@ function BottomNav({ tab, setTab, notifsCount }: { tab: Tab; setTab: (t: Tab) =>
       paddingBottom: 'env(safe-area-inset-bottom)',
     }}>
       {items.map(item => (
-        <button key={item.id} onClick={() => setTab(item.id)} style={{
-          flex: 1, padding: '12px 0 4px', display: 'flex', flexDirection: 'column',
+        <button key={item.id} onClick={() => setTab(item.id)} aria-label={item.label} aria-current={tab === item.id ? 'page' : undefined} style={{
+          flex: 1, padding: '10px 0 8px', minHeight: '56px', display: 'flex', flexDirection: 'column',
           alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer',
         }}>
           {item.icon(tab === item.id)}
-          <span style={{ fontSize: '10px', fontWeight: 600, color: tab === item.id ? C.primary : C.muted, fontFamily: 'Nunito,sans-serif' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: tab === item.id ? C.primaryText : C.muted, fontFamily: FONTE_TEXTO }}>
             {item.label}
           </span>
         </button>
@@ -477,17 +497,7 @@ function AppShell({ screen, tab, setTab, nav, onLogout, notifsCount, children }:
             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 01-3.46 0"/>
           </svg>
-          {notifsCount > 0 && (
-            <span style={{
-              position: 'absolute', top: '-4px', right: '-6px',
-              background: C.primary, color: '#fff', borderRadius: '10px',
-              padding: '0 4px', fontSize: '9px', fontWeight: 800,
-              fontFamily: 'Outfit,sans-serif', lineHeight: '14px',
-              minWidth: '14px', textAlign: 'center',
-            }}>
-              {notifsCount > 9 ? '9+' : notifsCount}
-            </span>
-          )}
+          {notifsCount > 0 && <Contador n={notifsCount} style={{ position: 'absolute', top: '-6px', right: '-9px' }} />}
         </div>
       ),
     },
@@ -527,7 +537,7 @@ function AppShell({ screen, tab, setTab, nav, onLogout, notifsCount, children }:
                 <path d="M20 11 C20 8.8 22 7 24 7 C26 7 28 8.8 28 11 C28 14 24 17 24 17 C24 17 20 14 20 11Z" fill={C.primary}/>
               </svg>
             </div>
-            <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '18px', fontWeight: 800, color: C.text }}>PlaceMatch</span>
+            <span style={{ fontFamily: FONTE_TITULO, fontSize: '18px', fontWeight: 800, color: C.text }}>PlaceMatch</span>
           </div>
         </div>
 
@@ -539,13 +549,15 @@ function AppShell({ screen, tab, setTab, nav, onLogout, notifsCount, children }:
               <button
                 key={item.id}
                 onClick={() => handleTabChange(item.id)}
+                aria-label={item.label}
+                aria-current={active ? 'page' : undefined}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '12px 16px', borderRadius: '14px', cursor: 'pointer',
+                  padding: '12px 16px', minHeight: '48px', borderRadius: RAIO.botao, cursor: 'pointer',
                   border: 'none', width: '100%', textAlign: 'left',
-                  background: active ? `${C.primary}18` : 'transparent',
-                  color: active ? C.primary : C.muted,
-                  fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700,
+                  background: active ? C.primarySoft : 'transparent',
+                  color: active ? C.primaryText : C.muted,
+                  fontFamily: FONTE_TITULO, fontSize: '15px', fontWeight: 700,
                 }}
               >
                 {item.icon(active)}
@@ -561,10 +573,10 @@ function AppShell({ screen, tab, setTab, nav, onLogout, notifsCount, children }:
             onClick={onLogout}
             style={{
               display: 'flex', alignItems: 'center', gap: '12px',
-              padding: '12px 16px', borderRadius: '14px', cursor: 'pointer',
+              padding: '12px 16px', minHeight: '48px', borderRadius: RAIO.botao, cursor: 'pointer',
               border: 'none', width: '100%', textAlign: 'left',
               background: 'transparent', color: C.muted,
-              fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
+              fontFamily: FONTE_TITULO, fontSize: '15px', fontWeight: 700,
             }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -611,16 +623,16 @@ function BrandPanel() {
             <path d="M20 11 C20 8.8 22 7 24 7 C26 7 28 8.8 28 11 C28 14 24 17 24 17 C24 17 20 14 20 11Z" fill="rgba(255,255,255,0.6)"/>
           </svg>
         </div>
-        <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '40px', fontWeight: 800, margin: '0 0 8px', letterSpacing: '-1px' }}>PlaceMatch</h1>
-        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.85, margin: '0 0 28px' }}>Seu lar, sua turma</p>
+        <h1 style={{ fontFamily: FONTE_TITULO, fontSize: '40px', fontWeight: 800, margin: '0 0 8px', letterSpacing: '-1px' }}>PlaceMatch</h1>
+        <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.85, margin: '0 0 28px' }}>Seu lar, sua turma</p>
         <div style={{ borderRadius: '24px', overflow: 'hidden', height: '260px', marginBottom: '24px' }}>
           <img
-            src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=520&fit=crop&auto=format"
+            src={capaInicio}
             alt="Pessoas convivendo em apartamento aconchegante"
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         </div>
-        <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 600, lineHeight: 1.4, opacity: 0.95 }}>
+        <p style={{ fontFamily: FONTE_TITULO, fontSize: '20px', fontWeight: 700, lineHeight: 1.4, textShadow: '0 1px 6px rgba(42,36,32,0.45)' }}>
           Encontre quem combina com seu jeito de morar
         </p>
       </div>
@@ -647,20 +659,20 @@ function WelcomeScreen({ nav }: { nav: (s: Screen) => void }) {
                 <path d="M20 11 C20 8.8 22 7 24 7 C26 7 28 8.8 28 11 C28 14 24 17 24 17 C24 17 20 14 20 11Z" fill="#E06B45"/>
               </svg>
             </div>
-            <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '32px', fontWeight: 800, color: C.text, margin: 0, letterSpacing: '-0.5px' }}>PlaceMatch</h1>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 600, color: C.primary, margin: 0, letterSpacing: '1px', textTransform: 'uppercase' }}>Seu lar, sua turma</p>
+            <h1 style={{ fontFamily: FONTE_TITULO, fontSize: '32px', fontWeight: 800, color: C.text, margin: 0, letterSpacing: '-0.5px' }}>PlaceMatch</h1>
+            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', fontWeight: 700, color: C.primaryText, margin: 0, letterSpacing: '1px', textTransform: 'uppercase' }}>Seu lar, sua turma</p>
           </div>
           <div style={{ position: 'relative', width: '100%' }}>
             <div style={{ borderRadius: '28px', overflow: 'hidden', height: '240px', position: 'relative' }}>
               <img
-                src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop&auto=format"
+                src={capaInicio}
                 alt="Pessoas convivendo em apartamento aconchegante"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(42,36,32,0.5) 0%, transparent 60%)' }}/>
             </div>
             <div style={{ position: 'absolute', bottom: 20, left: 20, right: 20 }}>
-              <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.3 }}>
+              <p style={{ fontFamily: FONTE_TITULO, fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.3 }}>
                 Encontre quem combina com seu jeito de morar
               </p>
             </div>
@@ -669,8 +681,8 @@ function WelcomeScreen({ nav }: { nav: (s: Screen) => void }) {
 
         {/* Desktop: título acima dos botões */}
         <div className="hidden lg:block mb-8 text-center">
-          <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 8px' }}>Bem-vindo!</h2>
-          <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted, margin: 0 }}>Entre ou crie sua conta para começar</p>
+          <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 8px' }}>Boas-vindas!</h2>
+          <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.muted, margin: 0 }}>Entre ou crie sua conta para começar.</p>
         </div>
 
         <div className="w-full max-w-sm" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -721,37 +733,41 @@ function LoginScreen({ nav, onLoginSuccess, loginMsg }: { nav: (s: Screen) => vo
       <BrandPanel />
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          <button onClick={() => nav('welcome')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '6px', color: C.muted }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-            <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 600 }}>Voltar</span>
+          <button onClick={() => nav('welcome')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px 8px 0', minHeight: '44px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', color: C.muted }}>
+            <IconeVoltar />
+            <span style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', fontWeight: 700 }}>Voltar</span>
           </button>
 
           {loginMsg && (
-            <div style={{ background: `${C.danger}12`, border: `1px solid ${C.danger}40`, borderRadius: '12px', padding: '12px 16px', marginBottom: '20px' }}>
-              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.danger, margin: 0 }}>{loginMsg}</p>
+            <div role="alert" style={{ background: C.dangerSoft, border: `1px solid ${C.danger}40`, borderRadius: RAIO.campo, padding: '12px 16px', marginBottom: '20px' }}>
+              <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.danger, margin: 0 }}>{loginMsg}</p>
             </div>
           )}
-          <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>Boas-vindas de volta!</h2>
-          <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted, margin: '0 0 32px' }}>Entre com sua conta para continuar</p>
+          <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>Boas-vindas de volta!</h2>
+          <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.muted, margin: '0 0 32px' }}>Entre com sua conta para continuar.</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={setEmail} error={fieldErrors.email} />
             <Input label="Senha" type="password" placeholder="••••••••" value={senha} onChange={setSenha} error={fieldErrors.senha} />
           </div>
 
-          <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '14px', fontWeight: 600, fontFamily: 'Nunito,sans-serif', padding: '16px 0 0', display: 'block' }}>
+          <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primaryText, fontSize: '14px', fontWeight: 700, fontFamily: FONTE_TEXTO, padding: '12px 0', minHeight: '44px', display: 'block' }}>
             Esqueci minha senha
           </button>
 
-          {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginTop: '8px', textAlign: 'center' }}>{erro}</p>}
+          {erro && (
+            <div role="alert" style={{ background: C.dangerSoft, border: `1px solid ${C.danger}40`, borderRadius: RAIO.campo, padding: '12px 16px', marginTop: '8px' }}>
+              <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', fontWeight: 700, color: C.danger, margin: 0 }}>{erro}</p>
+            </div>
+          )}
 
           <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <Btn label={loading ? 'Aguarde...' : 'Entrar'} onClick={handleEntrar} disabled={loading} />
+            <Btn label={loading ? 'Entrando…' : 'Entrar'} onClick={handleEntrar} disabled={loading} />
           </div>
 
-          <p style={{ textAlign: 'center', marginTop: '24px', fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>
-            Ainda não tenho uma conta?{' '}
-            <button onClick={() => nav('register')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontWeight: 700, fontSize: '14px', fontFamily: 'Nunito,sans-serif', padding: 0 }}>
+          <p style={{ textAlign: 'center', marginTop: '24px', fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted }}>
+            Ainda não tem uma conta?{' '}
+            <button onClick={() => nav('register')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primaryText, fontWeight: 700, fontSize: '14px', fontFamily: FONTE_TEXTO, padding: '12px 4px', minHeight: '44px' }}>
               Criar conta
             </button>
           </p>
@@ -819,13 +835,13 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
       <BrandPanel />
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          <button onClick={() => nav('welcome')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '6px', color: C.muted }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-            <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 600 }}>Voltar</span>
+          <button onClick={() => nav('welcome')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px 8px 0', minHeight: '44px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', color: C.muted }}>
+            <IconeVoltar />
+            <span style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', fontWeight: 700 }}>Voltar</span>
           </button>
 
-          <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>Criar conta</h2>
-          <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted, margin: '0 0 28px' }}>Vamos te conectar ao lugar certo</p>
+          <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>Criar conta</h2>
+          <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.muted, margin: '0 0 28px' }}>Vamos conectar você ao lugar certo.</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <Input label="Nome completo" placeholder="Seu nome" value={nome} onChange={setNome} error={fieldErrors.username} maxLength={150} />
@@ -836,31 +852,31 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
             </div>
           </div>
 
-          <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, marginTop: '20px', marginBottom: '10px' }}>Você está:</p>
+          <p style={{ fontFamily: FONTE_TITULO, fontSize: '14px', fontWeight: 700, color: C.text, marginTop: '20px', marginBottom: '10px' }}>Você está:</p>
           <div style={{ display: 'flex', gap: '10px' }}>
             {(['looking', 'has'] as const).map(r => (
-              <button key={r} onClick={() => setRole(r)} style={{
-                flex: 1, padding: '13px', borderRadius: '14px', cursor: 'pointer',
-                border: `2px solid ${role === r ? C.primary : fieldErrors.role ? C.danger : C.border}`,
-                background: role === r ? `${C.primary}12` : C.card,
-                color: role === r ? C.primary : C.muted,
-                fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 700, lineHeight: 1.3,
+              <button key={r} type="button" onClick={() => setRole(r)} aria-pressed={role === r} style={{
+                flex: 1, padding: '13px', minHeight: '48px', borderRadius: RAIO.botao, cursor: 'pointer',
+                border: `2px solid ${role === r ? C.primary : fieldErrors.role ? C.danger : C.borderStrong}`,
+                background: role === r ? C.primarySoft : C.card,
+                color: role === r ? C.primaryText : C.muted,
+                fontFamily: FONTE_TEXTO, fontSize: '14px', fontWeight: 700, lineHeight: 1.3,
               }}>
                 {r === 'looking' ? '🔍 Procuro um lugar' : '🏠 Tenho um lugar disponível'}
               </button>
             ))}
           </div>
-          {fieldErrors.role && <span style={{ fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '6px' }}>{fieldErrors.role}</span>}
+          {fieldErrors.role && <span style={ESTILO_ERRO_CAMPO}>{fieldErrors.role}</span>}
 
-          {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginTop: '12px', textAlign: 'center' }}>{erro}</p>}
+          {erro && <MensagemErro>{erro}</MensagemErro>}
 
           <div style={{ marginTop: '28px' }}>
-            <Btn label={loading ? 'Aguarde...' : 'Continuar'} onClick={handleContinuar} disabled={loading} />
+            <Btn label={loading ? 'Criando conta…' : 'Continuar'} onClick={handleContinuar} disabled={loading} />
           </div>
 
-          <p style={{ textAlign: 'center', marginTop: '20px', fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>
-            Já tenho conta?{' '}
-            <button onClick={() => nav('login')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontWeight: 700, fontSize: '14px', fontFamily: 'Nunito,sans-serif', padding: 0 }}>
+          <p style={{ textAlign: 'center', marginTop: '20px', fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted }}>
+            Já tem uma conta?{' '}
+            <button onClick={() => nav('login')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primaryText, fontWeight: 700, fontSize: '14px', fontFamily: FONTE_TEXTO, padding: '12px 4px', minHeight: '44px' }}>
               Entrar
             </button>
           </p>
@@ -1027,8 +1043,19 @@ function validarPerfil(f: PerfilForm, campos: string[], anuncio: boolean): Recor
   return e;
 }
 
-const ROTULO_ESTILO: React.CSSProperties = { fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' };
-const ERRO_ESTILO: React.CSSProperties = { fontSize: '12px', color: C.danger, fontFamily: 'Nunito,sans-serif', display: 'block', marginTop: '4px' };
+const ROTULO_ESTILO: React.CSSProperties = { fontFamily: FONTE_TITULO, fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' };
+const ERRO_ESTILO = ESTILO_ERRO_CAMPO;
+
+/** Botão de opção dos formulários de perfil (Sim/Não, tipo de imóvel, horário...). */
+function estiloOpcao(ativo: boolean, erro?: string): React.CSSProperties {
+  return {
+    borderRadius: RAIO.campo, cursor: 'pointer', minHeight: '44px',
+    border: `2px solid ${ativo ? C.primary : erro ? C.danger : C.borderStrong}`,
+    background: ativo ? C.primarySoft : C.card,
+    color: ativo ? C.primaryText : C.muted,
+    fontFamily: FONTE_TEXTO, fontWeight: 700,
+  };
+}
 
 function CampoSimNao({ label, value, onChange, error }: { label: string; value: boolean | null; onChange: (v: boolean) => void; error?: string }) {
   return (
@@ -1037,11 +1064,7 @@ function CampoSimNao({ label, value, onChange, error }: { label: string; value: 
       <div style={{ display: 'flex', gap: '10px' }}>
         {[true, false].map(v => (
           <button key={String(v)} type="button" onClick={() => onChange(v)} aria-pressed={value === v} style={{
-            flex: 1, padding: '12px', borderRadius: '12px', cursor: 'pointer', minHeight: '44px',
-            border: `2px solid ${value === v ? C.primary : error ? C.danger : C.border}`,
-            background: value === v ? `${C.primary}12` : C.card,
-            color: value === v ? C.primary : C.muted,
-            fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 700,
+            ...estiloOpcao(value === v, error), flex: 1, padding: '12px', fontSize: '14px',
           }}>
             {v ? 'Sim' : 'Não'}
           </button>
@@ -1062,11 +1085,7 @@ function CampoEscolha<T extends string>({ label, value, onChange, options, error
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {options.map(opt => (
           <button key={opt.value} type="button" onClick={() => onChange(opt.value)} aria-pressed={value === opt.value} style={{
-            flex: 1, minWidth: '80px', padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', minHeight: '44px',
-            border: `2px solid ${value === opt.value ? C.primary : error ? C.danger : C.border}`,
-            background: value === opt.value ? `${C.primary}12` : C.card,
-            color: value === opt.value ? C.primary : C.muted,
-            fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 700, textAlign: 'center',
+            ...estiloOpcao(value === opt.value, error), flex: 1, minWidth: '80px', padding: '10px 12px', fontSize: '14px', textAlign: 'center',
           }}>
             {opt.label}
           </button>
@@ -1083,12 +1102,12 @@ function CampoEscala({ label, value, onChange, error }: { label: string; value: 
       <p style={ROTULO_ESTILO}>{label}</p>
       <div style={{ display: 'flex', gap: '8px' }}>
         {[1, 2, 3, 4, 5].map(i => (
-          <button key={i} type="button" onClick={() => onChange(i)} aria-label={`${label}: ${i} de 5`} style={{
-            flex: 1, height: '44px', borderRadius: '10px', cursor: 'pointer',
-            border: `2px solid ${value >= i ? C.primary : error ? C.danger : C.border}`,
-            background: value >= i ? C.primary : C.card,
+          <button key={i} type="button" onClick={() => onChange(i)} aria-label={`${label}: ${i} de 5`} aria-pressed={value === i} style={{
+            flex: 1, height: '44px', borderRadius: RAIO.campo, cursor: 'pointer',
+            border: `2px solid ${value >= i ? C.primaryDark : error ? C.danger : C.borderStrong}`,
+            background: value >= i ? C.primaryDark : C.card,
             color: value >= i ? '#fff' : C.muted,
-            fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700,
+            fontFamily: FONTE_TITULO, fontSize: '15px', fontWeight: 700,
           }}>{i}</button>
         ))}
       </div>
@@ -1104,11 +1123,7 @@ function CampoQtdMoradores({ value, onChange, error }: { value: number | null; o
       <div style={{ display: 'flex', gap: '8px' }}>
         {[1, 2, 3, 4].map(n => (
           <button key={n} type="button" onClick={() => onChange(n)} aria-pressed={value === n} style={{
-            flex: 1, height: '44px', borderRadius: '12px', cursor: 'pointer',
-            border: `2px solid ${value === n ? C.primary : error ? C.danger : C.border}`,
-            background: value === n ? `${C.primary}12` : C.card,
-            color: value === n ? C.primary : C.muted,
-            fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700,
+            ...estiloOpcao(value === n, error), flex: 1, height: '44px', fontFamily: FONTE_TITULO, fontSize: '15px',
           }}>{n}{n === 4 ? '+' : ''}</button>
         ))}
       </div>
@@ -1121,21 +1136,21 @@ function CampoTexto({ label, value, onChange, max, error, placeholder, altura = 
   label: string; value: string; onChange: (v: string) => void; max: number; error?: string; placeholder?: string; altura?: number;
 }) {
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-        <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif' }}>{label}</label>
-        <span style={{ fontSize: '12px', color: value.length >= max ? C.danger : C.muted, fontFamily: 'Nunito,sans-serif' }}>{value.length}/{max}</span>
-      </div>
+    <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <span style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span style={ESTILO_ROTULO}>{label}</span>
+        <span style={{ fontSize: '12px', color: value.length >= max ? C.danger : C.muted, fontFamily: FONTE_TEXTO }}>{value.length}/{max}</span>
+      </span>
       <textarea
         placeholder={placeholder}
         value={value}
         maxLength={max}
         aria-invalid={!!error}
         onChange={e => onChange(e.target.value)}
-        style={{ width: '100%', padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${error ? C.danger : C.border}`, background: C.card, fontSize: '15px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none', resize: 'none', height: `${altura}px`, boxSizing: 'border-box' }}
+        style={{ ...estiloCampo({ erro: !!error }), width: '100%', resize: 'none', height: `${altura}px`, lineHeight: 1.5 }}
       />
-      {error && <span style={ERRO_ESTILO}>{error}</span>}
-    </div>
+      {error && <span style={{ ...ERRO_ESTILO, marginTop: 0 }}>{error}</span>}
+    </label>
   );
 }
 
@@ -1146,8 +1161,8 @@ function EtapaPessoal({ form, setForm, errors }: PropsEtapa) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <Input label="Nome" placeholder="Seu nome completo" value={form.nome} onChange={v => setForm({ nome: v })} error={errors.nome} maxLength={LIM.nome} />
       <div className="grid md:grid-cols-2 gap-4">
-        <Input label="Idade" type="number" placeholder="Sua idade" value={form.idade} onChange={v => setForm({ idade: v })} error={errors.idade} />
-        <Input label="Região ou bairro" placeholder="Ex: Vila Madalena, SP" value={form.regiao} onChange={v => setForm({ regiao: v })} error={errors.regiao} maxLength={LIM.regiao} />
+        <Input label="Idade" type="number" inputMode="numeric" placeholder="Sua idade" value={form.idade} onChange={v => setForm({ idade: v })} error={errors.idade} />
+        <Input label="Região ou bairro" placeholder="Ex: Boa Viagem, Recife" value={form.regiao} onChange={v => setForm({ regiao: v })} error={errors.regiao} maxLength={LIM.regiao} />
       </div>
       <CampoTexto label="Sobre você" placeholder="Conte um pouco sobre você e o que procura em um colega de moradia..." value={form.bio} onChange={v => setForm({ bio: v })} max={LIM.bio} error={errors.bio} />
     </div>
@@ -1160,8 +1175,8 @@ function EtapaMoradia({ form, setForm, errors }: PropsEtapa) {
       <div>
         <p style={ROTULO_ESTILO}>Faixa de orçamento mensal</p>
         <div className="grid md:grid-cols-2 gap-4">
-          <Input label="Mínimo (R$)" placeholder="700" value={form.orcamentoMin} onChange={v => setForm({ orcamentoMin: v })} error={errors.orcamento_min} />
-          <Input label="Máximo (R$)" placeholder="1500" value={form.orcamentoMax} onChange={v => setForm({ orcamentoMax: v })} error={errors.orcamento_max} />
+          <Input label="Mínimo (R$)" inputMode="decimal" placeholder="700" value={form.orcamentoMin} onChange={v => setForm({ orcamentoMin: v })} error={errors.orcamento_min} />
+          <Input label="Máximo (R$)" inputMode="decimal" placeholder="1500" value={form.orcamentoMax} onChange={v => setForm({ orcamentoMax: v })} error={errors.orcamento_max} />
         </div>
       </div>
       <CampoEscolha<TipoImovel>
@@ -1246,7 +1261,7 @@ function EtapaAnuncio({ form, setForm, errors }: PropsEtapa) {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
           <p style={{ ...ROTULO_ESTILO, margin: 0 }}>Fotos do imóvel (links)</p>
-          <span style={{ fontSize: '12px', color: C.muted, fontFamily: 'Nunito,sans-serif' }}>{form.fotos.length}/{LIM.fotos}</span>
+          <span style={{ fontSize: '12px', color: C.muted, fontFamily: FONTE_TEXTO }}>{form.fotos.length}/{LIM.fotos}</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {form.fotos.map((url, i) => {
@@ -1258,7 +1273,7 @@ function EtapaAnuncio({ form, setForm, errors }: PropsEtapa) {
                   <div style={{ flex: 1 }}>
                     <Input label={`Foto ${i + 1}`} placeholder="https://..." value={url} onChange={v => setFoto(i, v)} maxLength={LIM.url} error={ruim ? 'Informe um link http:// ou https:// válido.' : undefined} />
                   </div>
-                  <button type="button" onClick={() => remover(i)} aria-label={`Remover foto ${i + 1}`} style={{ minWidth: '44px', minHeight: '48px', borderRadius: '12px', border: `1.5px solid ${C.border}`, background: C.card, color: C.muted, cursor: 'pointer', fontSize: '16px' }}>✕</button>
+                  <button type="button" onClick={() => remover(i)} aria-label={`Remover foto ${i + 1}`} style={{ minWidth: '48px', minHeight: '48px', borderRadius: RAIO.campo, border: `1.5px solid ${C.borderStrong}`, background: C.card, color: C.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconeFechar tamanho={18} /></button>
                 </div>
                 <PreviewFoto url={url} alt={`Pré-visualização da foto ${i + 1}`} />
               </div>
@@ -1266,7 +1281,7 @@ function EtapaAnuncio({ form, setForm, errors }: PropsEtapa) {
           })}
         </div>
         {form.fotos.length < LIM.fotos && (
-          <button type="button" onClick={() => setForm({ fotos: [...form.fotos, ''] })} style={{ marginTop: '10px', padding: '10px 14px', minHeight: '44px', borderRadius: '12px', border: `1.5px dashed ${C.primary}`, background: 'none', color: C.primary, cursor: 'pointer', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700 }}>
+          <button type="button" onClick={() => setForm({ fotos: [...form.fotos, ''] })} style={{ marginTop: '10px', padding: '10px 16px', minHeight: '44px', borderRadius: RAIO.botao, border: `2px dashed ${C.primary}`, background: 'none', color: C.primaryText, cursor: 'pointer', fontFamily: FONTE_TITULO, fontSize: '14px', fontWeight: 700 }}>
             + Adicionar foto
           </button>
         )}
@@ -1358,22 +1373,22 @@ function ProfileCreateScreen({ nav, onPerfilCriado, tipo }: { nav: (s: Screen) =
                 <div key={i} style={{ flex: 1, height: '6px', borderRadius: '3px', background: i <= step ? C.primary : C.border }} />
               ))}
             </div>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>
+            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', fontWeight: 600, color: C.muted, margin: 0 }}>
               Etapa {step} de {TOTAL_STEPS} — {STEP_LABELS[step - 1]}
             </p>
           </div>
 
           <div style={{ paddingTop: '24px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: step === 4 ? '0 0 6px' : '0 0 24px' }}>{TITULOS[step - 1]}</h2>
-            {step === 4 && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: '0 0 24px' }}>1 = mínimo &nbsp;·&nbsp; 5 = máximo</p>}
-            {step === 5 && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: '-12px 0 20px' }}>Opcional — você pode completar depois em Meu Perfil.</p>}
+            <h2 style={{ ...ESTILO_TITULO_TELA, margin: step >= 4 ? '0 0 6px' : '0 0 24px' }}>{TITULOS[step - 1]}</h2>
+            {step === 4 && <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '0 0 24px' }}>1 = mínimo · 5 = máximo</p>}
+            {step === 5 && <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '0 0 24px' }}>Opcional: você pode completar depois em Meu Perfil.</p>}
 
             {step === 1 && (
               <>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-                  <div style={{ width: '96px', height: '96px', borderRadius: '50%', background: C.border, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', border: `3px dashed ${C.primary}` }}>
+                  <div aria-hidden="true" style={{ width: '96px', height: '96px', borderRadius: '50%', background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', border: `3px dashed ${C.primary}` }}>
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: '26px', height: '26px', background: C.primary, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: '26px', height: '26px', background: C.primaryDark, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <span style={{ color: '#fff', fontSize: '14px', fontWeight: 700 }}>+</span>
                     </div>
                   </div>
@@ -1386,13 +1401,13 @@ function ProfileCreateScreen({ nav, onPerfilCriado, tipo }: { nav: (s: Screen) =
             {step === 4 && <EtapaHabitos {...props} />}
             {step === 5 && anuncio && <EtapaAnuncio {...props} />}
 
-            {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginTop: '12px', textAlign: 'center' }}>{erro}</p>}
+            {erro && <MensagemErro>{erro}</MensagemErro>}
 
             {/* Rodapé */}
             <div className="flex flex-col md:flex-row gap-3 mt-auto pt-8">
               {step > 1 && <Btn label="Voltar" outline onClick={() => { setFieldErrors({}); setErro(''); setStep(s => s - 1); }} />}
               <Btn
-                label={step === TOTAL_STEPS ? (loading ? 'Aguarde...' : 'Concluir perfil') : 'Próxima etapa'}
+                label={step === TOTAL_STEPS ? (loading ? 'Salvando…' : 'Concluir perfil') : 'Próxima etapa'}
                 onClick={step < TOTAL_STEPS ? handleProximo : handleConcluir}
                 disabled={step === TOTAL_STEPS && loading}
               />
@@ -1474,14 +1489,14 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
     if (f.tipo_imovel) params.tipo_imovel = f.tipo_imovel;
     if (f.aceita_pets !== 'indiferente') params.aceita_pets = f.aceita_pets;
     if (f.fumante !== 'indiferente') params.fumante = f.fumante;
-    if (f.orcamento_min) params.orcamento_min = parseFloat(f.orcamento_min);
-    if (f.orcamento_max) params.orcamento_max = parseFloat(f.orcamento_max);
+    if (f.orcamento_min) params.orcamento_min = numBR(f.orcamento_min);
+    if (f.orcamento_max) params.orcamento_max = numBR(f.orcamento_max);
     if (f.score_min > 0) params.score_min = f.score_min;
     if (f.ordenar !== 'compatibilidade') params.ordenar = f.ordenar;
     listarDescoberta(params)
       .then(data => { setProfiles(data.map(perfilDescobertoParaProfile)); setLoadingProfiles(false); })
       .catch(err => {
-        setApiError(err instanceof ApiError ? err.message : 'Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
+        setApiError(err instanceof ApiError ? err.message : 'Não foi possível carregar os perfis. Verifique sua conexão e tente novamente.');
         setLoadingProfiles(false);
       });
   };
@@ -1563,136 +1578,75 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
       <div style={{ padding: '16px 24px 8px', background: C.bg }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <div>
-            <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: 0 }}>{tituloTela}</h1>
-            {regiao && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>📍 {regiao}</p>}
+            <h1 style={ESTILO_TITULO_TELA}>{tituloTela}</h1>
+            {regiao && <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted, margin: '2px 0 0' }}>📍 {regiao}</p>}
           </div>
           <button onClick={() => setShowFilters(true)} aria-label="Abrir filtros de busca" style={{
-            position: 'relative', width: '44px', height: '44px', borderRadius: '14px',
-            border: `1.5px solid ${activeFiltersCount > 0 ? C.primary : C.border}`,
-            background: activeFiltersCount > 0 ? `${C.primary}12` : C.card,
+            position: 'relative', width: '44px', height: '44px', borderRadius: RAIO.botao,
+            border: `1.5px solid ${activeFiltersCount > 0 ? C.primary : C.borderStrong}`,
+            background: activeFiltersCount > 0 ? C.primarySoft : C.card,
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={activeFiltersCount > 0 ? C.primary : C.text} strokeWidth="2" strokeLinecap="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={activeFiltersCount > 0 ? C.primaryText : C.text} strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/>
             </svg>
-            {activeFiltersCount > 0 && (
-              <span style={{
-                position: 'absolute', top: '-6px', right: '-6px', background: C.primary, color: '#fff',
-                borderRadius: '10px', padding: '0 5px', fontSize: '10px', fontWeight: 800,
-                fontFamily: 'Outfit,sans-serif', lineHeight: '16px', minWidth: '16px', textAlign: 'center',
-              }}>
-                {activeFiltersCount}
-              </span>
-            )}
+            {activeFiltersCount > 0 && <Contador n={activeFiltersCount} style={{ position: 'absolute', top: '-6px', right: '-6px' }} />}
           </button>
         </div>
         {/* Search bar */}
         <div style={{ position: 'relative' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round"
-            style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round" aria-hidden="true"
+            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input
-            type="text"
+            type="search"
             value={searchQ}
             onChange={e => handleSearchChange(e.target.value)}
             placeholder="Buscar por nome, região..."
-            style={{
-              width: '100%', padding: '10px 12px 10px 36px', borderRadius: '12px',
-              border: `1.5px solid ${C.border}`, background: C.card, fontFamily: 'Nunito,sans-serif',
-              fontSize: '14px', color: C.text, outline: 'none', boxSizing: 'border-box',
-            }}
+            aria-label="Buscar por nome ou região"
+            style={{ ...estiloCampo({ compacto: true }), width: '100%', minHeight: '44px', padding: '10px 44px 10px 38px' }}
           />
           {searchQ && (
-            <button
-              onClick={() => handleSearchChange('')}
-              style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '16px', lineHeight: 1 }}
-            >✕</button>
+            <BotaoIcone ariaLabel="Limpar busca" onClick={() => handleSearchChange('')} style={{ position: 'absolute', right: '0', top: '50%', transform: 'translateY(-50%)' }}>
+              <IconeFechar tamanho={16} />
+            </BotaoIcone>
           )}
         </div>
         {/* Active filter chips */}
         {activeFiltersCount > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-            {filters.regiao && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
-                Região: {filters.regiao}
-                <button onClick={() => removeFilterChip('regiao')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
-              </span>
-            )}
-            {filters.tipo_imovel && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
-                {IMOVEL_LABEL[filters.tipo_imovel] ?? filters.tipo_imovel}
-                <button onClick={() => removeFilterChip('tipo_imovel')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
-              </span>
-            )}
-            {filters.aceita_pets !== 'indiferente' && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
-                Pets: {filters.aceita_pets === 'sim' ? 'Sim' : 'Não'}
-                <button onClick={() => removeFilterChip('aceita_pets')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
-              </span>
-            )}
-            {filters.fumante !== 'indiferente' && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
-                Fumante: {filters.fumante === 'sim' ? 'Sim' : 'Não'}
-                <button onClick={() => removeFilterChip('fumante')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
-              </span>
-            )}
-            {filters.orcamento_min && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
-                Mín: R$ {filters.orcamento_min}
-                <button onClick={() => removeFilterChip('orcamento_min')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
-              </span>
-            )}
-            {filters.orcamento_max && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
-                Máx: R$ {filters.orcamento_max}
-                <button onClick={() => removeFilterChip('orcamento_max')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
-              </span>
-            )}
-            {filters.score_min > 0 && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
-                Score ≥ {filters.score_min}%
-                <button onClick={() => removeFilterChip('score_min')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
-              </span>
-            )}
-            {filters.ordenar !== 'compatibilidade' && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '20px', background: `${C.primary}18`, fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700, color: C.primary }}>
-                {filters.ordenar === 'menor_preco' ? 'Menor preço' : 'Maior preço'}
-                <button onClick={() => removeFilterChip('ordenar')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '12px', padding: '0 0 0 2px', lineHeight: 1 }}>✕</button>
-              </span>
-            )}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+            {filters.regiao && <ChipFiltro rotulo={`Região: ${filters.regiao}`} onRemover={() => removeFilterChip('regiao')} />}
+            {filters.tipo_imovel && <ChipFiltro rotulo={IMOVEL_LABEL[filters.tipo_imovel] ?? filters.tipo_imovel} onRemover={() => removeFilterChip('tipo_imovel')} />}
+            {filters.aceita_pets !== 'indiferente' && <ChipFiltro rotulo={`Aceita pets: ${filters.aceita_pets === 'sim' ? 'Sim' : 'Não'}`} onRemover={() => removeFilterChip('aceita_pets')} />}
+            {filters.fumante !== 'indiferente' && <ChipFiltro rotulo={`Fumante: ${filters.fumante === 'sim' ? 'Sim' : 'Não'}`} onRemover={() => removeFilterChip('fumante')} />}
+            {filters.orcamento_min && <ChipFiltro rotulo={`Mínimo: ${moedaBR(numBR(filters.orcamento_min))}`} onRemover={() => removeFilterChip('orcamento_min')} />}
+            {filters.orcamento_max && <ChipFiltro rotulo={`Máximo: ${moedaBR(numBR(filters.orcamento_max))}`} onRemover={() => removeFilterChip('orcamento_max')} />}
+            {filters.score_min > 0 && <ChipFiltro rotulo={`Compatibilidade ≥ ${filters.score_min}%`} onRemover={() => removeFilterChip('score_min')} />}
+            {filters.ordenar !== 'compatibilidade' && <ChipFiltro rotulo={filters.ordenar === 'menor_preco' ? 'Menor preço' : 'Maior preço'} onRemover={() => removeFilterChip('ordenar')} />}
           </div>
         )}
       </div>
 
       {/* Cards */}
       <div style={{ padding: '0 20px 20px', flex: 1 }}>
-        {loadingProfiles && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '480px', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '15px' }}>
-            Carregando perfis...
-          </div>
-        )}
-        {!loadingProfiles && apiError && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '480px', padding: '24px', textAlign: 'center', color: C.danger, fontFamily: 'Nunito,sans-serif', fontSize: '14px' }}>
-            {apiError}
-          </div>
-        )}
+        {loadingProfiles && <EstadoCarregando texto="Carregando perfis…" altura="420px" />}
+        {!loadingProfiles && apiError && <EstadoErro mensagem={apiError} onTentarNovamente={() => doFetch(searchQ, filters)} altura="420px" />}
         {!loadingProfiles && !apiError && profiles.length === 0 && (activeFiltersCount > 0 || searchQ) ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '360px', padding: '24px', textAlign: 'center', gap: '12px' }}>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted, margin: 0 }}>
-              Nenhum perfil com esses filtros.
-            </p>
-            <button
-              onClick={handleClearFilters}
-              style={{ padding: '8px 20px', borderRadius: '12px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
-            >
-              Limpar filtros
-            </button>
-          </div>
+          <EstadoVazio
+            titulo="Nenhum perfil com esses filtros."
+            descricao="Tente outros termos ou remova alguns filtros."
+            icone={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
+            acao={{ rotulo: 'Limpar filtros', onClick: handleClearFilters }}
+            altura="360px"
+          />
         ) : (!loadingProfiles && !apiError && profiles.length === 0) ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '480px', padding: '24px', textAlign: 'center', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '15px' }}>
-            Ainda não há perfis para você. Volte mais tarde.
-          </div>
+          <EstadoVazio
+            titulo="Ainda não há perfis para você."
+            descricao="Volte mais tarde: novos perfis aparecem aqui assim que se cadastrarem."
+            icone={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>}
+            altura="420px"
+          />
         ) : null}
 
         {/* Mobile: single card */}
@@ -1709,17 +1663,17 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                     <ImagemComFallback src={p.fotosImovel?.[0]} alt={p.tituloAnuncio ?? p.name}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }} tipo="imovel" />
                     <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
-                      <CompatBadge value={p.compat} />
+                      <CompatBadge value={p.compat} sobreFoto />
                     </div>
                   </div>
                   <div style={{ padding: '16px 20px 20px' }}>
-                    <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 800, color: C.text, margin: '0 0 4px', lineHeight: 1.3, overflow: 'hidden', maxHeight: '2.6em' }}>
+                    <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '20px', fontWeight: 800, color: C.text, margin: '0 0 4px', lineHeight: 1.3, overflow: 'hidden', maxHeight: '2.6em' }}>
                       {p.tituloAnuncio ?? `Vaga em ${p.region}`}
                     </h2>
-                    <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: '0 0 8px' }}>
-                      📍 {p.region} · {IMOVEL_LABEL[p.tipoImovel] ?? p.tipoImovel} · {p.qtdMoradores} morador{p.qtdMoradores !== 1 ? 'es' : ''}
+                    <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted, margin: '0 0 8px' }}>
+                      📍 {p.region} · {IMOVEL_LABEL[p.tipoImovel] ?? p.tipoImovel} · {rotuloMoradores(p.qtdMoradores)}
                     </p>
-                    <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '22px', fontWeight: 800, color: C.text, margin: '0 0 10px' }}>
+                    <p style={{ fontFamily: FONTE_TITULO, fontSize: '22px', fontWeight: 800, color: C.text, margin: '0 0 10px' }}>
                       {p.budget} <span style={{ fontSize: '14px', fontWeight: 400, color: C.muted }}>/ mês</span>
                     </p>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
@@ -1730,7 +1684,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                       <ImagemComFallback src={p.fotoPerfilUrl} alt={p.name}
                         style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
                         tipo="avatar" iniciais={p.name.charAt(0)} />
-                      <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted }}>
+                      <span style={{ fontFamily: FONTE_TEXTO, fontSize: '12px', color: C.muted }}>
                         Anunciado por <strong style={{ color: C.text }}>{p.name.split(' ')[0]}</strong>
                       </span>
                     </div>
@@ -1744,19 +1698,19 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} tipo="avatar" iniciais={p.name.charAt(0)} />
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(42,36,32,0.88) 0%, rgba(42,36,32,0.2) 50%, transparent 80%)' }} />
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
                       <div>
-                        <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '26px', fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>{p.name}, {p.age}</h2>
-                        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>📍 {p.region}</p>
+                        <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '26px', fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>{p.name}, {p.age}</h2>
+                        <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: 'rgba(255,255,255,0.9)', margin: 0 }}>📍 {p.region}</p>
                       </div>
-                      <CompatBadge value={p.compat} />
+                      <CompatBadge value={p.compat} sobreFoto />
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
                       {p.tags.map(t => (
-                        <span key={t} style={{ padding: '4px 10px', borderRadius: '20px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', fontSize: '12px', fontWeight: 600, color: '#fff', fontFamily: 'Nunito,sans-serif' }}>{t}</span>
+                        <span key={t} style={{ padding: '4px 10px', borderRadius: RAIO.selo, background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)', fontSize: '12px', fontWeight: 600, color: '#fff', fontFamily: FONTE_TEXTO }}>{t}</span>
                       ))}
                     </div>
-                    <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.75)', margin: 0, lineHeight: 1.5 }}>{p.bio.slice(0, 80)}...</p>
+                    {p.bio && <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: 'rgba(255,255,255,0.9)', margin: 0, lineHeight: 1.5 }}>{p.bio.length > 80 ? `${p.bio.slice(0, 80).trimEnd()}…` : p.bio}</p>}
                   </div>
                 </div>
               )}
@@ -1767,8 +1721,8 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                 <button aria-label="Curtir perfil" onClick={() => handleLike(p)} disabled={isLoading} style={{ width: '72px', height: '72px', borderRadius: '50%', border: 'none', background: `linear-gradient(135deg, ${C.primary}, ${C.primaryLight})`, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 24px rgba(224,107,69,0.4)`, opacity: isLoading ? 0.6 : 1 }}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                 </button>
-                <button aria-label="Ver mais opções" style={{ width: '64px', height: '64px', borderRadius: '50%', border: `2px solid ${C.border}`, background: C.card, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.mint} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                <button aria-label="Ver detalhes" onClick={() => { onSelectProfile(p); nav('profile-detail'); }} style={{ width: '64px', height: '64px', borderRadius: '50%', border: `2px solid ${C.border}`, background: C.card, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.mintText} strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
                 </button>
               </div>
             </div>
@@ -1790,17 +1744,17 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                         <ImagemComFallback src={p.fotosImovel?.[0]} alt={p.tituloAnuncio ?? p.name}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }} tipo="imovel" />
                         <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                          <CompatBadge value={p.compat} />
+                          <CompatBadge value={p.compat} sobreFoto />
                         </div>
                       </div>
                       <div style={{ padding: '14px 16px 16px' }}>
-                        <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 800, color: C.text, margin: '0 0 3px', lineHeight: 1.3, overflow: 'hidden', maxHeight: '2.6em' }}>
+                        <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '16px', fontWeight: 800, color: C.text, margin: '0 0 3px', lineHeight: 1.3, overflow: 'hidden', maxHeight: '2.6em' }}>
                           {p.tituloAnuncio ?? `Vaga em ${p.region}`}
                         </h2>
-                        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted, margin: '0 0 6px' }}>
-                          📍 {p.region} · {IMOVEL_LABEL[p.tipoImovel] ?? p.tipoImovel} · {p.qtdMoradores} morador{p.qtdMoradores !== 1 ? 'es' : ''}
+                        <p style={{ fontFamily: FONTE_TEXTO, fontSize: '12px', color: C.muted, margin: '0 0 6px' }}>
+                          📍 {p.region} · {IMOVEL_LABEL[p.tipoImovel] ?? p.tipoImovel} · {rotuloMoradores(p.qtdMoradores)}
                         </p>
-                        <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '17px', fontWeight: 800, color: C.text, margin: '0 0 8px' }}>
+                        <p style={{ fontFamily: FONTE_TITULO, fontSize: '17px', fontWeight: 800, color: C.text, margin: '0 0 8px' }}>
                           {p.budget} <span style={{ fontSize: '12px', fontWeight: 400, color: C.muted }}>/ mês</span>
                         </p>
                         <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '10px' }}>
@@ -1811,7 +1765,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                           <ImagemComFallback src={p.fotoPerfilUrl} alt={p.name}
                             style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }}
                             tipo="avatar" iniciais={p.name.charAt(0)} />
-                          <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '11px', color: C.muted }}>
+                          <span style={{ fontFamily: FONTE_TEXTO, fontSize: '12px', color: C.muted }}>
                             Anunciado por <strong style={{ color: C.text }}>{p.name.split(' ')[0]}</strong>
                           </span>
                         </div>
@@ -1825,16 +1779,16 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }} tipo="avatar" iniciais={p.name.charAt(0)} />
                       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(42,36,32,0.85) 0%, rgba(42,36,32,0.15) 50%, transparent 80%)' }} />
                       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px', marginBottom: '6px' }}>
                           <div>
-                            <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '22px', fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>{p.name}, {p.age}</h2>
-                            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>📍 {p.region}</p>
+                            <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '22px', fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>{p.name}, {p.age}</h2>
+                            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: 'rgba(255,255,255,0.9)', margin: 0 }}>📍 {p.region}</p>
                           </div>
-                          <CompatBadge value={p.compat} />
+                          <CompatBadge value={p.compat} sobreFoto />
                         </div>
                         <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                           {p.tags.slice(0, 3).map(t => (
-                            <span key={t} style={{ padding: '3px 8px', borderRadius: '16px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', fontSize: '11px', fontWeight: 600, color: '#fff', fontFamily: 'Nunito,sans-serif' }}>{t}</span>
+                            <span key={t} style={{ padding: '3px 8px', borderRadius: RAIO.selo, background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)', fontSize: '12px', fontWeight: 600, color: '#fff', fontFamily: FONTE_TEXTO }}>{t}</span>
                           ))}
                         </div>
                       </div>
@@ -1910,13 +1864,13 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
         <div style={{ position: 'relative', background: '#000' }}>
           <ImagemComFallback src={fotoSrc} alt={profile.tituloAnuncio ?? profile.name}
             style={{ width: '100%', height: '300px', objectFit: 'cover', display: 'block' }} tipo="imovel" />
-          <button aria-label="Voltar" onClick={() => nav(backScreen)} style={{ position: 'absolute', top: '16px', left: '16px', width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-          </button>
+          <BotaoIcone ariaLabel="Voltar" onClick={() => nav(backScreen)} cor="#fff" fundo="rgba(42,36,32,0.45)" style={{ position: 'absolute', top: '16px', left: '16px', backdropFilter: 'blur(8px)' }}>
+            <IconeVoltar />
+          </BotaoIcone>
           {fotosImovel.length > 1 && (
             <div style={{ display: 'flex', gap: '8px', padding: '10px 16px', overflowX: 'auto', background: 'rgba(0,0,0,0.55)' }}>
               {fotosImovel.map((f, i) => (
-                <button key={i} onClick={() => setFotoAtiva(f)} style={{ flexShrink: 0, padding: 0, border: `2px solid ${fotoAtiva === f ? '#fff' : 'transparent'}`, borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', background: 'none' }}>
+                <button key={i} onClick={() => setFotoAtiva(f)} aria-label={`Ver foto ${i + 1}`} aria-pressed={fotoAtiva === f} style={{ flexShrink: 0, padding: 0, border: `2px solid ${fotoAtiva === f ? '#fff' : 'transparent'}`, borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', background: 'none' }}>
                   <ImagemComFallback src={f} alt={`Foto ${i + 1}`} tipo="imovel" style={{ width: '64px', height: '48px', objectFit: 'cover', display: 'block' }} />
                 </button>
               ))}
@@ -1927,11 +1881,11 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
         {/* informações */}
         <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
           <div style={{ marginBottom: '16px' }}>
-            <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '26px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>
-              {profile.tituloAnuncio ?? `Vaga em ${profile.region}`}
-            </h2>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: '0 0 12px' }}>📍 {profile.region}</p>
-            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '26px', fontWeight: 800, color: C.text, margin: 0 }}>
+            <h1 style={{ fontFamily: FONTE_TITULO, fontSize: '26px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>
+              {profile.tituloAnuncio || `Vaga em ${profile.region}`}
+            </h1>
+            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '0 0 12px' }}>📍 {profile.region}</p>
+            <p style={{ fontFamily: FONTE_TITULO, fontSize: '26px', fontWeight: 800, color: C.text, margin: 0 }}>
               {profile.budget} <span style={{ fontSize: '16px', fontWeight: 400, color: C.muted }}>/ mês</span>
             </p>
           </div>
@@ -1941,37 +1895,29 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
           </div>
 
           {profile.descricaoImovel && (
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.text, lineHeight: 1.7, marginBottom: '24px' }}>
+            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.text, lineHeight: 1.7, marginBottom: '24px' }}>
               {profile.descricaoImovel}
             </p>
           )}
 
           {/* Sobre a vaga */}
-          <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
-            <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 16px' }}>Sobre a vaga</h3>
+          <CartaoSecao titulo="Sobre a vaga">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                { label: 'Tipo de imóvel', value: IMOVEL_LABEL[profile.tipoImovel] ?? profile.tipoImovel },
-                { label: 'Moradores', value: `${profile.qtdMoradores}${profile.qtdMoradores === 4 ? '+' : ''} pessoa${profile.qtdMoradores > 1 ? 's' : ''}` },
-                { label: 'Aceita pets', value: profile.pets ? 'Sim' : 'Não' },
-                { label: 'Fumante', value: profile.smoker ? 'Permitido' : 'Não permitido' },
-              ].map(row => (
-                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>{row.label}</span>
-                  <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text }}>{row.value}</span>
-                </div>
-              ))}
+              <LinhaInfo label="Tipo de imóvel" value={IMOVEL_LABEL[profile.tipoImovel] ?? profile.tipoImovel} />
+              <LinhaInfo label="Moradores" value={rotuloMoradores(profile.qtdMoradores)} />
+              <LinhaInfo label="Aceita pets" value={profile.pets ? 'Sim' : 'Não'} />
+              <LinhaInfo label="Fumantes" value={profile.smoker ? 'Permitido' : 'Não permitido'} />
             </div>
-          </div>
+          </CartaoSecao>
 
           {/* Anunciado por */}
-          <div style={{ background: C.card, borderRadius: '20px', padding: '16px 20px', marginBottom: '24px', border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ background: C.card, borderRadius: RAIO.card, padding: '16px 20px', marginBottom: '24px', border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
             <ImagemComFallback src={profile.fotoPerfilUrl} alt={profile.name}
-              style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+              style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }}
               tipo="avatar" iniciais={profile.name.charAt(0)} />
             <div>
-              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted, margin: '0 0 2px' }}>Anunciado por</p>
-              <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text, margin: 0 }}>
+              <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted, margin: '0 0 2px' }}>Anunciado por</p>
+              <p style={{ fontFamily: FONTE_TITULO, fontSize: '15px', fontWeight: 700, color: C.text, margin: 0 }}>
                 {profile.name.split(' ')[0]}, {profile.age} anos
               </p>
             </div>
@@ -1980,11 +1926,11 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
           {!somenteLeitura && (
             <div style={{ display: 'flex', gap: '12px' }}>
               <Btn label="✕ Recusar" outline onClick={handleRecusar} disabled={liking} />
-              <Btn label={liking ? 'Enviando...' : '💛 Tenho interesse'} onClick={onLike ? handleLike : () => nav('match')} disabled={liking} />
+              <Btn label={liking ? 'Enviando…' : '💛 Tenho interesse'} onClick={onLike ? handleLike : () => nav('match')} disabled={liking} />
             </div>
           )}
           <div style={{ textAlign: 'center', marginTop: '12px' }}>
-            <button onClick={() => setShowDenuncia(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 600, padding: '4px 0' }}>
+            <button onClick={() => setShowDenuncia(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontFamily: FONTE_TEXTO, fontSize: '14px', fontWeight: 700, padding: '12px 8px', minHeight: '44px', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
               Denunciar este anúncio
             </button>
           </div>
@@ -2002,13 +1948,13 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
       <div className="relative h-[340px] lg:h-screen lg:sticky lg:top-0 lg:w-[420px] lg:flex-shrink-0">
         <ImagemComFallback src={profile.photo} alt={profile.name} tipo="avatar" iniciais={profile.name.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(42,36,32,0.6) 0%, transparent 60%)' }} />
-        <button aria-label="Voltar" onClick={() => nav(backScreen)} style={{ position: 'absolute', top: '16px', left: '16px', width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        </button>
+        <BotaoIcone ariaLabel="Voltar" onClick={() => nav(backScreen)} cor="#fff" fundo="rgba(42,36,32,0.45)" style={{ position: 'absolute', top: '16px', left: '16px', backdropFilter: 'blur(8px)' }}>
+          <IconeVoltar />
+        </BotaoIcone>
         {/* Desktop: name overlay on photo */}
         <div className="hidden lg:block" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px' }}>
-          <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '32px', fontWeight: 800, color: '#fff', margin: '0 0 4px' }}>{profile.name}, {profile.age}</h2>
-          <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: 'rgba(255,255,255,0.85)', margin: 0 }}>📍 {profile.region}</p>
+          <h1 style={{ fontFamily: FONTE_TITULO, fontSize: '32px', fontWeight: 800, color: '#fff', margin: '0 0 4px', textShadow: '0 1px 6px rgba(0,0,0,0.3)' }}>{profile.name}, {profile.age}</h1>
+          <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: 'rgba(255,255,255,0.92)', margin: 0 }}>📍 {profile.region}</p>
         </div>
       </div>
 
@@ -2017,8 +1963,8 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
         {/* Mobile: name shown here */}
         <div className="lg:hidden" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
           <div>
-            <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 4px' }}>{profile.name}, {profile.age}</h2>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0 }}>📍 {profile.region}</p>
+            <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 4px' }}>{profile.name}, {profile.age}</h2>
+            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: 0 }}>📍 {profile.region}</p>
           </div>
           <CompatBadge value={profile.compat} large />
         </div>
@@ -2031,64 +1977,32 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
           {profile.tags.map(t => <Tag key={t} label={t} />)}
         </div>
 
-        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.text, lineHeight: 1.7, marginBottom: '24px' }}>{profile.bio}</p>
+        {profile.bio && <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.text, lineHeight: 1.7, marginBottom: '24px' }}>{profile.bio}</p>}
 
-        <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
-          <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 16px' }}>Preferências de moradia</h3>
+        <CartaoSecao titulo="Preferências de moradia">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[
-              { label: 'Orçamento', value: profile.budget },
-              { label: 'Tipo de imóvel', value: IMOVEL_LABEL[profile.tipoImovel] ?? profile.tipoImovel },
-              { label: 'Moradores', value: `${profile.qtdMoradores}${profile.qtdMoradores === 4 ? '+' : ''} pessoa${profile.qtdMoradores > 1 ? 's' : ''}` },
-              { label: 'Fumante', value: profile.smoker ? 'Sim' : 'Não' },
-              { label: 'Aceita pets', value: profile.pets ? 'Sim' : 'Não' },
-            ].map(row => (
-              <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>{row.label}</span>
-                <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text }}>{row.value}</span>
-              </div>
-            ))}
+            <LinhaInfo label="Orçamento" value={profile.budget} />
+            <LinhaInfo label="Tipo de imóvel" value={IMOVEL_LABEL[profile.tipoImovel] ?? profile.tipoImovel} />
+            <LinhaInfo label="Moradores" value={rotuloMoradores(profile.qtdMoradores)} />
+            <LinhaInfo label="Fumante" value={profile.smoker ? 'Sim' : 'Não'} />
+            <LinhaInfo label="Aceita pets" value={profile.pets ? 'Sim' : 'Não'} />
           </div>
-        </div>
+        </CartaoSecao>
 
-        <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
-          <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 16px' }}>Convivência</h3>
+        <CartaoSecao titulo="Convivência">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[
-              { label: 'Horário', value: HORARIO_LABEL[profile.horario] ?? profile.horario },
-              { label: 'Visitas', value: VISITAS_LABEL[profile.visitas] ?? profile.visitas },
-            ].map(row => (
-              <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>{row.label}</span>
-                <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text }}>{row.value}</span>
-              </div>
-            ))}
+            <LinhaInfo label="Horário" value={HORARIO_LABEL[profile.horario] ?? profile.horario} />
+            <LinhaInfo label="Visitas" value={VISITAS_LABEL[profile.visitas] ?? profile.visitas} />
           </div>
-        </div>
+        </CartaoSecao>
 
-        <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '24px', border: `1px solid ${C.border}` }}>
-          <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 16px' }}>Hábitos</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {([
-              { label: 'Organização', value: profile.organized },
-              { label: 'Tolerância à bagunça', value: profile.messy },
-              { label: 'Tolerância a barulho', value: profile.ruido },
-              { label: 'Perfil social', value: profile.social },
-            ] as { label: string; value: number }[]).map(row => (
-              <div key={row.label}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>{row.label}</span>
-                  <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, color: C.primary }}>{row.value}/5</span>
-                </div>
-                <ScaleBar value={row.value} />
-              </div>
-            ))}
-          </div>
-        </div>
+        <CartaoSecao titulo="Hábitos" style={{ marginBottom: '24px' }}>
+          <ListaHabitos valores={[profile.organized, profile.messy, profile.ruido, profile.social]} />
+        </CartaoSecao>
 
-        {!somenteLeitura && <Btn label={liking ? 'Curtindo...' : '💛 Curtir perfil'} onClick={onLike ? handleLike : () => nav('match')} />}
+        {!somenteLeitura && <Btn label={liking ? 'Enviando…' : '💛 Curtir perfil'} onClick={onLike ? handleLike : () => nav('match')} />}
         <div style={{ textAlign: 'center', marginTop: '12px' }}>
-          <button onClick={() => setShowDenuncia(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 600, padding: '4px 0' }}>
+          <button onClick={() => setShowDenuncia(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontFamily: FONTE_TEXTO, fontSize: '14px', fontWeight: 700, padding: '12px 8px', minHeight: '44px', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
             Denunciar este perfil
           </button>
         </div>
@@ -2110,12 +2024,6 @@ function FiltersModal({ filters, onApply, onClear, onClose }: {
 }) {
   const [draft, setDraft] = useState<DiscoveryFilters>({ ...filters });
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   const set = <K extends keyof DiscoveryFilters>(k: K, v: DiscoveryFilters[K]) =>
     setDraft(d => ({ ...d, [k]: v }));
 
@@ -2124,19 +2032,13 @@ function FiltersModal({ filters, onApply, onClear, onClose }: {
     field: 'aceita_pets' | 'fumante',
   ) => (
     <div>
-      <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{label}</p>
+      <p style={ROTULO_ESTILO}>{label}</p>
       <div style={{ display: 'flex', gap: '8px' }}>
         {(['indiferente', 'sim', 'nao'] as const).map(v => {
           const active = draft[field] === v;
           const lbl = v === 'indiferente' ? 'Indiferente' : v === 'sim' ? 'Sim' : 'Não';
           return (
-            <button key={v} onClick={() => set(field, v)} style={{
-              flex: 1, padding: '10px', borderRadius: '12px', cursor: 'pointer', minHeight: '40px',
-              border: `2px solid ${active ? C.primary : C.border}`,
-              background: active ? `${C.primary}12` : C.bg,
-              color: active ? C.primary : C.muted,
-              fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 700,
-            }}>
+            <button key={v} type="button" onClick={() => set(field, v)} aria-pressed={active} style={{ ...estiloOpcao(active), flex: 1, padding: '10px', fontSize: '14px' }}>
               {lbl}
             </button>
           );
@@ -2154,138 +2056,72 @@ function FiltersModal({ filters, onApply, onClear, onClose }: {
   ];
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Filtros de busca"
-      onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(42,36,32,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}
-      className="md:items-center md:justify-center"
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ background: C.card, padding: '24px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
-        className="rounded-t-[28px] md:rounded-[24px] md:max-w-md md:shadow-2xl"
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '22px', fontWeight: 800, color: C.text, margin: 0 }}>Filtros</h3>
-          <button
-            onClick={onClose}
-            aria-label="Fechar filtros"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '22px', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px' }}
-          >✕</button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {/* Região */}
-          <div>
-            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Região</p>
-            <input
-              value={draft.regiao}
-              onChange={e => set('regiao', e.target.value)}
-              placeholder="Ex: Pinheiros, Lapa..."
-              style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: `1.5px solid ${C.border}`, fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.text, outline: 'none', boxSizing: 'border-box', background: C.bg }}
-            />
-          </div>
-
-          {/* Tipo de imóvel */}
-          <div>
-            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Tipo de imóvel</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {TIPO_IMOVEL_OPTS.map(opt => {
-                const active = draft.tipo_imovel === opt.value;
-                return (
-                  <button key={opt.value} onClick={() => set('tipo_imovel', opt.value)} style={{
-                    padding: '8px 14px', borderRadius: '20px', cursor: 'pointer',
-                    border: `2px solid ${active ? C.primary : C.border}`,
-                    background: active ? `${C.primary}12` : C.bg,
-                    color: active ? C.primary : C.muted,
-                    fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 700,
-                  }}>
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Aceita pets */}
-          {triBtn('Aceita pets', 'aceita_pets')}
-
-          {/* Fumante */}
-          {triBtn('Fumante', 'fumante')}
-
-          {/* Orçamento */}
-          <div>
-            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Faixa de orçamento</p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ flex: 1 }}>
-                <Input
-                  label="Mínimo"
-                  placeholder="R$ 500"
-                  value={draft.orcamento_min}
-                  onChange={v => set('orcamento_min', v)}
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <Input
-                  label="Máximo"
-                  placeholder="R$ 2.000"
-                  value={draft.orcamento_max}
-                  onChange={v => set('orcamento_max', v)}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Score mínimo */}
-          <div>
-            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>
-              Compatibilidade mínima: <span style={{ color: C.primary }}>{draft.score_min}%</span>
-            </p>
-            <input
-              type="range" min={0} max={100} step={5}
-              value={draft.score_min}
-              onChange={e => set('score_min', parseInt(e.target.value))}
-              style={{ width: '100%', accentColor: C.primary }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'Nunito,sans-serif', fontSize: '11px', color: C.muted, marginTop: '2px' }}>
-              <span>0%</span><span>50%</span><span>100%</span>
-            </div>
-          </div>
-
-          {/* Ordenar */}
-          <div>
-            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Ordenar por</p>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {([
-                { value: 'compatibilidade', label: 'Mais compatível' },
-                { value: 'menor_preco', label: 'Menor preço' },
-                { value: 'maior_preco', label: 'Maior preço' },
-              ] as const).map(opt => {
-                const active = draft.ordenar === opt.value;
-                return (
-                  <button key={opt.value} onClick={() => set('ordenar', opt.value)} style={{
-                    padding: '8px 14px', borderRadius: '20px', cursor: 'pointer',
-                    border: `2px solid ${active ? C.primary : C.border}`,
-                    background: active ? `${C.primary}12` : C.bg,
-                    color: active ? C.primary : C.muted,
-                    fontFamily: 'Nunito,sans-serif', fontSize: '13px', fontWeight: 700,
-                  }}>
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+    <Modal
+      titulo="Filtros" ariaLabel="Filtros de busca" rotuloFechar="Fechar filtros" onFechar={onClose} folha larguraMax="480px"
+      rodape={(
+        <div style={{ display: 'flex', gap: '12px' }}>
           <Btn label="Limpar filtros" outline onClick={onClear} />
           <Btn label="Aplicar filtros" onClick={() => onApply(draft)} />
         </div>
+      )}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <Input label="Região" placeholder="Ex: Boa Viagem, Casa Forte..." value={draft.regiao} onChange={v => set('regiao', v)} />
+
+        <div>
+          <p style={ROTULO_ESTILO}>Tipo de imóvel</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {TIPO_IMOVEL_OPTS.map(opt => (
+              <Chip key={opt.value} ativo={draft.tipo_imovel === opt.value} onClick={() => set('tipo_imovel', opt.value)}>{opt.label}</Chip>
+            ))}
+          </div>
+        </div>
+
+        {triBtn('Aceita pets', 'aceita_pets')}
+        {triBtn('Fumante', 'fumante')}
+
+        <div>
+          <p style={ROTULO_ESTILO}>Faixa de orçamento (R$)</p>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ flex: 1 }}>
+              <Input label="Mínimo" inputMode="decimal" placeholder="500" value={draft.orcamento_min} onChange={v => set('orcamento_min', v)} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <Input label="Máximo" inputMode="decimal" placeholder="2000" value={draft.orcamento_max} onChange={v => set('orcamento_max', v)} />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p style={ROTULO_ESTILO}>
+            Compatibilidade mínima: <span style={{ color: C.primaryText }}>{draft.score_min}%</span>
+          </p>
+          <input
+            type="range" min={0} max={100} step={5}
+            value={draft.score_min}
+            onChange={e => set('score_min', parseInt(e.target.value))}
+            aria-label="Compatibilidade mínima"
+            style={{ width: '100%', accentColor: C.primaryDark, minHeight: '32px' }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: FONTE_TEXTO, fontSize: '12px', color: C.muted, marginTop: '2px' }}>
+            <span>0%</span><span>50%</span><span>100%</span>
+          </div>
+        </div>
+
+        <div>
+          <p style={ROTULO_ESTILO}>Ordenar por</p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {([
+              { value: 'compatibilidade', label: 'Mais compatível' },
+              { value: 'menor_preco', label: 'Menor preço' },
+              { value: 'maior_preco', label: 'Maior preço' },
+            ] as const).map(opt => (
+              <Chip key={opt.value} ativo={draft.ordenar === opt.value} onClick={() => set('ordenar', opt.value)}>{opt.label}</Chip>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -2314,7 +2150,9 @@ function NotificationsScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPer
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
 
-  useEffect(() => {
+  const carregar = () => {
+    setLoading(true);
+    setErro('');
     const lastVisit = sessionStorage.getItem('pm_notif_last_visit');
     const agora = new Date().toISOString();
     listarMatches()
@@ -2328,7 +2166,10 @@ function NotificationsScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPer
         setLoading(false);
       })
       .catch((e: Error) => { setErro(e.message); setLoading(false); });
-  }, []);
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { carregar(); }, []);
 
   const abrirChat = (m: MatchData) => {
     const outro = m.perfil_a.id === meuPerfilId ? m.perfil_b : m.perfil_a;
@@ -2340,58 +2181,38 @@ function NotificationsScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPer
   return (
     <div className="flex flex-col flex-1 pb-20 lg:pb-0" style={{ background: C.bg }}>
       <div style={{ padding: '20px 24px 12px' }}>
-        <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: '0 0 4px' }}>Notificações</h1>
-        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>
-          {loading ? 'Carregando...' : erro ? ' ' : matches.length === 0 ? 'Tudo em dia' : `${matches.length} novo${matches.length !== 1 ? 's' : ''} match${matches.length !== 1 ? 'es' : ''}`}
+        <h1 style={{ ...ESTILO_TITULO_TELA, margin: '0 0 4px' }}>Notificações</h1>
+        <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted, margin: 0, minHeight: '18px' }}>
+          {loading || erro ? '' : matches.length === 0 ? 'Tudo em dia.' : `${matches.length} novo${matches.length !== 1 ? 's' : ''} match${matches.length !== 1 ? 'es' : ''}`}
         </p>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {loading && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 24px' }}>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted }}>Carregando...</p>
-          </div>
-        )}
+        {loading && <EstadoCarregando texto="Carregando notificações…" />}
 
-        {!loading && erro && (
-          <div style={{ padding: '60px 24px', textAlign: 'center' }}>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.danger }}>{erro}</p>
-          </div>
-        )}
+        {!loading && erro && <EstadoErro mensagem={erro} onTentarNovamente={carregar} />}
 
         {!loading && !erro && matches.length === 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', gap: '12px' }}>
-            <div style={{ width: '72px', height: '72px', background: `${C.primary}18`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 01-3.46 0"/>
-              </svg>
-            </div>
-            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '18px', fontWeight: 700, color: C.text, margin: 0 }}>Nenhuma novidade</p>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0, textAlign: 'center', maxWidth: '260px' }}>
-              Quando alguém curtir você de volta, você verá o match aqui.
-            </p>
-            <button
-              onClick={() => nav('discovery')}
-              style={{ marginTop: '4px', padding: '10px 20px', borderRadius: '14px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
-            >
-              Ir para a Descoberta
-            </button>
-          </div>
+          <EstadoVazio
+            titulo="Nenhuma novidade"
+            descricao="Quando alguém curtir você de volta, o match aparece aqui."
+            icone={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>}
+            acao={{ rotulo: 'Ir para a Descoberta', onClick: () => nav('discovery') }}
+          />
         )}
 
         {!loading && !erro && matches.map(m => {
           const outro = m.perfil_a.id === meuPerfilId ? m.perfil_b : m.perfil_a;
           const compat = Math.round(m.score * 100);
           const level = getCompatLevel(compat);
-          const foto = outro.fotos_imovel?.[0] ?? '';
+          const foto = fotoDaPessoa(outro);
           return (
             <button
               key={m.id}
               onClick={() => abrirChat(m)}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: '14px',
-                padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer',
+                padding: '14px 24px', minHeight: '72px', background: 'none', border: 'none', cursor: 'pointer',
                 textAlign: 'left', borderBottom: `1px solid ${C.border}`,
               }}
             >
@@ -2400,23 +2221,17 @@ function NotificationsScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPer
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text }}>
-                    {outro.nome}
+                  <span style={{ fontFamily: FONTE_TITULO, fontSize: '16px', fontWeight: 700, color: C.text }}>
+                    Novo match com {outro.nome}
                   </span>
-                  <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted, flexShrink: 0, marginLeft: '8px' }}>
+                  <span title={dataBR(m.data_match)} style={{ fontFamily: FONTE_TEXTO, fontSize: '12px', color: C.muted, flexShrink: 0, marginLeft: '8px' }}>
                     {tempoRelativo(m.data_match)}
                   </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{
-                    background: `${level.color}22`, color: level.color,
-                    borderRadius: '8px', padding: '2px 8px',
-                    fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 800,
-                  }}>
-                    {compat}% compatível
-                  </span>
-                  <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted }}>
-                    Toque para conversar →
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <Selo tom={level.tom}>{compat}% compatível</Selo>
+                  <span style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted }}>
+                    Abrir conversa →
                   </span>
                 </div>
               </div>
@@ -2450,14 +2265,14 @@ function MatchScreen({ nav, profile, setCurrentChat }: {
           background: `${C.mint}22`, display: 'flex', alignItems: 'center',
           justifyContent: 'center', margin: '0 auto 14px',
         }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={C.mint} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={C.mintText} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M20 6L9 17l-5-5"/>
           </svg>
         </div>
-        <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: '0 0 8px' }}>
+        <h1 style={{ ...ESTILO_TITULO_TELA, margin: '0 0 8px' }}>
           Interesse mútuo confirmado
         </h1>
-        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0 }}>
+        <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: 0, lineHeight: 1.5 }}>
           Vocês dois demonstraram interesse. Conversem para combinar os detalhes da vaga.
         </p>
       </div>
@@ -2465,9 +2280,9 @@ function MatchScreen({ nav, profile, setCurrentChat }: {
       {/* Cartão */}
       <div style={{
         width: '100%', maxWidth: '420px',
-        background: C.card, borderRadius: '20px',
+        background: C.card, borderRadius: RAIO.card,
         border: `1px solid ${C.border}`,
-        boxShadow: '0 4px 24px rgba(42,36,32,0.08)',
+        boxShadow: SOMBRA.card,
         overflow: 'hidden',
         marginBottom: '20px',
       }}>
@@ -2484,25 +2299,17 @@ function MatchScreen({ nav, profile, setCurrentChat }: {
             </div>
             {/* Informações */}
             <div style={{ padding: '18px 20px 20px' }}>
-              <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '17px', fontWeight: 800, color: C.text, margin: '0 0 5px' }}>
+              <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '17px', fontWeight: 800, color: C.text, margin: '0 0 5px' }}>
                 {profile.tituloAnuncio ?? profile.name}
               </h2>
-              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: '0 0 8px' }}>
-                📍 {profile.region} · {IMOVEL_LABEL[profile.tipoImovel] ?? profile.tipoImovel} · {profile.qtdMoradores} morador{profile.qtdMoradores !== 1 ? 'es' : ''}
+              <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted, margin: '0 0 8px' }}>
+                📍 {profile.region} · {IMOVEL_LABEL[profile.tipoImovel] ?? profile.tipoImovel} · {rotuloMoradores(profile.qtdMoradores)}
               </p>
-              <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 12px' }}>
+              <p style={{ fontFamily: FONTE_TITULO, fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 12px' }}>
                 {profile.budget}
-                <span style={{ fontFamily: 'Nunito,sans-serif', fontWeight: 400, fontSize: '13px', color: C.muted }}> / mês</span>
+                <span style={{ fontFamily: FONTE_TEXTO, fontWeight: 400, fontSize: '13px', color: C.muted }}> / mês</span>
               </p>
-              <span style={{
-                display: 'inline-block',
-                background: `${C.mint}22`, color: C.text,
-                borderRadius: '20px', padding: '3px 12px',
-                fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 700,
-                marginBottom: '14px',
-              }}>
-                {profile.compat}% de compatibilidade
-              </span>
+              <div style={{ marginBottom: '14px' }}><CompatBadge value={profile.compat} /></div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '12px', borderTop: `1px solid ${C.border}` }}>
                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
                   <ImagemComFallback
@@ -2513,7 +2320,7 @@ function MatchScreen({ nav, profile, setCurrentChat }: {
                     style={{ width: '28px', height: '28px', objectFit: 'cover' }}
                   />
                 </div>
-                <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted }}>
+                <span style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted }}>
                   Anunciado por <strong style={{ color: C.text }}>{primeiroNome}</strong>
                 </span>
               </div>
@@ -2532,56 +2339,23 @@ function MatchScreen({ nav, profile, setCurrentChat }: {
               />
             </div>
             <div style={{ textAlign: 'center' }}>
-              <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 800, color: C.text, margin: '0 0 4px' }}>
+              <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '20px', fontWeight: 800, color: C.text, margin: '0 0 4px' }}>
                 {profile.name}
               </h2>
-              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0 }}>
+              <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: 0 }}>
                 {profile.age} anos · {profile.region}
               </p>
             </div>
-            <span style={{
-              background: `${C.mint}22`, color: C.text,
-              borderRadius: '20px', padding: '4px 14px',
-              fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700,
-            }}>
-              {profile.compat}% de compatibilidade
-            </span>
+            <CompatBadge value={profile.compat} />
           </div>
         )}
       </div>
 
       {/* Botões */}
       <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <button
-          onClick={() => { setCurrentChat(profile); nav('chat'); }}
-          style={{
-            width: '100%', padding: '15px', background: C.primary, color: '#fff',
-            border: 'none', borderRadius: '16px', fontSize: '16px', fontWeight: 700,
-            fontFamily: 'Outfit,sans-serif', cursor: 'pointer',
-          }}
-        >
-          Enviar mensagem
-        </button>
-        <button
-          onClick={() => nav('matches')}
-          style={{
-            width: '100%', padding: '15px', background: 'transparent', color: C.primary,
-            border: `2px solid ${C.primary}`, borderRadius: '16px', fontSize: '16px', fontWeight: 700,
-            fontFamily: 'Outfit,sans-serif', cursor: 'pointer',
-          }}
-        >
-          Ver meus matches
-        </button>
-        <button
-          onClick={() => nav('discovery')}
-          style={{
-            width: '100%', padding: '12px', background: 'transparent', color: C.muted,
-            border: 'none', borderRadius: '16px', fontSize: '14px', fontWeight: 600,
-            fontFamily: 'Outfit,sans-serif', cursor: 'pointer',
-          }}
-        >
-          Continuar buscando
-        </button>
+        <Btn label="Enviar mensagem" onClick={() => { setCurrentChat(profile); nav('chat'); }} />
+        <Btn label="Ver meus matches" outline onClick={() => nav('matches')} />
+        <Botao variante="texto" larguraTotal onClick={() => nav('discovery')}>Continuar buscando</Botao>
       </div>
     </div>
   );
@@ -2598,7 +2372,7 @@ function conversaParaProfile(c: Conversa): Profile {
     region: p.regiao,
     bio: '',
     compat: Math.round(c.score * 100),
-    photo: '',
+    photo: fotoDaPessoa(p),
     tags: [],
     budget: '',
     smoker: false, pets: false, organized: 3, messy: 3,
@@ -2651,84 +2425,45 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
   return (
     <div className="flex flex-col flex-1 pb-20 lg:pb-0" style={{ background: C.bg }}>
       <div style={{ padding: '20px 24px 12px' }}>
-        <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: '0 0 4px' }}>Seus Matches</h1>
-        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.muted, margin: 0 }}>
-          {loading ? 'Carregando...' : erro ? ' ' : `${conversas.length} conversa${conversas.length !== 1 ? 's' : ''}`}
+        <h1 style={{ ...ESTILO_TITULO_TELA, margin: '0 0 4px' }}>Seus Matches</h1>
+        <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted, margin: 0, minHeight: '18px' }}>
+          {loading || erro ? '' : `${conversas.length} conversa${conversas.length !== 1 ? 's' : ''}`}
         </p>
         {/* Search + nao_lidas */}
         <div style={{ marginTop: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: 1 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round"
-              style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round" aria-hidden="true"
+              style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input
-              type="text"
+              type="search"
               value={search}
               onChange={e => handleMatchSearch(e.target.value)}
               placeholder="Buscar conversa..."
-              style={{
-                width: '100%', padding: '9px 10px 9px 32px', borderRadius: '12px',
-                border: `1.5px solid ${C.border}`, background: C.card,
-                fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.text, outline: 'none', boxSizing: 'border-box',
-              }}
+              aria-label="Buscar conversa"
+              style={{ ...estiloCampo({ compacto: true }), width: '100%', minHeight: '44px', padding: '10px 12px 10px 38px' }}
             />
           </div>
-          <button
-            onClick={() => handleNaoLidasToggle(!naoLidas)}
-            style={{
-              padding: '9px 14px', borderRadius: '12px', cursor: 'pointer', whiteSpace: 'nowrap',
-              border: `1.5px solid ${naoLidas ? C.primary : C.border}`,
-              background: naoLidas ? `${C.primary}12` : C.card,
-              color: naoLidas ? C.primary : C.muted,
-              fontFamily: 'Nunito,sans-serif', fontSize: '12px', fontWeight: 700,
-            }}
-          >
-            Só não lidas
-          </button>
+          <Chip ativo={naoLidas} onClick={() => handleNaoLidasToggle(!naoLidas)}>Só não lidas</Chip>
         </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {loading && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 24px' }}>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '15px', color: C.muted }}>Carregando conversas...</p>
-          </div>
-        )}
+        {loading && <EstadoCarregando texto="Carregando conversas…" />}
 
-        {!loading && erro && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 24px', gap: '16px' }}>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.danger, textAlign: 'center' }}>{erro}</p>
-            <Btn label="Tentar novamente" small onClick={() => carregar(search, naoLidas)} style={{ maxWidth: '200px' }} />
-          </div>
-        )}
+        {!loading && erro && <EstadoErro mensagem={erro} onTentarNovamente={() => carregar(search, naoLidas)} />}
 
         {!loading && !erro && conversas.length === 0 && (search || naoLidas) && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', gap: '12px' }}>
-            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '17px', fontWeight: 700, color: C.text, margin: 0 }}>Nenhuma conversa encontrada</p>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0, textAlign: 'center', maxWidth: '260px' }}>
-              Tente outros termos ou remova os filtros aplicados.
-            </p>
-          </div>
+          <EstadoVazio titulo="Nenhuma conversa encontrada" descricao="Tente outros termos ou remova os filtros aplicados." />
         )}
         {!loading && !erro && conversas.length === 0 && !search && !naoLidas && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', gap: '12px' }}>
-            <div style={{ width: '72px', height: '72px', background: `${C.primary}18`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-              </svg>
-            </div>
-            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '18px', fontWeight: 700, color: C.text, margin: 0 }}>Você ainda não tem matches</p>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0, textAlign: 'center', maxWidth: '260px' }}>
-              Curta perfis na tela de Descoberta. Quando alguém curtir você de volta, aparece aqui!
-            </p>
-            <button
-              onClick={() => nav('discovery')}
-              style={{ marginTop: '4px', padding: '10px 20px', borderRadius: '14px', border: 'none', background: C.primary, color: '#fff', fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
-            >
-              Ir para a Descoberta
-            </button>
-          </div>
+          <EstadoVazio
+            titulo="Você ainda não tem matches"
+            descricao="Curta perfis na Descoberta. Quando alguém curtir você de volta, a conversa aparece aqui."
+            icone={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>}
+            acao={{ rotulo: 'Ir para a Descoberta', onClick: () => nav('discovery') }}
+          />
         )}
 
         {/* Mobile: lista */}
@@ -2741,7 +2476,7 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
               return (
                 <button key={c.match_id} onClick={() => abrirChat(c)} style={{
                   width: '100%', display: 'flex', alignItems: 'center', gap: '14px',
-                  padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer',
+                  padding: '14px 24px', minHeight: '72px', background: 'none', border: 'none', cursor: 'pointer',
                   textAlign: 'left', borderBottom: `1px solid ${C.border}`,
                 }}>
                   <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -2749,29 +2484,21 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
                       <ImagemComFallback src={profile.photo} alt={profile.name} tipo="avatar" iniciais={profile.name.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                     <div style={{
-                      position: 'absolute', bottom: '-2px', right: '-2px',
-                      background: level.color, borderRadius: '10px', border: '2px solid white',
-                      padding: '1px 5px', fontSize: '10px', fontWeight: 800,
-                      fontFamily: 'Outfit,sans-serif', color: '#fff', lineHeight: '14px',
+                      position: 'absolute', bottom: '-4px', right: '-6px',
+                      background: '#fff', borderRadius: '10px', border: `2px solid ${level.color}`,
+                      padding: '0 5px', fontSize: '11px', fontWeight: 800,
+                      fontFamily: FONTE_TITULO, color: level.texto, lineHeight: '16px',
                     }}>
                       {profile.compat}%
                     </div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-                      <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text }}>{profile.name}</span>
-                      {c.nao_lidas > 0 && (
-                        <span style={{
-                          background: C.primary, color: '#fff', borderRadius: '12px',
-                          padding: '1px 7px', fontSize: '11px', fontWeight: 800,
-                          fontFamily: 'Outfit,sans-serif', flexShrink: 0,
-                        }}>
-                          {c.nao_lidas}
-                        </span>
-                      )}
+                      <span style={{ fontFamily: FONTE_TITULO, fontSize: '16px', fontWeight: 700, color: C.text }}>{profile.name}</span>
+                      {c.nao_lidas > 0 && <Contador n={c.nao_lidas} style={{ flexShrink: 0 }} />}
                     </div>
                     <p style={{
-                      fontFamily: 'Nunito,sans-serif', fontSize: '13px',
+                      fontFamily: FONTE_TEXTO, fontSize: '13px',
                       color: c.nao_lidas > 0 ? C.text : C.muted,
                       fontWeight: c.nao_lidas > 0 ? 700 : 400,
                       margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -2795,37 +2522,28 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
               return (
                 <button key={c.match_id} onClick={() => abrirChat(c)} style={{
                   display: 'flex', flexDirection: 'column', background: C.card,
-                  border: `2px solid ${level.color}30`, borderRadius: '20px', overflow: 'hidden',
+                  border: `1px solid ${C.border}`, borderRadius: RAIO.card, overflow: 'hidden',
                   cursor: 'pointer', textAlign: 'left', padding: 0,
-                  boxShadow: `0 4px 20px ${level.color}18`, position: 'relative',
+                  boxShadow: SOMBRA.card, position: 'relative',
                 }}>
                   {c.nao_lidas > 0 && (
-                    <span style={{
-                      position: 'absolute', top: '10px', right: '10px', zIndex: 2,
-                      background: C.primary, color: '#fff', borderRadius: '12px',
-                      padding: '2px 8px', fontSize: '12px', fontWeight: 800,
-                      fontFamily: 'Outfit,sans-serif',
-                    }}>
+                    <Selo tom="coral" style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 2, background: C.primaryDark, color: '#fff' }}>
                       {c.nao_lidas} nova{c.nao_lidas !== 1 ? 's' : ''}
-                    </span>
+                    </Selo>
                   )}
-                  <div style={{ position: 'relative', height: '160px', flexShrink: 0 }}>
-                    <ImagemComFallback src={profile.photo} alt={profile.name} tipo="avatar" iniciais={profile.name.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <div style={{
-                      position: 'absolute', top: '10px', left: '10px',
-                      background: `${level.color}EE`, borderRadius: '10px', padding: '3px 10px',
-                      fontFamily: 'Outfit,sans-serif', fontSize: '12px', fontWeight: 800, color: '#fff',
-                    }}>
-                      {level.label}
-                    </div>
+                  <div style={{ position: 'relative', height: '210px', flexShrink: 0 }}>
+                    <ImagemComFallback src={profile.photo} alt={profile.name} tipo="avatar" iniciais={profile.name.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%' }} />
+                    <Selo tom={level.tom} style={{ position: 'absolute', top: '10px', left: '10px', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                      {level.label} · {profile.compat}%
+                    </Selo>
                   </div>
                   <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div>
-                      <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text }}>{profile.name}</span>
-                      <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.muted, marginLeft: '6px' }}>{profile.age} anos · {profile.region}</span>
+                      <span style={{ fontFamily: FONTE_TITULO, fontSize: '15px', fontWeight: 700, color: C.text }}>{profile.name}</span>
+                      <span style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted, marginLeft: '6px' }}>{profile.age} anos · {profile.region}</span>
                     </div>
                     <p style={{
-                      fontFamily: 'Nunito,sans-serif', fontSize: '13px',
+                      fontFamily: FONTE_TEXTO, fontSize: '13px',
                       color: c.nao_lidas > 0 ? C.text : C.muted,
                       fontWeight: c.nao_lidas > 0 ? 700 : 400,
                       margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -2927,35 +2645,41 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   };
 
-  const formatTime = (dt: string) =>
-    new Date(dt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  // Hoje: só a hora. Outros dias: data e hora (dd/mm hh:mm).
+  const formatTime = (dt: string) => {
+    const d = new Date(dt);
+    const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return d.toDateString() === new Date().toDateString()
+      ? hora
+      : `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${hora}`;
+  };
 
   return (
     <div className="flex flex-col flex-1" style={{ background: C.bg, overflow: 'hidden' }}>
       <div className="flex flex-col flex-1 w-full max-w-3xl mx-auto" style={{ overflow: 'hidden' }}>
         {/* Header */}
-        <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px', background: C.card, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-          <button aria-label="Voltar" onClick={() => nav('matches')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: C.muted }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-          </button>
+        <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px', background: C.card, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+          <BotaoIcone ariaLabel="Voltar" onClick={() => nav('matches')}>
+            <IconeVoltar tamanho={22} />
+          </BotaoIcone>
           <div style={{ width: '44px', height: '44px', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${C.primary}` }}>
             <ImagemComFallback src={profile.photo} alt={profile.name} tipo="avatar" iniciais={profile.name.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 700, color: C.text, margin: 0 }}>{profile.name}</p>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontFamily: FONTE_TITULO, fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</p>
             <CompatBadge value={profile.compat} />
           </div>
           <div style={{ position: 'relative' }}>
-            <button aria-label="Mais opções" onClick={() => setShowMenu(m => !m)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: C.muted }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-            </button>
+            <BotaoIcone ariaLabel="Mais opções" onClick={() => setShowMenu(m => !m)}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+            </BotaoIcone>
             {showMenu && (
-              <div style={{ position: 'absolute', right: 0, top: '36px', background: C.card, borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,0.14)', border: `1px solid ${C.border}`, zIndex: 50, minWidth: '160px', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', right: 0, top: '48px', background: C.card, borderRadius: RAIO.botao, boxShadow: SOMBRA.menu, border: `1px solid ${C.border}`, zIndex: 50, minWidth: '180px', overflow: 'hidden' }}>
                 {['Ver perfil', 'Denunciar'].map(opt => (
                   <button key={opt} onClick={() => { setShowMenu(false); if (opt === 'Denunciar') setShowReport(true); if (opt === 'Ver perfil') onVerPerfil(); }} style={{
-                    display: 'block', width: '100%', padding: '14px 16px',
+                    display: 'block', width: '100%', padding: '12px 16px', minHeight: '48px',
                     background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-                    fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 600,
+                    fontFamily: FONTE_TEXTO, fontSize: '15px', fontWeight: 700,
                     color: opt === 'Denunciar' ? C.danger : C.text,
                   }}>{opt}</button>
                 ))}
@@ -2966,21 +2690,10 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
 
         {/* Mensagens */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {loading && (
-            <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>Carregando mensagens...</p>
-            </div>
-          )}
-          {!loading && erro && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '40px 0' }}>
-              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.danger, textAlign: 'center' }}>{erro}</p>
-              <Btn label="Tentar novamente" small onClick={carregarMensagens} style={{ maxWidth: '200px' }} />
-            </div>
-          )}
+          {loading && <EstadoCarregando texto="Carregando mensagens…" />}
+          {!loading && erro && <EstadoErro mensagem={erro} onTentarNovamente={carregarMensagens} />}
           {!loading && !erro && messages.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>Diga olá! Combinem os detalhes da vaga.</p>
-            </div>
+            <EstadoVazio titulo="Nenhuma mensagem ainda" descricao="Diga olá! Combinem os detalhes da vaga por aqui." />
           )}
           {messages.map(msg => {
             const isMe = msg.remetente_id === meuPerfilId;
@@ -2989,13 +2702,13 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
                 <div style={{
                   maxWidth: '70%', padding: '11px 15px',
                   borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                  background: isMe ? C.primary : C.card,
+                  background: isMe ? C.primaryDark : C.card,
                   color: isMe ? '#fff' : C.text,
                   border: isMe ? 'none' : `1px solid ${C.border}`,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  boxShadow: '0 2px 8px rgba(42,36,32,0.06)',
                 }}>
-                  <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', lineHeight: 1.5, margin: '0 0 4px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg.conteudo}</p>
-                  <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '11px', color: isMe ? 'rgba(255,255,255,0.7)' : C.muted, margin: 0, textAlign: 'right' }}>
+                  <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', lineHeight: 1.5, margin: '0 0 4px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg.conteudo}</p>
+                  <p style={{ fontFamily: FONTE_TEXTO, fontSize: '11px', color: isMe ? 'rgba(255,255,255,0.88)' : C.muted, margin: 0, textAlign: 'right' }}>
                     {formatTime(msg.data_envio)}
                   </p>
                 </div>
@@ -3007,8 +2720,8 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
 
         {/* Erro de envio */}
         {sendError && (
-          <div style={{ padding: '6px 16px 2px', background: `${C.danger}12`, borderTop: `1px solid ${C.danger}30` }}>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '12px', color: C.danger, margin: 0 }}>{sendError}</p>
+          <div role="alert" style={{ padding: '8px 16px', background: C.dangerSoft, borderTop: `1px solid ${C.danger}30` }}>
+            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.danger, margin: 0 }}>{sendError}</p>
           </div>
         )}
 
@@ -3020,17 +2733,16 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Digite uma mensagem..."
+              aria-label="Mensagem"
               maxLength={1000}
               rows={1}
               style={{
-                width: '100%', padding: '12px 16px', borderRadius: '22px',
-                border: `1.5px solid ${C.border}`, background: C.bg,
-                fontSize: '14px', fontFamily: 'Nunito,sans-serif', color: C.text,
-                outline: 'none', resize: 'none', boxSizing: 'border-box', display: 'block',
+                ...estiloCampo({ fundo: C.bg }), width: '100%', minHeight: '46px', padding: '12px 18px', borderRadius: '23px',
+                resize: 'none', display: 'block',
               }}
             />
             {input.length > 900 && (
-              <span style={{ position: 'absolute', bottom: '-14px', right: '8px', fontSize: '10px', color: input.length >= 1000 ? C.danger : C.muted, fontFamily: 'Nunito,sans-serif' }}>
+              <span style={{ position: 'absolute', bottom: '-16px', right: '8px', fontSize: '11px', color: input.length >= 1000 ? C.danger : C.muted, fontFamily: FONTE_TEXTO }}>
                 {input.length}/1000
               </span>
             )}
@@ -3041,7 +2753,7 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
             aria-label="Enviar mensagem"
             style={{
               width: '46px', height: '46px', borderRadius: '50%', border: 'none',
-              background: sending || !input.trim() ? C.border : C.primary,
+              background: sending || !input.trim() ? C.borderStrong : C.primaryDark,
               cursor: sending || !input.trim() ? 'default' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
@@ -3137,42 +2849,39 @@ function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExc
   const handleLogout = () => onLogout();
 
   if (!meuPerfil) {
-    return (
-      <div className="flex flex-1 items-center justify-center" style={{ background: C.bg, color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '15px' }}>
-        Carregando perfil...
-      </div>
-    );
+    return <div className="flex flex-1 items-center justify-center" style={{ background: C.bg }}><EstadoCarregando texto="Carregando perfil…" /></div>;
   }
 
   return (
     <div className="flex flex-col flex-1 pb-20 lg:pb-0" style={{ background: C.bg }}>
-      <div style={{ padding: '20px 24px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '24px', fontWeight: 800, color: C.text, margin: 0 }}>Meu Perfil</h1>
+      <div style={{ padding: '20px 24px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+        <h1 style={ESTILO_TITULO_TELA}>Meu Perfil</h1>
         {editing
           ? <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={cancelarEdicao} disabled={loading} style={{ background: 'none', border: `1.5px solid ${C.border}`, color: C.muted, borderRadius: '12px', padding: '8px 16px', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}>Cancelar</button>
-              <button onClick={salvar} disabled={loading} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: '12px', padding: '8px 16px', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>{loading ? 'Salvando...' : 'Salvar'}</button>
+              <Botao variante="neutro" tamanho="compacto" onClick={cancelarEdicao} disabled={loading}>Cancelar</Botao>
+              <Botao tamanho="compacto" onClick={salvar} disabled={loading}>{loading ? 'Salvando…' : 'Salvar'}</Botao>
             </div>
-          : <button onClick={() => setEditing(true)} style={{ background: 'none', border: `1.5px solid ${C.primary}`, color: C.primary, borderRadius: '12px', padding: '8px 16px', fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>Editar</button>
+          : <Botao variante="secundario" tamanho="compacto" onClick={() => setEditing(true)}>Editar</Botao>
         }
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px' }}>
         <div className="lg:flex lg:gap-8 lg:items-start">
 
-          {/* Left column: avatar + tags (desktop only shows tags here) */}
+          {/* Coluna esquerda: avatar + tags (no desktop as tags ficam aqui) */}
           <div className="lg:w-72 lg:flex-shrink-0 lg:sticky lg:top-6">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', padding: '20px', background: C.card, borderRadius: '20px', border: `1px solid ${C.border}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', padding: '20px', background: C.card, borderRadius: RAIO.card, border: `1px solid ${C.border}` }}>
               <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${C.primary}`, flexShrink: 0 }}>
-                <ImagemComFallback src={meuPerfil.foto_perfil_url} alt={meuPerfil.nome} tipo="avatar" iniciais={meuPerfil.nome.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <ImagemComFallback src={fotoDaPessoa(meuPerfil)} alt={meuPerfil.nome} tipo="avatar" iniciais={meuPerfil.nome.charAt(0)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-              <div>
-                <h2 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 800, color: C.text, margin: '0 0 2px' }}>{meuPerfil.nome}</h2>
-                <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: '0 0 6px' }}>{meuPerfil.idade} anos · {meuPerfil.regiao}</p>
+              <div style={{ minWidth: 0 }}>
+                <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '20px', fontWeight: 800, color: C.text, margin: '0 0 2px' }}>{meuPerfil.nome}</h2>
+                <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '0 0 6px' }}>{meuPerfil.idade} anos · {meuPerfil.regiao}</p>
+                <Selo tom={anuncio ? 'mint' : 'coral'}>{anuncio ? 'Oferecendo vaga' : 'Buscando vaga'}</Selo>
               </div>
             </div>
 
-            {/* Tags on desktop (view mode only) */}
+            {/* Tags no desktop (só no modo de visualização) */}
             {!editing && (
               <div className="hidden lg:flex" style={{ gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
                 {buildTags(meuPerfil).map(t => <Tag key={t} label={t} />)}
@@ -3180,9 +2889,9 @@ function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExc
             )}
           </div>
 
-          {/* Right column: content + actions */}
+          {/* Coluna direita: conteúdo + ações */}
           <div className="flex-1">
-            {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginBottom: '12px', textAlign: 'center' }}>{erro}</p>}
+            {erro && <div style={{ marginBottom: '12px' }}><MensagemErro>{erro}</MensagemErro></div>}
 
             {editing ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '24px' }}>
@@ -3192,103 +2901,65 @@ function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExc
                 <EtapaHabitos form={form} setForm={setForm} errors={editFieldErrors} />
                 {anuncio && (
                   <div>
-                    <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 800, color: C.text, margin: '0 0 14px' }}>Anúncio do imóvel</h3>
+                    <h3 style={{ fontFamily: FONTE_TITULO, fontSize: '16px', fontWeight: 800, color: C.text, margin: '0 0 14px' }}>Anúncio do imóvel</h3>
                     <EtapaAnuncio form={form} setForm={setForm} errors={editFieldErrors} />
                   </div>
                 )}
               </div>
             ) : (
               <>
-                <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
-                  <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text, margin: '0 0 10px' }}>Sobre mim</h3>
-                  <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.text, lineHeight: 1.7, margin: 0 }}>{meuPerfil.bio || 'Você ainda não escreveu uma apresentação.'}</p>
-                </div>
+                <CartaoSecao titulo="Sobre mim">
+                  <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: meuPerfil.bio ? C.text : C.muted, lineHeight: 1.7, margin: 0 }}>{meuPerfil.bio || 'Você ainda não escreveu uma apresentação.'}</p>
+                </CartaoSecao>
 
-                <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
-                  <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text, margin: '0 0 14px' }}>Preferências de moradia</h3>
-                  {[
-                    { label: 'Orçamento', value: `R$ ${meuPerfil.orcamento_min} – R$ ${meuPerfil.orcamento_max}` },
-                    { label: 'Tipo de imóvel', value: IMOVEL_LABEL[meuPerfil.tipo_imovel] ?? meuPerfil.tipo_imovel },
-                    { label: 'Moradores', value: (() => { const n = meuPerfil.qtd_moradores; return `${n}${n === 4 ? '+' : ''} pessoa${n > 1 ? 's' : ''}`; })() },
-                    { label: 'Fumante', value: meuPerfil.fumante ? 'Sim' : 'Não' },
-                    { label: 'Aceita pets', value: meuPerfil.aceita_pets ? 'Sim' : 'Não' },
-                  ].map(row => (
-                    <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                      <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>{row.label}</span>
-                      <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text }}>{row.value}</span>
-                    </div>
-                  ))}
-                </div>
+                <CartaoSecao titulo="Preferências de moradia">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <LinhaInfo label="Orçamento" value={faixaMoedaBR(meuPerfil.orcamento_min, meuPerfil.orcamento_max)} />
+                    <LinhaInfo label="Tipo de imóvel" value={IMOVEL_LABEL[meuPerfil.tipo_imovel] ?? meuPerfil.tipo_imovel} />
+                    <LinhaInfo label="Moradores" value={rotuloMoradores(meuPerfil.qtd_moradores)} />
+                    <LinhaInfo label="Fumante" value={meuPerfil.fumante ? 'Sim' : 'Não'} />
+                    <LinhaInfo label="Aceita pets" value={meuPerfil.aceita_pets ? 'Sim' : 'Não'} />
+                  </div>
+                </CartaoSecao>
 
-                <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
-                  <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text, margin: '0 0 14px' }}>Convivência</h3>
-                  {[
-                    { label: 'Horário', value: HORARIO_LABEL[meuPerfil.perfil_horario] },
-                    { label: 'Visitas', value: VISITAS_LABEL[meuPerfil.aceita_visitas] },
-                  ].map(row => (
-                    <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                      <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>{row.label}</span>
-                      <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '14px', fontWeight: 700, color: C.text }}>{row.value}</span>
-                    </div>
-                  ))}
-                </div>
+                <CartaoSecao titulo="Convivência">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <LinhaInfo label="Horário" value={HORARIO_LABEL[meuPerfil.perfil_horario]} />
+                    <LinhaInfo label="Visitas" value={VISITAS_LABEL[meuPerfil.aceita_visitas]} />
+                  </div>
+                </CartaoSecao>
 
-                <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
-                  <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text, margin: '0 0 14px' }}>Hábitos</h3>
-                  {([
-                    { label: 'Organização', value: meuPerfil.nivel_organizacao },
-                    { label: 'Tolerância à bagunça', value: meuPerfil.tolerancia_bagunca },
-                    { label: 'Tolerância a barulho', value: meuPerfil.nivel_ruido },
-                    { label: 'Perfil social', value: meuPerfil.nivel_social },
-                  ] as { label: string; value: number }[]).map(row => (
-                    <div key={row.label} style={{ marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                        <span style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted }}>{row.label}</span>
-                        <span style={{ fontFamily: 'Outfit,sans-serif', fontSize: '13px', fontWeight: 700, color: C.primary }}>{row.value}/5</span>
-                      </div>
-                      <ScaleBar value={row.value} />
-                    </div>
-                  ))}
-                </div>
+                <CartaoSecao titulo="Hábitos">
+                  <ListaHabitos valores={[meuPerfil.nivel_organizacao, meuPerfil.tolerancia_bagunca, meuPerfil.nivel_ruido, meuPerfil.nivel_social]} />
+                </CartaoSecao>
 
                 {anuncio && meuPerfil && (meuPerfil.titulo_anuncio || meuPerfil.descricao_imovel || (meuPerfil.fotos_imovel?.length ?? 0) > 0) && (
-                  <div style={{ background: C.card, borderRadius: '20px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
-                    <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.text, margin: '0 0 10px' }}>Meu anúncio</h3>
-                    {meuPerfil.titulo_anuncio && <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '16px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>{meuPerfil.titulo_anuncio}</p>}
-                    {meuPerfil.descricao_imovel && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.text, lineHeight: 1.7, margin: '0 0 12px' }}>{meuPerfil.descricao_imovel}</p>}
+                  <CartaoSecao titulo="Meu anúncio">
+                    {meuPerfil.titulo_anuncio && <p style={{ fontFamily: FONTE_TITULO, fontSize: '16px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>{meuPerfil.titulo_anuncio}</p>}
+                    {meuPerfil.descricao_imovel && <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.text, lineHeight: 1.7, margin: '0 0 12px' }}>{meuPerfil.descricao_imovel}</p>}
                     {(meuPerfil.fotos_imovel?.length ?? 0) > 0 && (
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {meuPerfil.fotos_imovel!.map((u, i) => (
-                          <div key={u + i} style={{ width: '96px', height: '72px', borderRadius: '10px', overflow: 'hidden', border: `1.5px solid ${C.border}` }}>
+                          <div key={u + i} style={{ width: '112px', height: '84px', borderRadius: RAIO.campo, overflow: 'hidden', border: `1px solid ${C.border}` }}>
                             <ImagemComFallback src={u} alt={`Foto ${i + 1} do imóvel`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
                         ))}
                       </div>
                     )}
-                  </div>
+                  </CartaoSecao>
                 )}
 
-                {/* Tags on mobile */}
+                {/* Tags no celular */}
                 <div className="lg:hidden" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
                   {buildTags(meuPerfil).map(t => <Tag key={t} label={t} />)}
                 </div>
               </>
             )}
 
-            <button onClick={handleLogout} style={{
-              width: '100%', padding: '15px', background: 'none',
-              border: `1.5px solid ${C.border}`, borderRadius: '16px',
-              fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.muted, cursor: 'pointer',
-            }}>
-              Sair da conta
-            </button>
-            {meuPerfil && <button onClick={() => setShowDeleteModal(true)} style={{
-              width: '100%', padding: '15px', marginTop: '10px', background: 'none',
-              border: `1.5px solid ${C.danger}`, borderRadius: '16px',
-              fontFamily: 'Outfit,sans-serif', fontSize: '15px', fontWeight: 700, color: C.danger, cursor: 'pointer',
-            }}>
-              Excluir perfil
-            </button>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <Btn label="Sair da conta" outline onClick={handleLogout} />
+              {meuPerfil && <Btn label="Excluir perfil" danger outline onClick={() => setShowDeleteModal(true)} />}
+            </div>
             {showDeleteModal && (
               <DeleteProfileModal
                 onClose={() => setShowDeleteModal(false)}
@@ -3308,42 +2979,16 @@ function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExc
 // ─── Delete Profile Modal ─────────────────────────────────────────────────────
 
 function DeleteProfileModal({ onClose, onConfirm, loading }: { onClose: () => void; onConfirm: () => void; loading: boolean }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !loading) onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose, loading]);
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Excluir perfil"
-      onClick={() => { if (!loading) onClose(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(42,36,32,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ background: C.card, padding: '24px', width: '100%', maxWidth: '420px', margin: '0 16px', borderRadius: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 800, color: C.text, margin: 0 }}>Excluir perfil?</h3>
-          <button
-            onClick={onClose}
-            aria-label="Fechar modal"
-            disabled={loading}
-            style={{ background: 'none', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', color: C.muted, fontSize: '22px', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', opacity: loading ? 0.4 : 1 }}
-          >✕</button>
-        </div>
-        <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: '0 0 24px', lineHeight: 1.6 }}>
-          Ao excluir seu perfil, você perderá todas as suas curtidas, matches e conversas. Esta ação não pode ser desfeita.
-        </p>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Btn label="Cancelar" outline onClick={onClose} disabled={loading} />
-          <Btn label={loading ? 'Excluindo...' : 'Excluir definitivamente'} danger onClick={onConfirm} disabled={loading} />
-        </div>
+    <Modal titulo="Excluir perfil?" ariaLabel="Excluir perfil" rotuloFechar="Fechar" onFechar={onClose} podeFechar={!loading} larguraMax="420px">
+      <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.muted, margin: '0 0 24px', lineHeight: 1.6 }}>
+        Ao excluir seu perfil, você perderá todas as suas curtidas, matches e conversas. Esta ação não pode ser desfeita.
+      </p>
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <Btn label="Cancelar" outline onClick={onClose} disabled={loading} />
+        <Btn label={loading ? 'Excluindo…' : 'Excluir definitivamente'} danger onClick={onConfirm} disabled={loading} />
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -3363,12 +3008,6 @@ function ReportModal({ onClose, denunciadoUsuarioId }: { onClose: () => void; de
   const [sucesso, setSucesso] = useState(false);
   const [erro, setErro] = useState('');
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   const handleEnviar = async () => {
     if (!motivo) { setErro('Selecione um motivo.'); return; }
     setErro('');
@@ -3385,71 +3024,42 @@ function ReportModal({ onClose, denunciadoUsuarioId }: { onClose: () => void; de
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Denunciar usuário"
-      onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(42,36,32,0.5)', zIndex: 100, display: 'flex', alignItems: sucesso ? 'center' : 'flex-end', justifyContent: 'center' }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ background: C.card, padding: '24px', width: '100%' }}
-        className={sucesso ? 'rounded-[24px] max-w-sm mx-4 shadow-2xl' : 'rounded-t-[28px] md:rounded-[24px] md:max-w-md md:shadow-2xl'}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '20px', fontWeight: 800, color: C.text, margin: 0 }}>Denunciar usuário</h3>
-          <button
-            onClick={onClose}
-            aria-label="Fechar denúncia"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '22px', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px' }}
-          >✕</button>
+    <Modal titulo="Denunciar usuário" rotuloFechar="Fechar denúncia" onFechar={onClose} folha={!sucesso} larguraMax="440px">
+      {sucesso ? (
+        <div role="status" style={{ textAlign: 'center', padding: '16px 0 8px' }}>
+          <p style={{ fontFamily: FONTE_TITULO, fontSize: '18px', fontWeight: 800, color: C.mintText, margin: '0 0 8px' }}>Denúncia enviada!</p>
+          <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: 0 }}>Nossa equipe vai analisar.</p>
         </div>
-
-        {sucesso ? (
-          <div style={{ textAlign: 'center', padding: '24px 0' }}>
-            <p style={{ fontFamily: 'Outfit,sans-serif', fontSize: '18px', fontWeight: 800, color: C.mint, margin: '0 0 8px' }}>Denúncia enviada!</p>
-            <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '14px', color: C.muted, margin: 0 }}>Nossa equipe vai analisar.</p>
+      ) : (
+        <>
+          <p style={{ ...ROTULO_ESTILO, marginBottom: '10px' }}>Motivo</p>
+          <div role="group" aria-label="Motivo da denúncia" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+            {MOTIVOS_UI.map(m => (
+              <button key={m.value} type="button" aria-pressed={motivo === m.value} onClick={() => { setMotivo(m.value); setErro(''); }} style={{
+                padding: '12px 16px', borderRadius: RAIO.campo, cursor: 'pointer', textAlign: 'left', minHeight: '48px',
+                border: `2px solid ${motivo === m.value ? C.danger : C.border}`,
+                background: motivo === m.value ? C.dangerSoft : C.card,
+                color: motivo === m.value ? C.danger : C.text,
+                fontFamily: FONTE_TEXTO, fontSize: '15px', fontWeight: 700,
+              }}>
+                {m.label}
+              </button>
+            ))}
           </div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-              {MOTIVOS_UI.map(m => (
-                <button key={m.value} onClick={() => { setMotivo(m.value); setErro(''); }} style={{
-                  padding: '13px 16px', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', minHeight: '44px',
-                  border: `1.5px solid ${motivo === m.value ? C.danger : C.border}`,
-                  background: motivo === m.value ? `${C.danger}10` : C.bg,
-                  color: motivo === m.value ? C.danger : C.text,
-                  fontFamily: 'Nunito,sans-serif', fontSize: '14px', fontWeight: 600,
-                }}>
-                  {m.label}
-                </button>
-              ))}
-            </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: C.muted, fontFamily: 'Nunito,sans-serif' }}>Descrição (opcional)</label>
-                <span style={{ fontSize: '12px', color: C.muted, fontFamily: 'Nunito,sans-serif' }}>{descricao.length}/500</span>
-              </div>
-              <textarea
-                value={descricao}
-                onChange={e => setDescricao(e.target.value.slice(0, 500))}
-                placeholder="Descreva o ocorrido com mais detalhes..."
-                style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: `1.5px solid ${C.border}`, background: C.bg, fontSize: '14px', fontFamily: 'Nunito,sans-serif', color: C.text, outline: 'none', resize: 'none', height: '80px', boxSizing: 'border-box' }}
-              />
-            </div>
+          <div style={{ marginBottom: '16px' }}>
+            <CampoTexto label="Descrição (opcional)" placeholder="Descreva o ocorrido com mais detalhes..." value={descricao} onChange={v => setDescricao(v.slice(0, 500))} max={500} altura={88} />
+          </div>
 
-            {erro && <p style={{ fontFamily: 'Nunito,sans-serif', fontSize: '13px', color: C.danger, marginBottom: '12px', textAlign: 'center' }}>{erro}</p>}
+          {erro && <div style={{ marginBottom: '12px' }}><MensagemErro>{erro}</MensagemErro></div>}
 
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <Btn label="Cancelar" outline onClick={onClose} />
-              <Btn label={loading ? 'Enviando...' : 'Enviar denúncia'} danger onClick={handleEnviar} />
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <Btn label="Cancelar" outline onClick={onClose} />
+            <Btn label={loading ? 'Enviando…' : 'Enviar denúncia'} danger onClick={handleEnviar} disabled={loading} />
+          </div>
+        </>
+      )}
+    </Modal>
   );
 }
 
@@ -3465,6 +3075,12 @@ const TELAS_PUBLICAS: Screen[] = ['welcome', 'login', 'register'];
 const TELAS_DE_ABA: Screen[] = ['discovery', 'notifications', 'matches', 'profile'];
 // Dependem de estado em memória (perfil/conversa escolhidos): ao abrir direto pela URL, voltam à tela-mãe.
 const TELA_SEM_ESTADO: Partial<Record<Screen, Screen>> = { 'profile-detail': 'discovery', match: 'matches', chat: 'matches' };
+
+const TITULO_DA_TELA: Record<Screen, string> = {
+  welcome: '', login: 'Entrar', register: 'Criar conta', 'profile-create': 'Criar perfil',
+  discovery: 'Descoberta', 'profile-detail': 'Detalhes', match: 'Interesse mútuo', matches: 'Matches',
+  chat: 'Conversa', profile: 'Meu Perfil', notifications: 'Notificações', admin: 'Painel administrativo',
+};
 
 function temSessao(): boolean {
   try { return !!sessionStorage.getItem('pm_access'); } catch { return false; }
@@ -3577,6 +3193,15 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Cada tela abre no topo (a rolagem da tela anterior não deve ser herdada).
+  useEffect(() => { window.scrollTo(0, 0); }, [screen]);
+
+  // Título da aba do navegador conforme a tela.
+  useEffect(() => {
+    const t = TITULO_DA_TELA[screen];
+    document.title = t ? `${t} · PlaceMatch` : 'PlaceMatch — Encontre quem combina com seu jeito de morar';
+  }, [screen]);
+
   // A aba do menu acompanha a tela atual (também ao voltar pelo navegador).
   useEffect(() => {
     if (TELAS_DE_ABA.includes(screen)) setTab(screen as Tab);
@@ -3661,8 +3286,8 @@ export default function App() {
 
   if (restaurando) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-bg" style={{ color: C.muted, fontFamily: 'Nunito,sans-serif', fontSize: '15px' }}>
-        Carregando...
+      <div className="flex min-h-dvh items-center justify-center bg-bg">
+        <EstadoCarregando />
       </div>
     );
   }
