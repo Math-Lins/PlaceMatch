@@ -102,7 +102,10 @@ DashboardResposta = _classe('Dashboard', {
     'kpis': _classe('DashboardKpis', {
         'usuarios_total': s.IntegerField(), 'usuarios_por_tipo': s.DictField(child=s.IntegerField()),
         'usuarios_suspensos': s.IntegerField(), 'perfis_total': s.IntegerField(), 'curtidas_total': s.IntegerField(),
-        'recusas_total': s.IntegerField(), 'matches_total': s.IntegerField(), 'taxa_match': s.FloatField(help_text='Em %.'),
+        'recusas_total': s.IntegerField(), 'matches_total': s.IntegerField(), 'taxa_match': s.FloatField(help_text=(
+            'Em %, de 0 a 100: curtidas positivas que fazem parte de um match ÷ curtidas positivas × 100. '
+            'As duas contagens usam o mesmo conjunto de curtidas de `curtidas_total` (mesmo filtro de região/tipo, '
+            'aplicado ao perfil de origem da curtida). Sem curtidas: 0.')),
         'mensagens_total': s.IntegerField(), 'conversas_ativas': s.IntegerField(), 'score_medio': s.FloatField(allow_null=True, help_text='De 0 a 1.'),
         'denuncias_pendentes': s.IntegerField(),
     })(),
@@ -380,7 +383,10 @@ OPERACOES = {
     'painel_dashboard': dict(
         metodo='GET', rota='/api/admin/dashboard/', tag='Painel administrativo', quem=ADMIN,
         resumo='Dashboard',
-        descricao='KPIs, séries diárias (matches, curtidas e mensagens), top regiões e distribuição de score. Período padrão: últimos 30 dias.',
+        descricao=('KPIs, séries diárias (matches, curtidas e mensagens), top regiões e distribuição de score. Período padrão: últimos 30 dias '
+                   '(aplicado às séries; os KPIs de curtidas e matches são acumulados). '
+                   '`taxa_match` = curtidas positivas que fazem parte de um match ÷ curtidas positivas × 100, sempre entre 0 e 100; '
+                   'as duas contagens usam o mesmo conjunto de curtidas (filtro de região/tipo aplicado ao perfil de origem da curtida).'),
         params=[
             P('data_inicio', OpenApiTypes.DATE, 'Início do período. ' + DATA, exemplo='2026-11-01'),
             P('data_fim', OpenApiTypes.DATE, 'Fim do período. ' + DATA, exemplo='2026-11-30'),

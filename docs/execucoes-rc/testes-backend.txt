@@ -1,7 +1,7 @@
-# 17/11/2026 21:34:33 -0300 | diretório: backend | comando: python manage.py test --settings=placematch.test_settings -v 2
+# 17/11/2026 22:34:30 -0300 | diretório: backend | comando: python manage.py test --settings=placematch.test_settings -v 2
 
 Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Found 574 test(s).
+Found 589 test(s).
 Operations to perform:
   Synchronize unmigrated apps: corsheaders, drf_spectacular, messages, painel, rest_framework, rest_framework_simplejwt, staticfiles
   Apply all migrations: admin, auth, chat, contenttypes, logs, matches, moderacao, perfis, sessions, usuarios
@@ -199,6 +199,14 @@ test_ctv74_ordenar_invalido (matches.test_funcionais_sprint9.ValidacaoFiltrosDes
 test_ctv75_bool_invalido (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv75_bool_invalido) ... ok
 test_ctv76_orcamento_negativo (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv76_orcamento_negativo) ... ok
 test_ctv77_usuario_sem_perfil_na_descoberta (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv77_usuario_sem_perfil_na_descoberta) ... ok
+test_campo_usuario_exclui_administradores (matches.test_seed_regressao.AdminDjangoNaoOfereceAdministradorComoDonoDePerfilTest.test_campo_usuario_exclui_administradores) ... ok
+test_curtida_mutua_cria_match (matches.test_seed_regressao.SeedCurtidasEMatchesTest.test_curtida_mutua_cria_match) ... ok
+test_duas_execucoes_com_sorteios_diferentes_nunca_criam_match_sem_curtida_mutua (matches.test_seed_regressao.SeedCurtidasEMatchesTest.test_duas_execucoes_com_sorteios_diferentes_nunca_criam_match_sem_curtida_mutua)
+Reproduz as duas execuções (sorteios diferentes) que geraram os 10 matches inconsistentes. ... ok
+test_oferta_que_ja_recusou_nao_vira_match (matches.test_seed_regressao.SeedCurtidasEMatchesTest.test_oferta_que_ja_recusou_nao_vira_match) ... ok
+test_recusa_anterior_nao_vira_match (matches.test_seed_regressao.SeedCurtidasEMatchesTest.test_recusa_anterior_nao_vira_match)
+Cenário exato do banco local: busca recusou; na nova execução a oferta 'retribui'. ... ok
+test_recusa_existente_impede_o_match_do_par (matches.test_seed_regressao.SeedMatchesComandoTest.test_recusa_existente_impede_o_match_do_par) ... ok
 test_score_alto_para_perfis_similares (matches.tests.CalcularScoreTest.test_score_alto_para_perfis_similares) ... ok
 test_score_baixo_para_perfis_diferentes (matches.tests.CalcularScoreTest.test_score_baixo_para_perfis_diferentes) ... ok
 test_score_entre_zero_e_um_similares (matches.tests.CalcularScoreTest.test_score_entre_zero_e_um_similares) ... ok
@@ -279,7 +287,7 @@ Após excluir usuário A: curtidas, match e mensagens são removidos. ... ok
 test_regra_logs_ficam_com_usuario_nulo_apos_exclusao (moderacao.tests.test_fluxo_completo.RegraExclusaoPerfilTest.test_regra_logs_ficam_com_usuario_nulo_apos_exclusao)
 LogOperacao de A fica com usuario=NULL após excluir a conta. ... ok
 test_regra_taxa_match_formula (moderacao.tests.test_fluxo_completo.RegraTaxaMatchDashboard.test_regra_taxa_match_formula)
-taxa_match = matches×2 ÷ curtidas; nunca >100%. ... ok
+1 par com match mútuo → 2 curtidas, as 2 em match → taxa = 100%. ... ok
 test_regra_taxa_match_nao_ultrapassa_100 (moderacao.tests.test_fluxo_completo.RegraTaxaMatchDashboard.test_regra_taxa_match_nao_ultrapassa_100)
 Mesmo com mais matches que curtidas (dados inconsistentes), taxa <= 100%. ... ok
 test_regra_match_unico_por_par (moderacao.tests.test_fluxo_completo.RegrasMatchUnicoTest.test_regra_match_unico_por_par)
@@ -390,6 +398,15 @@ test_periodo_sem_dados_retorna_zeros (painel.tests_painel.DashboardSemDadosTest.
 test_serie_inclui_todos_dias_do_periodo (painel.tests_painel.DashboardSeriesTest.test_serie_inclui_todos_dias_do_periodo) ... ok
 test_serie_periodo_sem_dados_retorna_zeros (painel.tests_painel.DashboardSeriesTest.test_serie_periodo_sem_dados_retorna_zeros) ... ok
 test_series_tem_chaves_esperadas (painel.tests_painel.DashboardSeriesTest.test_series_tem_chaves_esperadas) ... ok
+test_sem_curtidas_taxa_zero_sem_divisao_por_zero (painel.tests_painel.DashboardTaxaMatchSemCurtidasTest.test_sem_curtidas_taxa_zero_sem_divisao_por_zero) ... ok
+test_filtro_regiao_e_tipo (painel.tests_painel.DashboardTaxaMatchTest.test_filtro_regiao_e_tipo) ... ok
+test_filtro_regiao_olinda (painel.tests_painel.DashboardTaxaMatchTest.test_filtro_regiao_olinda) ... ok
+test_filtro_regiao_recife (painel.tests_painel.DashboardTaxaMatchTest.test_filtro_regiao_recife) ... ok
+test_filtro_tipo_buscando (painel.tests_painel.DashboardTaxaMatchTest.test_filtro_tipo_buscando) ... ok
+test_filtro_tipo_que_dava_200 (painel.tests_painel.DashboardTaxaMatchTest.test_filtro_tipo_que_dava_200) ... ok
+test_nunca_passa_de_100_nem_fica_negativa (painel.tests_painel.DashboardTaxaMatchTest.test_nunca_passa_de_100_nem_fica_negativa) ... ok
+test_recusas_nao_entram_na_taxa (painel.tests_painel.DashboardTaxaMatchTest.test_recusas_nao_entram_na_taxa) ... ok
+test_sem_filtro_igual_a_formula_antiga (painel.tests_painel.DashboardTaxaMatchTest.test_sem_filtro_igual_a_formula_antiga) ... ok
 test_distribuicao_score_5_faixas (painel.tests_painel.DashboardTopRegioesTest.test_distribuicao_score_5_faixas) ... ok
 test_distribuicao_score_faixa_correta (painel.tests_painel.DashboardTopRegioesTest.test_distribuicao_score_faixa_correta) ... ok
 test_top_regioes_maximo_8 (painel.tests_painel.DashboardTopRegioesTest.test_top_regioes_maximo_8) ... ok
@@ -662,7 +679,7 @@ test_ctv26_refresh_ausente (usuarios.test_funcionais_sprint9.ValidacaoTokensTest
 test_ctv27_token_de_usuario_suspenso (usuarios.test_funcionais_sprint9.ValidacaoTokensTest.test_ctv27_token_de_usuario_suspenso) ... ok
 
 ----------------------------------------------------------------------
-Ran 574 tests in 47.846s
+Ran 589 tests in 52.807s
 
 OK
 Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
@@ -691,7 +708,7 @@ System check identified no issues (0 silenced).
 
 [CT-V88] status=201 body={"id": 1, "match_id": 1, "remetente_id": 1, "conteudo": "ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá
 
-[CT-V134] status=200 body={"count": 1, "page": 1, "results": [{"id": 1, "data_hora": "2026-11-18T00:34:53.391912Z", "usuario": {"id": 1, "nome": "buscando", "email": "buscando@t.com"}, "acao": "LOGIN", "acao_label": "Login", "entidade": "", "entidade_id": null, "detalhes": {}, "ip": null}]}
+[CT-V134] status=200 body={"count": 1, "page": 1, "results": [{"id": 1, "data_hora": "2026-11-18T01:34:54.387381Z", "usuario": {"id": 1, "nome": "buscando", "email": "buscando@t.com"}, "acao": "LOGIN", "acao_label": "Login", "entidade": "", "entidade_id": null, "detalhes": {}, "ip": null}]}
 
 [CT-V108] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
 
@@ -828,7 +845,7 @@ System check identified no issues (0 silenced).
 
 [CT-V96] status=400 body={"detail": "Você não pode denunciar a si mesmo."}
 
-[CT-V97] status=201 body={"id": 1, "denunciado": 2, "motivo": "spam", "status": "pendente", "criada_em": "2026-11-18T00:35:02.116543Z"}
+[CT-V97] status=201 body={"id": 1, "denunciado": 2, "motivo": "spam", "status": "pendente", "criada_em": "2026-11-18T01:35:07.451156Z"}
 
 [CT-V98] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON."}
 
@@ -848,7 +865,7 @@ System check identified no issues (0 silenced).
 
 [CT-V124] status=200 body={"count": 3, "page": 9999, "results": []}
 
-[CT-V125] status=200 body={"count": 3, "page": 1, "results": [{"id": 3, "nome": "adm", "email": "adm@t.com", "tipo": "administrador", "regiao": null, "data_cadastro": "2026-11-18T00:35:08.552998Z", "tem_perfil": false, "ativo": true}, {"id": 2, "nome": "oferece", "email": "oferece@t.com", "tipo": "oferecendo_vaga", "regiao":
+[CT-V125] status=200 body={"count": 3, "page": 1, "results": [{"id": 3, "nome": "adm", "email": "adm@t.com", "tipo": "administrador", "regiao": null, "data_cadastro": "2026-11-18T01:35:15.019582Z", "tem_perfil": false, "ativo": true}, {"id": 2, "nome": "oferece", "email": "oferece@t.com", "tipo": "oferecendo_vaga", "regiao":
 
 [CT-V126] status=400 body={"detail": "Valor inválido para ativo. Use true ou false."}
 
@@ -858,7 +875,7 @@ System check identified no issues (0 silenced).
 
 [CT-V129] status=400 body={"detail": "Tipo inválido. Use: buscando_vaga, oferecendo_vaga, administrador."}
 
-[CT-V130] status=200 body={"titulo": "Matches", "colunas": ["Data", "Perfil A", "Perfil B", "Região A", "Região B", "Score (%)", "Mensagens", "Ativa"], "linhas": [], "totais": {"matches": 0, "mensagens": 0}, "filtros_aplicados": {"data_inicio": "0001-01-01"}, "gerado_em": "2026-11-18T00:35:08.805663Z"}
+[CT-V130] status=200 body={"titulo": "Matches", "colunas": ["Data", "Perfil A", "Perfil B", "Região A", "Região B", "Score (%)", "Mensagens", "Ativa"], "linhas": [], "totais": {"matches": 0, "mensagens": 0}, "filtros_aplicados": {"data_inicio": "0001-01-01"}, "gerado_em": "2026-11-18T01:35:15.213602Z"}
 
 [CT-V28] status=400 body={"nome": ["Este campo não pode ficar em branco."]}
 
@@ -956,7 +973,7 @@ System check identified no issues (0 silenced).
 
 [CT-V17] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON com e-mail e senha."}
 
-[CT-V18] status=200 body={"refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTU2NjkzNiwiaWF0IjoxNzk0OTYyMTM2LCJqdGkiOiI3OTU3NjcwOThhODI0ODNjYTM1OWYyYjc4YmYxYjU1MCIsInVzZXJfaWQiOiIxIn0.ifQNqw7yn9RY1xlCdZ6Bn0Dp-PmM-3Irm5OkZeaSWGQ", "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0
+[CT-V18] status=200 body={"refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTU3MDU0MCwiaWF0IjoxNzk0OTY1NzQwLCJqdGkiOiJmZmNjOTIwNGU3MjI0NjcxYTkzZmRiZGZmNjM1MTBmMyIsInVzZXJfaWQiOiIxIn0.VyYxUgtf1F6qngijDR07EZdg8DrViGA0R75HinaQaH4", "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0
 
 [CT-V19] status=400 body={"email": ["Informe o e-mail."]}
 

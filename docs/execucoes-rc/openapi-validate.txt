@@ -1,7 +1,20 @@
-# 17/11/2026 21:36:20 -0300 | diretório: backend | comando: python manage.py spectacular --validate --fail-on-warn --file ../docs/openapi.yaml --settings=placematch.test_settings
+# 17/11/2026 22:36:17 -0300 | diretório: backend | comando: python manage.py spectacular --validate --fail-on-warn --file ../docs/openapi.yaml --settings=placematch.test_settings
 
 
 # código de saída: 0
 
-# 17/11/2026 21:36:36 -0300 | verificação: git diff --stat --exit-code docs/openapi.yaml (o arquivo regravado pelo --file é idêntico ao versionado?)
-# código de saída: 0 (0 = docs/openapi.yaml já estava atualizado)
+# 17/11/2026 22:36:27 -0300 | verificação: docs/openapi.yaml regravado pelo --file. Em relação ao versionado (HEAD), mudou por causa da nova regra da taxa_match e dos exemplos reais regerados (scripts/gerar_exemplos_api.py + gerar_docs_api.py):
+ docs/openapi.yaml | 103 +++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 55 insertions(+), 48 deletions(-)
+# idêntico ao gerado na regeneração anterior desta tarefa (estável)
+# campo taxa_match no schema:
+3511:        taxa_match:
+3512-          type: number
+3513-          format: double
+3514-          description: 'Em %, de 0 a 100: curtidas positivas que fazem parte de um
+3515-            match ÷ curtidas positivas × 100. As duas contagens usam o mesmo conjunto
+3516-            de curtidas de `curtidas_total` (mesmo filtro de região/tipo, aplicado
+3517-            ao perfil de origem da curtida). Sem curtidas: 0.'
+# exemplos do dashboard (sem filtro; com regiao=Boa Viagem&tipo=oferecendo_vaga — antes 200.0):
+86:                      taxa_match: 100.0
+142:                      taxa_match: 100.0

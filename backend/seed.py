@@ -118,91 +118,44 @@ def criar_perfil(usuario, nome, tipo):
     return p, True
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+def _curtiu(origem, destino):
+    """True só se existe curtida POSITIVA origem → destino (uma recusa não conta)."""
+    return Curtida.objects.filter(perfil_origem=origem, perfil_destino=destino, tipo='curtir').exists()
 
-print('\n=== PlaceMatch Seed ===\n')
 
-with transaction.atomic():
+def criar_curtidas_e_matches(buscando, oferecendo, rnd=random):
+    """Cada buscando curte ~7 dos oferecendo; ~5 retribuem (match); recusa 2 dos restantes.
 
-    # ── 1. Usuários ───────────────────────────────────────────────────────────
-    print('[1/6] Criando usuários...')
-
-    buscando = []
-    for i, nome in enumerate(NOMES_MASC):
-        email = f'{nome.lower()}.busca@teste.com'
-        u, criado = get_ou_criar_usuario(email, f'{nome.lower()}_busca', 'buscando_vaga', nome)
-        p, _ = criar_perfil(u, nome, 'buscando_vaga')
-        buscando.append(p)
-        status = 'criado' if criado else 'já existe'
-        print(f'  {nome} (buscando_vaga) — {status}')
-
-    oferecendo = []
-    for i, nome in enumerate(NOMES_FEM):
-        email = f'{nome.lower()}.oferece@teste.com'
-        u, criado = get_ou_criar_usuario(email, f'{nome.lower()}_oferece', 'oferecendo_vaga', nome)
-        p, _ = criar_perfil(u, nome, 'oferecendo_vaga')
-        oferecendo.append(p)
-        status = 'criado' if criado else 'já existe'
-        print(f'  {nome} (oferecendo_vaga) — {status}')
-
-    # Garante que os usuários de teste do .env têm perfil
-    try:
-        u_inq = Usuario.objects.get(email='inquilino@teste.com')
-        criar_perfil(u_inq, 'Inquilino Teste', 'buscando_vaga')
-    except Usuario.DoesNotExist:
-        pass
-    try:
-        u_anu = Usuario.objects.get(email='anunciante@teste.com')
-        criar_perfil(u_anu, 'Anunciante Teste', 'oferecendo_vaga')
-    except Usuario.DoesNotExist:
-        pass
-
-    # ── 2. Compatibilidades ───────────────────────────────────────────────────
-    print('\n[2/6] Calculando scores de compatibilidade...')
-    todos_perfis = Perfil.objects.select_related('usuario').all()
-    for p in todos_perfis:
-        recalcular_lote(p)
-    total_compat = Compatibilidade.objects.count()
-    print(f'  {total_compat} compatibilidades calculadas.')
-
-    # ── 3. Curtidas e matches ─────────────────────────────────────────────────
-    print('\n[3/6] Criando curtidas e matches...')
-
+    Pode rodar mais de uma vez no mesmo banco. Regra do sistema: match só com curtida MÚTUA
+    (as duas do tipo 'curtir'). Correção: antes, uma recusa já existente buscando → oferecendo
+    (deixada por uma execução anterior) era tratada como curtida, e o match nascia sem
+    curtida mútua (origem dos matches 52, 55, 56, 58, 59, 60, 63, 65, 67 e 71 do banco local).
+    """
     pares_com_match = 0
     pares_sem_match = 0
 
-    # Cada buscando curte ~7 dos 10 oferecendo; ~5 são mútuos (match)
     for pb in buscando:
-        alvos = random.sample(oferecendo, k=7)
-        curtiu_ids = set()
+        alvos = rnd.sample(oferecendo, k=min(7, len(oferecendo)))
         for po in alvos:
-            if Curtida.objects.filter(perfil_origem=pb, perfil_destino=po).exists():
-                curtiu_ids.add(po.id)
-                continue
-            Curtida.objects.create(perfil_origem=pb, perfil_destino=po, tipo='curtir')
-            curtiu_ids.add(po.id)
+            if not Curtida.objects.filter(perfil_origem=pb, perfil_destino=po).exists():
+                Curtida.objects.create(perfil_origem=pb, perfil_destino=po, tipo='curtir')
+        # Só quem foi de fato curtido pode virar match (uma recusa anterior é mantida).
+        curtidos = [po for po in alvos if _curtiu(pb, po)]
 
         # ~5 retribuem
-        retribuem = random.sample(alvos, k=min(5, len(alvos)))
-        for po in retribuem:
-            if Curtida.objects.filter(perfil_origem=po, perfil_destino=pb).exists():
-                continue
-            Curtida.objects.create(perfil_origem=po, perfil_destino=pb, tipo='curtir')
+        for po in rnd.sample(curtidos, k=min(5, len(curtidos))):
+            if not Curtida.objects.filter(perfil_origem=po, perfil_destino=pb).exists():
+                Curtida.objects.create(perfil_origem=po, perfil_destino=pb, tipo='curtir')
+            if not (_curtiu(pb, po) and _curtiu(po, pb)):
+                continue  # a outra pessoa já tinha recusado: sem match
 
-            # Cria match
             pa_id = min(pb.id, po.id)
             pb_id = max(pb.id, po.id)
             try:
-                compat = Compatibilidade.objects.get(perfil_a_id=pa_id, perfil_b_id=pb_id)
-                score = compat.score
+                score = Compatibilidade.objects.get(perfil_a_id=pa_id, perfil_b_id=pb_id).score
             except Compatibilidade.DoesNotExist:
-                score = round(random.uniform(0.4, 0.95), 4)
-
-            match, criado = Match.objects.get_or_create(
-                perfil_a_id=pa_id,
-                perfil_b_id=pb_id,
-                defaults={'score': score},
-            )
+                score = round(rnd.uniform(0.4, 0.95), 4)
+            _, criado = Match.objects.get_or_create(perfil_a_id=pa_id, perfil_b_id=pb_id, defaults={'score': score})
             if criado:
                 pares_com_match += 1
 
@@ -213,81 +166,139 @@ with transaction.atomic():
                 Curtida.objects.create(perfil_origem=pb, perfil_destino=po, tipo='recusar')
                 pares_sem_match += 1
 
-    print(f'  {pares_com_match} matches criados, {pares_sem_match} recusas.')
+    return pares_com_match, pares_sem_match
 
-    # ── 4. Mensagens ──────────────────────────────────────────────────────────
-    print('\n[4/6] Criando mensagens...')
 
-    matches = Match.objects.select_related('perfil_a', 'perfil_b').all()
-    total_msgs = 0
-    for match in matches:
-        # ~70% das conversas têm mensagens
-        if random.random() < 0.3:
-            continue
-        qtd = random.randint(2, 6)
-        participantes = [match.perfil_a, match.perfil_b]
-        for _ in range(qtd):
-            remetente = random.choice(participantes)
-            Mensagem.objects.get_or_create(
-                match=match,
-                remetente=remetente,
-                conteudo=random.choice(MENSAGENS),
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+def main():
+    print('\n=== PlaceMatch Seed ===\n')
+
+    with transaction.atomic():
+
+        # ── 1. Usuários ───────────────────────────────────────────────────────────
+        print('[1/6] Criando usuários...')
+
+        buscando = []
+        for i, nome in enumerate(NOMES_MASC):
+            email = f'{nome.lower()}.busca@teste.com'
+            u, criado = get_ou_criar_usuario(email, f'{nome.lower()}_busca', 'buscando_vaga', nome)
+            p, _ = criar_perfil(u, nome, 'buscando_vaga')
+            buscando.append(p)
+            status = 'criado' if criado else 'já existe'
+            print(f'  {nome} (buscando_vaga) — {status}')
+
+        oferecendo = []
+        for i, nome in enumerate(NOMES_FEM):
+            email = f'{nome.lower()}.oferece@teste.com'
+            u, criado = get_ou_criar_usuario(email, f'{nome.lower()}_oferece', 'oferecendo_vaga', nome)
+            p, _ = criar_perfil(u, nome, 'oferecendo_vaga')
+            oferecendo.append(p)
+            status = 'criado' if criado else 'já existe'
+            print(f'  {nome} (oferecendo_vaga) — {status}')
+
+        # Garante que os usuários de teste do .env têm perfil
+        try:
+            u_inq = Usuario.objects.get(email='inquilino@teste.com')
+            criar_perfil(u_inq, 'Inquilino Teste', 'buscando_vaga')
+        except Usuario.DoesNotExist:
+            pass
+        try:
+            u_anu = Usuario.objects.get(email='anunciante@teste.com')
+            criar_perfil(u_anu, 'Anunciante Teste', 'oferecendo_vaga')
+        except Usuario.DoesNotExist:
+            pass
+
+        # ── 2. Compatibilidades ───────────────────────────────────────────────────
+        print('\n[2/6] Calculando scores de compatibilidade...')
+        todos_perfis = Perfil.objects.select_related('usuario').all()
+        for p in todos_perfis:
+            recalcular_lote(p)
+        total_compat = Compatibilidade.objects.count()
+        print(f'  {total_compat} compatibilidades calculadas.')
+
+        # ── 3. Curtidas e matches ─────────────────────────────────────────────────
+        print('\n[3/6] Criando curtidas e matches...')
+        pares_com_match, pares_sem_match = criar_curtidas_e_matches(buscando, oferecendo)
+        print(f'  {pares_com_match} matches criados, {pares_sem_match} recusas.')
+
+        # ── 4. Mensagens ──────────────────────────────────────────────────────────
+        print('\n[4/6] Criando mensagens...')
+
+        matches = Match.objects.select_related('perfil_a', 'perfil_b').all()
+        total_msgs = 0
+        for match in matches:
+            # ~70% das conversas têm mensagens
+            if random.random() < 0.3:
+                continue
+            qtd = random.randint(2, 6)
+            participantes = [match.perfil_a, match.perfil_b]
+            for _ in range(qtd):
+                remetente = random.choice(participantes)
+                Mensagem.objects.get_or_create(
+                    match=match,
+                    remetente=remetente,
+                    conteudo=random.choice(MENSAGENS),
+                )
+                total_msgs += 1
+
+        print(f'  {total_msgs} mensagens criadas.')
+
+        # ── 5. Denúncias ──────────────────────────────────────────────────────────
+        print('\n[5/6] Criando denúncias...')
+
+        admin = Usuario.objects.filter(tipo='administrador').first()
+        todos_usuarios = list(Usuario.objects.filter(tipo__in=['buscando_vaga', 'oferecendo_vaga']))
+
+        denuncias_criadas = 0
+        pares_usados = set()
+        tentativas = 0
+        while denuncias_criadas < 5 and tentativas < 50:
+            tentativas += 1
+            denunciante = random.choice(todos_usuarios)
+            denunciado = random.choice(todos_usuarios)
+            if denunciante.id == denunciado.id:
+                continue
+            par = (min(denunciante.id, denunciado.id), max(denunciante.id, denunciado.id))
+            if par in pares_usados:
+                continue
+            pares_usados.add(par)
+
+            d = Denuncia.objects.create(
+                denunciante=denunciante,
+                denunciado=denunciado,
+                motivo=random.choice(MOTIVOS_DENUNCIA),
+                descricao='Comportamento inadequado reportado pelo usuário.',
+                status='pendente',
             )
-            total_msgs += 1
 
-    print(f'  {total_msgs} mensagens criadas.')
+            # Alguns já resolvidos
+            if denuncias_criadas < 2 and admin:
+                d.status = random.choice(['resolvida', 'descartada'])
+                d.resolvida_por = admin
+                d.resolucao = 'Analisado pela equipe de moderação.'
+                d.save()
 
-    # ── 5. Denúncias ──────────────────────────────────────────────────────────
-    print('\n[5/6] Criando denúncias...')
+            denuncias_criadas += 1
 
-    admin = Usuario.objects.filter(tipo='administrador').first()
-    todos_usuarios = list(Usuario.objects.filter(tipo__in=['buscando_vaga', 'oferecendo_vaga']))
+        print(f'  {denuncias_criadas} denúncias criadas.')
 
-    denuncias_criadas = 0
-    pares_usados = set()
-    tentativas = 0
-    while denuncias_criadas < 5 and tentativas < 50:
-        tentativas += 1
-        denunciante = random.choice(todos_usuarios)
-        denunciado = random.choice(todos_usuarios)
-        if denunciante.id == denunciado.id:
-            continue
-        par = (min(denunciante.id, denunciado.id), max(denunciante.id, denunciado.id))
-        if par in pares_usados:
-            continue
-        pares_usados.add(par)
+        # ── 6. Resumo ─────────────────────────────────────────────────────────────
+        print('\n[6/6] Resumo final:')
+        print(f'  Usuários:         {Usuario.objects.count()}')
+        print(f'  Perfis:           {Perfil.objects.count()}')
+        print(f'  Compatibilidades: {Compatibilidade.objects.count()}')
+        print(f'  Curtidas:         {Curtida.objects.count()}')
+        print(f'  Matches:          {Match.objects.count()}')
+        print(f'  Mensagens:        {Mensagem.objects.count()}')
+        print(f'  Denúncias:        {Denuncia.objects.count()}')
+        print('\n=== Seed concluído com sucesso! ===\n')
+        print('Credenciais de acesso:')
+        print('  Admin:       admin@admin.com.br  /  123456')
+        print('  Inquilino:   inquilino@teste.com  /  Teste@123')
+        print('  Anunciante:  anunciante@teste.com  /  Teste@123')
+        print('  Extras:      <nome>.busca@teste.com / <nome>.oferece@teste.com  /  Teste@123')
 
-        d = Denuncia.objects.create(
-            denunciante=denunciante,
-            denunciado=denunciado,
-            motivo=random.choice(MOTIVOS_DENUNCIA),
-            descricao='Comportamento inadequado reportado pelo usuário.',
-            status='pendente',
-        )
 
-        # Alguns já resolvidos
-        if denuncias_criadas < 2 and admin:
-            d.status = random.choice(['resolvida', 'descartada'])
-            d.resolvida_por = admin
-            d.resolucao = 'Analisado pela equipe de moderação.'
-            d.save()
-
-        denuncias_criadas += 1
-
-    print(f'  {denuncias_criadas} denúncias criadas.')
-
-    # ── 6. Resumo ─────────────────────────────────────────────────────────────
-    print('\n[6/6] Resumo final:')
-    print(f'  Usuários:         {Usuario.objects.count()}')
-    print(f'  Perfis:           {Perfil.objects.count()}')
-    print(f'  Compatibilidades: {Compatibilidade.objects.count()}')
-    print(f'  Curtidas:         {Curtida.objects.count()}')
-    print(f'  Matches:          {Match.objects.count()}')
-    print(f'  Mensagens:        {Mensagem.objects.count()}')
-    print(f'  Denúncias:        {Denuncia.objects.count()}')
-    print('\n=== Seed concluído com sucesso! ===\n')
-    print('Credenciais de acesso:')
-    print('  Admin:       admin@admin.com.br  /  123456')
-    print('  Inquilino:   inquilino@teste.com  /  Teste@123')
-    print('  Anunciante:  anunciante@teste.com  /  Teste@123')
-    print('  Extras:      <nome>.busca@teste.com / <nome>.oferece@teste.com  /  Teste@123')
+if __name__ == '__main__':
+    main()

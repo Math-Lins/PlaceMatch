@@ -415,7 +415,7 @@ class RegraDenunciaProcedenteNaoSuspende(TestCase):
 
 
 class RegraTaxaMatchDashboard(TestCase):
-    """Regra: taxa_match = matches×2 ÷ curtidas, nunca ultrapassa 100%."""
+    """Regra: taxa_match = curtidas positivas em match ÷ curtidas positivas, sempre entre 0 e 100%."""
 
     def setUp(self):
         self.admin = User.objects.create_user(
@@ -442,18 +442,16 @@ class RegraTaxaMatchDashboard(TestCase):
         return pa, pb
 
     def test_regra_taxa_match_formula(self):
-        """taxa_match = matches×2 ÷ curtidas; nunca >100%."""
-        # 1 par com match mútuo → 2 curtidas, 1 match → taxa = 100%
+        """1 par com match mútuo → 2 curtidas, as 2 em match → taxa = 100%."""
         self._criar_par('1', curtir_mutuo=True)
         res = self.client.get('/api/admin/dashboard/')
         self.assertEqual(res.status_code, http_status.HTTP_200_OK)
         taxa = res.data['kpis']['taxa_match']
-        self.assertLessEqual(taxa, 100.0, 'taxa_match nunca deve passar de 100%')
-        self.assertGreaterEqual(taxa, 0.0)
+        self.assertEqual(taxa, 100.0)
 
     def test_regra_taxa_match_nao_ultrapassa_100(self):
         """Mesmo com mais matches que curtidas (dados inconsistentes), taxa <= 100%."""
-        # Cria match diretamente sem curtidas para forcar matches*2 > curtidas
+        # Match criado sem curtidas: 0 curtidas → taxa 0 (sem divisão por zero)
         ua = User.objects.create_user(
             username='tx_edge_a', email='tx_edge_a@test.com',
             password='Senha@1234', tipo='buscando_vaga')
@@ -465,11 +463,10 @@ class RegraTaxaMatchDashboard(TestCase):
         pid_a = min(pa.id, pb.id)
         pid_b = max(pa.id, pb.id)
         Match.objects.create(perfil_a_id=pid_a, perfil_b_id=pid_b, score=0.5)
-        # 1 match, 0 curtidas -> formula retornaria divisao por zero ou >100%; deve ser capped
         res = self.client.get('/api/admin/dashboard/')
         self.assertEqual(res.status_code, http_status.HTTP_200_OK)
         taxa = res.data['kpis']['taxa_match']
-        self.assertLessEqual(taxa, 100.0, 'taxa_match com 0 curtidas deve ser <= 100%')
+        self.assertEqual(taxa, 0.0, 'sem curtidas a taxa é 0 (sem divisão por zero)')
 
 
 class RegraCompatibilidadeRegiao(TestCase):

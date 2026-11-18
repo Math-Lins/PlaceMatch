@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.db.models import Count, Avg, Q
+from django.db.models import Count, Avg, Exists, OuterRef, Q
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from django.utils.timezone import make_aware
@@ -63,6 +63,23 @@ def _perfil_ids_filtrados(regiao=None, tipo=None):
     if tipo:
         qs = qs.filter(usuario__tipo=tipo)
     return list(qs.values_list('id', flat=True))
+
+
+def _taxa_match(curtidas_qs, total=None):
+    """% das curtidas positivas de `curtidas_qs` que fazem parte de um match (0 a 100, 2 casas).
+
+    Uma curtida faz parte de um match quando existe Match entre o perfil de origem e o de
+    destino (o Match guarda o par em qualquer ordem: perfil_a < perfil_b). Sem curtidas → 0.0.
+    """
+    total = curtidas_qs.count() if total is None else total
+    if not total:
+        return 0.0
+    par_com_match = Match.objects.filter(
+        Q(perfil_a_id=OuterRef('perfil_origem_id'), perfil_b_id=OuterRef('perfil_destino_id'))
+        | Q(perfil_a_id=OuterRef('perfil_destino_id'), perfil_b_id=OuterRef('perfil_origem_id'))
+    )
+    em_match = curtidas_qs.filter(Exists(par_com_match)).count()
+    return round(em_match / total * 100, 2)
 
 
 def _gerar_serie_datas(periodo_inicio, periodo_fim, dados_qs):
@@ -151,13 +168,12 @@ class DashboardView(APIView):
         recusas_total = recusas_qs.count()
         matches_total = matches_qs.count()
 
-        # taxa_match = (matches × 2) / curtidas × 100
-        # Cada match resulta de 2 curtidas mútuas; matches×2 estima as curtidas
-        # que geraram match sobre o total de curtidas positivas.
-        if curtidas_total > 0:
-            taxa_match = round((matches_total * 2 / curtidas_total) * 100, 2)
-        else:
-            taxa_match = 0.0
+        # taxa_match = curtidas positivas que fazem parte de um match ÷ curtidas positivas × 100.
+        # Numerador e denominador saem do MESMO conjunto (curtidas_qs: mesmo período e mesmo
+        # filtro, aplicado ao perfil de origem), então o valor fica sempre entre 0 e 100.
+        # (A fórmula antiga, matches×2 ÷ curtidas, contava o match inteiro mas só as curtidas
+        # do lado filtrado e chegava a 200% com filtro de região/tipo.)
+        taxa_match = _taxa_match(curtidas_qs, curtidas_total)
 
         mensagens_qs = Mensagem.objects.filter(match__in=matches_qs)
         mensagens_total = mensagens_qs.count()

@@ -958,7 +958,7 @@ HTTP 201
       "usuario_id": 3
     },
     "score": 0.9295,
-    "data_match": "2026-11-16T01:02:32.508503-03:00"
+    "data_match": "2026-11-17T22:14:29.792738-03:00"
   }
 }
 ```
@@ -1053,7 +1053,7 @@ HTTP 200
       "usuario_id": 3
     },
     "score": 0.9295,
-    "data_match": "2026-11-16T01:02:32.508503-03:00"
+    "data_match": "2026-11-17T22:14:29.792738-03:00"
   }
 ]
 ```
@@ -1121,7 +1121,7 @@ HTTP 200
     "score": 0.9295,
     "ultima_mensagem": {
       "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-      "data_envio": "2026-11-16T04:02:33.118027Z",
+      "data_envio": "2026-11-18T01:14:30.652915Z",
       "remetente_id": 2
     },
     "nao_lidas": 1
@@ -1165,7 +1165,7 @@ HTTP 200
     "score": 0.9295,
     "ultima_mensagem": {
       "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-      "data_envio": "2026-11-16T04:02:33.118027Z",
+      "data_envio": "2026-11-18T01:14:30.652915Z",
       "remetente_id": 2
     },
     "nao_lidas": 1
@@ -1219,7 +1219,7 @@ HTTP 200
     "match_id": 1,
     "remetente_id": 1,
     "conteudo": "Oi, Bruno! O quarto ainda está disponível?",
-    "data_envio": "2026-11-16T01:02:33.019723-03:00",
+    "data_envio": "2026-11-17T22:14:30.579677-03:00",
     "lida": false
   },
   {
@@ -1227,7 +1227,7 @@ HTTP 200
     "match_id": 1,
     "remetente_id": 2,
     "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-    "data_envio": "2026-11-16T01:02:33.118027-03:00",
+    "data_envio": "2026-11-17T22:14:30.652915-03:00",
     "lida": true
   }
 ]
@@ -1248,7 +1248,7 @@ HTTP 200
     "match_id": 1,
     "remetente_id": 2,
     "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-    "data_envio": "2026-11-16T01:02:33.118027-03:00",
+    "data_envio": "2026-11-17T22:14:30.652915-03:00",
     "lida": true
   }
 ]
@@ -1303,7 +1303,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 1,
   "conteudo": "Oi, Bruno! O quarto ainda está disponível?",
-  "data_envio": "2026-11-16T01:02:33.019723-03:00",
+  "data_envio": "2026-11-17T22:14:30.579677-03:00",
   "lida": false
 }
 ```
@@ -1324,7 +1324,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 2,
   "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-  "data_envio": "2026-11-16T01:02:33.118027-03:00",
+  "data_envio": "2026-11-17T22:14:30.652915-03:00",
   "lida": false
 }
 ```
@@ -1377,7 +1377,7 @@ HTTP 201
   "denunciado": 4,
   "motivo": "spam",
   "status": "pendente",
-  "criada_em": "2026-11-16T04:02:35.219764Z"
+  "criada_em": "2026-11-18T01:14:31.564996Z"
 }
 ```
 
@@ -1438,8 +1438,8 @@ HTTP 200
     "status": "pendente",
     "resolvida_por": null,
     "resolucao": "",
-    "criada_em": "2026-11-16T04:02:35.219764Z",
-    "atualizada_em": "2026-11-16T04:02:35.219806Z"
+    "criada_em": "2026-11-18T01:14:31.564996Z",
+    "atualizada_em": "2026-11-18T01:14:31.565020Z"
   }
 ]
 ```
@@ -1609,7 +1609,7 @@ HTTP 200
 **Quem pode:** Somente administrador.  
 **Operação (OpenAPI):** `painel_dashboard`
 
-KPIs, séries diárias (matches, curtidas e mensagens), top regiões e distribuição de score. Período padrão: últimos 30 dias.
+KPIs, séries diárias (matches, curtidas e mensagens), top regiões e distribuição de score. Período padrão: últimos 30 dias (aplicado às séries; os KPIs de curtidas e matches são acumulados). `taxa_match` = curtidas positivas que fazem parte de um match ÷ curtidas positivas × 100, sempre entre 0 e 100; as duas contagens usam o mesmo conjunto de curtidas (filtro de região/tipo aplicado ao perfil de origem da curtida).
 
 **Parâmetros de consulta** (todos opcionais)
 
@@ -1653,43 +1653,43 @@ HTTP 200
   "series": {
     "matches_por_dia": [
       {
-        "data": "2026-10-18",
-        "total": 0
-      },
-      {
-        "data": "2026-10-19",
-        "total": 0
-      },
-      {
         "data": "2026-10-20",
+        "total": 0
+      },
+      {
+        "data": "2026-10-21",
+        "total": 0
+      },
+      {
+        "data": "2026-10-22",
         "total": 0
       }
     ],
     "curtidas_por_dia": [
       {
-        "data": "2026-10-18",
-        "total": 0
-      },
-      {
-        "data": "2026-10-19",
-        "total": 0
-      },
-      {
         "data": "2026-10-20",
+        "total": 0
+      },
+      {
+        "data": "2026-10-21",
+        "total": 0
+      },
+      {
+        "data": "2026-10-22",
         "total": 0
       }
     ],
     "mensagens_por_dia": [
       {
-        "data": "2026-10-18",
-        "total": 0
-      },
-      {
-        "data": "2026-10-19",
-        "total": 0
-      },
-      {
         "data": "2026-10-20",
+        "total": 0
+      },
+      {
+        "data": "2026-10-21",
+        "total": 0
+      },
+      {
+        "data": "2026-10-22",
         "total": 0
       }
     ]
@@ -1746,7 +1746,7 @@ HTTP 200
     "curtidas_total": 1,
     "recusas_total": 0,
     "matches_total": 1,
-    "taxa_match": 200.0,
+    "taxa_match": 100.0,
     "mensagens_total": 2,
     "conversas_ativas": 1,
     "score_medio": 0.9295,
@@ -1755,43 +1755,43 @@ HTTP 200
   "series": {
     "matches_por_dia": [
       {
-        "data": "2026-10-18",
-        "total": 0
-      },
-      {
-        "data": "2026-10-19",
-        "total": 0
-      },
-      {
         "data": "2026-10-20",
+        "total": 0
+      },
+      {
+        "data": "2026-10-21",
+        "total": 0
+      },
+      {
+        "data": "2026-10-22",
         "total": 0
       }
     ],
     "curtidas_por_dia": [
       {
-        "data": "2026-10-18",
-        "total": 0
-      },
-      {
-        "data": "2026-10-19",
-        "total": 0
-      },
-      {
         "data": "2026-10-20",
+        "total": 0
+      },
+      {
+        "data": "2026-10-21",
+        "total": 0
+      },
+      {
+        "data": "2026-10-22",
         "total": 0
       }
     ],
     "mensagens_por_dia": [
       {
-        "data": "2026-10-18",
-        "total": 0
-      },
-      {
-        "data": "2026-10-19",
-        "total": 0
-      },
-      {
         "data": "2026-10-20",
+        "total": 0
+      },
+      {
+        "data": "2026-10-21",
+        "total": 0
+      },
+      {
+        "data": "2026-10-22",
         "total": 0
       }
     ]
@@ -1946,7 +1946,7 @@ HTTP 200
   ],
   "linhas": [
     [
-      "2026-11-16",
+      "2026-11-17",
       "Ana Souza",
       "Bruno Lima"
     ]
@@ -1956,7 +1956,7 @@ HTTP 200
     "mensagens": 2
   },
   "filtros_aplicados": {},
-  "gerado_em": "2026-11-16T04:02:43.545600Z"
+  "gerado_em": "2026-11-18T01:14:37.717758Z"
 }
 ```
 
@@ -1970,9 +1970,9 @@ curl -X GET "<BASE>/api/admin/relatorios/usuarios/?formato=csv" \
 ```json
 HTTP 200  (text/csv)
 ﻿Data de Cadastro;Nome;E-mail;Tipo;Região;Tem Perfil
-2026-11-16;admin@exemplo.com;admin@exemplo.com;administrador;;não
-2026-11-16;Ana Souza;ana.souza@exemplo.com;buscando_vaga;Boa Viagem;sim
-2026-11-16;Bruno Lima;bruno.lima@exemplo.com;oferecendo_vaga;Boa Viagem;sim
+17/11/2026;admin@exemplo.com;admin@exemplo.com;Administrador;;Não
+17/11/2026;Ana Souza;ana.souza@exemplo.com;Buscando vaga;Boa Viagem;Sim
+17/11/2026;Bruno Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;Sim
 ```
 
 **Erros possíveis**
@@ -2027,7 +2027,7 @@ HTTP 200
       "email": "diego.alves@exemplo.com",
       "tipo": "buscando_vaga",
       "regiao": null,
-      "data_cadastro": "2026-11-16T04:02:07.078611Z",
+      "data_cadastro": "2026-11-18T01:14:12.005260Z",
       "tem_perfil": false,
       "ativo": true
     },
@@ -2037,7 +2037,7 @@ HTTP 200
       "email": "ana.souza@exemplo.com",
       "tipo": "buscando_vaga",
       "regiao": "Boa Viagem",
-      "data_cadastro": "2026-11-16T04:01:59.322201Z",
+      "data_cadastro": "2026-11-18T01:14:05.182701Z",
       "tem_perfil": true,
       "ativo": true
     }
@@ -2085,9 +2085,9 @@ curl -X GET "<BASE>/api/admin/usuarios/exportar/?ativo=true" \
 ```json
 HTTP 200  (text/csv)
 ﻿ID;Nome;E-mail;Tipo;Região;Data de Cadastro;Tem Perfil
-5;Diego Alves;diego.alves@exemplo.com;buscando_vaga;;2026-11-16;não
-4;Carla Dias;carla.dias@exemplo.com;oferecendo_vaga;Casa Forte;2026-11-16;sim
-3;Bruno Lima;bruno.lima@exemplo.com;oferecendo_vaga;Boa Viagem;2026-11-16;sim
+5;Diego Alves;diego.alves@exemplo.com;Buscando vaga;;17/11/2026;Não
+4;Carla Dias;carla.dias@exemplo.com;Oferecendo vaga;Casa Forte;17/11/2026;Sim
+3;Bruno Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;17/11/2026;Sim
 ```
 
 **Erros possíveis**
@@ -2138,7 +2138,7 @@ HTTP 200
   "results": [
     {
       "id": 19,
-      "data_hora": "2026-11-16T04:02:32.515574Z",
+      "data_hora": "2026-11-18T01:14:29.799569Z",
       "usuario": {
         "id": 3,
         "nome": "Bruno Lima",
@@ -2173,7 +2173,7 @@ HTTP 200
   "results": [
     {
       "id": 22,
-      "data_hora": "2026-11-16T04:02:35.236404Z",
+      "data_hora": "2026-11-18T01:14:31.571202Z",
       "usuario": {
         "id": 2,
         "nome": "Ana Souza",
@@ -2233,9 +2233,9 @@ curl -X GET "<BASE>/api/admin/logs/exportar/?acao=LOGIN" \
 ```json
 HTTP 200  (text/csv)
 ﻿ID;Data/Hora;Usuário ID;Usuário Nome;Usuário E-mail;Ação;Descrição da Ação;Entidade;ID da Entidade;Detalhes;IP
-10;2026-11-16 04:02:29;1;admin@exemplo.com;admin@exemplo.com;LOGIN;Login;usuario;1;{};127.0.0.1
-9;2026-11-16 04:02:26;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;{};127.0.0.1
-8;2026-11-16 04:02:23;4;Carla Dias;carla.dias@exemplo.com;LOGIN;Login;usuario;4;{};127.0.0.1
+10;17/11/2026 22:14:27;1;admin@exemplo.com;admin@exemplo.com;LOGIN;Login;usuario;1;;127.0.0.1
+9;17/11/2026 22:14:25;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;;127.0.0.1
+8;17/11/2026 22:14:23;4;Carla Dias;carla.dias@exemplo.com;LOGIN;Login;usuario;4;;127.0.0.1
 ```
 
 **Erros possíveis**
@@ -2487,7 +2487,7 @@ HTTP 201
       "usuario_id": 3
     },
     "score": 0.9295,
-    "data_match": "2026-11-16T01:02:32.508503-03:00"
+    "data_match": "2026-11-17T22:14:29.792738-03:00"
   }
 }
 ```
@@ -2560,7 +2560,7 @@ HTTP 200
       "usuario_id": 3
     },
     "score": 0.9295,
-    "data_match": "2026-11-16T01:02:32.508503-03:00"
+    "data_match": "2026-11-17T22:14:29.792738-03:00"
   }
 ]
 ```
@@ -2583,7 +2583,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 1,
   "conteudo": "Oi, Bruno! O quarto ainda está disponível?",
-  "data_envio": "2026-11-16T01:02:33.019723-03:00",
+  "data_envio": "2026-11-17T22:14:30.579677-03:00",
   "lida": false
 }
 ```
@@ -2606,7 +2606,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 2,
   "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-  "data_envio": "2026-11-16T01:02:33.118027-03:00",
+  "data_envio": "2026-11-17T22:14:30.652915-03:00",
   "lida": false
 }
 ```

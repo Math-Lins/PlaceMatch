@@ -95,6 +95,18 @@ class Command(BaseCommand):
                 defaults={'tipo': 'curtir'},
             )
 
+            # Match só com curtida MÚTUA: se um dos dois já tinha RECUSADO (get_or_create mantém a
+            # recusa existente), não cria o match — senão nasce um match sem curtida mútua.
+            if Curtida.objects.filter(
+                Q(perfil_origem=pa, perfil_destino=pb) | Q(perfil_origem=pb, perfil_destino=pa),
+                tipo='curtir',
+            ).count() < 2:
+                self.stdout.write(self.style.WARNING(
+                    f'  ! Sem curtida mútua (há uma recusa): {pa.nome} <-> {pb.nome} — match não criado'
+                ))
+                pulados += 1
+                continue
+
             # Match
             pa_id = min(pa.id, pb.id)
             pb_id = max(pa.id, pb.id)

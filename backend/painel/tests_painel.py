@@ -129,7 +129,7 @@ class DashboardKPIsTest(PainelBaseTestCase):
         self.assertEqual(d['kpis']['matches_total'], 1)
 
     def test_kpis_taxa_match(self):
-        # (1 * 2 / 2) * 100 = 100.0
+        # 2 curtidas positivas (p1→p2, p2→p1), as 2 fazem parte do match → 100.0
         d = self._dados()
         self.assertEqual(d['kpis']['taxa_match'], 100.0)
 
@@ -188,6 +188,83 @@ class DashboardFiltrosTest(PainelBaseTestCase):
     def test_filtros_aplicados_presentes_na_resposta(self):
         resp = self.client.get(reverse('dashboard'), {'regiao': 'Recife'})
         self.assertEqual(resp.data['filtros_aplicados'].get('regiao'), 'Recife')
+
+
+# ─── Taxa de match ────────────────────────────────────────────────────────────
+
+class DashboardTaxaMatchTest(PainelBaseTestCase):
+    """
+    taxa_match = curtidas positivas que fazem parte de um match ÷ curtidas positivas × 100,
+    com as duas contagens sobre o MESMO conjunto (filtro aplicado ao perfil de origem).
+
+    Cenário = base + p4 (oferecendo_vaga, Olinda):
+      p1→p2, p2→p1 (match p1–p2) · p1→p4, p4→p1 (match p1–p4, entre regiões) ·
+      p3→p4 (curtida sem resposta) · p3→p2 (recusa, não conta)
+    Fórmula antiga (matches×2 ÷ curtidas) entre parênteses em cada teste.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.u4 = criar_usuario('u4@test.com', tipo='oferecendo_vaga')
+        self.p4 = criar_perfil(self.u4, regiao='Olinda')
+        criar_curtida(self.p1, self.p4)
+        criar_curtida(self.p4, self.p1)
+        criar_match(self.p1, self.p4, score=0.7)
+        criar_curtida(self.p3, self.p4)
+
+    def _taxa(self, params=None):
+        resp = self.client.get(reverse('dashboard'), params or {})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        return resp.data['kpis']['taxa_match']
+
+    def test_sem_filtro_igual_a_formula_antiga(self):
+        # 5 curtidas, 4 em match → 80% (antiga: 2 matches × 2 ÷ 5 = 80%)
+        self.assertEqual(self._taxa(), 80.0)
+
+    def test_filtro_tipo_que_dava_200(self):
+        # oferecendo_vaga (p2, p4): p2→p1 e p4→p1, as duas em match → 100% (antiga: 2×2 ÷ 2 = 200%)
+        self.assertEqual(self._taxa({'tipo': 'oferecendo_vaga'}), 100.0)
+
+    def test_filtro_tipo_buscando(self):
+        # buscando_vaga (p1, p3): p1→p2, p1→p4 em match; p3→p4 não → 66,67% (antiga: 133,33%)
+        self.assertEqual(self._taxa({'tipo': 'buscando_vaga'}), 66.67)
+
+    def test_filtro_regiao_recife(self):
+        # Recife (p1, p2): p1→p2, p2→p1, p1→p4, todas em match → 100% (antiga: 2×2 ÷ 3 = 133,33%)
+        self.assertEqual(self._taxa({'regiao': 'Recife'}), 100.0)
+
+    def test_filtro_regiao_olinda(self):
+        # Olinda (p3, p4): p4→p1 em match, p3→p4 não → 50% (antiga: 1×2 ÷ 2 = 100%)
+        self.assertEqual(self._taxa({'regiao': 'Olinda'}), 50.0)
+
+    def test_filtro_regiao_e_tipo(self):
+        # Olinda + oferecendo_vaga (só p4): p4→p1 em match → 100% (antiga: 1×2 ÷ 1 = 200%)
+        self.assertEqual(self._taxa({'regiao': 'Olinda', 'tipo': 'oferecendo_vaga'}), 100.0)
+
+    def test_nunca_passa_de_100_nem_fica_negativa(self):
+        for params in [{}, {'tipo': 'oferecendo_vaga'}, {'tipo': 'buscando_vaga'},
+                       {'regiao': 'Recife'}, {'regiao': 'Olinda'}, {'regiao': 'Inexistente'}]:
+            with self.subTest(**params):
+                self.assertTrue(0.0 <= self._taxa(params) <= 100.0)
+
+    def test_recusas_nao_entram_na_taxa(self):
+        # Só a recusa p3→p2 sobra para p3 depois de apagar a curtida p3→p4: 0 curtidas → 0%
+        Curtida.objects.filter(perfil_origem=self.p3, tipo='curtir').delete()
+        self.assertEqual(self._taxa({'regiao': 'Olinda', 'tipo': 'buscando_vaga'}), 0.0)
+
+
+class DashboardTaxaMatchSemCurtidasTest(APITestCase):
+    def test_sem_curtidas_taxa_zero_sem_divisao_por_zero(self):
+        admin = criar_usuario('adm@test.com', tipo='administrador')
+        pa = criar_perfil(criar_usuario('a@test.com', 'buscando_vaga'))
+        pb = criar_perfil(criar_usuario('b@test.com', 'oferecendo_vaga'))
+        criar_match(pa, pb)  # match sem curtidas (dado inconsistente): ainda assim 0, sem erro
+        self.client.force_authenticate(admin)
+        resp = self.client.get(reverse('dashboard'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['kpis']['curtidas_total'], 0)
+        self.assertEqual(resp.data['kpis']['matches_total'], 1)
+        self.assertEqual(resp.data['kpis']['taxa_match'], 0.0)
 
 
 # ─── Séries temporais com zeros ───────────────────────────────────────────────
