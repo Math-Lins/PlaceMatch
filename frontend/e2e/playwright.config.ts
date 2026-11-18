@@ -36,6 +36,9 @@ export const envBackend = {
   DB_PORT: env.E2E_DB_PORT || '5433',
   SECRET_KEY: env.E2E_SECRET_KEY || 'chave-e2e-somente-para-testes-0123456789',
   DEBUG: 'True',
+  // Todos os roteiros entram do mesmo IP: sem isso o limite de tentativas de login (padrão 5/min) bloquearia o e2e.
+  LOGIN_LIMITE_IP: 'off',
+  LOGIN_LIMITE_EMAIL: 'off',
   ALLOWED_HOSTS: 'localhost,127.0.0.1',
   ADMIN_EMAIL: env.E2E_ADMIN_EMAIL,
   ADMIN_SENHA: env.E2E_ADMIN_SENHA,

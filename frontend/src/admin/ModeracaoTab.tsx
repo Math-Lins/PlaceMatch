@@ -38,7 +38,8 @@ const MOTIVO_OPTS = [
 interface AnalisarModalProps {
   denuncia: DenunciaItem;
   onClose: () => void;
-  onConcluido: () => void;
+  /** `aviso`: texto para mostrar na tela quando a decisão foi gravada mas a suspensão falhou. */
+  onConcluido: (aviso?: string) => void;
 }
 
 function AnalisarModal({ denuncia, onClose, onConcluido }: AnalisarModalProps) {
@@ -54,14 +55,22 @@ function AnalisarModal({ denuncia, onClose, onConcluido }: AnalisarModalProps) {
     setLoading(true);
     try {
       await resolverDenuncia(denuncia.id, decisao, observacao);
-      if (suspender && decisao === 'resolvida' && denuncia.denunciado.id) {
-        await suspenderUsuario(denuncia.denunciado.id, `Denúncia nº ${denuncia.id} procedente.`);
-      }
-      onConcluido();
     } catch (e: unknown) {
       setErro(e instanceof ApiError ? e.message : 'Não foi possível registrar a decisão.');
       setLoading(false);
+      return;
     }
+    // A decisão já está gravada (a denúncia não está mais pendente): se a suspensão falhar, não dá para
+    // "tentar de novo" aqui. Fecha o modal e orienta a suspender pela aba Usuários.
+    if (suspender && decisao === 'resolvida' && denuncia.denunciado.id) {
+      try {
+        await suspenderUsuario(denuncia.denunciado.id, `Denúncia nº ${denuncia.id} procedente.`);
+      } catch {
+        onConcluido('A denúncia foi registrada como procedente, mas a suspensão falhou. Suspenda a conta pela aba Usuários.');
+        return;
+      }
+    }
+    onConcluido();
   };
 
   const linha = (rotulo: string, valor: React.ReactNode) => (
@@ -142,6 +151,7 @@ export default function ModeracaoTab() {
   const [exporting, setExporting] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [analisando, setAnalisando] = useState<DenunciaItem | null>(null);
+  const [aviso, setAviso] = useState('');
 
   // Filtros
   const [status, setStatus] = useState('pendente');
@@ -168,7 +178,7 @@ export default function ModeracaoTab() {
 
   const erroPeriodo = validarPeriodo(dataInicio, dataFim);
 
-  const handleBuscar = () => carregar({ status, motivo, data_inicio: dataInicio, data_fim: dataFim });
+  const handleBuscar = () => { setAviso(''); carregar({ status, motivo, data_inicio: dataInicio, data_fim: dataFim }); };
 
   const handleExport = async () => {
     if (erroPeriodo) return;
@@ -216,6 +226,7 @@ export default function ModeracaoTab() {
         </Botao>
       </BarraFiltros>
 
+      {aviso && <div role="alert" style={{ marginBottom: '12px' }}><MensagemErro>{aviso}</MensagemErro></div>}
       {loading && <EstadoCarregando texto="Carregando denúncias…" />}
       {!loading && erro && <EstadoErro mensagem={erro} onTentarNovamente={handleBuscar} />}
       {!loading && !erro && filtradas.length === 0 && (
@@ -287,7 +298,11 @@ export default function ModeracaoTab() {
         <AnalisarModal
           denuncia={analisando}
           onClose={() => setAnalisando(null)}
-          onConcluido={() => { setAnalisando(null); carregar({ status, motivo, data_inicio: dataInicio, data_fim: dataFim }); }}
+          onConcluido={(avisoDaSuspensao) => {
+            setAnalisando(null);
+            setAviso(avisoDaSuspensao ?? '');
+            carregar({ status, motivo, data_inicio: dataInicio, data_fim: dataFim });
+          }}
         />
       )}
     </div>

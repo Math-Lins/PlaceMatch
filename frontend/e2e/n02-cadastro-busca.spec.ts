@@ -28,6 +28,12 @@ test('N02 Cadastro "Maria José da Silva" (buscando vaga) → perfil em etapas �
     await expect(page.getByText('Idade deve estar entre 18 e 100 anos.')).toBeVisible();
     await expect(page.getByText('Região deve ter pelo menos 2 caracteres.')).toBeVisible();
     expect(await etapaAtual(page)).toBe(1);
+    // AUD-F17: a mensagem de erro fica ligada ao campo (leitores de tela leem a mensagem junto com o campo)
+    const nome = page.getByPlaceholder('Seu nome completo');
+    await expect(nome).toHaveAttribute('aria-invalid', 'true');
+    const idErro = await nome.getAttribute('aria-describedby');
+    expect(idErro, 'o campo com erro precisa de aria-describedby').toBeTruthy();
+    await expect(page.locator(`[id="${idErro}"]`)).toHaveText('Nome deve ter pelo menos 2 caracteres.');
     await print(page, 'N02', 2, 'etapa1-erros');
   });
 

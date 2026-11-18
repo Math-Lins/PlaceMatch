@@ -59,6 +59,7 @@ Somente `registrar`, `login` e `login/refresh` são públicos. O frontend guarda
 |---|---|---|---|---|
 | Autenticação | `POST` | `/api/auth/registrar/` | Público (sem login) | Cadastrar usuário |
 | Autenticação | `POST` | `/api/auth/login/` | Público (sem login) | Entrar (login por e-mail) |
+| Autenticação | `POST` | `/api/auth/logout/` | Público (sem login) | Sair (encerrar a sessão) |
 | Autenticação | `POST` | `/api/auth/login/refresh/` | Público (sem login) | Renovar o token de acesso |
 | Autenticação | `GET` | `/api/auth/me/` | Qualquer usuário logado | Dados do usuário logado |
 | Perfis | `GET` | `/api/perfis/` | Qualquer usuário logado | Listar o próprio perfil |
@@ -138,7 +139,7 @@ HTTP 201
 **Quem pode:** Público (sem login).  
 **Operação (OpenAPI):** `auth_login`
 
-Autentica por e-mail e senha (e-mail sem diferenciar maiúsculas) e devolve os tokens JWT. Envie o `access` no cabeçalho `Authorization: Bearer <access>` das demais chamadas. Contas suspensas recebem 401 com a mensagem "Conta suspensa. Procure o suporte.".
+Autentica por e-mail e senha (e-mail sem diferenciar maiúsculas) e devolve os tokens JWT. Envie o `access` no cabeçalho `Authorization: Bearer <access>` das demais chamadas. Contas suspensas recebem 401 com a mensagem "Conta suspensa. Procure o suporte.". **Limite de tentativas:** só as tentativas que falham contam. Passando de 5 por minuto (mesmo IP) ou de 10 por hora (mesmo e-mail, sem diferenciar maiúsculas, exista a conta ou não), a resposta é `429` com o cabeçalho `Retry-After`. As taxas são configuráveis (`LOGIN_LIMITE_IP`, `LOGIN_LIMITE_EMAIL`). Login correto zera o contador do e-mail.
 
 **Corpo de entrada** (JSON)
 
@@ -172,6 +173,44 @@ HTTP 200
 | `400` | E-mail e senha ausentes | `{"email": ["Informe o e-mail."], "password": ["Informe a senha."]}` |
 | `401` | Senha incorreta ou usuário inexistente | `{"detail": "E-mail ou senha incorretos."}` |
 | `401` | Conta suspensa | `{"detail": "Conta suspensa. Procure o suporte."}` |
+| `429` | Tentativas demais (com `Retry-After`) | `{"detail": "Muitas tentativas. Aguarde alguns minutos e tente de novo."}` |
+
+---
+
+### `POST /api/auth/logout/` — Sair (encerrar a sessão)
+
+**Quem pode:** Público (sem login).  
+**Operação (OpenAPI):** `auth_logout`
+
+Coloca o `refresh` na lista de bloqueio: ele deixa de servir para renovar o token. O `access` já emitido vale até expirar (1 hora). Não precisa de cabeçalho de autorização; a credencial é o próprio `refresh`. Chame ao sair; se falhar, o cliente pode sair mesmo assim.
+
+**Corpo de entrada** (JSON)
+
+| Campo | Tipo | Obrigatório | Regras |
+|---|---|---|---|
+| `refresh` | texto | sim | Token de renovação recebido no login. |
+
+**Resposta de sucesso:** `204` — Sessão encerrada (sem corpo).
+
+**Exemplo**
+
+```bash
+curl -X POST "<BASE>/api/auth/logout/" \
+  -H "Content-Type: application/json" \
+  -d '{"refresh": "<REFRESH>"}'
+```
+
+```json
+HTTP 204
+(sem corpo)
+```
+
+**Erros possíveis**
+
+| Status | Quando | Resposta real |
+|---|---|---|
+| `400` | Refresh ausente | `{"refresh": ["Informe o refresh."]}` |
+| `401` | Refresh inválido ou já encerrado | `{"detail": "O token é inválido ou já foi encerrado."}` |
 
 ---
 
@@ -180,7 +219,7 @@ HTTP 200
 **Quem pode:** Público (sem login).  
 **Operação (OpenAPI):** `auth_refresh`
 
-Troca um `refresh` válido por um novo `access` e por um **novo `refresh`** (o refresh é rotacionado: guarde o novo). O `access` dura 1 hora; o `refresh`, 7 dias.
+Troca um `refresh` válido por um novo `access` e por um **novo `refresh`** (o refresh é rotacionado: guarde o novo). O refresh antigo é bloqueado ao ser trocado e também após o logout. O `access` dura 1 hora; o `refresh`, 7 dias.
 
 **Corpo de entrada** (JSON)
 
@@ -958,7 +997,7 @@ HTTP 201
       "usuario_id": 3
     },
     "score": 0.9295,
-    "data_match": "2026-11-17T22:14:29.792738-03:00"
+    "data_match": "2026-11-18T01:35:55.030154-03:00"
   }
 }
 ```
@@ -1053,7 +1092,7 @@ HTTP 200
       "usuario_id": 3
     },
     "score": 0.9295,
-    "data_match": "2026-11-17T22:14:29.792738-03:00"
+    "data_match": "2026-11-18T01:35:55.030154-03:00"
   }
 ]
 ```
@@ -1121,7 +1160,7 @@ HTTP 200
     "score": 0.9295,
     "ultima_mensagem": {
       "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-      "data_envio": "2026-11-18T01:14:30.652915Z",
+      "data_envio": "2026-11-18T04:35:55.873275Z",
       "remetente_id": 2
     },
     "nao_lidas": 1
@@ -1165,7 +1204,7 @@ HTTP 200
     "score": 0.9295,
     "ultima_mensagem": {
       "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-      "data_envio": "2026-11-18T01:14:30.652915Z",
+      "data_envio": "2026-11-18T04:35:55.873275Z",
       "remetente_id": 2
     },
     "nao_lidas": 1
@@ -1219,7 +1258,7 @@ HTTP 200
     "match_id": 1,
     "remetente_id": 1,
     "conteudo": "Oi, Bruno! O quarto ainda está disponível?",
-    "data_envio": "2026-11-17T22:14:30.579677-03:00",
+    "data_envio": "2026-11-18T01:35:55.720540-03:00",
     "lida": false
   },
   {
@@ -1227,7 +1266,7 @@ HTTP 200
     "match_id": 1,
     "remetente_id": 2,
     "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-    "data_envio": "2026-11-17T22:14:30.652915-03:00",
+    "data_envio": "2026-11-18T01:35:55.873275-03:00",
     "lida": true
   }
 ]
@@ -1248,7 +1287,7 @@ HTTP 200
     "match_id": 1,
     "remetente_id": 2,
     "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-    "data_envio": "2026-11-17T22:14:30.652915-03:00",
+    "data_envio": "2026-11-18T01:35:55.873275-03:00",
     "lida": true
   }
 ]
@@ -1271,7 +1310,7 @@ HTTP 200
 **Quem pode:** Participante do match.  
 **Operação (OpenAPI):** `chat_mensagens_enviar`
 
-Envia uma mensagem de texto (1 a 1000 caracteres). Recusa conteúdo vazio, só espaços ou que não seja texto. Se o outro participante estiver com a conta suspensa → 403.
+Envia uma mensagem de texto (1 a 1000 caracteres). Recusa conteúdo vazio, só espaços ou que não seja texto. Se o outro participante estiver com a conta suspensa → 403. Match que deixou de existir → 404.
 
 **Parâmetros de rota**
 
@@ -1303,7 +1342,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 1,
   "conteudo": "Oi, Bruno! O quarto ainda está disponível?",
-  "data_envio": "2026-11-17T22:14:30.579677-03:00",
+  "data_envio": "2026-11-18T01:35:55.720540-03:00",
   "lida": false
 }
 ```
@@ -1324,7 +1363,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 2,
   "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-  "data_envio": "2026-11-17T22:14:30.652915-03:00",
+  "data_envio": "2026-11-18T01:35:55.873275-03:00",
   "lida": false
 }
 ```
@@ -1349,7 +1388,7 @@ HTTP 201
 **Quem pode:** Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador recebe 403.  
 **Operação (OpenAPI):** `moderacao_denunciar`
 
-Cria uma denúncia `pendente`. `denunciado` é o id do **usuário** (campo `usuario_id` dos perfis). Não vale denunciar a si mesmo.
+Cria uma denúncia `pendente`. `denunciado` é o id do **usuário** (campo `usuario_id` dos perfis). Não vale denunciar a si mesmo, nem denunciar de novo a mesma pessoa enquanto sua denúncia anterior estiver `pendente` (400).
 
 **Corpo de entrada** (JSON)
 
@@ -1377,7 +1416,7 @@ HTTP 201
   "denunciado": 4,
   "motivo": "spam",
   "status": "pendente",
-  "criada_em": "2026-11-18T01:14:31.564996Z"
+  "criada_em": "2026-11-18T04:35:56.962983Z"
 }
 ```
 
@@ -1388,6 +1427,7 @@ HTTP 201
 | `400` | Id e motivo inválidos | `{"detail": "O campo \"denunciado\" inválido. Informe um número inteiro."}` |
 | `400` | Usuário inexistente | `{"detail": "Usuário denunciado não encontrado."}` |
 | `400` | Autodenúncia | `{"detail": "Você não pode denunciar a si mesmo."}` |
+| `400` | Já existe denúncia pendente sua contra este usuário | `{"detail": "Você já tem uma denúncia pendente contra este usuário. Aguarde a análise da equipe."}` |
 | `401` | Sem token | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
 | `401` | Token inválido ou expirado | `{"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}` |
 
@@ -1407,8 +1447,8 @@ Denúncias da mais recente para a mais antiga. Valores inválidos nos filtros �
 | `status` | texto | Valores: `pendente`, `resolvida`, `descartada`. Situação. |
 | `denunciado` | inteiro | Id do usuário denunciado. |
 | `motivo` | texto | Valores: `spam`, `ofensivo`, `falso`, `outro`. Motivo. |
-| `data_inicio` | data (`AAAA-MM-DD`) | Criadas a partir desta data (inclusive). Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
-| `data_fim` | data (`AAAA-MM-DD`) | Criadas até esta data (inclusive). Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
+| `data_inicio` | data (`AAAA-MM-DD`) | Criadas a partir desta data (inclusive). Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
+| `data_fim` | data (`AAAA-MM-DD`) | Criadas até esta data (inclusive). Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
 
 **Resposta de sucesso:** `200` — Denúncias.
 
@@ -1438,8 +1478,8 @@ HTTP 200
     "status": "pendente",
     "resolvida_por": null,
     "resolucao": "",
-    "criada_em": "2026-11-18T01:14:31.564996Z",
-    "atualizada_em": "2026-11-18T01:14:31.565020Z"
+    "criada_em": "2026-11-18T04:35:56.962983Z",
+    "atualizada_em": "2026-11-18T04:35:56.963021Z"
   }
 ]
 ```
@@ -1492,7 +1532,7 @@ HTTP 200
   "id": 1,
   "status": "resolvida",
   "resolucao": "Anúncio duplicado; conta suspensa.",
-  "resolvida_por": "admin@exemplo.com"
+  "resolvida_por": "e2e-admin@teste.com"
 }
 ```
 
@@ -1615,8 +1655,8 @@ KPIs, séries diárias (matches, curtidas e mensagens), top regiões e distribui
 
 | Parâmetro | Tipo | Valores aceitos / descrição |
 |---|---|---|
-| `data_inicio` | data (`AAAA-MM-DD`) | Início do período. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
-| `data_fim` | data (`AAAA-MM-DD`) | Fim do período. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
+| `data_inicio` | data (`AAAA-MM-DD`) | Início do período. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
+| `data_fim` | data (`AAAA-MM-DD`) | Fim do período. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
 | `regiao` | texto | Filtra pelos perfis desta região. |
 | `tipo` | texto | Valores: `buscando_vaga`, `oferecendo_vaga`, `administrador`. Filtra pelo tipo de usuário. |
 
@@ -1836,6 +1876,7 @@ HTTP 200
 | Status | Quando | Resposta real |
 |---|---|---|
 | `400` | Período invertido | `{"detail": "data_inicio não pode ser maior que data_fim."}` |
+| `400` | Período maior que 366 dias | `{"detail": "O período não pode passar de 366 dias. Reduza o intervalo entre as datas."}` |
 | `401` | Sem token | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
 | `401` | Token inválido ou expirado | `{"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}` |
 | `403` | Usuário comum | `{"detail": "Você não tem permissão para executar essa ação."}` |
@@ -1921,8 +1962,8 @@ Filtros por relatório — `matches` e `atividade`: data_inicio, data_fim, regia
 |---|---|---|
 | `rel_id` | texto | Valores: `matches`, `compatibilidade-regiao`, `atividade`, `usuarios`, `denuncias`. Identificador do relatório. |
 | `formato` | texto | Valores: `json`, `csv`. Formato de saída (padrão `json`). |
-| `data_inicio` | data (`AAAA-MM-DD`) | Início do período. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
-| `data_fim` | data (`AAAA-MM-DD`) | Fim do período. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
+| `data_inicio` | data (`AAAA-MM-DD`) | Início do período. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
+| `data_fim` | data (`AAAA-MM-DD`) | Fim do período. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
 | `regiao` | texto | Região do perfil. |
 | `tipo` | texto | Valores: `buscando_vaga`, `oferecendo_vaga`, `administrador`. Tipo de usuário. |
 
@@ -1946,7 +1987,7 @@ HTTP 200
   ],
   "linhas": [
     [
-      "2026-11-17",
+      "2026-11-18",
       "Ana Souza",
       "Bruno Lima"
     ]
@@ -1956,7 +1997,7 @@ HTTP 200
     "mensagens": 2
   },
   "filtros_aplicados": {},
-  "gerado_em": "2026-11-18T01:14:37.717758Z"
+  "gerado_em": "2026-11-18T04:36:03.133304Z"
 }
 ```
 
@@ -1970,9 +2011,9 @@ curl -X GET "<BASE>/api/admin/relatorios/usuarios/?formato=csv" \
 ```json
 HTTP 200  (text/csv)
 ﻿Data de Cadastro;Nome;E-mail;Tipo;Região;Tem Perfil
-17/11/2026;admin@exemplo.com;admin@exemplo.com;Administrador;;Não
-17/11/2026;Ana Souza;ana.souza@exemplo.com;Buscando vaga;Boa Viagem;Sim
-17/11/2026;Bruno Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;Sim
+18/11/2026;e2e-admin@teste.com;e2e-admin@teste.com;Administrador;;Não
+18/11/2026;Ana Souza;ana.souza@exemplo.com;Buscando vaga;Boa Viagem;Sim
+18/11/2026;Bruno Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;Sim
 ```
 
 **Erros possíveis**
@@ -2001,8 +2042,8 @@ Usuários paginados, do mais recente para o mais antigo.
 | `tipo` | texto | Valores: `buscando_vaga`, `oferecendo_vaga`, `administrador`. Tipo de usuário. |
 | `regiao` | texto | Região do perfil. |
 | `ativo` | texto | Valores: `true`, `false`. `true` = contas ativas; `false` = suspensas. |
-| `data_inicio` | data (`AAAA-MM-DD`) | Cadastro a partir desta data. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
-| `data_fim` | data (`AAAA-MM-DD`) | Cadastro até esta data. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
+| `data_inicio` | data (`AAAA-MM-DD`) | Cadastro a partir desta data. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
+| `data_fim` | data (`AAAA-MM-DD`) | Cadastro até esta data. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
 | `page` | inteiro | Página (padrão 1). Valor inválido volta à página 1; página além do fim devolve `results: []`. |
 | `page_size` | inteiro | Itens por página (padrão 20, máximo 100). |
 
@@ -2027,7 +2068,7 @@ HTTP 200
       "email": "diego.alves@exemplo.com",
       "tipo": "buscando_vaga",
       "regiao": null,
-      "data_cadastro": "2026-11-18T01:14:12.005260Z",
+      "data_cadastro": "2026-11-18T04:35:27.511199Z",
       "tem_perfil": false,
       "ativo": true
     },
@@ -2037,7 +2078,7 @@ HTTP 200
       "email": "ana.souza@exemplo.com",
       "tipo": "buscando_vaga",
       "regiao": "Boa Viagem",
-      "data_cadastro": "2026-11-18T01:14:05.182701Z",
+      "data_cadastro": "2026-11-18T04:35:21.188809Z",
       "tem_perfil": true,
       "ativo": true
     }
@@ -2070,8 +2111,8 @@ Mesmos filtros da listagem (sem paginação). CSV com BOM e separador `;`. Regis
 | `tipo` | texto | Valores: `buscando_vaga`, `oferecendo_vaga`, `administrador`. Tipo de usuário. |
 | `regiao` | texto | Região do perfil. |
 | `ativo` | texto | Valores: `true`, `false`. `true` = ativas; `false` = suspensas. |
-| `data_inicio` | data (`AAAA-MM-DD`) | Cadastro a partir desta data. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
-| `data_fim` | data (`AAAA-MM-DD`) | Cadastro até esta data. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
+| `data_inicio` | data (`AAAA-MM-DD`) | Cadastro a partir desta data. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
+| `data_fim` | data (`AAAA-MM-DD`) | Cadastro até esta data. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
 
 **Resposta de sucesso:** `200` — Arquivo CSV de usuários. (`text/csv`, UTF-8 com BOM, separador `;`).
 
@@ -2085,9 +2126,9 @@ curl -X GET "<BASE>/api/admin/usuarios/exportar/?ativo=true" \
 ```json
 HTTP 200  (text/csv)
 ﻿ID;Nome;E-mail;Tipo;Região;Data de Cadastro;Tem Perfil
-5;Diego Alves;diego.alves@exemplo.com;Buscando vaga;;17/11/2026;Não
-4;Carla Dias;carla.dias@exemplo.com;Oferecendo vaga;Casa Forte;17/11/2026;Sim
-3;Bruno Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;17/11/2026;Sim
+5;Diego Alves;diego.alves@exemplo.com;Buscando vaga;;18/11/2026;Não
+4;Carla Dias;carla.dias@exemplo.com;Oferecendo vaga;Casa Forte;18/11/2026;Sim
+3;Bruno Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;18/11/2026;Sim
 ```
 
 **Erros possíveis**
@@ -2116,8 +2157,8 @@ Histórico de operações, do mais recente para o mais antigo. O texto das mensa
 | `usuario` | texto | Id, e-mail ou parte do nome do usuário. |
 | `entidade` | texto | Tipo de objeto afetado (`usuario`, `perfil`, `match`...). |
 | `q` | texto | Busca em e-mail, nome, username ou entidade. |
-| `data_inicio` | data (`AAAA-MM-DD`) | A partir desta data. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
-| `data_fim` | data (`AAAA-MM-DD`) | Até esta data. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
+| `data_inicio` | data (`AAAA-MM-DD`) | A partir desta data. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
+| `data_fim` | data (`AAAA-MM-DD`) | Até esta data. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
 | `page` | inteiro | Página (padrão 1). Valor inválido volta à página 1; página além do fim devolve `results: []`. |
 | `page_size` | inteiro | Itens por página (padrão 20, máximo 100). |
 
@@ -2137,8 +2178,8 @@ HTTP 200
   "page": 1,
   "results": [
     {
-      "id": 19,
-      "data_hora": "2026-11-18T01:14:29.799569Z",
+      "id": 23,
+      "data_hora": "2026-11-18T04:35:55.037647Z",
       "usuario": {
         "id": 3,
         "nome": "Bruno Lima",
@@ -2168,12 +2209,12 @@ curl -X GET "<BASE>/api/admin/logs/?usuario=ana.souza@exemplo.com&page_size=1" \
 ```json
 HTTP 200
 {
-  "count": 9,
+  "count": 10,
   "page": 1,
   "results": [
     {
-      "id": 22,
-      "data_hora": "2026-11-18T01:14:31.571202Z",
+      "id": 26,
+      "data_hora": "2026-11-18T04:35:56.969550Z",
       "usuario": {
         "id": 2,
         "nome": "Ana Souza",
@@ -2218,8 +2259,8 @@ Mesmos filtros da listagem (sem paginação). CSV com BOM e separador `;`. Regis
 | `usuario` | texto | Id, e-mail ou parte do nome do usuário. |
 | `entidade` | texto | Tipo de objeto afetado. |
 | `q` | texto | Busca em e-mail, nome, username ou entidade. |
-| `data_inicio` | data (`AAAA-MM-DD`) | A partir desta data. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
-| `data_fim` | data (`AAAA-MM-DD`) | Até esta data. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400. |
+| `data_inicio` | data (`AAAA-MM-DD`) | A partir desta data. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
+| `data_fim` | data (`AAAA-MM-DD`) | Até esta data. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366 dias → 400. |
 
 **Resposta de sucesso:** `200` — Arquivo CSV de logs. (`text/csv`, UTF-8 com BOM, separador `;`).
 
@@ -2233,9 +2274,9 @@ curl -X GET "<BASE>/api/admin/logs/exportar/?acao=LOGIN" \
 ```json
 HTTP 200  (text/csv)
 ﻿ID;Data/Hora;Usuário ID;Usuário Nome;Usuário E-mail;Ação;Descrição da Ação;Entidade;ID da Entidade;Detalhes;IP
-10;17/11/2026 22:14:27;1;admin@exemplo.com;admin@exemplo.com;LOGIN;Login;usuario;1;;127.0.0.1
-9;17/11/2026 22:14:25;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;;127.0.0.1
-8;17/11/2026 22:14:23;4;Carla Dias;carla.dias@exemplo.com;LOGIN;Login;usuario;4;;127.0.0.1
+14;18/11/2026 01:35:52;2;Ana Souza;ana.souza@exemplo.com;LOGIN;Login;usuario;2;;127.0.0.1
+13;18/11/2026 01:35:48;1;e2e-admin@teste.com;e2e-admin@teste.com;LOGIN;Login;usuario;1;;127.0.0.1
+12;18/11/2026 01:35:45;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;;127.0.0.1
 ```
 
 **Erros possíveis**
@@ -2487,7 +2528,7 @@ HTTP 201
       "usuario_id": 3
     },
     "score": 0.9295,
-    "data_match": "2026-11-17T22:14:29.792738-03:00"
+    "data_match": "2026-11-18T01:35:55.030154-03:00"
   }
 }
 ```
@@ -2560,7 +2601,7 @@ HTTP 200
       "usuario_id": 3
     },
     "score": 0.9295,
-    "data_match": "2026-11-17T22:14:29.792738-03:00"
+    "data_match": "2026-11-18T01:35:55.030154-03:00"
   }
 ]
 ```
@@ -2583,7 +2624,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 1,
   "conteudo": "Oi, Bruno! O quarto ainda está disponível?",
-  "data_envio": "2026-11-17T22:14:30.579677-03:00",
+  "data_envio": "2026-11-18T01:35:55.720540-03:00",
   "lida": false
 }
 ```
@@ -2606,7 +2647,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 2,
   "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-  "data_envio": "2026-11-17T22:14:30.652915-03:00",
+  "data_envio": "2026-11-18T01:35:55.873275-03:00",
   "lida": false
 }
 ```

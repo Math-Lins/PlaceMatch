@@ -1,4 +1,4 @@
-import { cadastrarComPerfil, expect, menu, novoPerfil, print, sair, test, tokens } from './apoio';
+import { API, cadastrarComPerfil, expect, menu, novoPerfil, print, sair, test, tokens } from './apoio';
 
 test('N08 Sair da conta: volta ao início, voltar do navegador não reabre tela interna, segunda aba mantém a sessão', async ({ page }) => {
   const u1 = novoPerfil('n08a', 'busca');
@@ -22,7 +22,12 @@ test('N08 Sair da conta: volta ao início, voltar do navegador não reabre tela 
     });
 
     await test.step('1. Sair da conta leva à tela inicial e apaga a sessão', async () => {
+      const refreshAntigo = (await tokens(page)).refresh!;
+      const logout = page.waitForResponse(r => r.url().includes('/api/auth/logout/'));
       await sair(page);
+      expect((await logout).status(), 'o logout deve avisar a API (204)').toBe(204);
+      const renovar = await page.request.post(`${API}/api/auth/login/refresh/`, { data: { refresh: refreshAntigo } });
+      expect(renovar.status(), 'o refresh usado no logout não pode mais renovar (AUD-15)').toBe(401);
       await expect(page.getByRole('heading', { name: 'Boas-vindas!' })).toBeVisible();
       const t = await tokens(page);
       expect(t.access).toBeNull();

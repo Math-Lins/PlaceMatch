@@ -15,7 +15,8 @@ from chat.models import Mensagem
 from logs.servicos import registrar
 from .exportacao import gerar_csv_response
 from .filtros import (
-    TIPOS_USUARIO, ler_paginacao, validar_bool_param, validar_e_parsear_datas, validar_escolha_param,
+    TIPOS_USUARIO, ler_paginacao, resposta_400, validar_amplitude, validar_bool_param, validar_e_parsear_datas,
+    validar_escolha_param,
 )
 from .permissoes import AdminPermission
 from drf_spectacular.utils import extend_schema
@@ -134,8 +135,14 @@ class DashboardView(APIView):
         )
         periodo_inicio = data_inicio or (hoje_inicio - timedelta(days=29))
         periodo_fim = data_fim or make_aware(
-            timezone.datetime(agora.year, agora.month, agora.day, 23, 59, 59)
+            timezone.datetime(agora.year, agora.month, agora.day, 23, 59, 59, 999999)
         )
+        # a série diária tem um ponto por dia: o período efetivo (com os padrões) também é limitado
+        if periodo_inicio > periodo_fim:
+            return resposta_400('data_inicio não pode ser maior que data_fim.')
+        erro = validar_amplitude(periodo_inicio, periodo_fim)
+        if erro:
+            return erro
 
         # ── Bases filtradas ───────────────────────────────────────────────────
         perfil_ids = _perfil_ids_filtrados(regiao, tipo)

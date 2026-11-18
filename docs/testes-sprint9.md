@@ -142,6 +142,9 @@ Esta seção só acrescenta os números por etapa; os registros acima ficam como
 | Sprint 10, etapa 1 (restrições do banco, `verificar_banco`, datas) | **560** (+29 em `placematch/test_sprint10.py`) | 13 roteiros, 25 testes | |
 | Sprint 10, etapa 2 (documentação OpenAPI/Swagger) | **574** (+14 em `placematch/test_api_docs.py`) | 13 roteiros, 25 testes | |
 | Sprint 10, etapa 3 (interface final e evidências da RC) | **574** (nenhum teste novo; 1 asserção ajustada em `painel/tests_painel.py`, `'sim'` → `'Sim'`) | 13 roteiros, 25 testes, todos aprovados | 2 roteiros ajustados ao texto novo (n06, n07) e seletores atualizados nos demais |
+| RC: correção da taxa de match e seeds (v1.0.0-rc1) | **589** | 13 roteiros, 25 testes | |
+| Auditoria da RC, 1ª rodada | **616** (+27 em `placematch/test_auditoria_rc.py`; 9 asserções de permissões/chat tornadas exatas) | 13 roteiros | Detalhes em [`auditoria-rc.md`](./auditoria-rc.md) |
+| Auditoria da RC, 2ª rodada | **651** (+35 em `placematch/test_auditoria_rc2.py`) | 13 roteiros (passos novos em N01, N02, N06, N08, N10, N11 e N12) | Limite de login, logout/blacklist, período máximo etc. |
 
 Verificações da etapa 3: `tsc --noEmit` e `npm run build` sem erros; `spectacular --validate` sem avisos; `matriz_permissoes` sem divergências; `verificar_banco --falhar` sobre os dados de demonstração: 13 verificações OK, 1 aviso esperado (matches de uma conta suspensa) e 0 erros.
 

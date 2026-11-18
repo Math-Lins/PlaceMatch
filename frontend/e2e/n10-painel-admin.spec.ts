@@ -104,6 +104,22 @@ test('N10 Painel admin: abas, período invertido, relatório, CSV, paginação e
       await page.locator('input[type="date"]').nth(1).fill('2025-01-01');
       await expect(page.getByText('A data inicial não pode ser maior que a data final.')).toBeVisible();
       await print(page, 'N10', 7, 'usuarios-periodo-invertido');
+      // AUD-12 (cliente): período maior que 366 dias é recusado antes de chamar a API
+      await page.locator('input[type="date"]').first().fill('2024-01-01');
+      await page.locator('input[type="date"]').nth(1).fill('2025-12-31');
+      await expect(page.getByText('O período não pode passar de 366 dias. Reduza o intervalo entre as datas.')).toBeVisible();
+      await page.locator('input[type="date"]').first().fill('2025-01-01');
+      await expect(page.getByText('O período não pode passar de 366 dias.')).toHaveCount(0);
+      await page.locator('input[type="date"]').first().fill('');
+      await page.locator('input[type="date"]').nth(1).fill('');
+      // AUD-F13: digitar não dispara uma consulta por tecla (debounce de 400 ms)
+      const consultas: string[] = [];
+      page.on('request', r => { if (/\/api\/admin\/usuarios\/\?/.test(r.url())) consultas.push(r.url()); });
+      await page.getByPlaceholder('Pesquisar...').pressSequentially('e2e-admin', { delay: 60 });
+      await expect.poll(() => consultas.length, { timeout: 10_000 }).toBeGreaterThan(0);
+      await page.waitForTimeout(1200);
+      expect(consultas.length, `uma consulta por tecla (${consultas.length}) em vez de uma só após o debounce`).toBeLessThanOrEqual(2);
+      await page.getByPlaceholder('Pesquisar...').fill('');
       await page.locator('input[type="date"]').first().fill('');
       await page.locator('input[type="date"]').nth(1).fill('');
       const [download] = await Promise.all([

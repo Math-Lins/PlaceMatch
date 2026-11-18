@@ -51,6 +51,22 @@ test.describe('N01 Visitante', () => {
       await expect(page.getByRole('heading', { name: 'Criar conta' })).toBeVisible();
     });
 
+    await test.step('5c. limite de tentativas (429): a tela de login mostra a mensagem da API (AUD-09)', async () => {
+      await page.route('**/api/auth/login/', route => route.fulfill({
+        status: 429, contentType: 'application/json', headers: { 'Retry-After': '60' },
+        body: JSON.stringify({ detail: 'Muitas tentativas. Aguarde alguns minutos e tente de novo.' }),
+      }));
+      await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+      await page.getByPlaceholder('seu@email.com').fill('qualquer@teste.com');
+      await page.getByPlaceholder('••••••••').fill('SenhaQualquer1');
+      await page.getByPlaceholder('••••••••').press('Enter');
+      await expect(page.getByText('Muitas tentativas. Aguarde alguns minutos e tente de novo.')).toBeVisible();
+      await page.unroute('**/api/auth/login/');
+      await page.getByRole('button', { name: 'Voltar' }).click();
+      await page.getByRole('button', { name: 'Criar conta' }).click();
+      await expect(page.getByRole('heading', { name: 'Criar conta' })).toBeVisible();
+    });
+
     await test.step('6. fontes Outfit e Nunito carregadas localmente', async () => {
       const carregadas = await page.evaluate(async () => {
         await Promise.all([document.fonts.load('700 16px Outfit'), document.fonts.load('400 16px Nunito')]);

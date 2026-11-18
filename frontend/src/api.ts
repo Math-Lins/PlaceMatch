@@ -32,6 +32,22 @@ export function logout(): void {
   for (const chave of CHAVES_DA_SESSAO) sessionStorage.removeItem(chave);
 }
 
+/**
+ * Sair da conta: limpa a sessão da aba na hora e avisa a API para bloquear o refresh
+ * (POST /api/auth/logout/). Se o aviso falhar, a pessoa sai do mesmo jeito.
+ */
+export function sairDaConta(): void {
+  const refresh = getRefreshToken();
+  logout();
+  if (!refresh) return;
+  fetch(`${BASE}/api/auth/logout/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh }),
+    keepalive: true,
+  }).catch(() => { /* sem rede: o refresh só vai expirar sozinho */ });
+}
+
 export class ApiError extends Error {
   fieldErrors: Record<string, string>;
   /** Status HTTP da resposta (undefined quando nem chegou resposta, ex.: sem rede). */
@@ -454,6 +470,12 @@ export function buildQS(params: Record<string, unknown>): string {
 /** Valida o período (datas AAAA-MM-DD) no cliente. Retorna a mensagem de erro, ou '' se ok. */
 export function validarPeriodo(inicio?: string, fim?: string): string {
   if (inicio && fim && inicio > fim) return 'A data inicial não pode ser maior que a data final.';
+  // Mesmas regras da API: datas a partir de 01/01/2000 e período de até 366 dias.
+  if ((inicio && inicio < '2000-01-01') || (fim && fim < '2000-01-01')) return 'As datas devem ser a partir de 01/01/2000.';
+  if (inicio && fim) {
+    const dias = (Date.parse(`${fim}T00:00:00Z`) - Date.parse(`${inicio}T00:00:00Z`)) / 86_400_000 + 1;
+    if (dias > 366) return 'O período não pode passar de 366 dias. Reduza o intervalo entre as datas.';
+  }
   return '';
 }
 
@@ -532,8 +554,11 @@ export async function downloadCsv(path: string, filename: string): Promise<void>
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a); // alguns navegadores só baixam se a âncora estiver no DOM
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000); // dá tempo ao navegador de iniciar o download
 }
 
 // ─── Admin: Dashboard & Relatórios ────────────────────────────────────────────

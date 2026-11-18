@@ -1,12 +1,15 @@
 from rest_framework import generics, permissions, status
+from rest_framework.views import APIView
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .models import Usuario
 from .serializers import RegistrarSerializer, UsuarioSerializer
 from drf_spectacular.utils import extend_schema
 from placematch.api_docs import doc
+from placematch.limites import LimitesDeLogin
 
 
 class RegistrarView(generics.CreateAPIView):
@@ -57,9 +60,14 @@ class LoginView(TokenObtainPairView):
             return Response(erros, status=status.HTTP_400_BAD_REQUEST)
         email = email.strip()
 
+        # Força bruta: bloqueia (429) quando há tentativas falhas demais deste IP ou para este e-mail.
+        limites = LimitesDeLogin(request)
+        limites.verificar(self)
+
         try:
             response = super().post(request, *args, **kwargs)
         except (AuthenticationFailed, TokenError):
+            limites.falhou()
             # Distingue conta suspensa (existe, senha confere, is_active=False) de
             # credenciais erradas. Não grava o e-mail digitado no log — só o motivo.
             motivo = 'credenciais'
@@ -79,6 +87,7 @@ class LoginView(TokenObtainPairView):
                 raise AuthenticationFailed('Conta suspensa. Procure o suporte.')
             raise AuthenticationFailed('E-mail ou senha incorretos.')
 
+        limites.acertou()
         # Sucesso: identifica o usuário pelo e-mail para o log.
         usuario = Usuario.objects.filter(email__iexact=email).first()
         registrar(
@@ -97,6 +106,23 @@ class RenovarTokenView(TokenRefreshView):
     @extend_schema(**doc('auth_refresh'))
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+
+class LogoutView(APIView):
+    """Encerra a sessão: coloca o refresh na lista de bloqueio (não vale mais para renovar)."""
+    permission_classes = [permissions.AllowAny]  # a credencial é o próprio refresh
+    authentication_classes: list = []
+
+    @extend_schema(**doc('auth_logout'))
+    def post(self, request):
+        refresh = request.data.get('refresh') if hasattr(request.data, 'get') else None
+        if not isinstance(refresh, str) or not refresh.strip():
+            return Response({'refresh': ['Informe o refresh.']}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            RefreshToken(refresh.strip()).blacklist()
+        except TokenError:
+            return Response({'detail': 'O token é inválido ou já foi encerrado.'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class MeView(generics.RetrieveAPIView):

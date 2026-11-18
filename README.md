@@ -65,13 +65,16 @@ cd ..
 | Variável | Descrição | Padrão do exemplo |
 |---|---|---|
 | `SECRET_KEY` | Chave do Django e do JWT. **Mínimo de 32 caracteres.** Com `DEBUG=False` a aplicação não sobe sem ela. | (definir) |
-| `DEBUG` | `True` em desenvolvimento | `True` |
+| `DEBUG` | **Padrão `False`** (se a variável não existir, a API sobe em modo seguro e exige `SECRET_KEY`). O desenvolvimento usa `DEBUG=True` no `backend/.env`, como no exemplo; o Docker e o e2e também definem `True`. | `True` |
 | `ALLOWED_HOSTS` | Hosts permitidos | `localhost,127.0.0.1` |
 | `DB_NAME` / `DB_USER` / `DB_PASSWORD` | Credenciais do PostgreSQL | `placematch` / `placematch_user` / (definir) |
 | `DB_HOST` / `DB_PORT` | Fora do Docker: `localhost` e a porta publicada (5433). No Docker o compose usa `db:5432`. | `localhost` / `5433` |
 | `ADMIN_EMAIL` / `ADMIN_SENHA` | Usados pelo comando `criar_admin` | (definir) |
+| `LOGIN_LIMITE_IP` / `LOGIN_LIMITE_EMAIL` | Limite de tentativas de login **que falham** (`429` ao passar): por IP e por e-mail. Formato `N/min` ou `N/hour`; vazio ou `off` desliga. | `5/min` / `10/hour` |
+| `PROXIES_CONFIAVEIS` | Quantos proxies confiáveis existem na frente da API (`0` = ignora o `X-Forwarded-For`). | `0` |
+| `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SECURE_PROXY_SSL_HEADER`, `CORS_ALLOWED_ORIGINS` | Só para produção (veja "Implantação em produção"). | desligados |
 
-`frontend/.env`: `VITE_API_URL`, a URL da API (padrão `http://localhost:8000`).
+`frontend/.env`: `VITE_API_URL`, a URL da API. Sem a variável, o frontend usa `http://127.0.0.1:8000` (o CORS do backend libera `localhost:5173` e `127.0.0.1:5173`).
 
 Gere uma `SECRET_KEY` com `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
 
@@ -219,6 +222,18 @@ npm run e2e:tour
 ```
 
 O `e2e:tour` roda `seed_demo --remover-outros` **no banco descartável do e2e**, percorre o sistema em desktop (1366×768) e celular (375×812) e grava `frontend/e2e/evidencias-rc/` (`RC-01` a `RC-37` + `INDICE.md`). Depois gera `frontend/evidencias-rc.zip` com essa pasta e com `docs/execucoes-rc/` (saídas das verificações finais: testes do backend, `verificar_banco`, matriz de permissões, validação do OpenAPI, build e e2e).
+
+## Implantação em produção
+
+O `Dockerfile` e o `docker-compose.yml` do repositório são de **desenvolvimento** (`runserver`, código montado como volume). Para publicar:
+
+1. **Variáveis**: `DEBUG=False` (ou omita: é o padrão), `SECRET_KEY` própria com 32+ caracteres, `ALLOWED_HOSTS` com o domínio, banco com senha forte e `CORS_ALLOWED_ORIGINS` com a URL do frontend (ex.: `https://app.exemplo.com`). Com `DEBUG=False` o Swagger (`/api/docs/`) fica restrito a administradores.
+2. **Servidor de aplicação**: use `gunicorn` (ou outro servidor WSGI), nunca o `runserver`: `gunicorn placematch.wsgi:application --bind 0.0.0.0:8000 --workers 3` (inclua `gunicorn` nas dependências da imagem de produção). Rode `python manage.py migrate` na implantação (inclui as tabelas da lista de bloqueio dos tokens).
+3. **HTTPS**: termine o TLS em um proxy reverso (nginx, Caddy, balanceador) e ative `SECURE_SSL_REDIRECT=True`, `SECURE_HSTS_SECONDS=31536000` (comece com um valor baixo), `SESSION_COOKIE_SECURE=True` e `CSRF_COOKIE_SECURE=True`. Se o proxy enviar `X-Forwarded-Proto: https`, defina `SECURE_PROXY_SSL_HEADER=True`.
+4. **Proxy confiável e IP real (AUD-13)**: atrás de proxy, o IP do cliente só é confiável se o proxy sobrescrever o `X-Forwarded-For`. Informe em `PROXIES_CONFIAVEIS` quantos proxies existem (ex.: `1`); com `0` o cabeçalho é ignorado no limite de login. Os logs de auditoria (`logs/servicos.py`) gravam o primeiro IP do `X-Forwarded-For` quando ele é válido: faça o proxy descartar esse cabeçalho vindo do cliente, senão o IP registrado pode ser forjado.
+5. **Limite de login com vários processos**: o contador usa o cache do Django (por padrão, memória de cada processo). Com mais de um processo ou servidor, configure um cache compartilhado (Redis ou banco) em `CACHES` para o limite valer para todos.
+6. **Frontend**: `npm run build` e sirva `frontend/dist` por um servidor estático (com `VITE_API_URL` apontando para a API ao compilar).
+7. **Sem seeds em produção**: `seed.py`, `seed_perfis` e `seed_demo` criam usuários de demonstração com senha conhecida.
 
 ## Estrutura do projeto
 

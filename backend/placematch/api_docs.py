@@ -147,7 +147,8 @@ def P(nome, tipo, descricao, enum=None, exemplo=None):
                             examples=[OpenApiExample('Exemplo', value=exemplo)] if exemplo is not None else None)
 
 
-DATA = 'Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio` maior que `data_fim` → 400.'
+DATA = ('Formato `AAAA-MM-DD`. Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 '
+        'ou período maior que 366 dias → 400.')
 P_PAGINA = [
     P('page', OpenApiTypes.INT, 'Página (padrão 1). Valor inválido volta à página 1; página além do fim devolve `results: []`.', exemplo=1),
     P('page_size', OpenApiTypes.INT, 'Itens por página (padrão 20, máximo 100).', exemplo=20),
@@ -186,18 +187,32 @@ OPERACOES = {
         resumo='Entrar (login por e-mail)',
         descricao=('Autentica por e-mail e senha (e-mail sem diferenciar maiúsculas) e devolve os tokens JWT. '
                    'Envie o `access` no cabeçalho `Authorization: Bearer <access>` das demais chamadas. '
-                   'Contas suspensas recebem 401 com a mensagem "Conta suspensa. Procure o suporte.".'),
+                   'Contas suspensas recebem 401 com a mensagem "Conta suspensa. Procure o suporte.". '
+                   '**Limite de tentativas:** só as tentativas que falham contam. Passando de 5 por minuto (mesmo IP) ou de 10 por hora '
+                   '(mesmo e-mail, sem diferenciar maiúsculas, exista a conta ou não), a resposta é `429` com o cabeçalho `Retry-After`. '
+                   'As taxas são configuráveis (`LOGIN_LIMITE_IP`, `LOGIN_LIMITE_EMAIL`). Login correto zera o contador do e-mail.'),
         request=LoginRequisicao, req_ex=[('login_ok', 'Login')],
         ok=(200, TokensResposta, 'login_ok', 'Tokens de acesso e de renovação.', []),
         erros=[(400, 'login_vazio', 'E-mail e senha ausentes'),
                (401, 'login_senha_errada', 'Senha incorreta ou usuário inexistente'),
-               (401, 'login_suspensa', 'Conta suspensa')],
+               (401, 'login_suspensa', 'Conta suspensa'),
+               (429, 'login_limite', 'Tentativas demais (com `Retry-After`)')],
+    ),
+    'auth_logout': dict(
+        metodo='POST', rota='/api/auth/logout/', tag='Autenticação', quem=PUBLICO, publico=True,
+        resumo='Sair (encerrar a sessão)',
+        descricao=('Coloca o `refresh` na lista de bloqueio: ele deixa de servir para renovar o token. O `access` já emitido vale até '
+                   'expirar (1 hora). Não precisa de cabeçalho de autorização; a credencial é o próprio `refresh`. '
+                   'Chame ao sair; se falhar, o cliente pode sair mesmo assim.'),
+        request=RefreshRequisicao, req_ex=[('logout_ok', 'Logout')],
+        ok=(204, None, 'logout_ok', 'Sessão encerrada (sem corpo).', []),
+        erros=[(400, 'logout_vazio', 'Refresh ausente'), (401, 'logout_invalido', 'Refresh inválido ou já encerrado')],
     ),
     'auth_refresh': dict(
         metodo='POST', rota='/api/auth/login/refresh/', tag='Autenticação', quem=PUBLICO, publico=True,
         resumo='Renovar o token de acesso',
         descricao=('Troca um `refresh` válido por um novo `access` e por um **novo `refresh`** (o refresh é rotacionado: '
-                   'guarde o novo). O `access` dura 1 hora; o `refresh`, 7 dias.'),
+                   'guarde o novo). O refresh antigo é bloqueado ao ser trocado e também após o logout. O `access` dura 1 hora; o `refresh`, 7 dias.'),
         request=RefreshRequisicao, req_ex=[('refresh_ok', 'Renovação')],
         ok=(200, TokensResposta, 'refresh_ok', 'Novo access e novo refresh.', []),
         erros=[(401, 'refresh_invalido', 'Refresh inválido, expirado ou de conta suspensa')],
@@ -322,7 +337,7 @@ OPERACOES = {
         metodo='POST', rota='/api/matches/{match_id}/mensagens/', tag='Chat', quem='Participante do match',
         resumo='Enviar mensagem',
         descricao=('Envia uma mensagem de texto (1 a 1000 caracteres). Recusa conteúdo vazio, só espaços ou que não seja texto. '
-                   'Se o outro participante estiver com a conta suspensa → 403.'),
+                   'Se o outro participante estiver com a conta suspensa → 403. Match que deixou de existir → 404.'),
         request=MensagemRequisicao, req_ex=[('mensagem_enviar', 'Mensagem')],
         ok=(201, MensagemSerializer, 'mensagem_enviar', 'Mensagem criada.', [('mensagem_responder', 'Resposta da outra pessoa')]),
         erros=[(400, 'mensagem_vazia', 'Conteúdo vazio ou só espaços'), (400, 'mensagem_longa', 'Mais de 1000 caracteres'),
@@ -332,11 +347,12 @@ OPERACOES = {
     'moderacao_denunciar': dict(
         metodo='POST', rota='/api/moderacao/denuncias/', tag='Moderação', quem=COMUM,
         resumo='Denunciar um usuário',
-        descricao='Cria uma denúncia `pendente`. `denunciado` é o id do **usuário** (campo `usuario_id` dos perfis). Não vale denunciar a si mesmo.',
+        descricao=('Cria uma denúncia `pendente`. `denunciado` é o id do **usuário** (campo `usuario_id` dos perfis). Não vale denunciar a si mesmo, '
+                   'nem denunciar de novo a mesma pessoa enquanto sua denúncia anterior estiver `pendente` (400).'),
         request=DenunciaRequisicao, req_ex=[('denuncia_ok', 'Denúncia por spam')],
         ok=(201, DenunciaCriada, 'denuncia_ok', 'Denúncia criada.', []),
         erros=[(400, 'denuncia_invalida', 'Id e motivo inválidos'), (400, 'denuncia_usuario_inexistente', 'Usuário inexistente'),
-               (400, 'denuncia_a_si_mesma', 'Autodenúncia')],
+               (400, 'denuncia_a_si_mesma', 'Autodenúncia'), (400, 'denuncia_duplicada', 'Já existe denúncia pendente sua contra este usuário')],
     ),
     'moderacao_denuncias_listar': dict(
         metodo='GET', rota='/api/admin/moderacao/denuncias/', tag='Moderação', quem=ADMIN,
@@ -394,7 +410,8 @@ OPERACOES = {
             P('tipo', OpenApiTypes.STR, 'Filtra pelo tipo de usuário.', enum=TIPOS_USUARIO),
         ],
         ok=(200, DashboardResposta, 'dashboard', 'Indicadores.', [('dashboard_filtros', 'Com filtros')]),
-        erros=[(400, 'dashboard_periodo_invertido', 'Período invertido'), (403, 'dashboard_comum', 'Usuário comum')],
+        erros=[(400, 'dashboard_periodo_invertido', 'Período invertido'), (400, 'dashboard_periodo_longo', 'Período maior que 366 dias'),
+               (403, 'dashboard_comum', 'Usuário comum')],
     ),
     'painel_relatorios_catalogo': dict(
         metodo='GET', rota='/api/admin/relatorios/', tag='Painel administrativo', quem=ADMIN,
@@ -488,6 +505,7 @@ DESCRICAO_STATUS = {
     401: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais inválidas no login).',
     403: 'Sem permissão para este recurso.',
     404: 'Recurso não encontrado.',
+    429: 'Tentativas de login demais: aguarde o tempo do cabeçalho `Retry-After` (em segundos).',
 }
 # Exemplos de 401 reaproveitados em todas as rotas autenticadas
 ERROS_401 = [('me_sem_token', 'Sem token'), ('me_token_invalido', 'Token inválido ou expirado')]

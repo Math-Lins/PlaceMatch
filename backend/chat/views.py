@@ -1,3 +1,4 @@
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -196,11 +197,16 @@ class MensagensView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        mensagem = Mensagem.objects.create(
-            match=match,
-            remetente=meu_perfil,
-            conteudo=conteudo,
-        )
+        try:
+            with transaction.atomic():
+                mensagem = Mensagem.objects.create(
+                    match=match,
+                    remetente=meu_perfil,
+                    conteudo=conteudo,
+                )
+        except IntegrityError:
+            # O match foi apagado (ex.: exclusão de perfil) entre a checagem e a gravação.
+            return Response({'detail': 'Match não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
 
         from logs.servicos import registrar
         registrar(

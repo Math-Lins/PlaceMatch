@@ -1,4 +1,4 @@
-import { cadastrarComPerfil, entrar, expect, menu, novoPerfil, print, sair, test, tokens } from './apoio';
+import { cadastrarComPerfil, entrar, expect, irParaInicio, menu, novoPerfil, print, sair, test, tokens } from './apoio';
 
 test.describe('N12 Sessão', () => {
   test('access inválido/expirado: a próxima ação renova a sessão sem deslogar', async ({ page }) => {
@@ -75,5 +75,27 @@ test.describe('N12 Sessão', () => {
     await page.unroute('**/api/auth/me/');
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
     await expect(page.getByRole('heading', { name: /^(Descoberta|Vagas para você)$/ })).toBeVisible({ timeout: 60_000 });
+  });
+
+  test('cadastro: conta criada e login automático falhou leva ao login com aviso, sem tentar cadastrar de novo (AUD-F12)', async ({ page }) => {
+    const u = novoPerfil('n12d', 'busca');
+    await irParaInicio(page);
+    await page.getByRole('button', { name: 'Criar conta' }).click();
+    await page.getByPlaceholder('Seu nome', { exact: true }).fill(u.nome);
+    await page.getByPlaceholder('seu@email.com').fill(u.email);
+    await page.getByPlaceholder('Mínimo 8 caracteres').fill(u.senha);
+    await page.getByPlaceholder('Repita a senha').fill(u.senha);
+    await page.getByRole('button', { name: /Procuro um lugar/ }).click();
+    await page.route('**/api/auth/login/', route => route.abort());
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await expect(page.getByText('Sua conta foi criada, mas não conseguimos entrar automaticamente. Entre com seu e-mail e senha.')).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole('heading', { name: 'Boas-vindas de volta!' })).toBeVisible();
+    await expect(page.getByText('Este e-mail já está cadastrado.')).toHaveCount(0);
+    await print(page, 'N12', 4, 'conta-criada-sem-login');
+    await page.unroute('**/api/auth/login/');
+    await page.getByPlaceholder('seu@email.com').fill(u.email);
+    await page.getByPlaceholder('••••••••').fill(u.senha);
+    await page.getByPlaceholder('••••••••').press('Enter');
+    await expect(page.getByText(/^Etapa 1 de/)).toBeVisible({ timeout: 60_000 });
   });
 });

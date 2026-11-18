@@ -27,6 +27,17 @@ test('N11 Moderação ponta a ponta: denúncia → análise com suspensão → "
       await print(A.page, 'N11', 2, 'denuncia-enviada');
     });
 
+    await test.step('2b. denunciar a mesma pessoa de novo, com a denúncia pendente, é recusado (AUD-10)', async () => {
+      await A.page.getByRole('button', { name: 'Mais opções' }).click();
+      await A.page.getByRole('button', { name: 'Denunciar', exact: true }).click();
+      const modal = A.page.getByRole('dialog', { name: 'Denunciar usuário' });
+      await modal.getByRole('button', { name: 'Spam', exact: true }).click();
+      await modal.getByRole('button', { name: 'Enviar denúncia' }).click();
+      await expect(modal.getByText('Você já tem uma denúncia pendente contra este usuário. Aguarde a análise da equipe.')).toBeVisible({ timeout: 20_000 });
+      await modal.getByRole('button', { name: 'Cancelar' }).click();
+      await expect(modal).toBeHidden();
+    });
+
     await test.step('3. o administrador vê a denúncia em Moderação', async () => {
       await entrar(admin.page, ADMIN.email, ADMIN.senha);
       await expect(admin.page.getByRole('heading', { name: 'Painel Admin' })).toBeVisible({ timeout: 60_000 });
@@ -57,9 +68,22 @@ test('N11 Moderação ponta a ponta: denúncia → análise com suspensão → "
       await modal.getByRole('button', { name: 'Procedente', exact: true }).click();
       await modal.getByText('Suspender a conta do denunciado').click();
       await print(admin.page, 'N11', 5, 'analisar-procedente-suspender');
+      // AUD-F09: a suspensão falha (rede) depois de a denúncia ser gravada como procedente
+      await admin.page.route('**/suspender/', route => route.abort());
       await modal.getByRole('button', { name: 'Confirmar' }).click();
       await expect(modal).toBeHidden({ timeout: 30_000 });
+      await expect(admin.page.getByText('A denúncia foi registrada como procedente, mas a suspensão falhou. Suspenda a conta pela aba Usuários.')).toBeVisible();
       await expect(admin.page.locator('tbody tr', { hasText: B.perfil.email })).toHaveCount(0, { timeout: 15_000 });
+      await admin.page.unroute('**/suspender/');
+      // ...e a conta é suspensa pela aba Usuários, como o aviso orienta
+      await admin.page.getByRole('button', { name: /^Usuários$/ }).click();
+      await admin.page.getByPlaceholder('Pesquisar...').fill(B.perfil.email);
+      await admin.page.getByRole('button', { name: 'Buscar', exact: true }).click();
+      const linhaUsuario = admin.page.locator('tbody tr', { hasText: B.perfil.email });
+      await expect(linhaUsuario).toBeVisible({ timeout: 30_000 });
+      await linhaUsuario.getByRole('button', { name: 'Suspender' }).click();
+      await admin.page.getByRole('dialog', { name: 'Suspender conta' }).getByRole('button', { name: 'Suspender' }).click();
+      await expect(linhaUsuario).toContainText('Suspenso', { timeout: 20_000 });
     });
 
     await test.step('6. o usuário suspenso tenta entrar e vê "Conta suspensa"', async () => {

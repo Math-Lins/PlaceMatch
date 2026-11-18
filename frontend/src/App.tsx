@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useId } from 'react';
 import {
   login as apiLogin,
   registrar as apiRegistrar,
@@ -7,7 +7,7 @@ import {
   criarPerfil as apiCriarPerfil,
   atualizarPerfil as apiAtualizarPerfil,
   excluirPerfil as apiExcluirPerfil,
-  logout,
+  sairDaConta,
   setOn401,
   ApiError,
   perfilIndisponivel,
@@ -208,6 +208,7 @@ function Input({ label, type = 'text', placeholder, value, onChange, error, maxL
   label: string; type?: string; placeholder?: string; value?: string; onChange?: (v: string) => void; error?: string; maxLength?: number;
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']; id?: string; autoComplete?: string;
 }) {
+  const erroId = useId();
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
       <span style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -225,10 +226,11 @@ function Input({ label, type = 'text', placeholder, value, onChange, error, maxL
         inputMode={inputMode}
         autoComplete={autoComplete}
         aria-invalid={!!error}
+        aria-describedby={error ? erroId : undefined}
         onChange={e => onChange?.(e.target.value)}
         style={estiloCampo({ erro: !!error })}
       />
-      {error && <span style={{ ...ESTILO_ERRO_CAMPO, marginTop: 0 }}>{error}</span>}
+      {error && <span id={erroId} style={{ ...ESTILO_ERRO_CAMPO, marginTop: 0 }}>{error}</span>}
     </label>
   );
 }
@@ -259,32 +261,6 @@ function CompatBadge({ value, large = false, sobreFoto = false }: { value: numbe
     <Selo tom={level.tom} grande={large} style={{ fontFamily: FONTE_TITULO, ...(sobreFoto ? { background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' } : {}) }}>
       ❤️ {value}% compatível
     </Selo>
-  );
-}
-
-function CompatMeter({ value }: { value: number }) {
-  const level = getCompatLevel(value);
-  const filledBars = COMPAT_LEVELS.indexOf(level) + 1;
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontFamily: FONTE_TITULO, fontSize: '13px', fontWeight: 700, color: level.texto }}>
-          {level.label}
-        </span>
-        <span style={{ fontFamily: FONTE_TITULO, fontSize: '14px', fontWeight: 800, color: level.texto }}>
-          {value}%
-        </span>
-      </div>
-      <div style={{ display: 'flex', gap: '3px' }}>
-        {COMPAT_LEVELS.map((l, i) => (
-          <div key={i} style={{
-            flex: 1, height: '6px', borderRadius: '3px',
-            background: i < filledBars ? level.color : C.border,
-            transition: 'background 0.2s',
-          }} />
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -802,7 +778,9 @@ function LoginScreen({ nav, onLoginSuccess, loginMsg }: { nav: (s: Screen) => vo
 
 // ─── Screen: Register ─────────────────────────────────────────────────────────
 
-function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onLoginSuccess: () => Promise<void> }) {
+function RegisterScreen({ nav, onLoginSuccess, onContaCriadaSemLogin }: {
+  nav: (s: Screen) => void; onLoginSuccess: () => Promise<void>; onContaCriadaSemLogin: (aviso: string) => void;
+}) {
   const [role, setRole] = useState<'looking' | 'has' | null>(null);
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
@@ -827,6 +805,7 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
     if (Object.keys(erros).length > 0) return;
 
     setLoading(true);
+    let contaCriada = false;
     try {
       await apiRegistrar({
         username: nome.trim(),
@@ -834,9 +813,15 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
         password: senha,
         tipo: role === 'looking' ? 'buscando_vaga' : 'oferecendo_vaga',
       });
+      contaCriada = true;
       await apiLogin(email.trim(), senha);
       await onLoginSuccess();
     } catch (e: unknown) {
+      if (contaCriada) {
+        // A conta já existe: tentar cadastrar de novo só daria "e-mail já cadastrado". Vai para o login.
+        onContaCriadaSemLogin('Sua conta foi criada, mas não conseguimos entrar automaticamente. Entre com seu e-mail e senha.');
+        return;
+      }
       if (e instanceof ApiError) {
         // Campos da API (backend/usuarios/serializers.py): username, email, password, tipo.
         // Na tela, `tipo` aparece no seletor "Você está:" (chave `role`).
@@ -1174,6 +1159,7 @@ function CampoQtdMoradores({ value, onChange, error }: { value: number | null; o
 function CampoTexto({ label, value, onChange, max, error, placeholder, altura = 100 }: {
   label: string; value: string; onChange: (v: string) => void; max: number; error?: string; placeholder?: string; altura?: number;
 }) {
+  const erroId = useId();
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
       <span style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1185,10 +1171,11 @@ function CampoTexto({ label, value, onChange, max, error, placeholder, altura = 
         value={value}
         maxLength={max}
         aria-invalid={!!error}
+        aria-describedby={error ? erroId : undefined}
         onChange={e => onChange(e.target.value)}
         style={{ ...estiloCampo({ erro: !!error }), width: '100%', resize: 'none', height: `${altura}px`, lineHeight: 1.5 }}
       />
-      {error && <span style={{ ...ERRO_ESTILO, marginTop: 0 }}>{error}</span>}
+      {error && <span id={erroId} style={{ ...ERRO_ESTILO, marginTop: 0 }}>{error}</span>}
     </label>
   );
 }
@@ -2470,11 +2457,10 @@ function conversaParaProfile(c: Conversa): Profile {
   };
 }
 
-function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId }: {
+function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId }: {
   nav: (s: Screen) => void;
   setCurrentChat: (p: Profile) => void;
   setActiveChatMatchId: (id: number) => void;
-  meuPerfilId: number | null;
 }) {
   const [conversas, setConversas] = useState<Conversa[]>([]);
   const [loading, setLoading] = useState(true);
@@ -2652,6 +2638,13 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
 
 // ─── Screen: Chat ─────────────────────────────────────────────────────────────
 
+/** Junta mensagens novas às atuais sem repetir ids (o envio e o polling podem trazer a mesma mensagem). */
+function juntarMensagens(atuais: MensagemAPI[], novas: MensagemAPI[]): MensagemAPI[] {
+  const ids = new Set(atuais.map(m => m.id));
+  const inedit = novas.filter(m => !ids.has(m.id));
+  return inedit.length > 0 ? [...atuais, ...inedit] : atuais;
+}
+
 function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowReport, onVerPerfil }: {
   onVerPerfil: () => void;
   nav: (s: Screen) => void;
@@ -2667,6 +2660,7 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState('');
+  const [semConexao, setSemConexao] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastIdRef = useRef<number>(0);
@@ -2697,11 +2691,12 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
       if (!loadedRef.current || document.hidden) return;
       try {
         const novas = await listarMensagens(matchId, lastIdRef.current);
+        setSemConexao(false);
         if (novas.length > 0) {
-          setMessages(prev => [...prev, ...novas]);
-          lastIdRef.current = novas[novas.length - 1].id;
+          setMessages(prev => juntarMensagens(prev, novas));
+          lastIdRef.current = Math.max(lastIdRef.current, novas[novas.length - 1].id);
         }
-      } catch { /* falha silenciosa no poll */ }
+      } catch { setSemConexao(true); /* o próximo ciclo tenta de novo */ }
     };
     const timer = setInterval(poll, 4000);
     return () => clearInterval(timer);
@@ -2720,8 +2715,8 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
     setInput('');
     try {
       const nova = await enviarMensagem(matchId, texto);
-      setMessages(prev => [...prev, nova]);
-      lastIdRef.current = nova.id;
+      setMessages(prev => juntarMensagens(prev, [nova]));
+      lastIdRef.current = Math.max(lastIdRef.current, nova.id);
     } catch (e: unknown) {
       setInput(texto);
       setSendError(e instanceof Error ? e.message : 'Erro ao enviar mensagem.');
@@ -2807,6 +2802,12 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
           <div ref={bottomRef} />
         </div>
 
+        {semConexao && (
+          <div role="status" style={{ padding: '6px 16px', background: C.bg, borderTop: `1px solid ${C.border}`, textAlign: 'center' }}>
+            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '12px', color: C.muted, margin: 0 }}>Sem conexão, tentando novamente…</p>
+          </div>
+        )}
+
         {/* Erro de envio */}
         {sendError && (
           <div role="alert" style={{ padding: '8px 16px', background: C.dangerSoft, borderTop: `1px solid ${C.danger}30` }}>
@@ -2864,8 +2865,7 @@ function ChatScreen({ nav, profile, matchId, meuPerfilId, showReport, setShowRep
 
 // ─── Screen: My Profile ───────────────────────────────────────────────────────
 
-function MyProfileScreen({ nav, meuPerfil, tipo, onPerfilAtualizado, onPerfilExcluido, onLogout }: {
-  nav: (s: Screen) => void;
+function MyProfileScreen({ meuPerfil, tipo, onPerfilAtualizado, onPerfilExcluido, onLogout }: {
   onLogout: () => void;
   meuPerfil: PerfilAPI | null;
   tipo: string;
@@ -3096,6 +3096,8 @@ function ReportModal({ onClose, denunciadoUsuarioId }: { onClose: () => void; de
   const [loading, setLoading] = useState(false);
   const [sucesso, setSucesso] = useState(false);
   const [erro, setErro] = useState('');
+  const fecharEmRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (fecharEmRef.current) clearTimeout(fecharEmRef.current); }, []);
 
   const handleEnviar = async () => {
     if (!motivo) { setErro('Selecione um motivo.'); return; }
@@ -3104,7 +3106,7 @@ function ReportModal({ onClose, denunciadoUsuarioId }: { onClose: () => void; de
     try {
       await criarDenuncia(denunciadoUsuarioId, motivo, descricao);
       setSucesso(true);
-      setTimeout(onClose, 2500);
+      fecharEmRef.current = setTimeout(onClose, 2500);
     } catch (e: unknown) {
       setErro(e instanceof ApiError ? e.message : 'Não foi possível enviar a denúncia.');
     } finally {
@@ -3237,7 +3239,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    logout();
+    sairDaConta();
     setMeuPerfil(null);
     setMeuTipo('');
     setNotifsCount(0);
@@ -3312,6 +3314,7 @@ export default function App() {
           if (!ativo) return;
           const perfil = perfis.find(p => p.usuario === usuario.id) ?? null;
           setMeuPerfil(perfil);
+          if (perfil) void atualizarNotifsCount();
           setScreen(s => {
             if (TELAS_PUBLICAS.includes(s)) return s;
             if (!perfil) return 'profile-create';
@@ -3367,11 +3370,12 @@ export default function App() {
       const perfis = await listarPerfis();
       const perfil = perfis.find(p => p.usuario === usuario.id) ?? null;
       setMeuPerfil(perfil);
+      if (perfil) void atualizarNotifsCount();
       nav(perfil ? 'discovery' : 'profile-create');
     } catch {
       // Não deu para carregar a conta (rede/servidor): desfaz o login e avisa na tela de entrada.
       // Mandar a pessoa para "Criar perfil" faria quem já tem perfil achar que perdeu os dados.
-      logout();
+      sairDaConta();
       throw new ApiError('Não foi possível carregar sua conta. Verifique sua conexão e tente novamente.');
     }
   };
@@ -3396,7 +3400,7 @@ export default function App() {
       {telaAtual === 'admin' && <AdminPanel nav={nav} onLogout={handleLogout} />}
       {telaAtual === 'welcome' && <WelcomeScreen nav={nav} />}
       {telaAtual === 'login' && <LoginScreen nav={nav} onLoginSuccess={handleLoginSuccess} loginMsg={sessionExpiredMsg} />}
-      {telaAtual === 'register' && <RegisterScreen nav={nav} onLoginSuccess={handleLoginSuccess} />}
+      {telaAtual === 'register' && <RegisterScreen nav={nav} onLoginSuccess={handleLoginSuccess} onContaCriadaSemLogin={(aviso) => { setSessionExpiredMsg(aviso); nav('login'); }} />}
       {telaAtual === 'profile-create' && (
         <ProfileCreateScreen nav={nav} tipo={meuTipo} onPerfilCriado={(p) => setMeuPerfil(p)} />
       )}
@@ -3443,7 +3447,7 @@ export default function App() {
       )}
       {telaAtual === 'match' && <MatchScreen nav={nav} profile={matchProfile} setCurrentChat={setCurrentChat} />}
       {telaAtual === 'matches' && (
-        <MatchesScreen key={matchesKey} nav={nav} setCurrentChat={setCurrentChat} setActiveChatMatchId={setActiveChatMatchId} meuPerfilId={meuPerfil?.id ?? null} />
+        <MatchesScreen key={matchesKey} nav={nav} setCurrentChat={setCurrentChat} setActiveChatMatchId={setActiveChatMatchId} />
       )}
       {telaAtual === 'notifications' && (
         <NotificationsScreen key={notifsKey} nav={nav} setCurrentChat={setCurrentChat} setActiveChatMatchId={setActiveChatMatchId} meuPerfilId={meuPerfil?.id ?? null} />
@@ -3470,7 +3474,6 @@ export default function App() {
       )}
       {telaAtual === 'profile' && (
         <MyProfileScreen
-          nav={nav}
           meuPerfil={meuPerfil}
           tipo={meuTipo}
           onLogout={handleLogout}

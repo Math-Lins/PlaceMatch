@@ -56,6 +56,17 @@ def validar_bool_param(valor, rotulo):
     return None
 
 
+DATA_MINIMA = date(2000, 1, 1)
+PERIODO_MAXIMO_DIAS = 366
+
+
+def validar_amplitude(inicio, fim):
+    """Response 400 se o período (datas já interpretadas) passar de 366 dias; senão None."""
+    if inicio and fim and (fim.date() - inicio.date()).days + 1 > PERIODO_MAXIMO_DIAS:
+        return resposta_400(f'O período não pode passar de {PERIODO_MAXIMO_DIAS} dias. Reduza o intervalo entre as datas.')
+    return None
+
+
 def validar_e_parsear_datas(params):
     """
     Valida e converte data_inicio / data_fim da query string.
@@ -85,8 +96,9 @@ def validar_e_parsear_datas(params):
     if data_fim_str:
         try:
             d = date.fromisoformat(data_fim_str)
+            # fim do dia inteiro, com microssegundos (senão sobra o último segundo de fora)
             data_fim_dt = make_aware(
-                timezone.datetime(d.year, d.month, d.day, 23, 59, 59)
+                timezone.datetime(d.year, d.month, d.day, 23, 59, 59, 999999)
             )
         except (ValueError, AttributeError, OverflowError):
             return None, None, Response(
@@ -99,5 +111,12 @@ def validar_e_parsear_datas(params):
             {'detail': 'data_inicio não pode ser maior que data_fim.'},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+    for rotulo, dt in (('data_inicio', data_inicio_dt), ('data_fim', data_fim_dt)):
+        if dt and dt.date() < DATA_MINIMA:
+            return None, None, resposta_400(f'{rotulo} não pode ser anterior a 01/01/2000.')
+    erro = validar_amplitude(data_inicio_dt, data_fim_dt)
+    if erro:
+        return None, None, erro
 
     return data_inicio_dt, data_fim_dt, None

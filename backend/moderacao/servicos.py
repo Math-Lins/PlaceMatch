@@ -35,6 +35,9 @@ def criar_denuncia(denunciante, denunciado_id, motivo, descricao='', request=Non
     if motivo not in validos:
         raise ValueError(f'Motivo inválido. Use: {", ".join(validos)}.')
 
+    if Denuncia.objects.filter(denunciante=denunciante, denunciado=denunciado, status='pendente').exists():
+        raise ValueError('Você já tem uma denúncia pendente contra este usuário. Aguarde a análise da equipe.')
+
     denuncia = Denuncia.objects.create(
         denunciante=denunciante,
         denunciado=denunciado,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { listarAdminUsuarios, downloadCsv, suspenderUsuario, reativarUsuario, validarPeriodo, ApiError } from '../api';
 import type { UsuarioAdmin, PaginatedResponse } from '../api';
 import {
@@ -67,7 +67,9 @@ export default function UsuariosTab() {
   const [actionErro, setActionErro] = useState('');
 
   // Filtros
-  const [q, setQ] = useState('');
+  const [busca, setBusca] = useState(''); // o que está digitado
+  const [q, setQ] = useState('');           // o termo aplicado na consulta (após 400 ms sem digitar, ou ao clicar em Buscar)
+  const consultaAtualRef = useRef(0);
   const [tipo, setTipo] = useState('');
   const [regiao, setRegiao] = useState('');
   const [ativo, setAtivo] = useState('');
@@ -79,6 +81,7 @@ export default function UsuariosTab() {
 
   const carregar = useCallback((pg: number) => {
     if (validarPeriodo(dataInicio, dataFim)) { setLoading(false); return; }
+    const consulta = ++consultaAtualRef.current;
     setLoading(true);
     setErro('');
     listarAdminUsuarios({
@@ -90,13 +93,23 @@ export default function UsuariosTab() {
       data_fim: dataFim || undefined,
       page: pg,
     })
-      .then(res => { setData(res); setLoading(false); })
-      .catch((e: Error) => { setErro(e instanceof ApiError ? e.message : e.message); setLoading(false); });
+      .then(res => { if (consulta === consultaAtualRef.current) { setData(res); setLoading(false); } })
+      .catch((e: Error) => { if (consulta === consultaAtualRef.current) { setErro(e instanceof ApiError ? e.message : e.message); setLoading(false); } });
   }, [q, tipo, regiao, ativo, dataInicio, dataFim]);
 
   useEffect(() => { carregar(page); }, [carregar, page]);
 
-  const handleSearch = () => { setPage(1); carregar(1); };
+  // Debounce: só consulta depois de 400 ms sem digitar.
+  useEffect(() => {
+    const t = setTimeout(() => { if (busca !== q) { setQ(busca); setPage(1); } }, 400);
+    return () => clearTimeout(t);
+  }, [busca, q]);
+
+  // "Buscar" (ou Enter) aplica na hora; se o termo não mudou, apenas recarrega.
+  const handleSearch = () => {
+    setPage(1);
+    if (busca !== q) setQ(busca); else carregar(1);
+  };
 
   const handleExport = async () => {
     if (erroPeriodo) return;
@@ -143,7 +156,7 @@ export default function UsuariosTab() {
     <div style={{ padding: '20px 24px' }}>
       <BarraFiltros>
         <Campo rotulo="Nome ou e-mail" flex="1 1 200px">
-          <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Pesquisar..." style={campo} />
+          <input value={busca} onChange={e => setBusca(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Pesquisar..." style={campo} />
         </Campo>
         <Campo rotulo="Tipo" minWidth="170px">
           <select value={tipo} onChange={e => setTipo(e.target.value)} style={campo}>

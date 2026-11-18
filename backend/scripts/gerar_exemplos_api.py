@@ -115,6 +115,10 @@ def main():
 
     chamar('login_senha_errada', 'POST', '/api/auth/login/', {'email': 'ana.souza@exemplo.com', 'password': 'errada'})
     chamar('login_vazio', 'POST', '/api/auth/login/', {})
+    # Limite de tentativas: suba a API com LOGIN_LIMITE_EMAIL=3/hour (e LOGIN_LIMITE_IP alto). E-mail inexistente de propósito.
+    for n in (1, 2, 3):
+        chamar(f'login_tentativa_{n}', 'POST', '/api/auth/login/', {'email': 'limite@exemplo.com', 'password': 'errada'})
+    chamar('login_limite', 'POST', '/api/auth/login/', {'email': 'LIMITE@exemplo.com', 'password': 'errada'})
     ana, ana_ref = login('login_ok', 'Ana.Souza@exemplo.com', SENHA)
     bruno, _ = login('login_bruno', 'bruno.lima@exemplo.com', SENHA)
     carla, _ = login('login_carla', 'carla.dias@exemplo.com', SENHA)
@@ -123,6 +127,10 @@ def main():
 
     chamar('refresh_ok', 'POST', '/api/auth/login/refresh/', {'refresh': ana_ref})
     chamar('refresh_invalido', 'POST', '/api/auth/login/refresh/', {'refresh': 'token-invalido'})
+    _, ana_sair = login('login_ana_logout', 'ana.souza@exemplo.com', SENHA)
+    chamar('logout_ok', 'POST', '/api/auth/logout/', {'refresh': ana_sair})
+    chamar('logout_invalido', 'POST', '/api/auth/logout/', {'refresh': ana_sair})
+    chamar('logout_vazio', 'POST', '/api/auth/logout/', {})
     chamar('me_ok', 'GET', '/api/auth/me/', token=ana, papel='logado')
     chamar('me_sem_token', 'GET', '/api/auth/me/')
     chamar('me_token_invalido', 'GET', '/api/auth/me/', token='token.invalido', papel='logado')
@@ -205,6 +213,8 @@ def main():
                   {'denunciado': ctx['usuario_carla'], 'motivo': 'spam', 'descricao': 'Anúncio repetido várias vezes.'},
                   token=ana, papel='comum')
     ctx['denuncia'] = r['id']
+    chamar('denuncia_duplicada', 'POST', '/api/moderacao/denuncias/',
+           {'denunciado': ctx['usuario_carla'], 'motivo': 'spam', 'descricao': 'Denúncia repetida.'}, token=ana, papel='comum')
     chamar('admin_denuncias_listar', 'GET', '/api/admin/moderacao/denuncias/?status=pendente', token=admin, papel='admin')
     chamar('admin_denuncias_filtro_invalido', 'GET', '/api/admin/moderacao/denuncias/?status=aberta&data_inicio=31/12/2025', token=admin, papel='admin')
     chamar('admin_denuncias_comum', 'GET', '/api/admin/moderacao/denuncias/', token=ana, papel='comum')
@@ -224,6 +234,7 @@ def main():
 
     # ── Painel e logs ──
     chamar('dashboard', 'GET', '/api/admin/dashboard/', token=admin, papel='admin')
+    chamar('dashboard_periodo_longo', 'GET', '/api/admin/dashboard/?data_inicio=2020-01-01&data_fim=2026-11-30', token=admin, papel='admin')
     chamar('dashboard_filtros', 'GET', '/api/admin/dashboard/?regiao=Boa%20Viagem&tipo=oferecendo_vaga', token=admin, papel='admin')
     chamar('dashboard_periodo_invertido', 'GET', '/api/admin/dashboard/?data_inicio=2025-12-31&data_fim=2025-01-01', token=admin, papel='admin')
     chamar('dashboard_comum', 'GET', '/api/admin/dashboard/', token=ana, papel='comum')

@@ -36,6 +36,15 @@ test('N06 Match e chat com duas sessões isoladas', async ({ browser }) => {
       await print(A.page, 'N06', 4, 'notificacoes-A');
     });
 
+    await test.step('4b. recarregar a página mostra o contador de notificações (AUD-F10)', async () => {
+      await menu(A.page, 'Descoberta').click();
+      await A.page.evaluate(() => sessionStorage.removeItem('pm_notif_last_visit'));
+      await A.page.reload();
+      await expect(A.page.getByRole('heading', { name: /^(Descoberta|Vagas para você)$/ })).toBeVisible({ timeout: 30_000 });
+      await expect(A.page.getByText(/notificaç(ão|ões) não lidas?/).first(), 'o contador deve aparecer sem precisar de um match novo na sessão')
+        .toBeAttached({ timeout: 15_000 });
+    });
+
     await test.step('5. A abre a conversa, vê a mensagem e responde', async () => {
       await menu(A.page, 'Matches').click();
       await A.page.getByRole('button').filter({ hasText: 'Olá! Tenho interesse' }).first().click();
@@ -52,6 +61,29 @@ test('N06 Match e chat com duas sessões isoladas', async ({ browser }) => {
       await print(B.page, 'N06', 6, 'chat-B-recebeu');
     });
 
+    await test.step('6b. polling que coincide com o envio não duplica a mensagem (AUD-F08)', async () => {
+      let pollsRetidos = 0;
+      let liberar: () => void = () => {};
+      const portao = new Promise<void>(r => { liberar = r; });
+      await B.page.route(/\/mensagens\/\?apos=/, async route => { pollsRetidos++; await portao; await route.continue(); });
+      await expect.poll(() => pollsRetidos, { timeout: 15_000 }).toBeGreaterThan(0); // um poll fica parado antes de chegar ao servidor
+      const texto = 'Mensagem enviada durante o polling.';
+      await B.page.getByPlaceholder('Digite uma mensagem...').fill(texto);
+      await B.page.getByRole('button', { name: 'Enviar mensagem' }).click();
+      await expect(B.page.getByText(texto)).toHaveCount(1);
+      liberar(); // o poll antigo segue para o servidor e devolve a mensagem que o envio já mostrou
+      await B.page.waitForTimeout(2500);
+      await expect(B.page.getByText(texto), 'a mensagem não pode aparecer duas vezes').toHaveCount(1);
+      await B.page.unroute(/\/mensagens\/\?apos=/);
+    });
+
+    await test.step('6c. sem conexão: aviso discreto no chat que some ao voltar (AUD-F15)', async () => {
+      await B.page.route(/\/mensagens\/\?apos=/, route => route.abort());
+      await expect(B.page.getByText('Sem conexão, tentando novamente…')).toBeVisible({ timeout: 15_000 });
+      await B.page.unroute(/\/mensagens\/\?apos=/);
+      await expect(B.page.getByText('Sem conexão, tentando novamente…')).toBeHidden({ timeout: 15_000 });
+    });
+
     await test.step('7. botões voltar funcionam: chat → Matches; Matches → Descoberta', async () => {
       await A.page.getByRole('button', { name: 'Voltar' }).click();
       await expect(A.page.getByRole('heading', { name: 'Seus Matches' })).toBeVisible();
@@ -63,7 +95,7 @@ test('N06 Match e chat com duas sessões isoladas', async ({ browser }) => {
 
     await test.step('8. menu do chat: "Ver perfil" leva a alguma tela', async () => {
       await menu(B.page, 'Matches').click();
-      await B.page.getByRole('button').filter({ hasText: 'Oi! Podemos conversar, sim.' }).first().click();
+      await B.page.getByRole('button').filter({ hasText: 'Mensagem enviada durante o polling.' }).first().click();
       await B.page.getByRole('button', { name: 'Mais opções' }).click();
       await B.page.getByRole('button', { name: 'Ver perfil', exact: true }).click();
       await expect(B.page.getByPlaceholder('Digite uma mensagem...'), '"Ver perfil" deveria sair do chat e abrir o perfil do outro usuário')

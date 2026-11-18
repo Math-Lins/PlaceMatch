@@ -27,8 +27,9 @@ paths:
         schema:
           type: string
           format: date
-        description: Fim do período. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio`
-          maior que `data_fim` → 400.
+        description: Fim do período. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio`
+          maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366
+          dias → 400.
         examples:
           Exemplo:
             value: '2026-11-30'
@@ -37,8 +38,9 @@ paths:
         schema:
           type: string
           format: date
-        description: Início do período. Formato `AAAA-MM-DD`. Formato inválido ou
-          `data_inicio` maior que `data_fim` → 400.
+        description: Início do período. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio`
+          maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366
+          dias → 400.
         examples:
           Exemplo:
             value: '2026-11-01'
@@ -197,6 +199,11 @@ paths:
                   value:
                     detail: data_inicio não pode ser maior que data_fim.
                   summary: Período invertido
+                PeríodoMaiorQue366Dias:
+                  value:
+                    detail: O período não pode passar de 366 dias. Reduza o intervalo
+                      entre as datas.
+                  summary: Período maior que 366 dias
           description: Dados inválidos (mensagem em português, por campo ou em `detail`).
         '401':
           content:
@@ -265,8 +272,9 @@ paths:
         schema:
           type: string
           format: date
-        description: Até esta data. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio`
-          maior que `data_fim` → 400.
+        description: Até esta data. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio`
+          maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366
+          dias → 400.
         examples:
           Exemplo:
             value: '2026-11-30'
@@ -275,8 +283,9 @@ paths:
         schema:
           type: string
           format: date
-        description: A partir desta data. Formato `AAAA-MM-DD`. Formato inválido ou
-          `data_inicio` maior que `data_fim` → 400.
+        description: A partir desta data. Formato `AAAA-MM-DD`. Formato inválido,
+          `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período
+          maior que 366 dias → 400.
         examples:
           Exemplo:
             value: '2026-11-01'
@@ -337,8 +346,8 @@ paths:
                     count: 1
                     page: 1
                     results:
-                    - id: 19
-                      data_hora: '2026-11-18T01:14:29.799569Z'
+                    - id: 23
+                      data_hora: '2026-11-18T04:35:55.037647Z'
                       usuario:
                         id: 3
                         nome: Bruno Lima
@@ -354,11 +363,11 @@ paths:
                   summary: Exemplo real
                 FiltradoPorE-mailDoUsuário:
                   value:
-                    count: 9
+                    count: 10
                     page: 1
                     results:
-                    - id: 22
-                      data_hora: '2026-11-18T01:14:31.571202Z'
+                    - id: 26
+                      data_hora: '2026-11-18T04:35:56.969550Z'
                       usuario:
                         id: 2
                         nome: Ana Souza
@@ -442,8 +451,9 @@ paths:
         schema:
           type: string
           format: date
-        description: Até esta data. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio`
-          maior que `data_fim` → 400.
+        description: Até esta data. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio`
+          maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366
+          dias → 400.
         examples:
           Exemplo:
             value: '2026-11-30'
@@ -452,8 +462,9 @@ paths:
         schema:
           type: string
           format: date
-        description: A partir desta data. Formato `AAAA-MM-DD`. Formato inválido ou
-          `data_inicio` maior que `data_fim` → 400.
+        description: A partir desta data. Formato `AAAA-MM-DD`. Formato inválido,
+          `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período
+          maior que 366 dias → 400.
         examples:
           Exemplo:
             value: '2026-11-01'
@@ -494,9 +505,10 @@ paths:
               examples:
                 ExemploReal(primeirasLinhas):
                   value: "\uFEFFID;Data/Hora;Usuário ID;Usuário Nome;Usuário E-mail;Ação;Descrição
-                    da Ação;Entidade;ID da Entidade;Detalhes;IP\n10;17/11/2026 22:14:27;1;admin@exemplo.com;admin@exemplo.com;LOGIN;Login;usuario;1;;127.0.0.1\n9;17/11/2026
-                    22:14:25;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;;127.0.0.1\n8;17/11/2026
-                    22:14:23;4;Carla Dias;carla.dias@exemplo.com;LOGIN;Login;usuario;4;;127.0.0.1"
+                    da Ação;Entidade;ID da Entidade;Detalhes;IP\n14;18/11/2026 01:35:52;2;Ana
+                    Souza;ana.souza@exemplo.com;LOGIN;Login;usuario;2;;127.0.0.1\n13;18/11/2026
+                    01:35:48;1;e2e-admin@teste.com;e2e-admin@teste.com;LOGIN;Login;usuario;1;;127.0.0.1\n12;18/11/2026
+                    01:35:45;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;;127.0.0.1"
                   summary: Exemplo real (primeiras linhas)
           description: Arquivo CSV de logs.
         '400':
@@ -548,7 +560,8 @@ paths:
           type: string
           format: date
         description: Criadas até esta data (inclusive). Formato `AAAA-MM-DD`. Formato
-          inválido ou `data_inicio` maior que `data_fim` → 400.
+          inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01
+          ou período maior que 366 dias → 400.
         examples:
           Exemplo:
             value: '2026-11-30'
@@ -558,7 +571,8 @@ paths:
           type: string
           format: date
         description: Criadas a partir desta data (inclusive). Formato `AAAA-MM-DD`.
-          Formato inválido ou `data_inicio` maior que `data_fim` → 400.
+          Formato inválido, `data_inicio` maior que `data_fim`, data anterior a 2000-01-01
+          ou período maior que 366 dias → 400.
         examples:
           Exemplo:
             value: '2026-11-01'
@@ -617,8 +631,8 @@ paths:
                       status: pendente
                       resolvida_por: null
                       resolucao: ''
-                      criada_em: '2026-11-18T01:14:31.564996Z'
-                      atualizada_em: '2026-11-18T01:14:31.565020Z'
+                      criada_em: '2026-11-18T04:35:56.962983Z'
+                      atualizada_em: '2026-11-18T04:35:56.963021Z'
                   summary: Exemplo real
           description: Denúncias.
         '400':
@@ -709,7 +723,7 @@ paths:
                     id: 1
                     status: resolvida
                     resolucao: Anúncio duplicado; conta suspensa.
-                    resolvida_por: admin@exemplo.com
+                    resolvida_por: e2e-admin@teste.com
                   summary: Exemplo real
           description: Denúncia decidida.
         '400':
@@ -1033,8 +1047,9 @@ paths:
         schema:
           type: string
           format: date
-        description: Fim do período. Formato `AAAA-MM-DD`. Formato inválido ou `data_inicio`
-          maior que `data_fim` → 400.
+        description: Fim do período. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio`
+          maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366
+          dias → 400.
         examples:
           Exemplo:
             value: '2026-11-30'
@@ -1043,8 +1058,9 @@ paths:
         schema:
           type: string
           format: date
-        description: Início do período. Formato `AAAA-MM-DD`. Formato inválido ou
-          `data_inicio` maior que `data_fim` → 400.
+        description: Início do período. Formato `AAAA-MM-DD`. Formato inválido, `data_inicio`
+          maior que `data_fim`, data anterior a 2000-01-01 ou período maior que 366
+          dias → 400.
         examples:
           Exemplo:
             value: '2026-11-01'
@@ -1104,22 +1120,22 @@ paths:
                     - Perfil A
                     - Perfil B
                     linhas:
-                    - - '2026-11-17'
+                    - - '2026-11-18'
                       - Ana Souza
                       - Bruno Lima
                     totais:
                       matches: 1
                       mensagens: 2
                     filtros_aplicados: {}
-                    gerado_em: '2026-11-18T01:14:37.717758Z'
+                    gerado_em: '2026-11-18T04:36:03.133304Z'
                   summary: Exemplo real
             text/csv:
               schema:
                 type: string
               examples:
                 RelatórioDeUsuáriosEmCSV:
-                  value: "\uFEFFData de Cadastro;Nome;E-mail;Tipo;Região;Tem Perfil\n17/11/2026;admin@exemplo.com;admin@exemplo.com;Administrador;;Não\n17/11/2026;Ana
-                    Souza;ana.souza@exemplo.com;Buscando vaga;Boa Viagem;Sim\n17/11/2026;Bruno
+                  value: "\uFEFFData de Cadastro;Nome;E-mail;Tipo;Região;Tem Perfil\n18/11/2026;e2e-admin@teste.com;e2e-admin@teste.com;Administrador;;Não\n18/11/2026;Ana
+                    Souza;ana.souza@exemplo.com;Buscando vaga;Boa Viagem;Sim\n18/11/2026;Bruno
                     Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;Sim"
                   summary: Relatório de usuários em CSV
           description: Relatório em JSON (ou CSV com `formato=csv`).
@@ -1186,8 +1202,9 @@ paths:
         schema:
           type: string
           format: date
-        description: Cadastro até esta data. Formato `AAAA-MM-DD`. Formato inválido
-          ou `data_inicio` maior que `data_fim` → 400.
+        description: Cadastro até esta data. Formato `AAAA-MM-DD`. Formato inválido,
+          `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período
+          maior que 366 dias → 400.
         examples:
           Exemplo:
             value: '2026-11-30'
@@ -1196,8 +1213,9 @@ paths:
         schema:
           type: string
           format: date
-        description: Cadastro a partir desta data. Formato `AAAA-MM-DD`. Formato inválido
-          ou `data_inicio` maior que `data_fim` → 400.
+        description: Cadastro a partir desta data. Formato `AAAA-MM-DD`. Formato inválido,
+          `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período
+          maior que 366 dias → 400.
         examples:
           Exemplo:
             value: '2026-11-01'
@@ -1264,7 +1282,7 @@ paths:
                       email: diego.alves@exemplo.com
                       tipo: buscando_vaga
                       regiao: null
-                      data_cadastro: '2026-11-18T01:14:12.005260Z'
+                      data_cadastro: '2026-11-18T04:35:27.511199Z'
                       tem_perfil: false
                       ativo: true
                     - id: 2
@@ -1272,7 +1290,7 @@ paths:
                       email: ana.souza@exemplo.com
                       tipo: buscando_vaga
                       regiao: Boa Viagem
-                      data_cadastro: '2026-11-18T01:14:05.182701Z'
+                      data_cadastro: '2026-11-18T04:35:21.188809Z'
                       tem_perfil: true
                       ativo: true
                   summary: Exemplo real
@@ -1330,8 +1348,9 @@ paths:
         schema:
           type: string
           format: date
-        description: Cadastro até esta data. Formato `AAAA-MM-DD`. Formato inválido
-          ou `data_inicio` maior que `data_fim` → 400.
+        description: Cadastro até esta data. Formato `AAAA-MM-DD`. Formato inválido,
+          `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período
+          maior que 366 dias → 400.
         examples:
           Exemplo:
             value: '2026-11-30'
@@ -1340,8 +1359,9 @@ paths:
         schema:
           type: string
           format: date
-        description: Cadastro a partir desta data. Formato `AAAA-MM-DD`. Formato inválido
-          ou `data_inicio` maior que `data_fim` → 400.
+        description: Cadastro a partir desta data. Formato `AAAA-MM-DD`. Formato inválido,
+          `data_inicio` maior que `data_fim`, data anterior a 2000-01-01 ou período
+          maior que 366 dias → 400.
         examples:
           Exemplo:
             value: '2026-11-01'
@@ -1383,9 +1403,9 @@ paths:
               examples:
                 ExemploReal(primeirasLinhas):
                   value: "\uFEFFID;Nome;E-mail;Tipo;Região;Data de Cadastro;Tem Perfil\n5;Diego
-                    Alves;diego.alves@exemplo.com;Buscando vaga;;17/11/2026;Não\n4;Carla
-                    Dias;carla.dias@exemplo.com;Oferecendo vaga;Casa Forte;17/11/2026;Sim\n3;Bruno
-                    Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;17/11/2026;Sim"
+                    Alves;diego.alves@exemplo.com;Buscando vaga;;18/11/2026;Não\n4;Carla
+                    Dias;carla.dias@exemplo.com;Oferecendo vaga;Casa Forte;18/11/2026;Sim\n3;Bruno
+                    Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;18/11/2026;Sim"
                   summary: Exemplo real (primeiras linhas)
           description: Arquivo CSV de usuários.
         '401':
@@ -1416,7 +1436,11 @@ paths:
       description: 'Autentica por e-mail e senha (e-mail sem diferenciar maiúsculas)
         e devolve os tokens JWT. Envie o `access` no cabeçalho `Authorization: Bearer
         <access>` das demais chamadas. Contas suspensas recebem 401 com a mensagem
-        "Conta suspensa. Procure o suporte.".'
+        "Conta suspensa. Procure o suporte.". **Limite de tentativas:** só as tentativas
+        que falham contam. Passando de 5 por minuto (mesmo IP) ou de 10 por hora (mesmo
+        e-mail, sem diferenciar maiúsculas, exista a conta ou não), a resposta é `429`
+        com o cabeçalho `Retry-After`. As taxas são configuráveis (`LOGIN_LIMITE_IP`,
+        `LOGIN_LIMITE_EMAIL`). Login correto zera o contador do e-mail.'
       summary: Entrar (login por e-mail)
       tags:
       - Autenticação
@@ -1481,13 +1505,26 @@ paths:
                   summary: Conta suspensa
           description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
             inválidas no login).'
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                TentativasDemais(com`Retry-After`):
+                  value:
+                    detail: Muitas tentativas. Aguarde alguns minutos e tente de novo.
+                  summary: Tentativas demais (com `Retry-After`)
+          description: 'Tentativas de login demais: aguarde o tempo do cabeçalho `Retry-After`
+            (em segundos).'
       x-quem-pode: Público (sem login)
   /api/auth/login/refresh/:
     post:
       operationId: auth_refresh
       description: 'Troca um `refresh` válido por um novo `access` e por um **novo
-        `refresh`** (o refresh é rotacionado: guarde o novo). O `access` dura 1 hora;
-        o `refresh`, 7 dias.'
+        `refresh`** (o refresh é rotacionado: guarde o novo). O refresh antigo é bloqueado
+        ao ser trocado e também após o logout. O `access` dura 1 hora; o `refresh`,
+        7 dias.'
       summary: Renovar o token de acesso
       tags:
       - Autenticação
@@ -1531,6 +1568,61 @@ paths:
                     detail: O token é inválido
                     code: token_not_valid
                   summary: Refresh inválido, expirado ou de conta suspensa
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+      x-quem-pode: Público (sem login)
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout
+      description: 'Coloca o `refresh` na lista de bloqueio: ele deixa de servir para
+        renovar o token. O `access` já emitido vale até expirar (1 hora). Não precisa
+        de cabeçalho de autorização; a credencial é o próprio `refresh`. Chame ao
+        sair; se falhar, o cliente pode sair mesmo assim.'
+      summary: Sair (encerrar a sessão)
+      tags:
+      - Autenticação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequisicaoRequest'
+            examples:
+              Logout:
+                value:
+                  refresh: <REFRESH>
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RefreshRequisicaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefreshRequisicaoRequest'
+        required: true
+      responses:
+        '204':
+          description: Sessão encerrada (sem corpo).
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                RefreshAusente:
+                  value:
+                    refresh:
+                    - Informe o refresh.
+                  summary: Refresh ausente
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                RefreshInválidoOuJáEncerrado:
+                  value:
+                    detail: O token é inválido ou já foi encerrado.
+                  summary: Refresh inválido ou já encerrado
           description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
             inválidas no login).'
       x-quem-pode: Público (sem login)
@@ -1733,7 +1825,7 @@ paths:
                       score: 0.9295
                       ultima_mensagem:
                         conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                        data_envio: '2026-11-18T01:14:30.652915Z'
+                        data_envio: '2026-11-18T04:35:55.873275Z'
                         remetente_id: 2
                       nao_lidas: 1
                   summary: Exemplo real
@@ -1763,7 +1855,7 @@ paths:
                       score: 0.9295
                       ultima_mensagem:
                         conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                        data_envio: '2026-11-18T01:14:30.652915Z'
+                        data_envio: '2026-11-18T04:35:55.873275Z'
                         remetente_id: 2
                       nao_lidas: 1
                   summary: Com filtros
@@ -1903,7 +1995,7 @@ paths:
                         tipo: oferecendo_vaga
                         usuario_id: 3
                       score: 0.9295
-                      data_match: '2026-11-17T22:14:29.792738-03:00'
+                      data_match: '2026-11-18T01:35:55.030154-03:00'
                   summary: 'Curtida mútua: match criado'
           description: Avaliação registrada (sem match ainda).
         '400':
@@ -2287,7 +2379,7 @@ paths:
                         tipo: oferecendo_vaga
                         usuario_id: 3
                       score: 0.9295
-                      data_match: '2026-11-17T22:14:29.792738-03:00'
+                      data_match: '2026-11-18T01:35:55.030154-03:00'
                   summary: Exemplo real
           description: Matches (cada perfil traz os campos públicos).
         '401':
@@ -2352,13 +2444,13 @@ paths:
                       match_id: 1
                       remetente_id: 1
                       conteudo: Oi, Bruno! O quarto ainda está disponível?
-                      data_envio: '2026-11-17T22:14:30.579677-03:00'
+                      data_envio: '2026-11-18T01:35:55.720540-03:00'
                       lida: false
                     - id: 2
                       match_id: 1
                       remetente_id: 2
                       conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                      data_envio: '2026-11-17T22:14:30.652915-03:00'
+                      data_envio: '2026-11-18T01:35:55.873275-03:00'
                       lida: true
                   summary: Exemplo real
                 SóAsNovas(`?apos=1`):
@@ -2367,7 +2459,7 @@ paths:
                       match_id: 1
                       remetente_id: 2
                       conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                      data_envio: '2026-11-17T22:14:30.652915-03:00'
+                      data_envio: '2026-11-18T01:35:55.873275-03:00'
                       lida: true
                   summary: Só as novas (`?apos=1`)
           description: Mensagens.
@@ -2431,7 +2523,7 @@ paths:
       operationId: chat_mensagens_enviar
       description: Envia uma mensagem de texto (1 a 1000 caracteres). Recusa conteúdo
         vazio, só espaços ou que não seja texto. Se o outro participante estiver com
-        a conta suspensa → 403.
+        a conta suspensa → 403. Match que deixou de existir → 404.
       summary: Enviar mensagem
       parameters:
       - in: path
@@ -2472,7 +2564,7 @@ paths:
                     match_id: 1
                     remetente_id: 1
                     conteudo: Oi, Bruno! O quarto ainda está disponível?
-                    data_envio: '2026-11-17T22:14:30.579677-03:00'
+                    data_envio: '2026-11-18T01:35:55.720540-03:00'
                     lida: false
                   summary: Exemplo real
                 RespostaDaOutraPessoa:
@@ -2481,7 +2573,7 @@ paths:
                     match_id: 1
                     remetente_id: 2
                     conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                    data_envio: '2026-11-17T22:14:30.652915-03:00'
+                    data_envio: '2026-11-18T01:35:55.873275-03:00'
                     lida: false
                   summary: Resposta da outra pessoa
           description: Mensagem criada.
@@ -2548,7 +2640,8 @@ paths:
     post:
       operationId: moderacao_denunciar
       description: Cria uma denúncia `pendente`. `denunciado` é o id do **usuário**
-        (campo `usuario_id` dos perfis). Não vale denunciar a si mesmo.
+        (campo `usuario_id` dos perfis). Não vale denunciar a si mesmo, nem denunciar
+        de novo a mesma pessoa enquanto sua denúncia anterior estiver `pendente` (400).
       summary: Denunciar um usuário
       tags:
       - Moderação
@@ -2586,7 +2679,7 @@ paths:
                     denunciado: 4
                     motivo: spam
                     status: pendente
-                    criada_em: '2026-11-18T01:14:31.564996Z'
+                    criada_em: '2026-11-18T04:35:56.962983Z'
                   summary: Exemplo real
           description: Denúncia criada.
         '400':
@@ -2606,6 +2699,11 @@ paths:
                 Autodenúncia:
                   value:
                     detail: Você não pode denunciar a si mesmo.
+                JáExisteDenúnciaPendenteSuaContraEsteUsuário:
+                  value:
+                    detail: Você já tem uma denúncia pendente contra este usuário.
+                      Aguarde a análise da equipe.
+                  summary: Já existe denúncia pendente sua contra este usuário
           description: Dados inválidos (mensagem em português, por campo ou em `detail`).
         '401':
           content:

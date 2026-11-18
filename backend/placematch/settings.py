@@ -11,7 +11,8 @@ load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'chave-local-insegura-nao-usar-em-producao')
 
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+# Seguro por padrão: sem a variável, DEBUG fica desligado. O desenvolvimento usa DEBUG=True no backend/.env.
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # Em produção (DEBUG=False) a chave DEVE vir da variável de ambiente SECRET_KEY, com pelo
 # menos 32 caracteres (também é a chave de assinatura do JWT/HS256). O valor padrão acima
@@ -37,6 +38,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'drf_spectacular',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     # projeto
     'usuarios',
@@ -179,6 +181,8 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
+    # o refresh antigo deixa de valer ao ser trocado e também no logout (POST /api/auth/logout/)
+    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────
@@ -187,3 +191,28 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ]
+
+# ─── Limite de tentativas de login (veja placematch/limites.py) ───────────────
+
+# Formato 'N/min' ou 'N/hour'; vazio ou 'off' desliga.
+LOGIN_LIMITE_IP = os.getenv('LOGIN_LIMITE_IP', '5/min')
+LOGIN_LIMITE_EMAIL = os.getenv('LOGIN_LIMITE_EMAIL', '10/hour')
+# Quantos proxies confiáveis existem na frente da API (0 = ignora o X-Forwarded-For).
+PROXIES_CONFIAVEIS = int(os.getenv('PROXIES_CONFIAVEIS', '0') or 0)
+
+# ─── Produção (tudo desligado por padrão; veja "Implantação em produção" no README) ─
+
+def _flag(nome):
+    return os.getenv(nome, 'False') == 'True'
+
+
+SECURE_SSL_REDIRECT = _flag('SECURE_SSL_REDIRECT')
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0') or 0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _flag('SECURE_HSTS_INCLUDE_SUBDOMAINS')
+SESSION_COOKIE_SECURE = _flag('SESSION_COOKIE_SECURE')
+CSRF_COOKIE_SECURE = _flag('CSRF_COOKIE_SECURE')
+if _flag('SECURE_PROXY_SSL_HEADER'):
+    # o proxy confiável envia X-Forwarded-Proto: https
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# Origens do frontend em produção (separadas por vírgula), além das de desenvolvimento.
+CORS_ALLOWED_ORIGINS += [o.strip() for o in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()]

@@ -30,7 +30,7 @@ class LogOperacao(models.Model):
     )
     acao = models.CharField(max_length=30, choices=ACAO_CHOICES)
     entidade = models.CharField(max_length=100, blank=True, default='')
-    entidade_id = models.PositiveIntegerField(null=True, blank=True)
+    entidade_id = models.BigIntegerField(null=True, blank=True)
     detalhes = models.JSONField(default=dict, blank=True)
     ip = models.GenericIPAddressField(null=True, blank=True)
     data_hora = models.DateTimeField(auto_now_add=True, db_index=True)
