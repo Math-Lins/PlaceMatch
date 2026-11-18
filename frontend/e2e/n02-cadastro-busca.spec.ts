@@ -31,13 +31,19 @@ test('N02 Cadastro "Maria José da Silva" (buscando vaga) → perfil em etapas �
     await print(page, 'N02', 2, 'etapa1-erros');
   });
 
-  await test.step('4. limites com contador (nome 150, região 200, bio 500)', async () => {
+  await test.step('4. limites com contador (link da foto 500, nome 150, região 200, bio 500)', async () => {
     await expect(page.getByText('0/150')).toBeVisible();
     await expect(page.getByText('0/200')).toBeVisible();
-    await expect(page.getByText('0/500')).toBeVisible();
+    // Dois contadores de 500: o link da foto (etapa 1 desde a RC) e a bio.
+    await expect(page.getByText('0/500', { exact: true })).toHaveCount(2);
     await page.getByPlaceholder('Seu nome completo').fill('x'.repeat(200));
     await expect(page.getByPlaceholder('Seu nome completo')).toHaveValue('x'.repeat(150));
     await expect(page.getByText('150/150')).toBeVisible();
+    const bio = page.getByPlaceholder(/Conte um pouco sobre você/);
+    await bio.fill('b'.repeat(510));
+    await expect(bio).toHaveValue('b'.repeat(500));
+    await expect(page.getByText('500/500', { exact: true })).toHaveCount(1);
+    await bio.fill('');
   });
 
   await test.step('5. etapa 1 preenchida avança para a etapa 2', async () => {

@@ -1,0 +1,103 @@
+# 17/11/2026 21:51:16 -0300 | diretório: frontend | comando: npm run build
+
+
+> placematch-frontend@1.0.0 build
+> vite build
+
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 36 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                              0.72 kB │ gzip:   0.39 kB
+dist/assets/nunito-vietnamese-700-normal-Ch8EUCfz.woff2      5.96 kB
+dist/assets/nunito-vietnamese-400-normal-BHkVbP3T.woff2      6.12 kB
+dist/assets/nunito-vietnamese-500-normal-BpqpEYcO.woff2      6.14 kB
+dist/assets/nunito-vietnamese-600-normal-BY8O6Cug.woff2      6.19 kB
+dist/assets/nunito-vietnamese-800-normal-D_CZYdm9.woff2      6.22 kB
+dist/assets/outfit-latin-ext-500-normal-zeox_O30.woff2       6.24 kB
+dist/assets/outfit-latin-ext-400-normal-5tcqmc2S.woff2       6.38 kB
+dist/assets/outfit-latin-ext-800-normal-DRv2ic_2.woff2       6.47 kB
+dist/assets/outfit-latin-ext-700-normal-CI4iH74K.woff2       6.48 kB
+dist/assets/outfit-latin-ext-600-normal-B85nYjL1.woff2       6.52 kB
+dist/assets/nunito-vietnamese-700-normal-C9SQsXvj.woff       8.07 kB
+dist/assets/nunito-vietnamese-400-normal-DtOtW02z.woff       8.24 kB
+dist/assets/nunito-vietnamese-500-normal-9ShSsgIA.woff       8.26 kB
+dist/assets/nunito-vietnamese-600-normal-DO1RqFw5.woff       8.27 kB
+dist/assets/nunito-vietnamese-800-normal-Dz0hZPb5.woff       8.30 kB
+dist/assets/nunito-cyrillic-500-normal-C7KGZCzc.woff2        8.40 kB
+dist/assets/nunito-cyrillic-400-normal-xAOo5cBP.woff2        8.46 kB
+dist/assets/outfit-latin-ext-500-normal-DrCvqoFD.woff        8.49 kB
+dist/assets/nunito-cyrillic-800-normal-D3igD7Kl.woff2        8.49 kB
+dist/assets/nunito-cyrillic-700-normal-DP36NgGt.woff2        8.51 kB
+dist/assets/nunito-cyrillic-600-normal-DJGQ2h05.woff2        8.53 kB
+dist/assets/outfit-latin-ext-400-normal-DHm7mdGe.woff        8.64 kB
+dist/assets/outfit-latin-ext-600-normal-CWJcPgd7.woff        8.75 kB
+dist/assets/outfit-latin-ext-800-normal-DyhPHUt-.woff        8.76 kB
+dist/assets/outfit-latin-ext-700-normal-fjS8-Gm7.woff        8.78 kB
+dist/assets/nunito-cyrillic-700-normal-DfHRUDv-.woff        10.40 kB
+dist/assets/nunito-cyrillic-400-normal-D1j0u8EH.woff        10.46 kB
+dist/assets/nunito-cyrillic-800-normal-DymMgApb.woff        10.46 kB
+dist/assets/nunito-cyrillic-500-normal-CsSUaxYY.woff        10.47 kB
+dist/assets/nunito-cyrillic-600-normal-BUjmtIuu.woff        10.54 kB
+dist/assets/nunito-cyrillic-ext-700-normal-BuR0mlCG.woff2   10.98 kB
+dist/assets/nunito-cyrillic-ext-500-normal-BooqzoBf.woff2   11.13 kB
+dist/assets/nunito-cyrillic-ext-400-normal-CuPM9foi.woff2   11.16 kB
+dist/assets/nunito-cyrillic-ext-600-normal-CWPPjBOD.woff2   11.20 kB
+dist/assets/nunito-cyrillic-ext-800-normal-B-cvGohL.woff2   11.26 kB
+dist/assets/outfit-latin-500-normal-DKnIMDSk.woff2          13.52 kB
+dist/assets/nunito-cyrillic-ext-700-normal-DfoqN4Gs.woff    13.87 kB
+dist/assets/outfit-latin-400-normal-BGsTXAXT.woff2          14.03 kB
+dist/assets/outfit-latin-800-normal-CQna6-G7.woff2          14.04 kB
+dist/assets/nunito-cyrillic-ext-800-normal-pjRatrRO.woff    14.06 kB
+dist/assets/outfit-latin-700-normal-Cu9v6i1X.woff2          14.06 kB
+dist/assets/nunito-cyrillic-ext-600-normal-vnfu4DTE.woff    14.09 kB
+dist/assets/nunito-cyrillic-ext-400-normal-xaE7D4Sw.woff    14.10 kB
+dist/assets/nunito-cyrillic-ext-500-normal-ryWF3qTI.woff    14.10 kB
+dist/assets/outfit-latin-600-normal-B7SfZ07L.woff2          14.14 kB
+dist/assets/nunito-latin-ext-700-normal-BWeMsAzO.woff2      15.82 kB
+dist/assets/nunito-latin-ext-400-normal-i-8OOpdj.woff2      15.88 kB
+dist/assets/nunito-latin-ext-500-normal-DpF2BH_v.woff2      15.97 kB
+dist/assets/nunito-latin-ext-600-normal-Dd9Zuxh1.woff2      16.08 kB
+dist/assets/nunito-latin-700-normal-Dort48En.woff2          16.22 kB
+dist/assets/nunito-latin-ext-800-normal-CtU8tJOV.woff2      16.28 kB
+dist/assets/nunito-latin-400-normal-r8SDr6Up.woff2          16.31 kB
+dist/assets/nunito-latin-500-normal-EugFkASW.woff2          16.42 kB
+dist/assets/nunito-latin-800-normal-Dz8SOQK_.woff2          16.52 kB
+dist/assets/nunito-latin-600-normal-Br8yIETf.woff2          16.55 kB
+dist/assets/outfit-latin-500-normal-ClnHRwRh.woff           17.68 kB
+dist/assets/outfit-latin-400-normal-DMwTpYkH.woff           18.23 kB
+dist/assets/outfit-latin-700-normal-D4itBLBr.woff           18.34 kB
+dist/assets/outfit-latin-800-normal-BRHLSPcU.woff           18.39 kB
+dist/assets/outfit-latin-600-normal-BEfTtDA7.woff           18.41 kB
+dist/assets/nunito-latin-700-normal-OcDqTBcA.woff           19.98 kB
+dist/assets/nunito-latin-400-normal-DKg4f3fz.woff           20.33 kB
+dist/assets/nunito-latin-800-normal-D-J0wlBY.woff           20.36 kB
+dist/assets/nunito-latin-500-normal-B5klmw3Q.woff           20.37 kB
+dist/assets/nunito-latin-600-normal-Cd0eNu1l.woff           20.49 kB
+dist/assets/nunito-latin-ext-700-normal-D4woHhbd.woff       21.00 kB
+dist/assets/nunito-latin-ext-500-normal-CVNQN0KE.woff       21.22 kB
+dist/assets/nunito-latin-ext-400-normal-CjMJVfGn.woff       21.28 kB
+dist/assets/nunito-latin-ext-600-normal-BKUpuB78.woff       21.30 kB
+dist/assets/nunito-latin-ext-800-normal-CDcxIxx8.woff       21.42 kB
+dist/assets/capa-inicio-Bz8Igd4J.jpg                        94.70 kB
+dist/assets/index-DcDj6HBy.css                              23.20 kB │ gzip:   4.60 kB
+dist/assets/index-DebfdW8Z.js                              383.60 kB │ gzip: 106.19 kB
+
+✓ built in 5.88s
+[33m[PLUGIN_TIMINGS] [0mPlugin hooks ran for 3.9s of this 5.8s build (67%).
+2 hooks are listed without a time. Their calls overlapped, so the time inside one call includes work from other calls. To find their cost, profile the build with `node --cpu-prof`:
+  - vite:css transform (11 calls)
+  - @tailwindcss/vite:generate:build transform (11 calls)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+
+
+# código de saída: 0
+
+
+# 17/11/2026 21:51:36 -0300 | diretório: frontend | comando: npx tsc --noEmit
+
+
+# código de saída: 0
+
+# 17/11/2026 21:52:06 -0300 | npm run lint: não executado — o package.json não define script "lint" (scripts: dev, build, preview, format, e2e, e2e:tour, e2e:db, e2e:db:parar).

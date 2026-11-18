@@ -1,0 +1,979 @@
+# 17/11/2026 21:34:33 -0300 | diretório: backend | comando: python manage.py test --settings=placematch.test_settings -v 2
+
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 574 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders, drf_spectacular, messages, painel, rest_framework, rest_framework_simplejwt, staticfiles
+  Apply all migrations: admin, auth, chat, contenttypes, logs, matches, moderacao, perfis, sessions, usuarios
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying usuarios.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying perfis.0001_initial... OK
+  Applying perfis.0002_initial... OK
+  Applying perfis.0003_alter_perfil_nivel_organizacao_and_more... OK
+  Applying perfis.0004_perfil_novos_campos... OK
+  Applying perfis.0005_anuncio_imovel... OK
+  Applying perfis.0006_restricoes_de_banco... OK
+  Applying matches.0001_initial... OK
+  Applying matches.0002_restricoes_de_banco... OK
+  Applying chat.0001_initial... OK
+  Applying chat.0002_renomear_indice_mensagem... OK
+  Applying chat.0003_restricoes_de_banco... OK
+  Applying logs.0001_initial... OK
+  Applying logs.0002_alter_logoperacao_acao... OK
+  Applying moderacao.0001_initial... OK
+  Applying moderacao.0002_restricoes_de_banco... OK
+  Applying sessions.0001_initial... OK
+  Applying usuarios.0002_manager_email_iexact... OK
+  Applying usuarios.0003_copiar_username_para_first_name... OK
+  Applying usuarios.0004_restricoes_de_banco...test_ctf19_listar_conversas (chat.test_funcionais_sprint9.FuncionaisChatTest.test_ctf19_listar_conversas) ... ok
+test_ctf20_enviar_mensagem_201 (chat.test_funcionais_sprint9.FuncionaisChatTest.test_ctf20_enviar_mensagem_201) ... ok
+test_ctf21_consultar_mensagens_e_marcar_lidas (chat.test_funcionais_sprint9.FuncionaisChatTest.test_ctf21_consultar_mensagens_e_marcar_lidas) ... ok
+test_ctf22_notificacoes_nao_lidas_via_conversas (chat.test_funcionais_sprint9.FuncionaisChatTest.test_ctf22_notificacoes_nao_lidas_via_conversas)
+Backend não tem módulo de notificações: o front deriva de /conversas (nao_lidas). ... ok
+test_ctv78_mensagem_vazia (chat.test_funcionais_sprint9.ValidacaoMensagemTest.test_ctv78_mensagem_vazia) ... ok
+test_ctv79_mensagem_so_espacos (chat.test_funcionais_sprint9.ValidacaoMensagemTest.test_ctv79_mensagem_so_espacos) ... ok
+test_ctv80_mensagem_1001_chars (chat.test_funcionais_sprint9.ValidacaoMensagemTest.test_ctv80_mensagem_1001_chars) ... ok
+test_ctv81_match_inexistente (chat.test_funcionais_sprint9.ValidacaoMensagemTest.test_ctv81_match_inexistente) ... ok
+test_ctv82_sem_campo_conteudo (chat.test_funcionais_sprint9.ValidacaoMensagemTest.test_ctv82_sem_campo_conteudo) ... ok
+test_ctv83_conteudo_nao_texto (chat.test_funcionais_sprint9.ValidacaoMensagemTest.test_ctv83_conteudo_nao_texto)
+Número/lista/objeto não são texto de mensagem válido. ... ok
+test_ctv84_nao_participante (chat.test_funcionais_sprint9.ValidacaoMensagemTest.test_ctv84_nao_participante) ... ok
+test_ctv85_usuario_sem_perfil (chat.test_funcionais_sprint9.ValidacaoMensagemTest.test_ctv85_usuario_sem_perfil) ... ok
+test_ctv86_apos_invalido (chat.test_funcionais_sprint9.ValidacaoMensagemTest.test_ctv86_apos_invalido) ... ok
+test_ctv87_enviar_para_match_com_usuario_suspenso (chat.test_funcionais_sprint9.ValidacaoMensagemTest.test_ctv87_enviar_para_match_com_usuario_suspenso) ... ok
+test_ctv88_conteudo_exatamente_1000 (chat.test_funcionais_sprint9.ValidacaoMensagemTest.test_ctv88_conteudo_exatamente_1000) ... ok
+test_admin_retorna_403_em_conversas (chat.tests.AcessoMensagensTest.test_admin_retorna_403_em_conversas) ... ok
+test_admin_retorna_403_em_mensagens_get (chat.tests.AcessoMensagensTest.test_admin_retorna_403_em_mensagens_get) ... ok
+test_admin_retorna_403_em_mensagens_post (chat.tests.AcessoMensagensTest.test_admin_retorna_403_em_mensagens_post) ... ok
+test_nao_participante_nao_envia_mensagem (chat.tests.AcessoMensagensTest.test_nao_participante_nao_envia_mensagem) ... ok
+test_nao_participante_nao_lista_mensagens (chat.tests.AcessoMensagensTest.test_nao_participante_nao_lista_mensagens) ... ok
+test_sem_token_conversas_retorna_401 (chat.tests.AcessoMensagensTest.test_sem_token_conversas_retorna_401) ... ok
+test_sem_token_get_retorna_401 (chat.tests.AcessoMensagensTest.test_sem_token_get_retorna_401) ... ok
+test_sem_token_post_retorna_401 (chat.tests.AcessoMensagensTest.test_sem_token_post_retorna_401) ... ok
+test_apos_retorna_apenas_mensagens_mais_novas (chat.tests.AposParametroTest.test_apos_retorna_apenas_mensagens_mais_novas) ... ok
+test_apos_sem_novas_retorna_vazio (chat.tests.AposParametroTest.test_apos_sem_novas_retorna_vazio) ... ok
+test_apagar_match_apaga_mensagens (chat.tests.CascadeTest.test_apagar_match_apaga_mensagens) ... ok
+test_filtro_nao_lidas_false_retorna_todos (chat.tests.ConversasFiltrosTest.test_filtro_nao_lidas_false_retorna_todos) ... ok
+test_filtro_nao_lidas_true_exclui_sem_nao_lidas (chat.tests.ConversasFiltrosTest.test_filtro_nao_lidas_true_exclui_sem_nao_lidas) ... ok
+test_filtro_nao_lidas_true_vazio_quando_tudo_lido (chat.tests.ConversasFiltrosTest.test_filtro_nao_lidas_true_vazio_quando_tudo_lido) ... ok
+test_filtro_q_case_insensitive (chat.tests.ConversasFiltrosTest.test_filtro_q_case_insensitive) ... ok
+test_filtro_q_por_nome_retorna_match_correto (chat.tests.ConversasFiltrosTest.test_filtro_q_por_nome_retorna_match_correto) ... ok
+test_filtro_q_por_titulo_anuncio (chat.tests.ConversasFiltrosTest.test_filtro_q_por_titulo_anuncio) ... ok
+test_filtro_q_sem_resultado (chat.tests.ConversasFiltrosTest.test_filtro_q_sem_resultado) ... ok
+test_contagem_nao_lidas_antes_de_listar (chat.tests.ConversasNaoLidasTest.test_contagem_nao_lidas_antes_de_listar) ... ok
+test_contagem_nao_lidas_depois_de_listar (chat.tests.ConversasNaoLidasTest.test_contagem_nao_lidas_depois_de_listar) ... ok
+test_proprias_mensagens_nao_contam_como_nao_lidas (chat.tests.ConversasNaoLidasTest.test_proprias_mensagens_nao_contam_como_nao_lidas) ... ok
+test_conversas_match_sem_mensagem_vai_para_o_fim (chat.tests.ConversasOrdenacaoTest.test_conversas_match_sem_mensagem_vai_para_o_fim) ... ok
+test_conversas_ordena_match_com_mensagem_recente_primeiro (chat.tests.ConversasOrdenacaoTest.test_conversas_ordena_match_com_mensagem_recente_primeiro) ... ok
+test_conversas_retorna_ultima_mensagem_correta (chat.tests.ConversasOrdenacaoTest.test_conversas_retorna_ultima_mensagem_correta) ... ok
+test_conversas_sem_mensagem_tem_ultima_mensagem_null (chat.tests.ConversasOrdenacaoTest.test_conversas_sem_mensagem_tem_ultima_mensagem_null) ... ok
+test_conversas_so_traz_matches_do_usuario (chat.tests.ConversasOrdenacaoTest.test_conversas_so_traz_matches_do_usuario) ... ok
+test_envio_por_participante_retorna_201 (chat.tests.EnvioMensagemTest.test_envio_por_participante_retorna_201) ... ok
+test_mensagens_aparecem_em_ordem_cronologica (chat.tests.EnvioMensagemTest.test_mensagens_aparecem_em_ordem_cronologica) ... ok
+test_listar_marca_mensagens_do_outro_como_lida (chat.tests.MarcarLidaTest.test_listar_marca_mensagens_do_outro_como_lida) ... ok
+test_listar_nao_marca_proprias_mensagens_como_lida (chat.tests.MarcarLidaTest.test_listar_nao_marca_proprias_mensagens_como_lida) ... ok
+test_conteudo_1000_chars_e_valido (chat.tests.ValidacaoConteudoTest.test_conteudo_1000_chars_e_valido) ... ok
+test_conteudo_1001_chars_retorna_400 (chat.tests.ValidacaoConteudoTest.test_conteudo_1001_chars_retorna_400) ... ok
+test_conteudo_so_espacos_retorna_400 (chat.tests.ValidacaoConteudoTest.test_conteudo_so_espacos_retorna_400) ... ok
+test_conteudo_vazio_retorna_400 (chat.tests.ValidacaoConteudoTest.test_conteudo_vazio_retorna_400) ... ok
+test_a_ve_b_na_descoberta (chat.tests_integracao.FluxoCompletoTest.test_a_ve_b_na_descoberta) ... ok
+test_b_ve_a_na_descoberta (chat.tests_integracao.FluxoCompletoTest.test_b_ve_a_na_descoberta) ... ok
+test_curtidas_mutuas_geram_match (chat.tests_integracao.FluxoCompletoTest.test_curtidas_mutuas_geram_match) ... ok
+test_descoberta_inclui_score (chat.tests_integracao.FluxoCompletoTest.test_descoberta_inclui_score) ... ok
+test_match_aparece_em_conversas_para_a (chat.tests_integracao.FluxoCompletoTest.test_match_aparece_em_conversas_para_a) ... ok
+test_match_aparece_em_conversas_para_b (chat.tests_integracao.FluxoCompletoTest.test_match_aparece_em_conversas_para_b) ... ok
+test_nao_lidas_antes_e_depois_de_listar (chat.tests_integracao.FluxoCompletoTest.test_nao_lidas_antes_e_depois_de_listar) ... ok
+test_proprias_mensagens_nao_contam_como_nao_lidas (chat.tests_integracao.FluxoCompletoTest.test_proprias_mensagens_nao_contam_como_nao_lidas) ... ok
+test_terceiro_usuario_nao_pode_enviar_mensagem (chat.tests_integracao.FluxoCompletoTest.test_terceiro_usuario_nao_pode_enviar_mensagem) ... ok
+test_terceiro_usuario_nao_pode_ler_mensagens (chat.tests_integracao.FluxoCompletoTest.test_terceiro_usuario_nao_pode_ler_mensagens) ... ok
+test_troca_de_mensagens_nos_dois_sentidos (chat.tests_integracao.FluxoCompletoTest.test_troca_de_mensagens_nos_dois_sentidos) ... ok
+test_ctv134_filtro_usuario_por_email (logs.test_funcionais_sprint9.FiltroUsuarioPeloFrontTest.test_ctv134_filtro_usuario_por_email) ... ok
+test_ctf27_admin_lista_logs (logs.test_funcionais_sprint9.FuncionaisLogsTest.test_ctf27_admin_lista_logs) ... ok
+test_ctf28_filtrar_logs_por_acao (logs.test_funcionais_sprint9.FuncionaisLogsTest.test_ctf28_filtrar_logs_por_acao) ... ok
+test_ctf29_exportar_logs_csv (logs.test_funcionais_sprint9.FuncionaisLogsTest.test_ctf29_exportar_logs_csv) ... ok
+test_ctf30_cadastro_e_login_geram_log (logs.test_funcionais_sprint9.FuncionaisLogsTest.test_ctf30_cadastro_e_login_geram_log) ... ok
+test_ctf31_usuario_comum_nao_acessa_logs (logs.test_funcionais_sprint9.FuncionaisLogsTest.test_ctf31_usuario_comum_nao_acessa_logs) ... ok
+test_ctv108_data_inicio_formato_invalido (logs.test_funcionais_sprint9.ValidacaoFiltrosLogsTest.test_ctv108_data_inicio_formato_invalido) ... ok
+test_ctv109_data_fim_inexistente (logs.test_funcionais_sprint9.ValidacaoFiltrosLogsTest.test_ctv109_data_fim_inexistente) ... ok
+test_ctv110_periodo_invertido (logs.test_funcionais_sprint9.ValidacaoFiltrosLogsTest.test_ctv110_periodo_invertido) ... ok
+test_ctv111_exportar_data_invalida (logs.test_funcionais_sprint9.ValidacaoFiltrosLogsTest.test_ctv111_exportar_data_invalida) ... ok
+test_ctv112_exportar_periodo_invertido (logs.test_funcionais_sprint9.ValidacaoFiltrosLogsTest.test_ctv112_exportar_periodo_invertido) ... ok
+test_ctv113_pagina_inexistente (logs.test_funcionais_sprint9.ValidacaoFiltrosLogsTest.test_ctv113_pagina_inexistente) ... ok
+test_ctv114_pagina_texto_nao_gera_500 (logs.test_funcionais_sprint9.ValidacaoFiltrosLogsTest.test_ctv114_pagina_texto_nao_gera_500) ... ok
+test_ctv115_acao_inexistente (logs.test_funcionais_sprint9.ValidacaoFiltrosLogsTest.test_ctv115_acao_inexistente) ... ok
+test_ctv116_usuario_id_gigante_nao_gera_500 (logs.test_funcionais_sprint9.ValidacaoFiltrosLogsTest.test_ctv116_usuario_id_gigante_nao_gera_500)
+`usuario` aceita ID, e-mail ou nome; um ID fora do limite do banco não pode dar 500. ... ok
+test_admin_lista_logs (logs.tests.LogAdminListTest.test_admin_lista_logs) ... ok
+test_anonimo_recebe_401 (logs.tests.LogAdminListTest.test_anonimo_recebe_401) ... ok
+test_filtro_acao (logs.tests.LogAdminListTest.test_filtro_acao) ... ok
+test_filtro_periodo (logs.tests.LogAdminListTest.test_filtro_periodo) ... ok
+test_filtro_q (logs.tests.LogAdminListTest.test_filtro_q) ... ok
+test_filtro_usuario (logs.tests.LogAdminListTest.test_filtro_usuario) ... ok
+test_nao_admin_recebe_403 (logs.tests.LogAdminListTest.test_nao_admin_recebe_403) ... ok
+test_paginacao (logs.tests.LogAdminListTest.test_paginacao) ... ok
+test_resultado_tem_campos_esperados (logs.tests.LogAdminListTest.test_resultado_tem_campos_esperados) ... ok
+test_cadastro_gera_log (logs.tests.LogCadastroTest.test_cadastro_gera_log) ... ok
+test_curtida_gera_log (logs.tests.LogCurtidaTest.test_curtida_gera_log) ... ok
+test_match_gera_log_com_score (logs.tests.LogCurtidaTest.test_match_gera_log_com_score) ... ok
+test_recusa_gera_log (logs.tests.LogCurtidaTest.test_recusa_gera_log) ... ok
+test_anonimo_recebe_401 (logs.tests.LogExportarTest.test_anonimo_recebe_401) ... ok
+test_exporta_csv_com_cabecalho (logs.tests.LogExportarTest.test_exporta_csv_com_cabecalho) ... ok
+test_exportar_com_filtro_acao (logs.tests.LogExportarTest.test_exportar_com_filtro_acao) ... ok
+test_exportar_gera_log_relatorio_exportado (logs.tests.LogExportarTest.test_exportar_gera_log_relatorio_exportado) ... ok
+test_nao_admin_recebe_403 (logs.tests.LogExportarTest.test_nao_admin_recebe_403) ... ok
+test_falha_no_log_nao_quebra_cadastro (logs.tests.LogFalhaGravacaoTest.test_falha_no_log_nao_quebra_cadastro) ... Erro ao gravar log (acao=CADASTRO, usuario=safe@test.com)
+Traceback (most recent call last):
+  File "C:\dev\projeto\PlaceMatch\backend\logs\servicos.py", line 22, in registrar
+    LogOperacao.objects.create(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        acao=acao,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        ip=_extrair_ip(request),
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\TASCM\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\TASCM\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\TASCM\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py", line 1241, in _execute_mock_call
+    raise effect
+Exception: DB error
+ok
+test_login_falha_gera_log_sem_email_senha (logs.tests.LogLoginTest.test_login_falha_gera_log_sem_email_senha) ... ok
+test_login_sucesso_gera_log (logs.tests.LogLoginTest.test_login_sucesso_gera_log) ... ok
+test_mensagem_nao_guarda_texto (logs.tests.LogMensagemTest.test_mensagem_nao_guarda_texto) ... ok
+test_criar_perfil_gera_log (logs.tests.LogPerfilTest.test_criar_perfil_gera_log) ... ok
+test_editar_perfil_gera_log_com_campos (logs.tests.LogPerfilTest.test_editar_perfil_gera_log_com_campos) ... ok
+test_excluir_perfil_gera_log (logs.tests.LogPerfilTest.test_excluir_perfil_gera_log) ... ok
+test_excluir_usuario_mantem_log_com_usuario_nulo (logs.tests.LogUsuarioExcluidoTest.test_excluir_usuario_mantem_log_com_usuario_nulo) ... ok
+test_ctf13_descoberta_lista_tipo_oposto (matches.test_funcionais_sprint9.FuncionaisMatchTest.test_ctf13_descoberta_lista_tipo_oposto) ... ok
+test_ctf14_descoberta_com_filtro (matches.test_funcionais_sprint9.FuncionaisMatchTest.test_ctf14_descoberta_com_filtro) ... ok
+test_ctf15_curtir_201_sem_match (matches.test_funcionais_sprint9.FuncionaisMatchTest.test_ctf15_curtir_201_sem_match) ... ok
+test_ctf16_recusar_201_e_some_da_descoberta (matches.test_funcionais_sprint9.FuncionaisMatchTest.test_ctf16_recusar_201_e_some_da_descoberta) ... ok
+test_ctf17_curtida_mutua_gera_match_e_lista (matches.test_funcionais_sprint9.FuncionaisMatchTest.test_ctf17_curtida_mutua_gera_match_e_lista) ... ok
+test_ctf18_matches_vazio_para_usuario_sem_matches (matches.test_funcionais_sprint9.FuncionaisMatchTest.test_ctf18_matches_vazio_para_usuario_sem_matches) ... ok
+test_ctv56_perfil_inexistente (matches.test_funcionais_sprint9.ValidacaoCurtidaTest.test_ctv56_perfil_inexistente) ... ok
+test_ctv57_sem_corpo (matches.test_funcionais_sprint9.ValidacaoCurtidaTest.test_ctv57_sem_corpo) ... ok
+test_ctv58_tipo_acao_invalido (matches.test_funcionais_sprint9.ValidacaoCurtidaTest.test_ctv58_tipo_acao_invalido) ... ok
+test_ctv59_perfil_destino_texto (matches.test_funcionais_sprint9.ValidacaoCurtidaTest.test_ctv59_perfil_destino_texto) ... ok
+test_ctv60_perfil_destino_nulo (matches.test_funcionais_sprint9.ValidacaoCurtidaTest.test_ctv60_perfil_destino_nulo) ... ok
+test_ctv61_curtir_proprio_perfil (matches.test_funcionais_sprint9.ValidacaoCurtidaTest.test_ctv61_curtir_proprio_perfil) ... ok
+test_ctv62_curtida_duplicada (matches.test_funcionais_sprint9.ValidacaoCurtidaTest.test_ctv62_curtida_duplicada) ... ok
+test_ctv63_curtir_mesmo_tipo (matches.test_funcionais_sprint9.ValidacaoCurtidaTest.test_ctv63_curtir_mesmo_tipo) ... ok
+test_ctv64_corpo_nao_objeto (matches.test_funcionais_sprint9.ValidacaoCurtidaTest.test_ctv64_corpo_nao_objeto) ... ok
+test_ctv65_usuario_sem_perfil (matches.test_funcionais_sprint9.ValidacaoCurtidaTest.test_ctv65_usuario_sem_perfil) ... ok
+test_ctv66_admin_nao_curte (matches.test_funcionais_sprint9.ValidacaoCurtidaTest.test_ctv66_admin_nao_curte) ... ok
+test_ctv67_curtir_perfil_de_usuario_suspenso (matches.test_funcionais_sprint9.ValidacaoCurtidaTest.test_ctv67_curtir_perfil_de_usuario_suspenso)
+Perfil de conta suspensa não aparece na descoberta; também não deveria ser curtível. ... ok
+test_ctv68_score_min_negativo (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv68_score_min_negativo) ... ok
+test_ctv69_score_min_acima_de_100 (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv69_score_min_acima_de_100) ... ok
+test_ctv70_score_min_texto (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv70_score_min_texto) ... ok
+test_ctv71_orcamento_min_texto (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv71_orcamento_min_texto) ... ok
+test_ctv72_orcamento_min_nan (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv72_orcamento_min_nan) ... ok
+test_ctv73_orcamento_max_infinity (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv73_orcamento_max_infinity) ... ok
+test_ctv74_ordenar_invalido (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv74_ordenar_invalido) ... ok
+test_ctv75_bool_invalido (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv75_bool_invalido) ... ok
+test_ctv76_orcamento_negativo (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv76_orcamento_negativo) ... ok
+test_ctv77_usuario_sem_perfil_na_descoberta (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv77_usuario_sem_perfil_na_descoberta) ... ok
+test_score_alto_para_perfis_similares (matches.tests.CalcularScoreTest.test_score_alto_para_perfis_similares) ... ok
+test_score_baixo_para_perfis_diferentes (matches.tests.CalcularScoreTest.test_score_baixo_para_perfis_diferentes) ... ok
+test_score_entre_zero_e_um_similares (matches.tests.CalcularScoreTest.test_score_entre_zero_e_um_similares) ... ok
+test_score_simetrico (matches.tests.CalcularScoreTest.test_score_simetrico) ... ok
+test_aceita_visitas_invalido_retorna_400 (matches.tests.CamposNovosAPITest.test_aceita_visitas_invalido_retorna_400) ... ok
+test_criar_perfil_sem_campos_novos_usa_defaults (matches.tests.CamposNovosAPITest.test_criar_perfil_sem_campos_novos_usa_defaults) ... ok
+test_nivel_ruido_fora_de_faixa_retorna_400_com_mensagem (matches.tests.CamposNovosAPITest.test_nivel_ruido_fora_de_faixa_retorna_400_com_mensagem) ... ok
+test_nivel_social_fora_de_faixa_retorna_400_com_mensagem (matches.tests.CamposNovosAPITest.test_nivel_social_fora_de_faixa_retorna_400_com_mensagem) ... ok
+test_perfil_horario_invalido_retorna_400 (matches.tests.CamposNovosAPITest.test_perfil_horario_invalido_retorna_400) ... ok
+test_qtd_moradores_fora_de_faixa_retorna_400_com_mensagem (matches.tests.CamposNovosAPITest.test_qtd_moradores_fora_de_faixa_retorna_400_com_mensagem) ... ok
+test_tipo_imovel_invalido_retorna_400 (matches.tests.CamposNovosAPITest.test_tipo_imovel_invalido_retorna_400) ... ok
+test_campos_novos_aparecem_em_descoberta (matches.tests.CamposNovosRespostasTest.test_campos_novos_aparecem_em_descoberta) ... ok
+test_campos_novos_aparecem_em_matches (matches.tests.CamposNovosRespostasTest.test_campos_novos_aparecem_em_matches) ... ok
+test_compatibilidade_criada_entre_tipos_opostos (matches.tests.CompatibilidadeSignalTest.test_compatibilidade_criada_entre_tipos_opostos) ... ok
+test_compatibilidade_nao_criada_entre_mesmo_tipo (matches.tests.CompatibilidadeSignalTest.test_compatibilidade_nao_criada_entre_mesmo_tipo) ... ok
+test_curtida_mutua_gera_match (matches.tests.CurtidaMatchTest.test_curtida_mutua_gera_match) ... ok
+test_curtir_mesmo_perfil_duas_vezes_retorna_400 (matches.tests.CurtidaMatchTest.test_curtir_mesmo_perfil_duas_vezes_retorna_400) ... ok
+test_curtir_proprio_perfil_retorna_400 (matches.tests.CurtidaMatchTest.test_curtir_proprio_perfil_retorna_400) ... ok
+test_400_aceita_pets_invalido (matches.tests.DescobertaFiltrosTest.test_400_aceita_pets_invalido) ... ok
+test_400_fumante_invalido (matches.tests.DescobertaFiltrosTest.test_400_fumante_invalido) ... ok
+test_400_orcamento_max_invalido (matches.tests.DescobertaFiltrosTest.test_400_orcamento_max_invalido) ... ok
+test_400_orcamento_min_invalido (matches.tests.DescobertaFiltrosTest.test_400_orcamento_min_invalido) ... ok
+test_400_ordenar_invalido (matches.tests.DescobertaFiltrosTest.test_400_ordenar_invalido) ... ok
+test_400_score_min_fora_de_faixa (matches.tests.DescobertaFiltrosTest.test_400_score_min_fora_de_faixa) ... ok
+test_filtro_aceita_pets_false (matches.tests.DescobertaFiltrosTest.test_filtro_aceita_pets_false) ... ok
+test_filtro_aceita_pets_true (matches.tests.DescobertaFiltrosTest.test_filtro_aceita_pets_true) ... ok
+test_filtro_fumante_true (matches.tests.DescobertaFiltrosTest.test_filtro_fumante_true) ... ok
+test_filtro_orcamento_intersecao_encontra_pb (matches.tests.DescobertaFiltrosTest.test_filtro_orcamento_intersecao_encontra_pb) ... ok
+test_filtro_orcamento_sem_intersecao (matches.tests.DescobertaFiltrosTest.test_filtro_orcamento_sem_intersecao) ... ok
+test_filtro_q_por_nome (matches.tests.DescobertaFiltrosTest.test_filtro_q_por_nome) ... ok
+test_filtro_q_por_titulo_anuncio (matches.tests.DescobertaFiltrosTest.test_filtro_q_por_titulo_anuncio) ... ok
+test_filtro_q_sem_resultado (matches.tests.DescobertaFiltrosTest.test_filtro_q_sem_resultado) ... ok
+test_filtro_regiao_multipla (matches.tests.DescobertaFiltrosTest.test_filtro_regiao_multipla) ... ok
+test_filtro_regiao_unica (matches.tests.DescobertaFiltrosTest.test_filtro_regiao_unica) ... ok
+test_filtro_score_min_exclui_baixo_score (matches.tests.DescobertaFiltrosTest.test_filtro_score_min_exclui_baixo_score) ... ok
+test_filtro_tipo_imovel (matches.tests.DescobertaFiltrosTest.test_filtro_tipo_imovel) ... ok
+test_ordenar_orcamento_asc (matches.tests.DescobertaFiltrosTest.test_ordenar_orcamento_asc) ... ok
+test_ordenar_orcamento_desc (matches.tests.DescobertaFiltrosTest.test_ordenar_orcamento_desc) ... ok
+test_ordenar_score_default (matches.tests.DescobertaFiltrosTest.test_ordenar_score_default) ... ok
+test_regressao_match_existente_exclui_perfil (matches.tests.DescobertaFiltrosTest.test_regressao_match_existente_exclui_perfil) ... ok
+test_admin_retorna_403_na_descoberta (matches.tests.DescobertaTest.test_admin_retorna_403_na_descoberta) ... ok
+test_descoberta_nao_retorna_ja_curtidos (matches.tests.DescobertaTest.test_descoberta_nao_retorna_ja_curtidos) ... ok
+test_descoberta_nao_retorna_ja_matched (matches.tests.DescobertaTest.test_descoberta_nao_retorna_ja_matched) ... ok
+test_scores_lote_equivalentes_ao_escalar (matches.tests.EquivalenciaVetorialEscalarReforcoTest.test_scores_lote_equivalentes_ao_escalar) ... 
+[EquivalenciaReforco] pares comparados: 50,562 | maior diferença absoluta: 0.00e+00
+ok
+test_perfis_identicos_em_todos_campos_retornam_score_1 (matches.tests.PerfilIdenticoTest.test_perfis_identicos_em_todos_campos_retornam_score_1) ... ok
+test_comando_executa_sem_excecao (matches.tests.RecalcularComandoTest.test_comando_executa_sem_excecao) ... ok
+test_compatibilidade_salva_com_pa_menor_que_pb (matches.tests.RecalcularLoteOrdemSignalTest.test_compatibilidade_salva_com_pa_menor_que_pb) ... ok
+test_combinacoes_extremas_sempre_em_zero_a_um (matches.tests.ScoreLimitesTest.test_combinacoes_extremas_sempre_em_zero_a_um) ... ok
+test_estilo_moradia_mais_compativel_tem_score_maior (matches.tests.ScorePorCriterioTest.test_estilo_moradia_mais_compativel_tem_score_maior) ... ok
+test_faixa_etaria_mais_proxima_tem_score_maior (matches.tests.ScorePorCriterioTest.test_faixa_etaria_mais_proxima_tem_score_maior) ... ok
+test_habitos_mais_compativeis_tem_score_maior (matches.tests.ScorePorCriterioTest.test_habitos_mais_compativeis_tem_score_maior) ... ok
+test_mesma_regiao_tem_score_maior (matches.tests.ScorePorCriterioTest.test_mesma_regiao_tem_score_maior) ... ok
+test_orcamento_mais_proximo_tem_score_maior (matches.tests.ScorePorCriterioTest.test_orcamento_mais_proximo_tem_score_maior) ... ok
+test_rotina_mais_compativel_tem_score_maior (matches.tests.ScorePorCriterioTest.test_rotina_mais_compativel_tem_score_maior) ... ok
+test_simetria_com_todos_campos_novos_distintos (matches.tests.ScoreSimetriaComCamposNovosTest.test_simetria_com_todos_campos_novos_distintos) ... ok
+test_extremos_opostos_retornam_minimo (matches.tests.SimHorarioTest.test_extremos_opostos_retornam_minimo) ... ok
+test_iguais_retornam_1 (matches.tests.SimHorarioTest.test_iguais_retornam_1) ... ok
+test_simetria (matches.tests.SimHorarioTest.test_simetria) ... ok
+test_extremos_opostos_retornam_minimo (matches.tests.SimImovelTest.test_extremos_opostos_retornam_minimo) ... ok
+test_iguais_retornam_1 (matches.tests.SimImovelTest.test_iguais_retornam_1) ... ok
+test_simetria (matches.tests.SimImovelTest.test_simetria) ... ok
+test_extremos_opostos_retornam_minimo (matches.tests.SimVisitasTest.test_extremos_opostos_retornam_minimo) ... ok
+test_iguais_retornam_1 (matches.tests.SimVisitasTest.test_iguais_retornam_1) ... ok
+test_simetria (matches.tests.SimVisitasTest.test_simetria) ... ok
+test_dois_recalculos_nao_criam_duplicatas (matches.tests.UpsertSemDuplicataTest.test_dois_recalculos_nao_criam_duplicatas) ... ok
+test_fluxo_completo (moderacao.tests.test_fluxo_completo.FluxoCompletoTest.test_fluxo_completo)
+Percorre os 12 passos principais da plataforma em sequência, ... ok
+test_regra_compatibilidade_regiao_percentual_nao_ultrapassa_100 (moderacao.tests.test_fluxo_completo.RegraCompatibilidadeRegiao.test_regra_compatibilidade_regiao_percentual_nao_ultrapassa_100)
+Todos os percentuais de perfis_com_match_pct devem ser <= 100%. ... ok
+test_regra_resolucao_improcedente_nao_suspende (moderacao.tests.test_fluxo_completo.RegraDenunciaProcedenteNaoSuspende.test_regra_resolucao_improcedente_nao_suspende)
+Resolver uma denúncia como 'descartada' não muda is_active do denunciado. ... ok
+test_regra_resolucao_procedente_nao_suspende_automaticamente (moderacao.tests.test_fluxo_completo.RegraDenunciaProcedenteNaoSuspende.test_regra_resolucao_procedente_nao_suspende_automaticamente)
+Resolver uma denúncia como 'resolvida' não muda is_active do denunciado. ... ok
+test_regra_exclusao_perfil_remove_curtidas_matches_mensagens (moderacao.tests.test_fluxo_completo.RegraExclusaoPerfilTest.test_regra_exclusao_perfil_remove_curtidas_matches_mensagens)
+Após excluir usuário A: curtidas, match e mensagens são removidos. ... ok
+test_regra_logs_ficam_com_usuario_nulo_apos_exclusao (moderacao.tests.test_fluxo_completo.RegraExclusaoPerfilTest.test_regra_logs_ficam_com_usuario_nulo_apos_exclusao)
+LogOperacao de A fica com usuario=NULL após excluir a conta. ... ok
+test_regra_taxa_match_formula (moderacao.tests.test_fluxo_completo.RegraTaxaMatchDashboard.test_regra_taxa_match_formula)
+taxa_match = matches×2 ÷ curtidas; nunca >100%. ... ok
+test_regra_taxa_match_nao_ultrapassa_100 (moderacao.tests.test_fluxo_completo.RegraTaxaMatchDashboard.test_regra_taxa_match_nao_ultrapassa_100)
+Mesmo com mais matches que curtidas (dados inconsistentes), taxa <= 100%. ... ok
+test_regra_match_unico_por_par (moderacao.tests.test_fluxo_completo.RegrasMatchUnicoTest.test_regra_match_unico_por_par)
+get_or_create garante no máximo um Match por par. ... ok
+test_ctf23_criar_denuncia_201 (moderacao.tests.test_funcionais_sprint9.FuncionaisModeracaoTest.test_ctf23_criar_denuncia_201) ... ok
+test_ctf24_admin_lista_denuncias (moderacao.tests.test_funcionais_sprint9.FuncionaisModeracaoTest.test_ctf24_admin_lista_denuncias) ... ok
+test_ctf25_admin_resolve_denuncia (moderacao.tests.test_funcionais_sprint9.FuncionaisModeracaoTest.test_ctf25_admin_resolve_denuncia) ... ok
+test_ctf26_admin_suspende_e_reativa (moderacao.tests.test_funcionais_sprint9.FuncionaisModeracaoTest.test_ctf26_admin_suspende_e_reativa) ... ok
+test_ctv100_resolver_denuncia_inexistente (moderacao.tests.test_funcionais_sprint9.ValidacaoAdminModeracaoTest.test_ctv100_resolver_denuncia_inexistente) ... ok
+test_ctv101_suspender_usuario_inexistente (moderacao.tests.test_funcionais_sprint9.ValidacaoAdminModeracaoTest.test_ctv101_suspender_usuario_inexistente) ... ok
+test_ctv102_suspender_ja_suspenso (moderacao.tests.test_funcionais_sprint9.ValidacaoAdminModeracaoTest.test_ctv102_suspender_ja_suspenso) ... ok
+test_ctv103_reativar_usuario_ativo (moderacao.tests.test_funcionais_sprint9.ValidacaoAdminModeracaoTest.test_ctv103_reativar_usuario_ativo) ... ok
+test_ctv104_resolucao_texto_muito_longo (moderacao.tests.test_funcionais_sprint9.ValidacaoAdminModeracaoTest.test_ctv104_resolucao_texto_muito_longo) ... ok
+test_ctv105_motivo_suspensao_muito_longo (moderacao.tests.test_funcionais_sprint9.ValidacaoAdminModeracaoTest.test_ctv105_motivo_suspensao_muito_longo) ... ok
+test_ctv106_listar_denuncias_status_invalido (moderacao.tests.test_funcionais_sprint9.ValidacaoAdminModeracaoTest.test_ctv106_listar_denuncias_status_invalido) ... ok
+test_ctv107_listar_denuncias_denunciado_texto (moderacao.tests.test_funcionais_sprint9.ValidacaoAdminModeracaoTest.test_ctv107_listar_denuncias_denunciado_texto) ... ok
+test_ctv99_resolver_status_invalido (moderacao.tests.test_funcionais_sprint9.ValidacaoAdminModeracaoTest.test_ctv99_resolver_status_invalido) ... ok
+test_ctv89_motivo_invalido (moderacao.tests.test_funcionais_sprint9.ValidacaoDenunciaTest.test_ctv89_motivo_invalido) ... ok
+test_ctv90_descricao_acima_de_500 (moderacao.tests.test_funcionais_sprint9.ValidacaoDenunciaTest.test_ctv90_descricao_acima_de_500) ... ok
+test_ctv91_usuario_inexistente (moderacao.tests.test_funcionais_sprint9.ValidacaoDenunciaTest.test_ctv91_usuario_inexistente) ... ok
+test_ctv92_denunciado_texto (moderacao.tests.test_funcionais_sprint9.ValidacaoDenunciaTest.test_ctv92_denunciado_texto) ... ok
+test_ctv93_denunciado_lista (moderacao.tests.test_funcionais_sprint9.ValidacaoDenunciaTest.test_ctv93_denunciado_lista) ... ok
+test_ctv94_sem_denunciado (moderacao.tests.test_funcionais_sprint9.ValidacaoDenunciaTest.test_ctv94_sem_denunciado) ... ok
+test_ctv95_motivo_ausente (moderacao.tests.test_funcionais_sprint9.ValidacaoDenunciaTest.test_ctv95_motivo_ausente) ... ok
+test_ctv96_auto_denuncia (moderacao.tests.test_funcionais_sprint9.ValidacaoDenunciaTest.test_ctv96_auto_denuncia) ... ok
+test_ctv97_descricao_exatamente_500 (moderacao.tests.test_funcionais_sprint9.ValidacaoDenunciaTest.test_ctv97_descricao_exatamente_500) ... ok
+test_ctv98_corpo_nao_objeto (moderacao.tests.test_funcionais_sprint9.ValidacaoDenunciaTest.test_ctv98_corpo_nao_objeto) ... ok
+test_admin_pode_listar (moderacao.tests.test_moderacao.AdminDenunciaListTest.test_admin_pode_listar) ... ok
+test_anonimo_nao_pode_listar (moderacao.tests.test_moderacao.AdminDenunciaListTest.test_anonimo_nao_pode_listar) ... ok
+test_filtro_por_denunciado (moderacao.tests.test_moderacao.AdminDenunciaListTest.test_filtro_por_denunciado) ... ok
+test_filtro_por_motivo (moderacao.tests.test_moderacao.AdminDenunciaListTest.test_filtro_por_motivo) ... ok
+test_filtro_por_status (moderacao.tests.test_moderacao.AdminDenunciaListTest.test_filtro_por_status) ... ok
+test_usuario_comum_nao_pode_listar (moderacao.tests.test_moderacao.AdminDenunciaListTest.test_usuario_comum_nao_pode_listar) ... ok
+test_admin_pode_descartar (moderacao.tests.test_moderacao.AdminDenunciaResolverTest.test_admin_pode_descartar) ... ok
+test_admin_pode_resolver (moderacao.tests.test_moderacao.AdminDenunciaResolverTest.test_admin_pode_resolver) ... ok
+test_denuncia_inexistente_retorna_404 (moderacao.tests.test_moderacao.AdminDenunciaResolverTest.test_denuncia_inexistente_retorna_404) ... ok
+test_nao_pode_resolver_denuncia_ja_resolvida (moderacao.tests.test_moderacao.AdminDenunciaResolverTest.test_nao_pode_resolver_denuncia_ja_resolvida) ... ok
+test_status_invalido_retorna_400 (moderacao.tests.test_moderacao.AdminDenunciaResolverTest.test_status_invalido_retorna_400) ... ok
+test_usuario_comum_nao_pode_resolver (moderacao.tests.test_moderacao.AdminDenunciaResolverTest.test_usuario_comum_nao_pode_resolver) ... ok
+test_admin_nao_pode_denunciar (moderacao.tests.test_moderacao.DenunciaCreateTest.test_admin_nao_pode_denunciar) ... ok
+test_anonimo_nao_pode_denunciar (moderacao.tests.test_moderacao.DenunciaCreateTest.test_anonimo_nao_pode_denunciar) ... ok
+test_campo_denunciado_obrigatorio (moderacao.tests.test_moderacao.DenunciaCreateTest.test_campo_denunciado_obrigatorio) ... ok
+test_denuncia_com_descricao (moderacao.tests.test_moderacao.DenunciaCreateTest.test_denuncia_com_descricao) ... ok
+test_denunciado_inexistente (moderacao.tests.test_moderacao.DenunciaCreateTest.test_denunciado_inexistente) ... ok
+test_motivo_invalido (moderacao.tests.test_moderacao.DenunciaCreateTest.test_motivo_invalido) ... ok
+test_nao_pode_denunciar_a_si_mesmo (moderacao.tests.test_moderacao.DenunciaCreateTest.test_nao_pode_denunciar_a_si_mesmo) ... ok
+test_usuario_pode_denunciar (moderacao.tests.test_moderacao.DenunciaCreateTest.test_usuario_pode_denunciar) ... ok
+test_criar_denuncia_admin_levanta_erro (moderacao.tests.test_moderacao.ServicosTest.test_criar_denuncia_admin_levanta_erro) ... ok
+test_criar_denuncia_mesmo_usuario_levanta_erro (moderacao.tests.test_moderacao.ServicosTest.test_criar_denuncia_mesmo_usuario_levanta_erro) ... ok
+test_criar_denuncia_service (moderacao.tests.test_moderacao.ServicosTest.test_criar_denuncia_service) ... ok
+test_reativar_ja_ativo_levanta_erro (moderacao.tests.test_moderacao.ServicosTest.test_reativar_ja_ativo_levanta_erro) ... ok
+test_reativar_usuario_service (moderacao.tests.test_moderacao.ServicosTest.test_reativar_usuario_service) ... ok
+test_resolver_denuncia_ja_resolvida_levanta_erro (moderacao.tests.test_moderacao.ServicosTest.test_resolver_denuncia_ja_resolvida_levanta_erro) ... ok
+test_resolver_denuncia_service (moderacao.tests.test_moderacao.ServicosTest.test_resolver_denuncia_service) ... ok
+test_suspender_ja_suspenso_levanta_erro (moderacao.tests.test_moderacao.ServicosTest.test_suspender_ja_suspenso_levanta_erro) ... ok
+test_suspender_usuario_service (moderacao.tests.test_moderacao.ServicosTest.test_suspender_usuario_service) ... ok
+test_match_com_suspenso_nao_aparece_na_lista (moderacao.tests.test_moderacao.SuspensaoEfeitosTest.test_match_com_suspenso_nao_aparece_na_lista) ... ok
+test_match_com_suspenso_nao_aparece_nas_conversas (moderacao.tests.test_moderacao.SuspensaoEfeitosTest.test_match_com_suspenso_nao_aparece_nas_conversas) ... ok
+test_usuario_suspenso_nao_aparece_na_descoberta (moderacao.tests.test_moderacao.SuspensaoEfeitosTest.test_usuario_suspenso_nao_aparece_na_descoberta) ... ok
+test_admin_pode_reativar (moderacao.tests.test_moderacao.SuspensaoTest.test_admin_pode_reativar) ... ok
+test_admin_pode_suspender (moderacao.tests.test_moderacao.SuspensaoTest.test_admin_pode_suspender) ... ok
+test_nao_pode_suspender_admin (moderacao.tests.test_moderacao.SuspensaoTest.test_nao_pode_suspender_admin) ... ok
+test_reativar_ja_ativo_retorna_400 (moderacao.tests.test_moderacao.SuspensaoTest.test_reativar_ja_ativo_retorna_400) ... ok
+test_suspender_ja_suspenso_retorna_400 (moderacao.tests.test_moderacao.SuspensaoTest.test_suspender_ja_suspenso_retorna_400) ... ok
+test_usuario_comum_nao_pode_reativar (moderacao.tests.test_moderacao.SuspensaoTest.test_usuario_comum_nao_pode_reativar) ... ok
+test_usuario_comum_nao_pode_suspender (moderacao.tests.test_moderacao.SuspensaoTest.test_usuario_comum_nao_pode_suspender) ... ok
+test_usuario_inexistente_retorna_404 (moderacao.tests.test_moderacao.SuspensaoTest.test_usuario_inexistente_retorna_404) ... ok
+test_anonimo_recebe_401 (painel.tests_painel.AdminUsuariosExportarTest.test_anonimo_recebe_401) ... ok
+test_csv_retorna_200_e_content_type_correto (painel.tests_painel.AdminUsuariosExportarTest.test_csv_retorna_200_e_content_type_correto) ... ok
+test_csv_separador_ponto_virgula (painel.tests_painel.AdminUsuariosExportarTest.test_csv_separador_ponto_virgula) ... ok
+test_csv_tem_bom_utf8 (painel.tests_painel.AdminUsuariosExportarTest.test_csv_tem_bom_utf8) ... ok
+test_csv_tem_cabecalho_correto (painel.tests_painel.AdminUsuariosExportarTest.test_csv_tem_cabecalho_correto) ... ok
+test_exportar_gera_log_relatorio_exportado (painel.tests_painel.AdminUsuariosExportarTest.test_exportar_gera_log_relatorio_exportado) ... ok
+test_nao_admin_recebe_403 (painel.tests_painel.AdminUsuariosExportarTest.test_nao_admin_recebe_403) ... ok
+test_admin_ve_lista (painel.tests_painel.AdminUsuariosListaTest.test_admin_ve_lista) ... ok
+test_anonimo_recebe_401 (painel.tests_painel.AdminUsuariosListaTest.test_anonimo_recebe_401) ... ok
+test_campos_esperados_presentes (painel.tests_painel.AdminUsuariosListaTest.test_campos_esperados_presentes) ... ok
+test_filtro_data_invalida_retorna_400 (painel.tests_painel.AdminUsuariosListaTest.test_filtro_data_invalida_retorna_400) ... ok
+test_filtro_q_por_email (painel.tests_painel.AdminUsuariosListaTest.test_filtro_q_por_email) ... ok
+test_filtro_regiao (painel.tests_painel.AdminUsuariosListaTest.test_filtro_regiao) ... ok
+test_filtro_tipo (painel.tests_painel.AdminUsuariosListaTest.test_filtro_tipo) ... ok
+test_nao_admin_recebe_403 (painel.tests_painel.AdminUsuariosListaTest.test_nao_admin_recebe_403) ... ok
+test_paginacao_page2 (painel.tests_painel.AdminUsuariosListaTest.test_paginacao_page2) ... ok
+test_paginacao_page_size (painel.tests_painel.AdminUsuariosListaTest.test_paginacao_page_size) ... ok
+test_resultado_nao_contem_senha (painel.tests_painel.AdminUsuariosListaTest.test_resultado_nao_contem_senha) ... ok
+test_csv_nome_arquivo_com_data (painel.tests_painel.CSVFormatoTest.test_csv_nome_arquivo_com_data) ... ok
+test_csv_separador_ponto_virgula (painel.tests_painel.CSVFormatoTest.test_csv_separador_ponto_virgula) ... ok
+test_csv_utf8_sig (painel.tests_painel.CSVFormatoTest.test_csv_utf8_sig) ... ok
+test_filtro_data_fim_invalida_retorna_400 (painel.tests_painel.DashboardFiltrosTest.test_filtro_data_fim_invalida_retorna_400) ... ok
+test_filtro_data_inicio_maior_que_fim_retorna_400 (painel.tests_painel.DashboardFiltrosTest.test_filtro_data_inicio_maior_que_fim_retorna_400) ... ok
+test_filtro_data_invalida_retorna_400 (painel.tests_painel.DashboardFiltrosTest.test_filtro_data_invalida_retorna_400) ... ok
+test_filtro_regiao_altera_perfis (painel.tests_painel.DashboardFiltrosTest.test_filtro_regiao_altera_perfis) ... ok
+test_filtro_tipo_buscando (painel.tests_painel.DashboardFiltrosTest.test_filtro_tipo_buscando) ... ok
+test_filtros_aplicados_presentes_na_resposta (painel.tests_painel.DashboardFiltrosTest.test_filtros_aplicados_presentes_na_resposta) ... ok
+test_kpis_conversas_ativas (painel.tests_painel.DashboardKPIsTest.test_kpis_conversas_ativas) ... ok
+test_kpis_curtidas_total (painel.tests_painel.DashboardKPIsTest.test_kpis_curtidas_total) ... ok
+test_kpis_matches_total (painel.tests_painel.DashboardKPIsTest.test_kpis_matches_total) ... ok
+test_kpis_mensagens_total (painel.tests_painel.DashboardKPIsTest.test_kpis_mensagens_total) ... ok
+test_kpis_perfis_total (painel.tests_painel.DashboardKPIsTest.test_kpis_perfis_total) ... ok
+test_kpis_recusas_total (painel.tests_painel.DashboardKPIsTest.test_kpis_recusas_total) ... ok
+test_kpis_score_medio (painel.tests_painel.DashboardKPIsTest.test_kpis_score_medio) ... ok
+test_kpis_taxa_match (painel.tests_painel.DashboardKPIsTest.test_kpis_taxa_match) ... ok
+test_kpis_usuarios_por_tipo (painel.tests_painel.DashboardKPIsTest.test_kpis_usuarios_por_tipo) ... ok
+test_kpis_usuarios_total (painel.tests_painel.DashboardKPIsTest.test_kpis_usuarios_total) ... ok
+test_numero_maximo_queries (painel.tests_painel.DashboardQueryCountTest.test_numero_maximo_queries)
+Garante ausência de N+1: o dashboard deve executar no máximo 35 queries ... ok
+test_periodo_sem_dados_retorna_zeros (painel.tests_painel.DashboardSemDadosTest.test_periodo_sem_dados_retorna_zeros) ... ok
+test_serie_inclui_todos_dias_do_periodo (painel.tests_painel.DashboardSeriesTest.test_serie_inclui_todos_dias_do_periodo) ... ok
+test_serie_periodo_sem_dados_retorna_zeros (painel.tests_painel.DashboardSeriesTest.test_serie_periodo_sem_dados_retorna_zeros) ... ok
+test_series_tem_chaves_esperadas (painel.tests_painel.DashboardSeriesTest.test_series_tem_chaves_esperadas) ... ok
+test_distribuicao_score_5_faixas (painel.tests_painel.DashboardTopRegioesTest.test_distribuicao_score_5_faixas) ... ok
+test_distribuicao_score_faixa_correta (painel.tests_painel.DashboardTopRegioesTest.test_distribuicao_score_faixa_correta) ... ok
+test_top_regioes_maximo_8 (painel.tests_painel.DashboardTopRegioesTest.test_top_regioes_maximo_8) ... ok
+test_top_regioes_presente (painel.tests_painel.DashboardTopRegioesTest.test_top_regioes_presente) ... ok
+test_admin_acessa (painel.tests_painel.PermissaoDashboardTest.test_admin_acessa) ... ok
+test_anonimo_recebe_401 (painel.tests_painel.PermissaoDashboardTest.test_anonimo_recebe_401) ... ok
+test_nao_admin_recebe_403 (painel.tests_painel.PermissaoDashboardTest.test_nao_admin_recebe_403) ... ok
+test_colunas_presentes (painel.tests_painel.RelatorioAtividadeTest.test_colunas_presentes) ... ok
+test_totais_corretos (painel.tests_painel.RelatorioAtividadeTest.test_totais_corretos) ... ok
+test_colunas_presentes (painel.tests_painel.RelatorioCompatibilidadeRegioTest.test_colunas_presentes) ... ok
+test_recife_perfis_com_match_pct (painel.tests_painel.RelatorioCompatibilidadeRegioTest.test_recife_perfis_com_match_pct) ... ok
+test_recife_tem_2_perfis_e_1_match (painel.tests_painel.RelatorioCompatibilidadeRegioTest.test_recife_tem_2_perfis_e_1_match) ... ok
+test_score_exibido_em_porcentagem (painel.tests_painel.RelatorioCompatibilidadeRegioTest.test_score_exibido_em_porcentagem) ... ok
+test_totais_matches_distintos (painel.tests_painel.RelatorioCompatibilidadeRegioTest.test_totais_matches_distintos) ... ok
+test_404_em_portugues (painel.tests_painel.RelatorioInexistenteTest.test_404_em_portugues) ... ok
+test_colunas_presentes (painel.tests_painel.RelatorioMatchesTest.test_colunas_presentes) ... ok
+test_csv_gera_log_relatorio_exportado (painel.tests_painel.RelatorioMatchesTest.test_csv_gera_log_relatorio_exportado) ... ok
+test_csv_tem_cabecalho_e_linha (painel.tests_painel.RelatorioMatchesTest.test_csv_tem_cabecalho_e_linha) ... ok
+test_json_nao_gera_log_exportado (painel.tests_painel.RelatorioMatchesTest.test_json_nao_gera_log_exportado) ... ok
+test_linha_tem_ativa_sim (painel.tests_painel.RelatorioMatchesTest.test_linha_tem_ativa_sim) ... ok
+test_score_exibido_em_porcentagem (painel.tests_painel.RelatorioMatchesTest.test_score_exibido_em_porcentagem) ... ok
+test_totais_corretos (painel.tests_painel.RelatorioMatchesTest.test_totais_corretos) ... ok
+test_colunas_presentes (painel.tests_painel.RelatorioUsuariosTest.test_colunas_presentes) ... ok
+test_filtro_data_invalida_retorna_400 (painel.tests_painel.RelatorioUsuariosTest.test_filtro_data_invalida_retorna_400) ... ok
+test_filtro_tipo (painel.tests_painel.RelatorioUsuariosTest.test_filtro_tipo) ... ok
+test_total_usuarios (painel.tests_painel.RelatorioUsuariosTest.test_total_usuarios) ... ok
+test_anonimo_recebe_401 (painel.tests_painel.RelatoriosCatalogoTest.test_anonimo_recebe_401) ... ok
+test_catalogo_ids_corretos (painel.tests_painel.RelatoriosCatalogoTest.test_catalogo_ids_corretos) ... ok
+test_catalogo_tem_5_relatorios (painel.tests_painel.RelatoriosCatalogoTest.test_catalogo_tem_5_relatorios) ... ok
+test_ctf32_dashboard (painel.tests.test_funcionais_sprint9.FuncionaisPainelTest.test_ctf32_dashboard) ... ok
+test_ctf33_catalogo_de_relatorios (painel.tests.test_funcionais_sprint9.FuncionaisPainelTest.test_ctf33_catalogo_de_relatorios) ... ok
+test_ctf34_relatorio_json (painel.tests.test_funcionais_sprint9.FuncionaisPainelTest.test_ctf34_relatorio_json) ... ok
+test_ctf35_relatorio_csv (painel.tests.test_funcionais_sprint9.FuncionaisPainelTest.test_ctf35_relatorio_csv) ... ok
+test_ctf36_admin_lista_usuarios (painel.tests.test_funcionais_sprint9.FuncionaisPainelTest.test_ctf36_admin_lista_usuarios) ... ok
+test_ctf37_exportar_usuarios_csv (painel.tests.test_funcionais_sprint9.FuncionaisPainelTest.test_ctf37_exportar_usuarios_csv) ... ok
+test_ctf38_usuario_comum_bloqueado (painel.tests.test_funcionais_sprint9.FuncionaisPainelTest.test_ctf38_usuario_comum_bloqueado) ... ok
+test_ctv117_relatorio_data_formato_invalido (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv117_relatorio_data_formato_invalido) ... ok
+test_ctv118_relatorio_periodo_invertido (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv118_relatorio_periodo_invertido) ... ok
+test_ctv119_relatorio_inexistente (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv119_relatorio_inexistente) ... ok
+test_ctv120_dashboard_data_invalida (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv120_dashboard_data_invalida) ... ok
+test_ctv121_dashboard_periodo_invertido (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv121_dashboard_periodo_invertido) ... ok
+test_ctv122_usuarios_data_invalida (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv122_usuarios_data_invalida) ... ok
+test_ctv123_usuarios_exportar_periodo_invertido (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv123_usuarios_exportar_periodo_invertido) ... ok
+test_ctv124_usuarios_pagina_inexistente (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv124_usuarios_pagina_inexistente) ... ok
+test_ctv125_usuarios_pagina_texto_nao_gera_500 (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv125_usuarios_pagina_texto_nao_gera_500) ... ok
+test_ctv126_usuarios_filtro_ativo_invalido (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv126_usuarios_filtro_ativo_invalido) ... ok
+test_ctv127_usuarios_filtro_tipo_invalido (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv127_usuarios_filtro_tipo_invalido) ... ok
+test_ctv128_relatorio_formato_invalido (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv128_relatorio_formato_invalido) ... ok
+test_ctv129_relatorio_tipo_invalido (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv129_relatorio_tipo_invalido) ... ok
+test_ctv130_data_com_ano_absurdo (painel.tests.test_funcionais_sprint9.ValidacaoFiltrosRelatorioTest.test_ctv130_data_com_ano_absurdo) ... ok
+test_admin_acessa_dashboard (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_dashboard) ... ok
+test_admin_acessa_logs (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_logs) ... ok
+test_admin_acessa_logs_exportar (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_logs_exportar) ... ok
+test_admin_acessa_relatorio_detalhe (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_relatorio_detalhe) ... ok
+test_admin_acessa_relatorios (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_relatorios) ... ok
+test_admin_acessa_usuarios (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_usuarios) ... ok
+test_admin_acessa_usuarios_exportar (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_usuarios_exportar) ... ok
+test_cadastro_tipo_administrador_mensagem_portugues (painel.tests.test_permissoes.CadastroTipoAdminTest.test_cadastro_tipo_administrador_mensagem_portugues) ... ok
+test_cadastro_tipo_administrador_rejeitado (painel.tests.test_permissoes.CadastroTipoAdminTest.test_cadastro_tipo_administrador_rejeitado) ... ok
+test_cadastro_tipo_valido_aceito (painel.tests.test_permissoes.CadastroTipoAdminTest.test_cadastro_tipo_valido_aceito) ... ok
+test_nao_participante_nao_envia_mensagem (painel.tests.test_permissoes.ChatAcessoTest.test_nao_participante_nao_envia_mensagem) ... ok
+test_nao_participante_nao_le_mensagens (painel.tests.test_permissoes.ChatAcessoTest.test_nao_participante_nao_le_mensagens) ... ok
+test_participante_envia_mensagem (painel.tests.test_permissoes.ChatAcessoTest.test_participante_envia_mensagem) ... ok
+test_participante_le_mensagens (painel.tests.test_permissoes.ChatAcessoTest.test_participante_le_mensagens) ... ok
+test_admin_nao_pode_curtir (painel.tests.test_permissoes.CurtidaMesmoTipoTest.test_admin_nao_pode_curtir) ... ok
+test_curtida_mesmo_tipo_mensagem_portugues (painel.tests.test_permissoes.CurtidaMesmoTipoTest.test_curtida_mesmo_tipo_mensagem_portugues) ... ok
+test_curtida_mesmo_tipo_retorna_400 (painel.tests.test_permissoes.CurtidaMesmoTipoTest.test_curtida_mesmo_tipo_retorna_400) ... ok
+test_curtida_tipo_oposto_aceita (painel.tests.test_permissoes.CurtidaMesmoTipoTest.test_curtida_tipo_oposto_aceita) ... ok
+test_admin_ve_todos_os_perfis (painel.tests.test_permissoes.ListaPerfisPropriasTest.test_admin_ve_todos_os_perfis) ... ok
+test_lista_nao_retorna_perfis_de_terceiros (painel.tests.test_permissoes.ListaPerfisPropriasTest.test_lista_nao_retorna_perfis_de_terceiros) ... ok
+test_lista_retorna_apenas_proprio (painel.tests.test_permissoes.ListaPerfisPropriasTest.test_lista_retorna_apenas_proprio) ... ok
+test_usuario_sem_perfil_recebe_lista_vazia (painel.tests.test_permissoes.ListaPerfisPropriasTest.test_usuario_sem_perfil_recebe_lista_vazia) ... ok
+test_login_conta_inativa_mensagem_portugues (painel.tests.test_permissoes.LoginContaInativaTest.test_login_conta_inativa_mensagem_portugues) ... ok
+test_login_conta_inativa_retorna_401 (painel.tests.test_permissoes.LoginContaInativaTest.test_login_conta_inativa_retorna_401) ... ok
+test_login_senha_errada_mensagem_portugues (painel.tests.test_permissoes.LoginContaInativaTest.test_login_senha_errada_mensagem_portugues) ... ok
+test_admin_ve_perfil_alheio (painel.tests.test_permissoes.PerfilAcessoEscritaTest.test_admin_ve_perfil_alheio) ... ok
+test_dono_edita_proprio_perfil (painel.tests.test_permissoes.PerfilAcessoEscritaTest.test_dono_edita_proprio_perfil) ... ok
+test_nao_dono_nao_edita_perfil (painel.tests.test_permissoes.PerfilAcessoEscritaTest.test_nao_dono_nao_edita_perfil) ... ok
+test_nao_dono_nao_exclui_perfil (painel.tests.test_permissoes.PerfilAcessoEscritaTest.test_nao_dono_nao_exclui_perfil) ... ok
+test_buscando_nao_ve_perfil_mesmo_tipo_sem_match (painel.tests.test_permissoes.PerfilRetrieveTest.test_buscando_nao_ve_perfil_mesmo_tipo_sem_match) ... ok
+test_buscando_ve_perfil_oposto (painel.tests.test_permissoes.PerfilRetrieveTest.test_buscando_ve_perfil_oposto) ... ok
+test_participante_ve_perfil_do_match (painel.tests.test_permissoes.PerfilRetrieveTest.test_participante_ve_perfil_do_match) ... ok
+test_sem_token_admin_dashboard (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_dashboard) ... ok
+test_sem_token_admin_logs (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_logs) ... ok
+test_sem_token_admin_logs_exportar (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_logs_exportar) ... ok
+test_sem_token_admin_relatorio_detalhe (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_relatorio_detalhe) ... ok
+test_sem_token_admin_relatorios (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_relatorios) ... ok
+test_sem_token_admin_usuarios (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_usuarios) ... ok
+test_sem_token_admin_usuarios_exportar (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_usuarios_exportar) ... ok
+test_sem_token_conversas (painel.tests.test_permissoes.SemTokenTest.test_sem_token_conversas) ... ok
+test_sem_token_curtidas (painel.tests.test_permissoes.SemTokenTest.test_sem_token_curtidas) ... ok
+test_sem_token_descoberta (painel.tests.test_permissoes.SemTokenTest.test_sem_token_descoberta) ... ok
+test_sem_token_matches (painel.tests.test_permissoes.SemTokenTest.test_sem_token_matches) ... ok
+test_sem_token_mensagens (painel.tests.test_permissoes.SemTokenTest.test_sem_token_mensagens) ... ok
+test_sem_token_perfis_detalhe (painel.tests.test_permissoes.SemTokenTest.test_sem_token_perfis_detalhe) ... ok
+test_sem_token_perfis_lista (painel.tests.test_permissoes.SemTokenTest.test_sem_token_perfis_lista) ... ok
+test_buscando_bloqueado_em_dashboard (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_dashboard) ... ok
+test_buscando_bloqueado_em_logs (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_logs) ... ok
+test_buscando_bloqueado_em_logs_exportar (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_logs_exportar) ... ok
+test_buscando_bloqueado_em_relatorio_detalhe (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_relatorio_detalhe) ... ok
+test_buscando_bloqueado_em_relatorios (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_relatorios) ... ok
+test_buscando_bloqueado_em_usuarios (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_usuarios) ... ok
+test_buscando_bloqueado_em_usuarios_exportar (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_usuarios_exportar) ... ok
+test_oferecendo_bloqueado_em_dashboard (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_dashboard) ... ok
+test_oferecendo_bloqueado_em_logs (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_logs) ... ok
+test_oferecendo_bloqueado_em_logs_exportar (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_logs_exportar) ... ok
+test_oferecendo_bloqueado_em_relatorio_detalhe (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_relatorio_detalhe) ... ok
+test_oferecendo_bloqueado_em_relatorios (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_relatorios) ... ok
+test_oferecendo_bloqueado_em_usuarios (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_usuarios) ... ok
+test_oferecendo_bloqueado_em_usuarios_exportar (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_usuarios_exportar) ... ok
+test_ctf05_criar_perfil_201 (perfis.test_funcionais_sprint9.FuncionaisPerfilTest.test_ctf05_criar_perfil_201) ... ok
+test_ctf06_listar_retorna_apenas_proprio (perfis.test_funcionais_sprint9.FuncionaisPerfilTest.test_ctf06_listar_retorna_apenas_proprio) ... ok
+test_ctf07_consultar_perfil_do_tipo_oposto (perfis.test_funcionais_sprint9.FuncionaisPerfilTest.test_ctf07_consultar_perfil_do_tipo_oposto) ... ok
+test_ctf08_atualizar_put (perfis.test_funcionais_sprint9.FuncionaisPerfilTest.test_ctf08_atualizar_put) ... ok
+test_ctf09_atualizar_patch (perfis.test_funcionais_sprint9.FuncionaisPerfilTest.test_ctf09_atualizar_patch) ... ok
+test_ctf10_excluir_proprio_perfil_204 (perfis.test_funcionais_sprint9.FuncionaisPerfilTest.test_ctf10_excluir_proprio_perfil_204) ... ok
+test_ctf11_nao_dono_nao_exclui_nem_edita (perfis.test_funcionais_sprint9.FuncionaisPerfilTest.test_ctf11_nao_dono_nao_exclui_nem_edita) ... ok
+test_ctf12_perfil_inexistente_404 (perfis.test_funcionais_sprint9.FuncionaisPerfilTest.test_ctf12_perfil_inexistente_404) ... ok
+test_ctv28_nome_vazio (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv28_nome_vazio) ... ok
+test_ctv29_nome_so_espacos (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv29_nome_so_espacos) ... ok
+test_ctv30_idade_ausente (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv30_idade_ausente) ... ok
+test_ctv31_idade_menor_que_18 (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv31_idade_menor_que_18) ... ok
+test_ctv32_idade_absurda_200 (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv32_idade_absurda_200) ... ok
+test_ctv33_idade_negativa (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv33_idade_negativa) ... ok
+test_ctv34_idade_texto (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv34_idade_texto) ... ok
+test_ctv35_orcamento_negativo (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv35_orcamento_negativo) ... ok
+test_ctv36_orcamento_min_maior_que_max (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv36_orcamento_min_maior_que_max) ... ok
+test_ctv37_orcamento_texto (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv37_orcamento_texto) ... ok
+test_ctv38_orcamento_ausente (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv38_orcamento_ausente) ... ok
+test_ctv39_tolerancia_bagunca_zero (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv39_tolerancia_bagunca_zero) ... ok
+test_ctv40_nivel_organizacao_seis (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv40_nivel_organizacao_seis) ... ok
+test_ctv41_nivel_ruido_negativo (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv41_nivel_ruido_negativo) ... ok
+test_ctv42_nivel_social_texto (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv42_nivel_social_texto) ... ok
+test_ctv43_bio_muito_longa (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv43_bio_muito_longa) ... ok
+test_ctv44_foto_perfil_url_invalida (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv44_foto_perfil_url_invalida) ... ok
+test_ctv45_foto_perfil_url_so_esquema (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv45_foto_perfil_url_so_esquema) ... ok
+test_ctv46_segundo_perfil_do_mesmo_usuario (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv46_segundo_perfil_do_mesmo_usuario)
+Esperado: 400 com mensagem (nunca 500/IntegrityError). ... ok
+test_ctv47_regiao_vazia (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv47_regiao_vazia) ... ok
+test_ctv48_nome_acima_de_150 (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv48_nome_acima_de_150) ... ok
+test_ctv49_idade_decimal (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv49_idade_decimal) ... ok
+test_ctv50_enum_invalido (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv50_enum_invalido) ... ok
+test_ctv51_qtd_moradores_zero (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv51_qtd_moradores_zero) ... ok
+test_ctv52_patch_idade_invalida (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv52_patch_idade_invalida) ... ok
+test_ctv53_patch_orcamento_min_maior_que_max_existente (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv53_patch_orcamento_min_maior_que_max_existente) ... ok
+test_ctv54_admin_nao_cria_perfil (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv54_admin_nao_cria_perfil) ... ok
+test_ctv55_orcamento_com_digitos_demais (perfis.test_funcionais_sprint9.ValidacaoPerfilTest.test_ctv55_orcamento_com_digitos_demais) ... ok
+test_criar_com_anuncio_retorna_201_e_campos (perfis.tests.CriarPerfilAnuncioTest.test_criar_com_anuncio_retorna_201_e_campos) ... ok
+test_descoberta_inclui_campos_anuncio_e_tipo (perfis.tests.DescobertaCamposAnuncioTest.test_descoberta_inclui_campos_anuncio_e_tipo) ... ok
+test_patch_titulo_mantem_fotos (perfis.tests.PatchTituloSemPerderFotosTest.test_patch_titulo_mantem_fotos) ... ok
+test_criar_sem_anuncio_retorna_201_e_defaults (perfis.tests.PerfilBuscandoVagaSemAnuncioTest.test_criar_sem_anuncio_retorna_201_e_defaults) ... ok
+test_url_invalida_retorna_400 (perfis.tests.ValidacaoFotoPerfilUrlTest.test_url_invalida_retorna_400) ... ok
+test_cinco_fotos_validas_aceita (perfis.tests.ValidacaoFotosImovelTest.test_cinco_fotos_validas_aceita) ... ok
+test_seis_fotos_retorna_400 (perfis.tests.ValidacaoFotosImovelTest.test_seis_fotos_retorna_400) ... ok
+test_url_invalida_retorna_400 (perfis.tests.ValidacaoFotosImovelTest.test_url_invalida_retorna_400) ... ok
+test_titulo_120_caracteres_aceita (perfis.tests.ValidacaoTituloAnuncioTest.test_titulo_120_caracteres_aceita) ... ok
+test_titulo_121_caracteres_retorna_400 (perfis.tests.ValidacaoTituloAnuncioTest.test_titulo_121_caracteres_retorna_400) ... ok
+test_em_desenvolvimento_fica_aberta (placematch.test_api_docs.AcessoADocumentacaoTest.test_em_desenvolvimento_fica_aberta) ... ok
+test_em_producao_administrador_acessa (placematch.test_api_docs.AcessoADocumentacaoTest.test_em_producao_administrador_acessa) ... ok
+test_em_producao_anonimo_e_usuario_comum_nao_acessam (placematch.test_api_docs.AcessoADocumentacaoTest.test_em_producao_anonimo_e_usuario_comum_nao_acessam) ... ok
+test_em_producao_staff_logado_por_sessao_acessa (placematch.test_api_docs.AcessoADocumentacaoTest.test_em_producao_staff_logado_por_sessao_acessa) ... ok
+test_exemplos_reais_em_cada_operacao (placematch.test_api_docs.CoberturaDasRotasTest.test_exemplos_reais_em_cada_operacao) ... ok
+test_grupos_esperados (placematch.test_api_docs.CoberturaDasRotasTest.test_grupos_esperados) ... ok
+test_rotas_publicas_nao_pedem_token (placematch.test_api_docs.CoberturaDasRotasTest.test_rotas_publicas_nao_pedem_token) ... ok
+test_toda_operacao_tem_grupo_resumo_descricao_e_respostas_de_erro (placematch.test_api_docs.CoberturaDasRotasTest.test_toda_operacao_tem_grupo_resumo_descricao_e_respostas_de_erro) ... ok
+test_todas_as_rotas_de_api_aparecem_no_schema (placematch.test_api_docs.CoberturaDasRotasTest.test_todas_as_rotas_de_api_aparecem_no_schema) ... ok
+test_404_do_drf_vem_em_portugues (placematch.test_api_docs.Erro404EmPortuguesTest.test_404_do_drf_vem_em_portugues) ... ok
+test_docs_openapi_yaml_acompanha_o_codigo (placematch.test_api_docs.OpenApiYamlAtualizadoTest.test_docs_openapi_yaml_acompanha_o_codigo) ... ok
+test_autenticacao_bearer_jwt_para_o_botao_authorize (placematch.test_api_docs.SchemaValidoTest.test_autenticacao_bearer_jwt_para_o_botao_authorize) ... ok
+test_gera_sem_avisos_nem_erros (placematch.test_api_docs.SchemaValidoTest.test_gera_sem_avisos_nem_erros)
+Equivale a `manage.py spectacular --validate --fail-on-warn`. ... ok
+test_openapi_3_com_titulo_e_versao (placematch.test_api_docs.SchemaValidoTest.test_openapi_3_com_titulo_e_versao) ... ok
+test_apos_invalido_400 (placematch.test_correcoes_sprint9.CorrecaoChatTest.test_apos_invalido_400) ... ok
+test_conteudo_precisa_ser_texto (placematch.test_correcoes_sprint9.CorrecaoChatTest.test_conteudo_precisa_ser_texto) ... ok
+test_enviar_com_usuario_suspenso_403_com_mensagem (placematch.test_correcoes_sprint9.CorrecaoChatTest.test_enviar_com_usuario_suspenso_403_com_mensagem) ... ok
+test_ids_gigantes_na_url_nao_dao_500 (placematch.test_correcoes_sprint9.CorrecaoChatTest.test_ids_gigantes_na_url_nao_dao_500) ... ok
+test_chave_de_teste_tem_ao_menos_32_bytes (placematch.test_correcoes_sprint9.CorrecaoChaveJwtTest.test_chave_de_teste_tem_ao_menos_32_bytes) ... ok
+test_producao_exige_secret_key_do_ambiente (placematch.test_correcoes_sprint9.CorrecaoChaveJwtTest.test_producao_exige_secret_key_do_ambiente) ... ok
+test_curtir_perfil_de_usuario_suspenso_404 (placematch.test_correcoes_sprint9.CorrecaoDescobertaTest.test_curtir_perfil_de_usuario_suspenso_404) ... ok
+test_filtro_numerico_valido_continua_funcionando (placematch.test_correcoes_sprint9.CorrecaoDescobertaTest.test_filtro_numerico_valido_continua_funcionando) ... ok
+test_filtros_numericos_invalidos_dao_400 (placematch.test_correcoes_sprint9.CorrecaoDescobertaTest.test_filtros_numericos_invalidos_dao_400) ... ok
+test_filtros_validos_continuam_funcionando (placematch.test_correcoes_sprint9.CorrecaoFiltrosTest.test_filtros_validos_continuam_funcionando) ... ok
+test_logs_filtro_usuario_por_id_email_e_nome (placematch.test_correcoes_sprint9.CorrecaoFiltrosTest.test_logs_filtro_usuario_por_id_email_e_nome) ... ok
+test_logs_filtros_invalidos_dao_400 (placematch.test_correcoes_sprint9.CorrecaoFiltrosTest.test_logs_filtros_invalidos_dao_400) ... ok
+test_usuarios_e_relatorios_filtros_invalidos (placematch.test_correcoes_sprint9.CorrecaoFiltrosTest.test_usuarios_e_relatorios_filtros_invalidos) ... ok
+test_conta_ativa_com_senha_errada_nao_diz_suspensa (placematch.test_correcoes_sprint9.CorrecaoLoginTest.test_conta_ativa_com_senha_errada_nao_diz_suspensa) ... ok
+test_conta_suspensa_so_quando_senha_confere (placematch.test_correcoes_sprint9.CorrecaoLoginTest.test_conta_suspensa_so_quando_senha_confere) ... ok
+test_corpo_invalido_ou_campos_vazios_dao_400_com_o_campo (placematch.test_correcoes_sprint9.CorrecaoLoginTest.test_corpo_invalido_ou_campos_vazios_dao_400_com_o_campo) ... ok
+test_login_falha_registra_log (placematch.test_correcoes_sprint9.CorrecaoLoginTest.test_login_falha_registra_log) ... ok
+test_login_ignora_maiusculas_no_email (placematch.test_correcoes_sprint9.CorrecaoLoginTest.test_login_ignora_maiusculas_no_email) ... ok
+test_mensagens_padrao_corrigidas (placematch.test_correcoes_sprint9.CorrecaoMensagensPadraoTest.test_mensagens_padrao_corrigidas) ... ok
+test_senha_curta_diz_no_minimo (placematch.test_correcoes_sprint9.CorrecaoMensagensPadraoTest.test_senha_curta_diz_no_minimo) ... ok
+test_filtros_da_lista_de_denuncias (placematch.test_correcoes_sprint9.CorrecaoModeracaoTest.test_filtros_da_lista_de_denuncias) ... ok
+test_limites_de_500_caracteres (placematch.test_correcoes_sprint9.CorrecaoModeracaoTest.test_limites_de_500_caracteres) ... ok
+test_resolver_e_suspender_com_corpo_ou_tipos_invalidos (placematch.test_correcoes_sprint9.CorrecaoModeracaoTest.test_resolver_e_suspender_com_corpo_ou_tipos_invalidos) ... ok
+test_tipos_errados_dao_400_em_portugues (placematch.test_correcoes_sprint9.CorrecaoModeracaoTest.test_tipos_errados_dao_400_em_portugues) ... ok
+test_criar_admin_continua_funcionando (placematch.test_correcoes_sprint9.CorrecaoNomeEUsernameTest.test_criar_admin_continua_funcionando) ... ok
+test_email_longo_gera_username_valido (placematch.test_correcoes_sprint9.CorrecaoNomeEUsernameTest.test_email_longo_gera_username_valido) ... ok
+test_homonimos_geram_usernames_distintos (placematch.test_correcoes_sprint9.CorrecaoNomeEUsernameTest.test_homonimos_geram_usernames_distintos) ... ok
+test_me_painel_logs_e_csv_mostram_o_nome (placematch.test_correcoes_sprint9.CorrecaoNomeEUsernameTest.test_me_painel_logs_e_csv_mostram_o_nome) ... ok
+test_migracao_de_dados_copia_username_para_first_name (placematch.test_correcoes_sprint9.CorrecaoNomeEUsernameTest.test_migracao_de_dados_copia_username_para_first_name) ... ok
+test_nome_curto_ou_vazio_tem_mensagem_do_campo (placematch.test_correcoes_sprint9.CorrecaoNomeEUsernameTest.test_nome_curto_ou_vazio_tem_mensagem_do_campo) ... ok
+test_nome_vai_para_first_name_e_username_e_gerado_do_email (placematch.test_correcoes_sprint9.CorrecaoNomeEUsernameTest.test_nome_vai_para_first_name_e_username_e_gerado_do_email) ... ok
+test_admin_nao_cria_perfil_403 (placematch.test_correcoes_sprint9.CorrecaoPerfilTest.test_admin_nao_cria_perfil_403) ... ok
+test_segundo_perfil_mensagem_exata (placematch.test_correcoes_sprint9.CorrecaoPerfilTest.test_segundo_perfil_mensagem_exata) ... ok
+test_acima_de_1000_da_400_com_mensagem (placematch.test_sprint10.DescricaoDoImovelTest.test_acima_de_1000_da_400_com_mensagem) ... ok
+test_ate_1000_caracteres_e_aceito (placematch.test_sprint10.DescricaoDoImovelTest.test_ate_1000_caracteres_e_aceito) ... ok
+test_criacao_tambem_valida (placematch.test_sprint10.DescricaoDoImovelTest.test_criacao_tambem_valida) ... ok
+test_combina_com_os_outros_filtros (placematch.test_sprint10.FiltroDeDatasDasDenunciasTest.test_combina_com_os_outros_filtros) ... ok
+test_data_fim_exclui_a_recente (placematch.test_sprint10.FiltroDeDatasDasDenunciasTest.test_data_fim_exclui_a_recente) ... ok
+test_data_inicio_exclui_a_antiga (placematch.test_sprint10.FiltroDeDatasDasDenunciasTest.test_data_inicio_exclui_a_antiga) ... ok
+test_data_inicio_no_futuro_nao_traz_nada (placematch.test_sprint10.FiltroDeDatasDasDenunciasTest.test_data_inicio_no_futuro_nao_traz_nada) ... ok
+test_formato_invalido_e_periodo_invertido_dao_400_em_portugues (placematch.test_sprint10.FiltroDeDatasDasDenunciasTest.test_formato_invalido_e_periodo_invertido_dao_400_em_portugues) ... ok
+test_periodo_que_contem_so_a_antiga (placematch.test_sprint10.FiltroDeDatasDasDenunciasTest.test_periodo_que_contem_so_a_antiga) ... ok
+test_sem_filtro_lista_as_duas (placematch.test_sprint10.FiltroDeDatasDasDenunciasTest.test_sem_filtro_lista_as_duas) ... ok
+test_compatibilidade (placematch.test_sprint10.RestricoesDoBancoTest.test_compatibilidade) ... ok
+test_curtida (placematch.test_sprint10.RestricoesDoBancoTest.test_curtida) ... ok
+test_denuncia (placematch.test_sprint10.RestricoesDoBancoTest.test_denuncia) ... ok
+test_email_unico_sem_diferenciar_maiusculas (placematch.test_sprint10.RestricoesDoBancoTest.test_email_unico_sem_diferenciar_maiusculas) ... ok
+test_match (placematch.test_sprint10.RestricoesDoBancoTest.test_match) ... ok
+test_mensagem_conteudo_de_1_a_1000 (placematch.test_sprint10.RestricoesDoBancoTest.test_mensagem_conteudo_de_1_a_1000) ... ok
+test_perfil_escalas_fora_de_1_a_5 (placematch.test_sprint10.RestricoesDoBancoTest.test_perfil_escalas_fora_de_1_a_5) ... ok
+test_perfil_idade_fora_de_18_a_100 (placematch.test_sprint10.RestricoesDoBancoTest.test_perfil_idade_fora_de_18_a_100) ... ok
+test_perfil_moradores_fora_de_1_a_4 (placematch.test_sprint10.RestricoesDoBancoTest.test_perfil_moradores_fora_de_1_a_4) ... ok
+test_perfil_orcamento (placematch.test_sprint10.RestricoesDoBancoTest.test_perfil_orcamento) ... ok
+test_perfil_textos (placematch.test_sprint10.RestricoesDoBancoTest.test_perfil_textos) ... ok
+test_perfil_update_tambem_e_recusado (placematch.test_sprint10.RestricoesDoBancoTest.test_perfil_update_tambem_e_recusado) ... ok
+test_perfil_valido_continua_aceito (placematch.test_sprint10.RestricoesDoBancoTest.test_perfil_valido_continua_aceito) ... ok
+test_perfil_valores_de_escolha_invalidos (placematch.test_sprint10.RestricoesDoBancoTest.test_perfil_valores_de_escolha_invalidos) ... ok
+test_usuario_tipo_invalido (placematch.test_sprint10.RestricoesDoBancoTest.test_usuario_tipo_invalido) ... ok
+test_banco_consistente (placematch.test_sprint10.VerificarBancoTest.test_banco_consistente) ... ok
+test_detecta_inconsistencias (placematch.test_sprint10.VerificarBancoTest.test_detecta_inconsistencias) ... ok
+test_falhar_sai_com_erro_quando_ha_problema (placematch.test_sprint10.VerificarBancoTest.test_falhar_sai_com_erro_quando_ha_problema) ... ok
+test_somente_leitura (placematch.test_sprint10.VerificarBancoTest.test_somente_leitura) ... ok
+test_ctf01_cadastro_201 (usuarios.test_funcionais_sprint9.FuncionaisAuthTest.test_ctf01_cadastro_201) ... ok
+test_ctf02_login_200_retorna_tokens (usuarios.test_funcionais_sprint9.FuncionaisAuthTest.test_ctf02_login_200_retorna_tokens) ... ok
+test_ctf03_refresh_token_200 (usuarios.test_funcionais_sprint9.FuncionaisAuthTest.test_ctf03_refresh_token_200) ... ok
+test_ctf04_me_retorna_usuario_logado (usuarios.test_funcionais_sprint9.FuncionaisAuthTest.test_ctf04_me_retorna_usuario_logado) ... ok
+test_ctv131_nome_completo_com_espaco (usuarios.test_funcionais_sprint9.ValidacaoCadastroComoOFrontEnviaTest.test_ctv131_nome_completo_com_espaco) ... ok
+test_ctv132_duas_pessoas_com_mesmo_nome_e_emails_diferentes (usuarios.test_funcionais_sprint9.ValidacaoCadastroComoOFrontEnviaTest.test_ctv132_duas_pessoas_com_mesmo_nome_e_emails_diferentes) ... ok
+test_ctv133_nome_com_acento (usuarios.test_funcionais_sprint9.ValidacaoCadastroComoOFrontEnviaTest.test_ctv133_nome_com_acento) ... ok
+test_ctv01_email_vazio (usuarios.test_funcionais_sprint9.ValidacaoCadastroTest.test_ctv01_email_vazio) ... ok
+test_ctv02_email_formato_invalido (usuarios.test_funcionais_sprint9.ValidacaoCadastroTest.test_ctv02_email_formato_invalido) ... ok
+test_ctv03_email_duplicado (usuarios.test_funcionais_sprint9.ValidacaoCadastroTest.test_ctv03_email_duplicado) ... ok
+test_ctv04_email_duplicado_com_maiusculas (usuarios.test_funcionais_sprint9.ValidacaoCadastroTest.test_ctv04_email_duplicado_com_maiusculas) ... ok
+test_ctv05_senha_curta (usuarios.test_funcionais_sprint9.ValidacaoCadastroTest.test_ctv05_senha_curta) ... ok
+test_ctv06_senha_vazia (usuarios.test_funcionais_sprint9.ValidacaoCadastroTest.test_ctv06_senha_vazia) ... ok
+test_ctv07_tipo_invalido (usuarios.test_funcionais_sprint9.ValidacaoCadastroTest.test_ctv07_tipo_invalido) ... ok
+test_ctv08_tipo_administrador_rejeitado (usuarios.test_funcionais_sprint9.ValidacaoCadastroTest.test_ctv08_tipo_administrador_rejeitado) ... ok
+test_ctv09_campos_ausentes (usuarios.test_funcionais_sprint9.ValidacaoCadastroTest.test_ctv09_campos_ausentes) ... ok
+test_ctv10_username_ausente (usuarios.test_funcionais_sprint9.ValidacaoCadastroTest.test_ctv10_username_ausente) ... ok
+test_ctv11_corpo_nao_objeto (usuarios.test_funcionais_sprint9.ValidacaoCadastroTest.test_ctv11_corpo_nao_objeto) ... ok
+test_ctv12_senha_so_numeros (usuarios.test_funcionais_sprint9.ValidacaoCadastroTest.test_ctv12_senha_so_numeros) ... ok
+test_ctv13_login_campos_vazios (usuarios.test_funcionais_sprint9.ValidacaoLoginTest.test_ctv13_login_campos_vazios)
+Esperado: 400 indicando campos obrigatórios (não mensagem genérica de credencial). ... ok
+test_ctv14_login_senha_errada (usuarios.test_funcionais_sprint9.ValidacaoLoginTest.test_ctv14_login_senha_errada) ... ok
+test_ctv15_login_usuario_inexistente (usuarios.test_funcionais_sprint9.ValidacaoLoginTest.test_ctv15_login_usuario_inexistente) ... ok
+test_ctv16_login_conta_suspensa (usuarios.test_funcionais_sprint9.ValidacaoLoginTest.test_ctv16_login_conta_suspensa) ... ok
+test_ctv17_login_corpo_nao_objeto_nao_gera_500 (usuarios.test_funcionais_sprint9.ValidacaoLoginTest.test_ctv17_login_corpo_nao_objeto_nao_gera_500) ... ok
+test_ctv18_login_email_com_maiusculas (usuarios.test_funcionais_sprint9.ValidacaoLoginTest.test_ctv18_login_email_com_maiusculas)
+E-mail é único sem distinguir caixa; o login deveria seguir a mesma regra. ... ok
+test_ctv19_login_email_vazio_senha_ok (usuarios.test_funcionais_sprint9.ValidacaoLoginTest.test_ctv19_login_email_vazio_senha_ok) ... ok
+test_ctv20_login_senha_vazia (usuarios.test_funcionais_sprint9.ValidacaoLoginTest.test_ctv20_login_senha_vazia) ... ok
+test_ctv21_token_ausente (usuarios.test_funcionais_sprint9.ValidacaoTokensTest.test_ctv21_token_ausente) ... ok
+test_ctv22_token_malformado (usuarios.test_funcionais_sprint9.ValidacaoTokensTest.test_ctv22_token_malformado) ... ok
+test_ctv23_token_expirado (usuarios.test_funcionais_sprint9.ValidacaoTokensTest.test_ctv23_token_expirado) ... ok
+test_ctv24_cabecalho_sem_token (usuarios.test_funcionais_sprint9.ValidacaoTokensTest.test_ctv24_cabecalho_sem_token) ... ok
+test_ctv25_refresh_invalido (usuarios.test_funcionais_sprint9.ValidacaoTokensTest.test_ctv25_refresh_invalido) ... ok
+test_ctv26_refresh_ausente (usuarios.test_funcionais_sprint9.ValidacaoTokensTest.test_ctv26_refresh_ausente) ... ok
+test_ctv27_token_de_usuario_suspenso (usuarios.test_funcionais_sprint9.ValidacaoTokensTest.test_ctv27_token_de_usuario_suspenso) ... ok
+
+----------------------------------------------------------------------
+Ran 574 tests in 47.846s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+ OK
+System check identified no issues (0 silenced).
+
+[CT-V78] status=400 body={"detail": "O conteúdo da mensagem não pode ser vazio."}
+
+[CT-V79] status=400 body={"detail": "O conteúdo da mensagem não pode ser vazio."}
+
+[CT-V80] status=400 body={"detail": "O conteúdo da mensagem não pode ter mais de 1000 caracteres."}
+
+[CT-V81] status=404 body={"detail": "Match não encontrado."}
+
+[CT-V82] status=400 body={"detail": "O conteúdo da mensagem não pode ser vazio."}
+
+[CT-V83] status=400 body={"detail": "O conteúdo da mensagem deve ser um texto."}
+
+[CT-V84] status=403 body={"detail": "Você não tem acesso a este match."}
+
+[CT-V85] status=400 body={"detail": "Você precisa criar um perfil antes de acessar o chat."}
+
+[CT-V86] status=400 body={"detail": "O parâmetro \"apos\" inválido. Informe um número inteiro. Informe o número da última mensagem já recebida."}
+
+[CT-V87] status=403 body={"detail": "Não é possível enviar mensagens: a conta do outro participante está suspensa."}
+
+[CT-V88] status=201 body={"id": 1, "match_id": 1, "remetente_id": 1, "conteudo": "ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá
+
+[CT-V134] status=200 body={"count": 1, "page": 1, "results": [{"id": 1, "data_hora": "2026-11-18T00:34:53.391912Z", "usuario": {"id": 1, "nome": "buscando", "email": "buscando@t.com"}, "acao": "LOGIN", "acao_label": "Login", "entidade": "", "entidade_id": null, "detalhes": {}, "ip": null}]}
+
+[CT-V108] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
+
+[CT-V109] status=400 body={"detail": "Formato de data_fim inválido. Use AAAA-MM-DD."}
+
+[CT-V110] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
+
+[CT-V111] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
+
+[CT-V112] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
+
+[CT-V113] status=200 body={"count": 0, "page": 9999, "results": []}
+
+[CT-V114] status=200 body={"count": 0, "page": 1, "results": []}
+
+[CT-V115] status=400 body={"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO."}
+
+[CT-V116] status=200 body={"count": 0, "page": 1, "results": []}
+
+[CT-V56] status=400 body={"perfil_destino": ["O identificador \"999999\" não existe."]}
+
+[CT-V57] status=400 body={"perfil_destino": ["Este campo é obrigatório."], "tipo": ["Este campo é obrigatório."]}
+
+[CT-V58] status=400 body={"tipo": ["\"amar\" não é uma opção válida."]}
+
+[CT-V59] status=400 body={"perfil_destino": ["Valor inválido. Informe o número do identificador (recebido: str)."]}
+
+[CT-V60] status=400 body={"perfil_destino": ["Este campo não pode ser nulo."]}
+
+[CT-V61] status=400 body={"detail": "Você não pode curtir o seu próprio perfil."}
+
+[CT-V62a] status=201 body={"match": false}
+
+[CT-V62] status=400 body={"detail": "Você já avaliou este perfil."}
+
+[CT-V63] status=400 body={"detail": "Você só pode avaliar perfis do tipo oposto."}
+
+[CT-V64] status=400 body={"non_field_errors": ["Dado inválido. Esperava um dicionário, mas recebeu list."]}
+
+[CT-V65] status=400 body={"detail": "Você precisa criar um perfil antes de curtir."}
+
+[CT-V66] status=403 body={"detail": "Administradores não podem avaliar perfis."}
+
+[CT-V67] status=404 body={"detail": "Perfil não encontrado."}
+
+[CT-V68] status=400 body={"detail": "score_min deve ser um número entre 0 e 100."}
+
+[CT-V69] status=400 body={"detail": "score_min deve ser um número entre 0 e 100."}
+
+[CT-V70] status=400 body={"detail": "score_min deve ser um número entre 0 e 100."}
+
+[CT-V71] status=400 body={"detail": "Valor inválido para orcamento_min. Informe um número entre 0 e 99999999.99."}
+
+[CT-V72] status=400 body={"detail": "Valor inválido para orcamento_min. Informe um número entre 0 e 99999999.99."}
+
+[CT-V73] status=400 body={"detail": "Valor inválido para orcamento_max. Informe um número entre 0 e 99999999.99."}
+
+[CT-V74] status=400 body={"detail": "ordenar inválido. Use: score, orcamento_asc, orcamento_desc."}
+
+[CT-V75] status=400 body={"detail": "Valor inválido para fumante. Use true ou false."}
+
+[CT-V76] status=400 body={"detail": "Valor inválido para orcamento_min. Informe um número entre 0 e 99999999.99."}
+
+[CT-V77] status=400 body={"detail": "Você precisa criar um perfil antes de acessar a descoberta."}
+[OK] 1. Cadastro usuário A (buscando_vaga) -> 201
+[OK] 1. Cadastro usuário B (oferecendo_vaga) -> 201
+[OK] 1. Auto-cadastro como admin bloqueado -> 400
+[OK] 2. Login usuário A -> 200
+[OK] 2. Login usuário B -> 200
+[OK] 2. /api/auth/me/ retorna tipo correto para A -> 200
+[OK] 3. Perfil com orcamento_min > orcamento_max rejeitado -> 400
+[OK] 3. Criação de perfil A -> 201
+[OK] 3. Criação de perfil B -> 201
+[OK] 4. A enxerga B na descoberta -> 200
+[OK] 4. Admin recebe 403 na descoberta -> 403
+[OK] 5. A curte B (sem match ainda) -> 201
+[OK] 5. Curtida duplicada rejeitada -> 400
+[OK] 5. B curte A -> match criado -> 201
+[OK] 6. B desaparece da descoberta de A após match -> 200
+[OK] 7. Admin recebe 403 em /api/conversas/ -> 403
+[OK] 7. A visualiza conversa do match -> 200
+[OK] 7. A envia mensagem no chat -> 201
+[OK] 7. Mensagem vazia rejeitada -> 400
+[OK] 7. Mensagem com >1000 chars rejeitada -> 400
+[OK] 7. B recebe mensagens do chat -> 200
+[OK] 8. A denuncia B -> 201
+[OK] 8. Admin resolve denúncia como "resolvida" -> 200
+[OK] 8. Admin suspende B -> 200
+[OK] 9. Login de conta suspensa retorna 401 -> 401
+[OK] 10. Admin reativa B -> 200
+[OK] 10. B loga com sucesso após reativação -> 200
+[OK] 11. Admin acessa dashboard -> 200
+[OK] 11. Admin acessa catálogo de relatórios -> 200
+[OK] 11. Admin acessa relatorio compatibilidade-regiao -> 200
+[OK] 11. Admin acessa relatorio denuncias -> 200
+[OK] 12. Usuário comum bloqueado em /api/admin/dashboard/ -> 403
+[OK] 12. Usuário comum bloqueado em /api/admin/moderacao/denuncias/ -> 403
+[OK] 12. Usuário comum bloqueado em /api/admin/moderacao/usuarios/2/suspender/ -> 403
+[OK] 12. Usuário comum bloqueado em /api/admin/relatorios/ -> 403
+
+[FLUXO COMPLETO] Todos os 12 passos verificados com sucesso.
+
+[CT-V100] status=404 body={"detail": "Denúncia não encontrada."}
+
+[CT-V101] status=404 body={"detail": "Usuário não encontrado."}
+
+[CT-V102] status=400 body={"detail": "Este usuário já está suspenso."}
+
+[CT-V103] status=400 body={"detail": "Este usuário já está ativo."}
+
+[CT-V104] status=400 body={"detail": "A resolução deve ter no máximo 500 caracteres (enviados: 5000)."}
+
+[CT-V105] status=400 body={"detail": "O motivo da suspensão deve ter no máximo 500 caracteres (enviados: 5000)."}
+
+[CT-V106] status=400 body={"detail": "Status inválido. Use: pendente, resolvida, descartada."}
+
+[CT-V107] status=400 body={"detail": "O filtro \"denunciado\" inválido. Informe um número inteiro."}
+
+[CT-V99] status=400 body={"detail": "Status inválido. Use \"resolvida\" ou \"descartada\"."}
+
+[CT-V89] status=400 body={"detail": "Motivo inválido. Use: spam, ofensivo, falso, outro."}
+
+[CT-V90] status=400 body={"detail": "A descrição deve ter no máximo 500 caracteres (enviados: 501)."}
+
+[CT-V91] status=400 body={"detail": "Usuário denunciado não encontrado."}
+
+[CT-V92] status=400 body={"detail": "O campo \"denunciado\" inválido. Informe um número inteiro."}
+
+[CT-V93] status=400 body={"detail": "O campo \"denunciado\" inválido. Informe um número inteiro."}
+
+[CT-V94] status=400 body={"detail": "O campo \"denunciado\" é obrigatório."}
+
+[CT-V95] status=400 body={"detail": "Motivo inválido. Use: spam, ofensivo, falso, outro."}
+
+[CT-V96] status=400 body={"detail": "Você não pode denunciar a si mesmo."}
+
+[CT-V97] status=201 body={"id": 1, "denunciado": 2, "motivo": "spam", "status": "pendente", "criada_em": "2026-11-18T00:35:02.116543Z"}
+
+[CT-V98] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON."}
+
+[CT-V117] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
+
+[CT-V118] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
+
+[CT-V119] status=404 body={"detail": "Relatório \"nao-existe\" não encontrado."}
+
+[CT-V120] status=400 body={"detail": "Formato de data_fim inválido. Use AAAA-MM-DD."}
+
+[CT-V121] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
+
+[CT-V122] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
+
+[CT-V123] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
+
+[CT-V124] status=200 body={"count": 3, "page": 9999, "results": []}
+
+[CT-V125] status=200 body={"count": 3, "page": 1, "results": [{"id": 3, "nome": "adm", "email": "adm@t.com", "tipo": "administrador", "regiao": null, "data_cadastro": "2026-11-18T00:35:08.552998Z", "tem_perfil": false, "ativo": true}, {"id": 2, "nome": "oferece", "email": "oferece@t.com", "tipo": "oferecendo_vaga", "regiao":
+
+[CT-V126] status=400 body={"detail": "Valor inválido para ativo. Use true ou false."}
+
+[CT-V127] status=400 body={"detail": "Tipo inválido. Use: buscando_vaga, oferecendo_vaga, administrador."}
+
+[CT-V128] status=400 body={"detail": "Formato inválido. Use: json, csv."}
+
+[CT-V129] status=400 body={"detail": "Tipo inválido. Use: buscando_vaga, oferecendo_vaga, administrador."}
+
+[CT-V130] status=200 body={"titulo": "Matches", "colunas": ["Data", "Perfil A", "Perfil B", "Região A", "Região B", "Score (%)", "Mensagens", "Ativa"], "linhas": [], "totais": {"matches": 0, "mensagens": 0}, "filtros_aplicados": {"data_inicio": "0001-01-01"}, "gerado_em": "2026-11-18T00:35:08.805663Z"}
+
+[CT-V28] status=400 body={"nome": ["Este campo não pode ficar em branco."]}
+
+[CT-V29] status=400 body={"nome": ["Este campo não pode ficar em branco."]}
+
+[CT-V30] status=400 body={"idade": ["Este campo é obrigatório."]}
+
+[CT-V31] status=400 body={"idade": ["A idade mínima permitida é 18 anos."]}
+
+[CT-V32] status=400 body={"idade": ["Informe uma idade válida (máximo 100 anos)."]}
+
+[CT-V33] status=400 body={"idade": ["Certifique-se de que este valor seja maior ou igual a 0."]}
+
+[CT-V34] status=400 body={"idade": ["Um número inteiro válido é exigido."]}
+
+[CT-V35] status=400 body={"orcamento_min": ["O orçamento mínimo deve ser maior que zero."]}
+
+[CT-V36] status=400 body={"orcamento_max": ["O orçamento máximo deve ser maior ou igual ao mínimo."]}
+
+[CT-V37] status=400 body={"orcamento_min": ["Um número válido é necessário."]}
+
+[CT-V38] status=400 body={"orcamento_max": ["Este campo é obrigatório."]}
+
+[CT-V39] status=400 body={"tolerancia_bagunca": ["Certifique-se de que este valor seja maior ou igual a 1."]}
+
+[CT-V40] status=400 body={"nivel_organizacao": ["Certifique-se de que este valor seja inferior ou igual a 5."]}
+
+[CT-V41] status=400 body={"nivel_ruido": ["Certifique-se de que este valor seja maior ou igual a 1."]}
+
+[CT-V42] status=400 body={"nivel_social": ["Um número inteiro válido é exigido."]}
+
+[CT-V43] status=400 body={"bio": ["A bio deve ter no máximo 500 caracteres (enviados: 501)."]}
+
+[CT-V44] status=400 body={"foto_perfil_url": ["Insira um URL válido."]}
+
+[CT-V45] status=400 body={"foto_perfil_url": ["Insira um URL válido."]}
+
+[CT-V46] status=400 body={"detail": "Você já possui um perfil."}
+
+[CT-V47] status=400 body={"regiao": ["Este campo não pode ficar em branco."]}
+
+[CT-V48] status=400 body={"nome": ["Certifique-se de que este campo não tenha mais de 150 caracteres."]}
+
+[CT-V49] status=400 body={"idade": ["Um número inteiro válido é exigido."]}
+
+[CT-V50] status=400 body={"tipo_imovel": ["\"castelo\" não é uma opção válida."]}
+
+[CT-V51] status=400 body={"qtd_moradores": ["Certifique-se de que este valor seja maior ou igual a 1."]}
+
+[CT-V52] status=400 body={"idade": ["A idade mínima permitida é 18 anos."]}
+
+[CT-V53] status=400 body={"orcamento_max": ["O orçamento máximo deve ser maior ou igual ao mínimo."]}
+
+[CT-V54] status=403 body={"detail": "O administrador não participa deste recurso."}
+
+[CT-V55] status=400 body={"orcamento_max": ["Certifique-se de que não haja mais de 10 dígitos no total."]}
+
+[CT-V131] status=201 body={"username": "Maria Silva", "email": "novo@t.com", "tipo": "buscando_vaga"}
+
+[CT-V132] status=201 body={"username": "Joao", "email": "j2@t.com", "tipo": "buscando_vaga"}
+
+[CT-V133] status=201 body={"username": "José", "email": "novo@t.com", "tipo": "buscando_vaga"}
+
+[CT-V01] status=400 body={"email": ["O e-mail não pode ficar em branco."]}
+
+[CT-V02] status=400 body={"email": ["Informe um e-mail válido."]}
+
+[CT-V03] status=400 body={"email": ["Este e-mail já está cadastrado."]}
+
+[CT-V04] status=400 body={"email": ["Este e-mail já está cadastrado."]}
+
+[CT-V05] status=400 body={"password": ["A senha deve ter no mínimo 8 caracteres."]}
+
+[CT-V06] status=400 body={"password": ["A senha não pode ficar em branco."]}
+
+[CT-V07] status=400 body={"tipo": ["Tipo de conta inválido. Use \"buscando_vaga\" ou \"oferecendo_vaga\"."]}
+
+[CT-V08] status=400 body={"tipo": ["Tipo de conta inválido. Use \"buscando_vaga\" ou \"oferecendo_vaga\"."]}
+
+[CT-V09] status=400 body={"username": ["O nome é obrigatório."], "email": ["O e-mail é obrigatório."], "password": ["A senha é obrigatória."], "tipo": ["O tipo de conta é obrigatório."]}
+
+[CT-V10] status=400 body={"username": ["O nome é obrigatório."]}
+
+[CT-V11] status=400 body={"non_field_errors": ["Dado inválido. Esperava um dicionário, mas recebeu list."]}
+
+[CT-V12] status=400 body={"password": ["Esta senha é muito comum.", "Esta senha é inteiramente numérica."]}
+
+[CT-V13] status=400 body={"email": ["Informe o e-mail."], "password": ["Informe a senha."]}
+
+[CT-V14] status=401 body={"detail": "E-mail ou senha incorretos."}
+
+[CT-V15] status=401 body={"detail": "E-mail ou senha incorretos."}
+
+[CT-V16] status=401 body={"detail": "Conta suspensa. Procure o suporte."}
+
+[CT-V17] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON com e-mail e senha."}
+
+[CT-V18] status=200 body={"refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTU2NjkzNiwiaWF0IjoxNzk0OTYyMTM2LCJqdGkiOiI3OTU3NjcwOThhODI0ODNjYTM1OWYyYjc4YmYxYjU1MCIsInVzZXJfaWQiOiIxIn0.ifQNqw7yn9RY1xlCdZ6Bn0Dp-PmM-3Irm5OkZeaSWGQ", "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0
+
+[CT-V19] status=400 body={"email": ["Informe o e-mail."]}
+
+[CT-V20] status=400 body={"password": ["Informe a senha."]}
+
+[CT-V21] status=401 body={"detail": "As credenciais de autenticação não foram fornecidas."}
+
+[CT-V22] status=401 body={"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}
+
+[CT-V23] status=401 body={"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "Token expirado"}]}
+
+[CT-V24] status=401 body={"detail": "Cabeçalho de autorização deve conter dois valores delimitados por espaço", "code": "bad_authorization_header"}
+
+[CT-V25] status=401 body={"detail": "O token é inválido", "code": "token_not_valid"}
+
+[CT-V26] status=400 body={"refresh": ["Este campo é obrigatório."]}
+
+[CT-V27] status=401 body={"detail": "Usuário está inativo", "code": "user_inactive"}
+
+# código de saída: 0

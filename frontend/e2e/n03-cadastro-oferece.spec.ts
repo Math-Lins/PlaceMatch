@@ -11,7 +11,19 @@ test('N03 Cadastro oferecendo vaga → etapas + anúncio com foto → Descoberta
     await print(page, 'N03', 1, 'etapa1-de-5');
   });
 
-  await test.step('2. etapas 1 a 4', async () => {
+  await test.step('2. etapa 1: link da foto (inválido mostra o erro do backend; válido mostra a prévia no círculo)', async () => {
+    const campo = page.getByRole('textbox', { name: /^Link da sua foto/ });
+    await page.getByRole('button', { name: 'Adicionar o link da sua foto' }).click();
+    await expect(campo, 'clicar no círculo leva o foco ao campo').toBeFocused();
+    await campo.fill('foto-invalida');
+    await expect(page.getByText('A URL da foto de perfil deve começar com http:// ou https://.')).toBeVisible();
+    await campo.fill(FOTO_OK);
+    await expect(page.getByText('A URL da foto de perfil deve começar com http:// ou https://.')).toBeHidden();
+    await expect(page.getByAltText('Pré-visualização da sua foto')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Alterar o link da sua foto' })).toBeVisible();
+  });
+
+  await test.step('3. etapas 1 a 4', async () => {
     await preencherEtapa1(page, p);
     await proxima(page);
     await preencherEtapa2(page, p);
@@ -25,7 +37,7 @@ test('N03 Cadastro oferecendo vaga → etapas + anúncio com foto → Descoberta
     await print(page, 'N03', 2, 'etapa5-anuncio');
   });
 
-  await test.step('3. título e descrição com contador e limite', async () => {
+  await test.step('4. título e descrição com contador e limite', async () => {
     await page.getByPlaceholder('Ex: Quarto amplo próximo ao metrô').fill('Quarto amplo em Boa Viagem');
     await page.getByPlaceholder('Descreva o imóvel, a vaga e as regras da casa...').fill('Apartamento reformado, 2 quartos, varanda.');
     await expect(page.getByText('26/120')).toBeVisible();
@@ -35,7 +47,7 @@ test('N03 Cadastro oferecendo vaga → etapas + anúncio com foto → Descoberta
     await page.getByPlaceholder('Ex: Quarto amplo próximo ao metrô').fill('Quarto amplo em Boa Viagem');
   });
 
-  await test.step('4. foto do imóvel por URL: inválida mostra erro, válida mostra pré-visualização', async () => {
+  await test.step('5. foto do imóvel por URL: inválida mostra erro, válida mostra pré-visualização', async () => {
     await page.getByRole('button', { name: '+ Adicionar foto' }).click();
     const foto1 = page.getByPlaceholder('https://...').first();
     await foto1.fill('foto-invalida');
@@ -49,7 +61,7 @@ test('N03 Cadastro oferecendo vaga → etapas + anúncio com foto → Descoberta
     await print(page, 'N03', 3, 'foto-com-previa');
   });
 
-  await test.step('5. limite de 5 fotos: o botão de adicionar some', async () => {
+  await test.step('6. limite de 5 fotos: o botão de adicionar some', async () => {
     for (let i = 0; i < 4; i++) await page.getByRole('button', { name: '+ Adicionar foto' }).click();
     await expect(page.getByText('5/5', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '+ Adicionar foto' })).toHaveCount(0);
@@ -57,31 +69,33 @@ test('N03 Cadastro oferecendo vaga → etapas + anúncio com foto → Descoberta
     await expect(page.getByText('1/5', { exact: true })).toBeVisible();
   });
 
-  await test.step('6. foto do proprietário também tem pré-visualização', async () => {
-    await page.getByPlaceholder('https://...').last().fill(FOTO_OK);
-    await expect(page.getByAltText('Pré-visualização da sua foto')).toBeVisible();
+  await test.step('7. a etapa 5 não repete o campo da foto de perfil', async () => {
+    await expect(page.getByRole('textbox', { name: /^Link da sua foto/ })).toHaveCount(0);
+    await expect(page.getByText('Sua foto (link)')).toHaveCount(0);
   });
 
-  await test.step('7. concluir leva a "Interessados na sua vaga"', async () => {
+  await test.step('8. concluir leva a "Interessados na sua vaga"', async () => {
     await page.getByRole('button', { name: 'Concluir perfil' }).click();
     await expect(page.getByRole('heading', { name: 'Interessados na sua vaga' })).toBeVisible({ timeout: 20_000 });
     await print(page, 'N03', 4, 'descoberta-interessados');
   });
 
-  await test.step('8. Meu Perfil mostra o anúncio salvo', async () => {
+  await test.step('9. Meu Perfil mostra o anúncio e a foto salvos', async () => {
     await menu(page, 'Perfil').click();
     await expect(page.getByRole('heading', { name: 'Meu Perfil' })).toBeVisible();
+    await expect(page.locator(`img[alt="${p.nome}"]`), 'a foto da etapa 1 aparece no Meu Perfil').toBeVisible();
     await expect(page.getByRole('heading', { name: 'Meu anúncio' })).toBeVisible();
     await expect(page.getByText('Quarto amplo em Boa Viagem')).toBeVisible();
     await expect(page.getByAltText('Foto 1 do imóvel')).toBeVisible();
     await print(page, 'N03', 5, 'meu-perfil-anuncio');
   });
 
-  await test.step('9. recarregar a página (sessão restaurada) mantém o anúncio e a seção de edição do anúncio', async () => {
+  await test.step('10. recarregar a página (sessão restaurada) mantém o anúncio, a foto e a seção de edição do anúncio', async () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Meu Perfil' })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole('heading', { name: 'Meu anúncio' })).toBeVisible();
     await page.getByRole('button', { name: 'Editar' }).click();
+    await expect(page.getByRole('textbox', { name: /^Link da sua foto/ }), 'o link salvo aparece na edição').toHaveValue(FOTO_OK);
     await expect(page.getByRole('heading', { name: 'Anúncio do imóvel' }), 'o tipo do usuário deve ser obtido de /api/auth/me/ ao restaurar a sessão').toBeVisible();
     await print(page, 'N03', 6, 'edicao-anuncio-apos-recarregar');
   });

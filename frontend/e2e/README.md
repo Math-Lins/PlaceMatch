@@ -29,6 +29,8 @@ npm run e2e -- n06              # só um roteiro (também: n01 ... n13)
 npm run e2e:db:parar            # apaga o banco do e2e (próxima execução parte do zero)
 ```
 
+Prints da Release Candidate (fora do `npm run e2e`): `npm run e2e:tour` roda `manage.py seed_demo --remover-outros` no banco descartável do e2e, grava `evidencias-rc/` (`RC-01` a `RC-37` + `INDICE.md`) e gera `frontend/evidencias-rc.zip` com essa pasta e com `docs/execucoes-rc/`.
+
 Para prints limpos da Descoberta, recrie o banco (`e2e:db:parar` e `e2e:db`) antes de rodar N02, N03, N04 e N05.
 
 ## Resultados

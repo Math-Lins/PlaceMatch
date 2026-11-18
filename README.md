@@ -103,15 +103,22 @@ python manage.py verificar_banco       # confere a consistência dos dados (some
 
 `verificar_banco` aceita `--detalhes` (lista os ids afetados) e `--falhar` (termina com erro se houver problema grave). No Docker: `docker exec placematch_backend python manage.py verificar_banco`.
 
-**Dados de demonstração** (opcionais, só para desenvolvimento; idempotentes):
+**Dados de demonstração** (opcionais). Use **somente em banco descartável ou local de desenvolvimento**, nunca em produção:
 
 ```powershell
-python manage.py seed_perfis
-python manage.py seed_matches
-python manage.py seed_mensagens
+python manage.py seed_demo                    # demonstração completa (idempotente)
+python manage.py seed_demo --remover-outros   # apaga antes os usuários que não são seed nem administrador (ex.: contas do e2e)
 ```
 
-Os usuários dos seeds usam e-mails do domínio `@seed.pm`; a senha de demonstração está no código de `backend/perfis/management/commands/seed_perfis.py`. Nunca rode os seeds em produção.
+O `seed_demo` cria, em um único comando:
+
+1. perfis do Recife com fotos (`seed_perfis`), matches com score (`seed_matches`) e conversas (`seed_mensagens`);
+2. datas espalhadas nos últimos 30 dias (cadastros, curtidas, matches e mensagens), para os gráficos do painel admin terem movimento;
+3. uma curtida pendente, para demonstrar o interesse mútuo ao curtir de volta;
+4. três denúncias (duas pendentes e uma procedente) e uma conta suspensa;
+5. registros de log coerentes com esses dados.
+
+Rodar de novo não duplica denúncias nem logs. Os comandos separados (`seed_perfis`, `seed_matches`, `seed_mensagens`) continuam disponíveis. Os usuários de demonstração usam e-mails do domínio fictício `@seed.pm`; a senha de demonstração está no código de `backend/perfis/management/commands/seed_perfis.py`. O `--remover-outros` **apaga contas reais**: use-o só no banco do e2e ou num banco local descartável.
 
 Dicionário de dados e esquema: [`docs/banco-de-dados.md`](./docs/banco-de-dados.md) e [`docs/esquema.sql`](./docs/esquema.sql).
 
@@ -165,12 +172,24 @@ O administrador entra pela mesma tela de login e cai direto no painel.
 
 ```powershell
 cd backend
-python manage.py test --settings=placematch.test_settings                     # 574 testes
+python manage.py test --settings=placematch.test_settings                     # suíte completa (use -v 2 para listar cada teste)
 python manage.py makemigrations --check --dry-run --settings=placematch.test_settings   # "No changes detected"
+python manage.py matriz_permissoes --settings=placematch.test_settings        # tabela rota × perfil de acesso (banco de teste efêmero)
 python manage.py spectacular --validate --fail-on-warn --file ../docs/openapi.yaml --settings=placematch.test_settings
 ```
 
-**Frontend** (tipos e build):
+- `matriz_permissoes` cria um banco de teste temporário, chama as rotas da API como anônimo, `buscando_vaga`, `oferecendo_vaga` e `administrador` e imprime o status esperado e o obtido em cada combinação. O banco é destruído no final.
+- `spectacular --validate` valida o schema OpenAPI e regrava `docs/openapi.yaml`. Se o arquivo mudar (`git diff docs/openapi.yaml`), versione a nova versão.
+
+**Consistência do banco** (no banco configurado no `.env`; somente leitura):
+
+```powershell
+python manage.py verificar_banco               # relatório com as contagens de cada verificação (OK / AVISO / ERRO)
+python manage.py verificar_banco --detalhes    # lista os ids afetados
+python manage.py verificar_banco --falhar      # termina com código 1 se houver ERRO (útil em CI)
+```
+
+**Frontend** (tipos e build; o projeto não tem script de lint):
 
 ```powershell
 cd frontend
@@ -190,6 +209,16 @@ npm run e2e:db:parar
 ```
 
 Pare o frontend de desenvolvimento antes: o Playwright sobe a API (8001) e o frontend (5173). A campanha de testes está em [`docs/testes-sprint9.md`](./docs/testes-sprint9.md).
+
+**Evidências da Release Candidate** (prints da interface final, fora do `npm run e2e`):
+
+```powershell
+cd frontend
+npm run e2e:db                                 # banco descartável do e2e (recrie com e2e:db:parar + e2e:db para partir do zero)
+npm run e2e:tour
+```
+
+O `e2e:tour` roda `seed_demo --remover-outros` **no banco descartável do e2e**, percorre o sistema em desktop (1366×768) e celular (375×812) e grava `frontend/e2e/evidencias-rc/` (`RC-01` a `RC-37` + `INDICE.md`). Depois gera `frontend/evidencias-rc.zip` com essa pasta e com `docs/execucoes-rc/` (saídas das verificações finais: testes do backend, `verificar_banco`, matriz de permissões, validação do OpenAPI, build e e2e).
 
 ## Estrutura do projeto
 
@@ -216,10 +245,11 @@ PlaceMatch/
 | Documento | Conteúdo |
 |---|---|
 | [`docs/api.md`](./docs/api.md) | Referência de todos os endpoints, com exemplos reais |
-| **`/api/docs/`** | Swagger UI interativo (com botão **Authorize** para o token JWT). Aberta com `DEBUG=True`; com `DEBUG=False`, só para administrador |
+| **[`/api/docs/`](http://localhost:8000/api/docs/)** | Swagger UI interativo (com botão **Authorize** para o token JWT). Fica aberto a todos só com `DEBUG=True`; com `DEBUG=False`, exige login de administrador |
 | `/api/schema/` · [`docs/openapi.yaml`](./docs/openapi.yaml) | Schema OpenAPI 3 |
 | [`docs/banco-de-dados.md`](./docs/banco-de-dados.md) | Dicionário de dados e regras protegidas no banco |
 | [`docs/testes-sprint9.md`](./docs/testes-sprint9.md) | Campanha de testes e bugs corrigidos |
+| [`docs/execucoes-rc/`](./docs/execucoes-rc/) | Saídas das verificações finais da Release Candidate (testes, banco, permissões, OpenAPI, build, e2e) |
 | [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md) | Fórmulas, pesos e benchmark do score |
 | [`docs/modulo-chat.md`](./docs/modulo-chat.md) · [`docs/runbook-docker.md`](./docs/runbook-docker.md) | Chat e operação com Docker |
 

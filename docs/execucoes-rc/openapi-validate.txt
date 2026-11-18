@@ -1,0 +1,7 @@
+# 17/11/2026 21:36:20 -0300 | diretório: backend | comando: python manage.py spectacular --validate --fail-on-warn --file ../docs/openapi.yaml --settings=placematch.test_settings
+
+
+# código de saída: 0
+
+# 17/11/2026 21:36:36 -0300 | verificação: git diff --stat --exit-code docs/openapi.yaml (o arquivo regravado pelo --file é idêntico ao versionado?)
+# código de saída: 0 (0 = docs/openapi.yaml já estava atualizado)

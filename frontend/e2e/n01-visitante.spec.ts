@@ -2,6 +2,10 @@ import { expect, irParaInicio, print, test } from './apoio';
 
 test.describe('N01 Visitante', () => {
   test('tela inicial → Entrar → voltar → Criar conta', async ({ page }) => {
+    // As fontes são locais (@fontsource): nenhuma requisição deve ir ao Google Fonts.
+    const fontesExternas: string[] = [];
+    page.on('request', r => { if (/fonts\.(googleapis|gstatic)\.com/.test(r.url())) fontesExternas.push(r.url()); });
+
     await test.step('1. tela inicial', async () => {
       await irParaInicio(page);
       await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toBeVisible();
@@ -13,6 +17,7 @@ test.describe('N01 Visitante', () => {
       await page.getByRole('button', { name: 'Entrar', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Boas-vindas de volta!' })).toBeVisible();
       await expect(page.getByPlaceholder('seu@email.com')).toBeVisible();
+      await expect(page.getByText('Esqueci minha senha'), 'o link sem fluxo de recuperação foi removido').toHaveCount(0);
       await print(page, 'N01', 2, 'login');
     });
 
@@ -34,6 +39,16 @@ test.describe('N01 Visitante', () => {
       await expect(page.getByRole('heading', { name: 'Boas-vindas de volta!' })).toBeVisible();
       await page.getByRole('button', { name: 'Criar conta' }).click();
       await expect(page.getByRole('heading', { name: 'Criar conta' })).toBeVisible();
+    });
+
+    await test.step('6. fontes Outfit e Nunito carregadas localmente', async () => {
+      const carregadas = await page.evaluate(async () => {
+        await Promise.all([document.fonts.load('700 16px Outfit'), document.fonts.load('400 16px Nunito')]);
+        const nomes = [...document.fonts].filter(f => f.status === 'loaded').map(f => f.family.replace(/['"]/g, ''));
+        return nomes.includes('Outfit') && nomes.includes('Nunito');
+      });
+      expect(carregadas, 'Outfit e Nunito devem carregar dos arquivos locais').toBe(true);
+      expect(fontesExternas, 'não deve haver requisição ao Google Fonts').toEqual([]);
     });
   });
 

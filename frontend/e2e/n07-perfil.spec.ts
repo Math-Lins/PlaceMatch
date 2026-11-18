@@ -1,4 +1,4 @@
-import { cadastrarComPerfil, expect, menu, novoPerfil, print, test } from './apoio';
+import { FOTO_OK, cadastrarComPerfil, expect, menu, novoPerfil, print, test } from './apoio';
 
 test('N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil', async ({ page }) => {
   const p = novoPerfil('n07', 'busca');
@@ -19,10 +19,13 @@ test('N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil'
       await expect(page.getByRole('button', { name: `${h}: 5 de 5` })).toBeVisible();
     }
     await expect(page.getByPlaceholder('Seu nome completo')).toHaveValue(p.nome);
+    await expect(page.getByRole('textbox', { name: /^Link da sua foto/ }), 'quem procura vaga também edita a foto').toBeVisible();
     await print(page, 'N07', 1, 'editando');
   });
 
-  await test.step('2. validação do formulário de edição (idade inválida, mínimo > máximo)', async () => {
+  await test.step('2. validação do formulário de edição (link da foto, idade inválida, mínimo > máximo)', async () => {
+    await page.getByRole('textbox', { name: /^Link da sua foto/ }).fill('ftp://foto');
+    await expect(page.getByText('A URL da foto de perfil deve começar com http:// ou https://.')).toBeVisible();
     await page.getByPlaceholder('Sua idade').fill('17');
     await page.getByPlaceholder('700').fill('5000');
     await page.getByRole('button', { name: 'Salvar' }).click();
@@ -33,6 +36,7 @@ test('N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil'
 
   const novo = { nome: 'Nome Editado Completo', idade: '31', regiao: 'Olinda', min: '1000', max: '2000' };
   await test.step('3. editar todos os campos e salvar', async () => {
+    await page.getByRole('textbox', { name: /^Link da sua foto/ }).fill(FOTO_OK);
     await page.getByPlaceholder('Seu nome completo').fill(novo.nome);
     await page.getByPlaceholder('Sua idade').fill(novo.idade);
     await page.getByPlaceholder('Ex: Boa Viagem, Recife').fill(novo.regiao);
@@ -53,6 +57,7 @@ test('N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil'
 
   await test.step('4. os dados atualizados aparecem na tela e persistem ao reabrir a edição', async () => {
     await expect(page.getByRole('heading', { name: novo.nome })).toBeVisible();
+    await expect(page.locator(`img[alt="${novo.nome}"]`), 'a foto do link aparece no Meu Perfil').toBeVisible();
     await expect(page.getByText(`${novo.idade} anos · ${novo.regiao}`)).toBeVisible();
     await expect(page.getByText('R$ 1.000 – R$ 2.000', { exact: true })).toBeVisible();
     await expect(page.getByText('Casa', { exact: true }).first()).toBeVisible();

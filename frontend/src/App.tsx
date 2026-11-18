@@ -203,9 +203,9 @@ function Btn({ label, onClick, outline = false, danger = false, small = false, d
   );
 }
 
-function Input({ label, type = 'text', placeholder, value, onChange, error, maxLength, inputMode }: {
+function Input({ label, type = 'text', placeholder, value, onChange, error, maxLength, inputMode, id }: {
   label: string; type?: string; placeholder?: string; value?: string; onChange?: (v: string) => void; error?: string; maxLength?: number;
-  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']; id?: string;
 }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -216,6 +216,7 @@ function Input({ label, type = 'text', placeholder, value, onChange, error, maxL
         )}
       </span>
       <input
+        id={id}
         type={type}
         placeholder={placeholder}
         value={value}
@@ -371,18 +372,35 @@ function CartaoSecao({ titulo, children, style }: { titulo: string; children: Re
   );
 }
 
-/** Contador sobre ícone (notificações, filtros ativos, mensagens não lidas). */
-function Contador({ n, style }: { n: number; style?: React.CSSProperties }) {
+/** "1 mensagem não lida" / "3 mensagens não lidas" (texto para leitores de tela). */
+function textoNaoLidas(n: number, singular: string, plural: string): string {
+  return `${n} ${n === 1 ? singular : plural}`;
+}
+
+/**
+ * Contador sobre ícone (notificações, filtros ativos, mensagens não lidas).
+ * O número visível é decorativo; `rotulo` é o texto lido pelos leitores de tela
+ * (o `id` permite ligá-lo ao botão com aria-describedby).
+ */
+function Contador({ n, style, rotulo, id }: { n: number; style?: React.CSSProperties; rotulo?: string; id?: string }) {
   return (
-    <span aria-hidden="true" style={{
-      background: C.primaryDark, color: '#fff', borderRadius: '10px',
-      padding: '0 5px', fontSize: '11px', fontWeight: 800,
-      fontFamily: FONTE_TITULO, lineHeight: '16px',
-      minWidth: '16px', textAlign: 'center', display: 'inline-block', ...style,
-    }}>
-      {n > 9 ? '9+' : n}
-    </span>
+    <>
+      <span aria-hidden="true" style={{
+        background: C.primaryDark, color: '#fff', borderRadius: '10px',
+        padding: '0 5px', fontSize: '11px', fontWeight: 800,
+        fontFamily: FONTE_TITULO, lineHeight: '16px',
+        minWidth: '16px', textAlign: 'center', display: 'inline-block', ...style,
+      }}>
+        {n > 9 ? '9+' : n}
+      </span>
+      {rotulo && <span id={id} className="sr-only">{rotulo}</span>}
+    </>
   );
+}
+
+/** Contador do item "Notificações" do menu; o nome do botão continua "Notificações" e a quantidade vira a descrição. */
+function ContadorNotificacoes({ n, id }: { n: number; id: string }) {
+  return <Contador n={n} id={id} rotulo={textoNaoLidas(n, 'notificação não lida', 'notificações não lidas')} style={{ position: 'absolute', top: '-6px', right: '-9px' }} />;
 }
 
 /** Chip de filtro aplicado, com botão de remover (área de toque de 32 px). */
@@ -400,6 +418,7 @@ function ChipFiltro({ rotulo, onRemover }: { rotulo: string; onRemover: () => vo
 // ─── Bottom Navigation ─────────────────────────────────────────────────────────
 
 function BottomNav({ tab, setTab, notifsCount }: { tab: Tab; setTab: (t: Tab) => void; notifsCount: number }) {
+  const ID_CONTADOR = 'contador-notificacoes-inferior';
   const items: { id: Tab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
     {
       id: 'discovery', label: 'Descoberta',
@@ -418,7 +437,7 @@ function BottomNav({ tab, setTab, notifsCount }: { tab: Tab; setTab: (t: Tab) =>
             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 01-3.46 0"/>
           </svg>
-          {notifsCount > 0 && <Contador n={notifsCount} style={{ position: 'absolute', top: '-6px', right: '-9px' }} />}
+          {notifsCount > 0 && <ContadorNotificacoes n={notifsCount} id={ID_CONTADOR} />}
         </div>
       ),
     },
@@ -447,7 +466,8 @@ function BottomNav({ tab, setTab, notifsCount }: { tab: Tab; setTab: (t: Tab) =>
       paddingBottom: 'env(safe-area-inset-bottom)',
     }}>
       {items.map(item => (
-        <button key={item.id} onClick={() => setTab(item.id)} aria-label={item.label} aria-current={tab === item.id ? 'page' : undefined} style={{
+        <button key={item.id} onClick={() => setTab(item.id)} aria-label={item.label} aria-current={tab === item.id ? 'page' : undefined}
+          aria-describedby={item.id === 'notifications' && notifsCount > 0 ? ID_CONTADOR : undefined} style={{
           flex: 1, padding: '10px 0 8px', minHeight: '56px', display: 'flex', flexDirection: 'column',
           alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer',
         }}>
@@ -478,6 +498,7 @@ function AppShell({ screen, tab, setTab, nav, onLogout, notifsCount, children }:
   if (!isInternal) return <>{children}</>;
 
   const handleTabChange = (t: Tab) => { setTab(t); nav(t as Screen); };
+  const ID_CONTADOR = 'contador-notificacoes-lateral';
 
   const sideItems: { id: Tab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
     {
@@ -497,7 +518,7 @@ function AppShell({ screen, tab, setTab, nav, onLogout, notifsCount, children }:
             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 01-3.46 0"/>
           </svg>
-          {notifsCount > 0 && <Contador n={notifsCount} style={{ position: 'absolute', top: '-6px', right: '-9px' }} />}
+          {notifsCount > 0 && <ContadorNotificacoes n={notifsCount} id={ID_CONTADOR} />}
         </div>
       ),
     },
@@ -551,6 +572,7 @@ function AppShell({ screen, tab, setTab, nav, onLogout, notifsCount, children }:
                 onClick={() => handleTabChange(item.id)}
                 aria-label={item.label}
                 aria-current={active ? 'page' : undefined}
+                aria-describedby={item.id === 'notifications' && notifsCount > 0 ? ID_CONTADOR : undefined}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '12px',
                   padding: '12px 16px', minHeight: '48px', borderRadius: RAIO.botao, cursor: 'pointer',
@@ -751,12 +773,8 @@ function LoginScreen({ nav, onLoginSuccess, loginMsg }: { nav: (s: Screen) => vo
             <Input label="Senha" type="password" placeholder="••••••••" value={senha} onChange={setSenha} error={fieldErrors.senha} />
           </div>
 
-          <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primaryText, fontSize: '14px', fontWeight: 700, fontFamily: FONTE_TEXTO, padding: '12px 0', minHeight: '44px', display: 'block' }}>
-            Esqueci minha senha
-          </button>
-
           {erro && (
-            <div role="alert" style={{ background: C.dangerSoft, border: `1px solid ${C.danger}40`, borderRadius: RAIO.campo, padding: '12px 16px', marginTop: '8px' }}>
+            <div role="alert" style={{ background: C.dangerSoft, border: `1px solid ${C.danger}40`, borderRadius: RAIO.campo, padding: '12px 16px', marginTop: '16px' }}>
               <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', fontWeight: 700, color: C.danger, margin: 0 }}>{erro}</p>
             </div>
           )}
@@ -917,11 +935,11 @@ const FORM_VAZIO: PerfilForm = {
 
 // Campos (nomes da API) de cada etapa da criação de perfil.
 const CAMPOS_ETAPA: Record<number, string[]> = {
-  1: ['nome', 'idade', 'regiao', 'bio'],
+  1: ['foto_perfil_url', 'nome', 'idade', 'regiao', 'bio'],
   2: ['orcamento_min', 'orcamento_max', 'tipo_imovel', 'qtd_moradores'],
   3: ['fumante', 'aceita_pets', 'aceita_visitas', 'perfil_horario'],
   4: ['tolerancia_bagunca', 'nivel_organizacao', 'nivel_ruido', 'nivel_social'],
-  5: ['titulo_anuncio', 'descricao_imovel', 'fotos_imovel', 'foto_perfil_url'],
+  5: ['titulo_anuncio', 'descricao_imovel', 'fotos_imovel'],
 };
 
 function etapaDoCampo(campo: string): number | null {
@@ -938,6 +956,15 @@ function numBR(v: string): number {
 function urlHttpValida(u: string): boolean {
   if (!/^https?:\/\//.test(u)) return false;
   try { return !!new URL(u).hostname; } catch { return false; }
+}
+
+// Mesma mensagem de PerfilSerializer.validate_foto_perfil_url (backend/perfis/serializers.py).
+const MSG_FOTO_PERFIL_INVALIDA = 'A URL da foto de perfil deve começar com http:// ou https://.';
+
+/** Erro do link da foto de perfil (vazio é permitido). */
+function erroFotoPerfil(url: string): string | undefined {
+  const u = url.trim();
+  return u && (u.length > LIM.url || !urlHttpValida(u)) ? MSG_FOTO_PERFIL_INVALIDA : undefined;
 }
 
 function perfilParaForm(p: PerfilAPI): PerfilForm {
@@ -972,11 +999,12 @@ function montarPayload(f: PerfilForm, anuncio: boolean): PerfilPayload {
     aceita_visitas: f.visitas ?? 'as_vezes',
     tipo_imovel: f.tipoImovel ?? 'indiferente',
     qtd_moradores: f.qtdMoradores ?? 2,
+    // A foto de perfil vale para os dois tipos de usuário (etapa 1).
+    foto_perfil_url: f.fotoPerfil.trim(),
     ...(anuncio ? {
       titulo_anuncio: f.titulo.trim(),
       descricao_imovel: f.descricaoImovel.trim(),
       fotos_imovel: f.fotos.map(x => x.trim()).filter(Boolean),
-      foto_perfil_url: f.fotoPerfil.trim(),
     } : {}),
   };
 }
@@ -999,6 +1027,10 @@ function validarPerfil(f: PerfilForm, campos: string[], anuncio: boolean): Recor
     const r = f.regiao.trim();
     if (r.length < 2) e.regiao = 'Região deve ter pelo menos 2 caracteres.';
     else if (r.length > LIM.regiao) e.regiao = `Região deve ter no máximo ${LIM.regiao} caracteres (${r.length}/${LIM.regiao}).`;
+  }
+  if (quer('foto_perfil_url')) {
+    const erro = erroFotoPerfil(f.fotoPerfil);
+    if (erro) e.foto_perfil_url = erro;
   }
   if (quer('bio') && f.bio.length > LIM.bio) e.bio = `Bio deve ter no máximo ${LIM.bio} caracteres (${f.bio.length}/${LIM.bio}).`;
 
@@ -1034,10 +1066,6 @@ function validarPerfil(f: PerfilForm, campos: string[], anuncio: boolean): Recor
       const ruim = f.fotos.findIndex(x => x.trim() !== '' && (x.trim().length > LIM.url || !urlHttpValida(x.trim())));
       if (preenchidas.length > LIM.fotos) e.fotos_imovel = `Envie no máximo ${LIM.fotos} fotos do imóvel.`;
       else if (ruim >= 0) e.fotos_imovel = `A foto ${ruim + 1} precisa ser um link http:// ou https:// válido (até ${LIM.url} caracteres).`;
-    }
-    if (quer('foto_perfil_url')) {
-      const u = f.fotoPerfil.trim();
-      if (u && (u.length > LIM.url || !urlHttpValida(u))) e.foto_perfil_url = 'A foto de perfil precisa ser um link http:// ou https:// válido.';
     }
   }
   return e;
@@ -1156,9 +1184,44 @@ function CampoTexto({ label, value, onChange, max, error, placeholder, altura = 
 
 type PropsEtapa = { form: PerfilForm; setForm: (p: Partial<PerfilForm>) => void; errors: Record<string, string> };
 
+const ID_CAMPO_FOTO_PERFIL = 'campo-foto-perfil';
+
+/** Círculo com a prévia da foto (ou ícone da câmera) + campo "Link da sua foto". Clicar no círculo foca o campo. */
+function CampoFotoPerfil({ form, setForm, errors }: PropsEtapa) {
+  const u = form.fotoPerfil.trim();
+  const erroLocal = erroFotoPerfil(form.fotoPerfil);
+  const valida = u !== '' && !erroLocal;
+  const [falhou, setFalhou] = useState(false);
+  useEffect(() => { setFalhou(false); }, [u]);
+  const mostrarFoto = valida && !falhou;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <button
+          type="button"
+          onClick={() => document.getElementById(ID_CAMPO_FOTO_PERFIL)?.focus()}
+          aria-label={mostrarFoto ? 'Alterar o link da sua foto' : 'Adicionar o link da sua foto'}
+          style={{ width: '96px', height: '96px', borderRadius: '50%', background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', border: mostrarFoto ? `3px solid ${C.primary}` : `3px dashed ${C.primary}`, padding: 0, cursor: 'pointer' }}
+        >
+          {mostrarFoto ? (
+            <img key={u} src={u} alt="Pré-visualização da sua foto" onError={() => setFalhou(true)} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+          ) : (
+            <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          )}
+          <span aria-hidden="true" style={{ position: 'absolute', bottom: 0, right: 0, width: '26px', height: '26px', background: C.primaryDark, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 700 }}>
+            {mostrarFoto ? '✎' : '+'}
+          </span>
+        </button>
+      </div>
+      <Input id={ID_CAMPO_FOTO_PERFIL} label="Link da sua foto" placeholder="https://..." value={form.fotoPerfil} onChange={v => setForm({ fotoPerfil: v })} error={erroLocal ?? errors.foto_perfil_url} maxLength={LIM.url} />
+    </div>
+  );
+}
+
 function EtapaPessoal({ form, setForm, errors }: PropsEtapa) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <CampoFotoPerfil form={form} setForm={setForm} errors={errors} />
       <Input label="Nome" placeholder="Seu nome completo" value={form.nome} onChange={v => setForm({ nome: v })} error={errors.nome} maxLength={LIM.nome} />
       <div className="grid md:grid-cols-2 gap-4">
         <Input label="Idade" type="number" inputMode="numeric" placeholder="Sua idade" value={form.idade} onChange={v => setForm({ idade: v })} error={errors.idade} />
@@ -1240,12 +1303,12 @@ function EtapaHabitos({ form, setForm, errors }: PropsEtapa) {
   );
 }
 
-function PreviewFoto({ url, alt, redonda = false }: { url: string; alt: string; redonda?: boolean }) {
+function PreviewFoto({ url, alt }: { url: string; alt: string }) {
   const u = url.trim();
   if (!u || !urlHttpValida(u)) return null;
   return (
-    <div style={{ width: redonda ? '72px' : '100%', maxWidth: redonda ? '72px' : '220px', height: redonda ? '72px' : '124px', borderRadius: redonda ? '50%' : '12px', overflow: 'hidden', border: `1.5px solid ${C.border}`, marginTop: '8px' }}>
-      <ImagemComFallback key={u} src={u} alt={alt} tipo={redonda ? 'avatar' : 'imovel'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    <div style={{ width: '100%', maxWidth: '220px', height: '124px', borderRadius: '12px', overflow: 'hidden', border: `1.5px solid ${C.border}`, marginTop: '8px' }}>
+      <ImagemComFallback key={u} src={u} alt={alt} tipo="imovel" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
     </div>
   );
 }
@@ -1286,11 +1349,6 @@ function EtapaAnuncio({ form, setForm, errors }: PropsEtapa) {
           </button>
         )}
         {errors.fotos_imovel && <span style={ERRO_ESTILO}>{errors.fotos_imovel}</span>}
-      </div>
-
-      <div>
-        <Input label="Sua foto (link)" placeholder="https://..." value={form.fotoPerfil} onChange={v => setForm({ fotoPerfil: v })} error={errors.foto_perfil_url} maxLength={LIM.url} />
-        <PreviewFoto url={form.fotoPerfil} alt="Pré-visualização da sua foto" redonda />
       </div>
     </div>
   );
@@ -1383,19 +1441,7 @@ function ProfileCreateScreen({ nav, onPerfilCriado, tipo }: { nav: (s: Screen) =
             {step === 4 && <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '0 0 24px' }}>1 = mínimo · 5 = máximo</p>}
             {step === 5 && <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '0 0 24px' }}>Opcional: você pode completar depois em Meu Perfil.</p>}
 
-            {step === 1 && (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-                  <div aria-hidden="true" style={{ width: '96px', height: '96px', borderRadius: '50%', background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', border: `3px dashed ${C.primary}` }}>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: '26px', height: '26px', background: C.primaryDark, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ color: '#fff', fontSize: '14px', fontWeight: 700 }}>+</span>
-                    </div>
-                  </div>
-                </div>
-                <EtapaPessoal {...props} />
-              </>
-            )}
+            {step === 1 && <EtapaPessoal {...props} />}
             {step === 2 && <EtapaMoradia {...props} />}
             {step === 3 && <EtapaConvivencia {...props} />}
             {step === 4 && <EtapaHabitos {...props} />}
@@ -2495,7 +2541,7 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
                       <span style={{ fontFamily: FONTE_TITULO, fontSize: '16px', fontWeight: 700, color: C.text }}>{profile.name}</span>
-                      {c.nao_lidas > 0 && <Contador n={c.nao_lidas} style={{ flexShrink: 0 }} />}
+                      {c.nao_lidas > 0 && <Contador n={c.nao_lidas} rotulo={textoNaoLidas(c.nao_lidas, 'mensagem não lida', 'mensagens não lidas')} style={{ flexShrink: 0 }} />}
                     </div>
                     <p style={{
                       fontFamily: FONTE_TEXTO, fontSize: '13px',
@@ -2528,7 +2574,8 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId, meuPerfilId 
                 }}>
                   {c.nao_lidas > 0 && (
                     <Selo tom="coral" style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 2, background: C.primaryDark, color: '#fff' }}>
-                      {c.nao_lidas} nova{c.nao_lidas !== 1 ? 's' : ''}
+                      <span aria-hidden="true">{c.nao_lidas} nova{c.nao_lidas !== 1 ? 's' : ''}</span>
+                      <span className="sr-only">{textoNaoLidas(c.nao_lidas, 'mensagem não lida', 'mensagens não lidas')}</span>
                     </Selo>
                   )}
                   <div style={{ position: 'relative', height: '210px', flexShrink: 0 }}>

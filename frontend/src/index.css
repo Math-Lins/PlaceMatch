@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap');
+/* Fontes Outfit e Nunito (pesos 400–800) hospedadas localmente via @fontsource: importadas em src/main.tsx. */
 @import 'tailwindcss';
 
 /* Mesmos valores de src/ui.tsx (C). Texto usa os tons escuros, que passam no contraste AA. */

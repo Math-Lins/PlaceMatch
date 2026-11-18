@@ -1,6 +1,6 @@
 # Evidências da Release Candidate — interface final
 
-Gerado por `e2e/tour-rc.spec.ts` (`npm run e2e:tour`) em 16/11/2026, 21:23:03, com os dados de demonstração de `manage.py seed_demo` (banco descartável do e2e).
+Gerado por `e2e/tour-rc.spec.ts` (`npm run e2e:tour`) em 17/11/2026, 21:55:27, com os dados de demonstração de `manage.py seed_demo` (banco descartável do e2e).
 
 | Arquivo | Tela | Perfil de acesso | Viewport |
 |---|---|---|---|

@@ -20,6 +20,8 @@ import { ADMIN } from './apoio';
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const PASTA = path.join(aqui, 'evidencias-rc');
 const ZIP = path.join(aqui, '..', 'evidencias-rc.zip');
+// Saídas das verificações finais (testes, verificar_banco, build, e2e...), incluídas no mesmo pacote.
+const EXECUCOES = path.join(aqui, '..', '..', 'docs', 'execucoes-rc');
 const FOTOS = path.join(aqui, 'fotos-demo');
 const BACKEND = path.join(aqui, '..', '..', 'backend');
 const URL_API = `http://127.0.0.1:${API}`;
@@ -44,7 +46,8 @@ const CAROLINA = {
 type Linha = { arquivo: string; tela: string; perfil: string; viewport: string };
 const indice: Linha[] = [];
 
-// ── Rede: localhost liberado; fotos dos seeds vêm das cópias locais; fontes e Swagger UI passam ──
+// ── Rede: localhost liberado; fotos dos seeds vêm das cópias locais; Swagger UI (jsdelivr) passa.
+//    As fontes são locais (@fontsource), então o Google Fonts não é liberado. ──
 async function prepararRede(context: BrowserContext) {
   await context.route(/^https?:\/\//, async route => {
     const u = new URL(route.request().url());
@@ -60,7 +63,7 @@ async function prepararRede(context: BrowserContext) {
     if (arquivo && fs.existsSync(path.join(FOTOS, arquivo))) {
       return route.fulfill({ status: 200, contentType: 'image/jpeg', path: path.join(FOTOS, arquivo) });
     }
-    if (['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net', 'images.unsplash.com', 'randomuser.me'].includes(u.hostname)) {
+    if (['cdn.jsdelivr.net', 'images.unsplash.com', 'randomuser.me'].includes(u.hostname)) {
       return route.continue();
     }
     return route.abort();
@@ -133,11 +136,13 @@ test.afterAll(() => {
     '',
   ];
   fs.writeFileSync(path.join(PASTA, 'INDICE.md'), linhas.join('\n'), 'utf-8');
+  // Pacote: evidencias-rc/ (prints + INDICE.md) e, se existir, execucoes-rc/ (saídas das verificações).
   fs.rmSync(ZIP, { force: true });
+  const pastas = [PASTA, ...(fs.existsSync(EXECUCOES) ? [EXECUCOES] : [])];
   if (process.platform === 'win32') {
-    execFileSync('powershell', ['-NoProfile', '-Command', `Compress-Archive -Path '${PASTA}\\*' -DestinationPath '${ZIP}' -Force`]);
+    execFileSync('powershell', ['-NoProfile', '-Command', `Compress-Archive -Path ${pastas.map(p => `'${p}'`).join(',')} -DestinationPath '${ZIP}' -Force`]);
   } else {
-    execFileSync('zip', ['-r', '-q', ZIP, '.'], { cwd: PASTA });
+    for (const p of pastas) execFileSync('zip', ['-r', '-q', ZIP, path.basename(p)], { cwd: path.dirname(p) });
   }
 });
 
@@ -174,6 +179,8 @@ test('tour da Release Candidate (desktop 1366×768 e celular 375×812)', async (
     await p.getByPlaceholder('Sua idade').fill(CAROLINA.idade);
     await p.getByPlaceholder('Ex: Boa Viagem, Recife').fill(CAROLINA.regiao);
     await p.getByPlaceholder(/Conte um pouco sobre você/).fill(CAROLINA.bio);
+    await p.getByRole('textbox', { name: /^Link da sua foto/ }).fill(CAROLINA.fotoPerfil);
+    await expect(p.getByAltText('Pré-visualização da sua foto')).toBeVisible();
     await print(p, 4, 'perfil-etapa1-sobre-voce', 'Criação de perfil — etapa 1 (sobre você)', 'Oferece vaga (nova conta)');
     await proxima();
     await p.getByPlaceholder('700').fill('900');
@@ -199,8 +206,6 @@ test('tour da Release Candidate (desktop 1366×768 e celular 375×812)', async (
       await p.getByRole('button', { name: '+ Adicionar foto' }).click();
       await p.getByPlaceholder('https://...').nth(i).fill(CAROLINA.fotos[i]);
     }
-    await p.getByPlaceholder('https://...').last().fill(CAROLINA.fotoPerfil);
-    await expect(p.getByAltText('Pré-visualização da sua foto')).toBeVisible();
     await print(p, 8, 'perfil-etapa5-anuncio', 'Criação de perfil — etapa 5 (anúncio do imóvel, com fotos)', 'Oferece vaga (nova conta)', { paginaInteira: true });
     await p.getByRole('button', { name: 'Concluir perfil' }).click();
     await expect(p.getByRole('heading', { name: 'Interessados na sua vaga' })).toBeVisible({ timeout: 60_000 });
