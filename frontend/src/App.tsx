@@ -18,6 +18,8 @@ import {
   listarMensagens,
   enviarMensagem,
   criarDenuncia,
+  solicitarRedefinicaoSenha,
+  redefinirSenha,
 } from './api';
 import type { Perfil as PerfilAPI, PerfilPayload, PerfilDescoberto, PerfilBasico, MatchData, Conversa, MensagemAPI, DescobertaParams } from './api';
 import AdminPanel from './admin/AdminPanel';
@@ -35,6 +37,8 @@ export type Screen =
   | 'welcome'
   | 'login'
   | 'register'
+  | 'esqueci-senha'
+  | 'redefinir-senha'
   | 'profile-create'
   | 'discovery'
   | 'profile-detail'
@@ -752,6 +756,11 @@ function LoginScreen({ nav, onLoginSuccess, loginMsg }: { nav: (s: Screen) => vo
             <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={setEmail} error={fieldErrors.email} autoComplete="username" />
             <Input label="Senha" type="password" placeholder="••••••••" value={senha} onChange={setSenha} error={fieldErrors.senha} autoComplete="current-password" />
           </div>
+          <div style={{ textAlign: 'right', marginTop: '4px' }}>
+            <button type="button" onClick={() => nav('esqueci-senha')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primaryText, fontWeight: 700, fontSize: '14px', fontFamily: FONTE_TEXTO, padding: '12px 0 12px 8px', minHeight: '44px' }}>
+              Esqueci minha senha
+            </button>
+          </div>
 
           {erro && (
             <div role="alert" style={{ background: C.dangerSoft, border: `1px solid ${C.danger}40`, borderRadius: RAIO.campo, padding: '12px 16px', marginTop: '16px' }}>
@@ -770,6 +779,183 @@ function LoginScreen({ nav, onLoginSuccess, loginMsg }: { nav: (s: Screen) => vo
               Criar conta
             </button>
           </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Screen: Esqueci minha senha ──────────────────────────────────────────────
+
+function EsqueciSenhaScreen({ nav }: { nav: (s: Screen) => void }) {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+  const [erro, setErro] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const tituloRef = useRef<HTMLHeadingElement>(null);
+
+  // Foco: ao abrir a confirmação, o título recebe o foco (leitores de tela leem a mensagem).
+  useEffect(() => { if (enviado) tituloRef.current?.focus(); }, [enviado]);
+
+  const handleEnviar = async () => {
+    if (loading) return; // sem duplo clique / duplo Enter
+    setErro('');
+    const erros: Record<string, string> = {};
+    if (!email.trim()) erros.email = 'Informe seu e-mail.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) erros.email = 'Informe um e-mail válido.';
+    setFieldErrors(erros);
+    if (Object.keys(erros).length > 0) return;
+
+    setLoading(true);
+    try {
+      await solicitarRedefinicaoSenha(email.trim());
+      setEnviado(true);
+    } catch (e: unknown) {
+      if (e instanceof ApiError) { setFieldErrors(e.fieldErrors); setErro(e.message); }
+      else setErro('Não foi possível enviar o pedido. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-dvh bg-bg">
+      <BrandPanel />
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <button onClick={() => nav('login')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px 8px 0', minHeight: '44px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px', color: C.muted }}>
+            <IconeVoltar />
+            <span style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', fontWeight: 700 }}>Voltar</span>
+          </button>
+
+          {enviado ? (
+            <div role="status">
+              <h2 ref={tituloRef} tabIndex={-1} style={{ fontFamily: FONTE_TITULO, fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 12px', outline: 'none' }}>Confira seu e-mail</h2>
+              <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.text, margin: '0 0 12px', lineHeight: 1.5 }}>
+                Se o e-mail estiver cadastrado, enviaremos um link para redefinir a senha.
+              </p>
+              <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '0 0 28px', lineHeight: 1.5 }}>
+                O link vale por 1 hora. Não chegou? Veja a caixa de spam ou peça outro link.
+              </p>
+              <Btn label="Voltar para o login" onClick={() => nav('login')} />
+            </div>
+          ) : (
+            <>
+              <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>Esqueci minha senha</h2>
+              <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.muted, margin: '0 0 28px' }}>Informe o e-mail da sua conta e enviaremos um link para criar uma nova senha.</p>
+              <form noValidate onSubmit={e => { e.preventDefault(); handleEnviar(); }}>
+                <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={setEmail} error={fieldErrors.email} autoComplete="username" />
+                {erro && <MensagemErro>{erro}</MensagemErro>}
+                <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <Btn label={loading ? 'Enviando…' : 'Enviar link'} type="submit" disabled={loading} />
+                  <Btn label="Voltar para o login" outline onClick={() => nav('login')} />
+                </div>
+              </form>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Screen: Nova senha (link do e-mail) ──────────────────────────────────────
+
+function RedefinirSenhaScreen({ nav, uid, token, onSenhaRedefinida }: {
+  nav: (s: Screen) => void; uid: string; token: string; onSenhaRedefinida: () => void;
+}) {
+  const [senha, setSenha] = useState('');
+  const [confirmar, setConfirmar] = useState('');
+  const [mostrar, setMostrar] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [concluido, setConcluido] = useState(false);
+  // Sem uid/token na URL, ou recusado pela API (inválido, expirado, já usado): tela de link inválido.
+  const [linkInvalido, setLinkInvalido] = useState(!uid || !token);
+  const tituloRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => { if (concluido || linkInvalido) tituloRef.current?.focus(); }, [concluido, linkInvalido]);
+
+  const handleSalvar = async () => {
+    if (loading) return;
+    setErro('');
+    const erros: Record<string, string> = {};
+    if (!senha) erros.nova_senha = 'Informe uma senha.';
+    else if (senha.length < 8) erros.nova_senha = 'A senha deve ter no mínimo 8 caracteres.';
+    if (senha && confirmar && senha !== confirmar) erros.confirmar = 'As senhas não coincidem.';
+    else if (senha && !confirmar) erros.confirmar = 'Repita a nova senha.';
+    setFieldErrors(erros);
+    if (Object.keys(erros).length > 0) return;
+
+    setLoading(true);
+    try {
+      await redefinirSenha(uid, token, senha);
+      onSenhaRedefinida();
+      setConcluido(true);
+    } catch (e: unknown) {
+      if (e instanceof ApiError) {
+        if (e.fieldErrors.nova_senha) setFieldErrors({ nova_senha: e.fieldErrors.nova_senha });
+        else if (e.status === 400) setLinkInvalido(true);
+        else setErro(e.message);
+      } else {
+        setErro('Não foi possível redefinir a senha. Tente novamente.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const titulo = (texto: string) => (
+    <h2 ref={tituloRef} tabIndex={-1} style={{ fontFamily: FONTE_TITULO, fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 12px', outline: 'none' }}>{texto}</h2>
+  );
+
+  return (
+    <div className="flex min-h-dvh bg-bg">
+      <BrandPanel />
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          {concluido ? (
+            <div role="status">
+              {titulo('Senha redefinida!')}
+              <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.text, margin: '0 0 28px', lineHeight: 1.5 }}>
+                Sua senha foi alterada e as sessões abertas foram encerradas. Entre com a nova senha.
+              </p>
+              <Btn label="Entrar" onClick={() => nav('login')} />
+            </div>
+          ) : linkInvalido ? (
+            <div role="alert">
+              {titulo('Link inválido ou expirado')}
+              <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.text, margin: '0 0 28px', lineHeight: 1.5 }}>
+                Este link não vale mais: ele expira em 1 hora e só pode ser usado uma vez. Peça um novo link para criar a nova senha.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <Btn label="Pedir um novo link" onClick={() => nav('esqueci-senha')} />
+                <Btn label="Voltar para o login" outline onClick={() => nav('login')} />
+              </div>
+            </div>
+          ) : (
+            <>
+              <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>Nova senha</h2>
+              <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.muted, margin: '0 0 28px' }}>Crie uma senha nova para a sua conta (mínimo de 8 caracteres).</p>
+              <form noValidate onSubmit={e => { e.preventDefault(); handleSalvar(); }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <Input label="Nova senha" type={mostrar ? 'text' : 'password'} placeholder="Mínimo 8 caracteres" value={senha} onChange={setSenha} error={fieldErrors.nova_senha} autoComplete="new-password" />
+                  <Input label="Confirmar nova senha" type={mostrar ? 'text' : 'password'} placeholder="Repita a nova senha" value={confirmar} onChange={setConfirmar} error={fieldErrors.confirmar} autoComplete="new-password" />
+                </div>
+                <div style={{ marginTop: '4px' }}>
+                  <button type="button" aria-pressed={mostrar} onClick={() => setMostrar(m => !m)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primaryText, fontWeight: 700, fontSize: '14px', fontFamily: FONTE_TEXTO, padding: '12px 0', minHeight: '44px' }}>
+                    {mostrar ? 'Ocultar senhas' : 'Mostrar senhas'}
+                  </button>
+                </div>
+                {erro && <MensagemErro>{erro}</MensagemErro>}
+                <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <Btn label={loading ? 'Salvando…' : 'Redefinir senha'} type="submit" disabled={loading} />
+                </div>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -1511,6 +1697,8 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
     } catch { return EMPTY_FILTERS; }
   });
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Sair da tela cancela a busca agendada (senão ela dispararia depois, até depois de sair da conta).
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
   // O título depende de quem está logado (vale também com a lista vazia).
   const tituloTela = tipo === 'buscando_vaga' ? 'Vagas para você'
@@ -2468,6 +2656,7 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId }: {
   const [search, setSearch] = useState('');
   const [naoLidas, setNaoLidas] = useState(false);
   const matchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (matchDebounceRef.current) clearTimeout(matchDebounceRef.current); }, []);
 
   const carregar = (q: string, nl: boolean) => {
     setLoading(true);
@@ -3162,13 +3351,14 @@ function getParam(name: string) {
 }
 
 // Navegação: a tela atual fica na URL (?screen=...) e no histórico do navegador.
-const TELAS_PUBLICAS: Screen[] = ['welcome', 'login', 'register'];
+// As telas de recuperação de senha são públicas: quem está logado e abre o link continua nela (a senha nova encerra a sessão).
+const TELAS_PUBLICAS: Screen[] = ['welcome', 'login', 'register', 'esqueci-senha', 'redefinir-senha'];
 const TELAS_DE_ABA: Screen[] = ['discovery', 'notifications', 'matches', 'profile'];
 // Dependem de estado em memória (perfil/conversa escolhidos): ao abrir direto pela URL, voltam à tela-mãe.
 const TELA_SEM_ESTADO: Partial<Record<Screen, Screen>> = { 'profile-detail': 'discovery', match: 'matches', chat: 'matches' };
 
 const TITULO_DA_TELA: Record<Screen, string> = {
-  welcome: '', login: 'Entrar', register: 'Criar conta', 'profile-create': 'Criar perfil',
+  welcome: '', login: 'Entrar', register: 'Criar conta', 'esqueci-senha': 'Esqueci minha senha', 'redefinir-senha': 'Nova senha', 'profile-create': 'Criar perfil',
   discovery: 'Descoberta', 'profile-detail': 'Detalhes', match: 'Interesse mútuo', matches: 'Matches',
   chat: 'Conversa', profile: 'Meu Perfil', notifications: 'Notificações', admin: 'Painel administrativo',
 };
@@ -3181,6 +3371,9 @@ function registrarTelaNaUrl(s: Screen, substituir: boolean, matchId?: number) {
   try {
     const url = new URL(window.location.href);
     url.searchParams.set('screen', s);
+    // O link do e-mail traz uid e token: saem da URL logo que são lidos (histórico e barra de endereço não os guardam).
+    url.searchParams.delete('uid');
+    url.searchParams.delete('token');
     // O chat guarda o id do match na URL para a conversa poder ser reaberta ao recarregar.
     if (s === 'chat' && matchId) url.searchParams.set('match', String(matchId));
     else url.searchParams.delete('match');
@@ -3206,6 +3399,8 @@ export default function App() {
   const [selectedProfile, setSelectedProfile] = useState<Profile>(PERFIL_VAZIO);
   const [currentChat, setCurrentChat] = useState<Profile>(PERFIL_VAZIO);
   const matchNaUrl = Number(getParam('match')) || 0;
+  // uid e token do link de redefinição de senha: lidos uma vez e guardados em memória (a URL é limpa em seguida).
+  const [linkSenha] = useState(() => ({ uid: getParam('uid') ?? '', token: getParam('token') ?? '' }));
   const matchRef = useRef<number>(0);
   const [activeChatMatchId, setActiveChatMatchIdState] = useState<number>(0);
   // Atualiza a ref de forma síncrona: a URL do chat é gravada logo depois, no mesmo clique.
@@ -3400,6 +3595,20 @@ export default function App() {
       {telaAtual === 'admin' && <AdminPanel nav={nav} onLogout={handleLogout} />}
       {telaAtual === 'welcome' && <WelcomeScreen nav={nav} />}
       {telaAtual === 'login' && <LoginScreen nav={nav} onLoginSuccess={handleLoginSuccess} loginMsg={sessionExpiredMsg} />}
+      {telaAtual === 'esqueci-senha' && <EsqueciSenhaScreen nav={nav} />}
+      {telaAtual === 'redefinir-senha' && (
+        <RedefinirSenhaScreen
+          nav={nav}
+          uid={linkSenha.uid}
+          token={linkSenha.token}
+          onSenhaRedefinida={() => {
+            // A API encerrou todas as sessões da conta: limpa a sessão desta aba (se havia uma) e o estado em memória.
+            sairDaConta();
+            setMeuPerfil(null); setMeuTipo(''); setNotifsCount(0); setActiveChatMatchId(0);
+            setCurrentChat(PERFIL_VAZIO); setSelectedProfile(PERFIL_VAZIO); setSessionExpiredMsg('');
+          }}
+        />
+      )}
       {telaAtual === 'register' && <RegisterScreen nav={nav} onLoginSuccess={handleLoginSuccess} onContaCriadaSemLogin={(aviso) => { setSessionExpiredMsg(aviso); nav('login'); }} />}
       {telaAtual === 'profile-create' && (
         <ProfileCreateScreen nav={nav} tipo={meuTipo} onPerfilCriado={(p) => setMeuPerfil(p)} />

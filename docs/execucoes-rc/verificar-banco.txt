@@ -1,68 +1,6 @@
-# 17/11/2026 21:36:39 -0300 | diretório: backend | comando: python manage.py verificar_banco --detalhes
+# v1.0.0-rc2 — duas verificações, SOMENTE LEITURA (verificar_banco não grava nada)
 
-VERIFICAÇÃO DO BANCO — PlaceMatch
-Banco: placematch (postgresql) em localhost:5432
-Registros: usuarios=24 | perfis=23 | compatibilidades=121 | curtidas=162 | matches=67 | mensagens=258 | denuncias=12 | logs=40
-
-[OK   ]  1. Registros órfãos (FK para registro inexistente): 0
-[ERRO ]  2. Matches sem curtida mútua: 10
-          dica: Um match só nasce quando as duas pessoas se curtem.
-          ids/itens: 52, 55, 56, 58, 59, 60, 63, 65, 67, 71
-[OK   ]  3. Match: pares duplicados (A,B) e (B,A): 0
-[OK   ]  4. Match: pares invertidos (perfil_a > perfil_b): 0
-[OK   ]  5. Compatibilidade: pares duplicados (A,B) e (B,A): 0
-[OK   ]  6. Compatibilidade: pares invertidos (perfil_a > perfil_b): 0
-[OK   ]  7. Compatibilidade faltando entre perfis de tipos opostos: 0
-[OK   ]  8. Compatibilidade entre perfis que não são de tipos opostos: 0
-[OK   ]  9. Mensagens enviadas por quem não participa do match: 0
-[AVISO] 10. Usuários comuns sem perfil: 1
-          dica: Pode ser um cadastro recente que ainda não concluiu o perfil.
-          ids/itens: 4
-[ERRO ] 11. Administradores com perfil: 1
-          dica: O administrador não participa do matching.
-          ids/itens: 1
-[OK   ] 12. Curtidas entre perfis do mesmo tipo: 0
-[OK   ] 13. Matches entre perfis do mesmo tipo: 0
-[AVISO] 14. Matches com conta suspensa (ocultos na API): 7
-          dica: Esperado enquanto a conta estiver suspensa.
-          ids/itens: 6, 22, 29, 32, 40, 45, 46
-
-Resumo: 14 verificações — 10 OK, 2 aviso(s), 2 erro(s).
-
-# código de saída: 0
-
-
-# ---- Segunda execução: banco DESCARTÁVEL do e2e (placematch_e2e_db, porta 5433), logo após o seed_demo --remover-outros do npm run e2e:tour ----
-# 17/11/2026 21:56:52 -0300 | diretório: backend | comando: python manage.py verificar_banco --detalhes
-
-VERIFICAÇÃO DO BANCO — PlaceMatch
-Banco: pm_e2e (postgresql) em 127.0.0.1:5433
-Registros: usuarios=23 | perfis=22 | compatibilidades=117 | curtidas=32 | matches=16 | mensagens=16 | denuncias=3 | logs=79
-
-[OK   ]  1. Registros órfãos (FK para registro inexistente): 0
-[OK   ]  2. Matches sem curtida mútua: 0
-[OK   ]  3. Match: pares duplicados (A,B) e (B,A): 0
-[OK   ]  4. Match: pares invertidos (perfil_a > perfil_b): 0
-[OK   ]  5. Compatibilidade: pares duplicados (A,B) e (B,A): 0
-[OK   ]  6. Compatibilidade: pares invertidos (perfil_a > perfil_b): 0
-[OK   ]  7. Compatibilidade faltando entre perfis de tipos opostos: 0
-[OK   ]  8. Compatibilidade entre perfis que não são de tipos opostos: 0
-[OK   ]  9. Mensagens enviadas por quem não participa do match: 0
-[OK   ] 10. Usuários comuns sem perfil: 0
-[OK   ] 11. Administradores com perfil: 0
-[OK   ] 12. Curtidas entre perfis do mesmo tipo: 0
-[OK   ] 13. Matches entre perfis do mesmo tipo: 0
-[AVISO] 14. Matches com conta suspensa (ocultos na API): 2
-          dica: Esperado enquanto a conta estiver suspensa.
-          ids/itens: 17, 15
-
-Resumo: 14 verificações — 13 OK, 1 aviso(s), 0 erro(s).
-
-# código de saída: 0
-
-
-# ---- 17/11/2026 23:04:43 -0300 | Terceira execução: BANCO DE DESENVOLVIMENTO APÓS LIMPEZA (placematch_db, porta 5432; limpeza feita pelo usuário) ----
-# 17/11/2026 23:04:27 -0300 | diretório: backend | comando: python manage.py verificar_banco --detalhes
+# 18/11/2026 10:43:23 -0300 | diretório: backend | banco de DESENVOLVIMENTO (configurado no .env): python manage.py verificar_banco --detalhes
 
 VERIFICAÇÃO DO BANCO — PlaceMatch
 Banco: placematch (postgresql) em localhost:5432
@@ -88,5 +26,32 @@ Registros: usuarios=24 | perfis=22 | compatibilidades=121 | curtidas=162 | match
           ids/itens: 6, 22, 29, 32, 40, 45, 46
 
 Resumo: 14 verificações — 12 OK, 2 aviso(s), 0 erro(s).
+
+# código de saída: 0
+
+# 18/11/2026 10:43:32 -0300 | diretório: backend | banco de DEMONSTRAÇÃO (banco descartável do e2e, depois de `seed_demo --remover-outros` e do tour): python manage.py verificar_banco --detalhes
+
+VERIFICAÇÃO DO BANCO — PlaceMatch
+Banco: pm_e2e (postgresql) em 127.0.0.1:5433
+Registros: usuarios=23 | perfis=22 | compatibilidades=117 | curtidas=32 | matches=16 | mensagens=16 | denuncias=3 | logs=81
+
+[OK   ]  1. Registros órfãos (FK para registro inexistente): 0
+[OK   ]  2. Matches sem curtida mútua: 0
+[OK   ]  3. Match: pares duplicados (A,B) e (B,A): 0
+[OK   ]  4. Match: pares invertidos (perfil_a > perfil_b): 0
+[OK   ]  5. Compatibilidade: pares duplicados (A,B) e (B,A): 0
+[OK   ]  6. Compatibilidade: pares invertidos (perfil_a > perfil_b): 0
+[OK   ]  7. Compatibilidade faltando entre perfis de tipos opostos: 0
+[OK   ]  8. Compatibilidade entre perfis que não são de tipos opostos: 0
+[OK   ]  9. Mensagens enviadas por quem não participa do match: 0
+[OK   ] 10. Usuários comuns sem perfil: 0
+[OK   ] 11. Administradores com perfil: 0
+[OK   ] 12. Curtidas entre perfis do mesmo tipo: 0
+[OK   ] 13. Matches entre perfis do mesmo tipo: 0
+[AVISO] 14. Matches com conta suspensa (ocultos na API): 2
+          dica: Esperado enquanto a conta estiver suspensa.
+          ids/itens: 16, 14
+
+Resumo: 14 verificações — 13 OK, 1 aviso(s), 0 erro(s).
 
 # código de saída: 0

@@ -1,6 +1,6 @@
 # Testes de navegação (e2e) — Playwright
 
-Abrem o sistema no Chromium e percorrem 13 roteiros (um arquivo `nXX-*.spec.ts` por roteiro): visitante, cadastro, descoberta, match e chat com duas sessões, perfil, sair da conta, permissões, painel admin, moderação, sessão (renovação do token) e mobile (375×812). O projeto `desktop` roda em 1366×768; o projeto `mobile`, só o `n13`.
+Abrem o sistema no Chromium e percorrem 14 roteiros (um arquivo `nXX-*.spec.ts` por roteiro): visitante, cadastro, descoberta, match e chat com duas sessões, perfil, sair da conta, permissões, painel admin, moderação, sessão (renovação do token), mobile (375×812) e recuperação de senha (o roteiro lê o e-mail gravado em arquivo). O projeto `desktop` roda em 1366×768; o projeto `mobile`, só o `n13`.
 
 ## Isolamento
 
@@ -25,13 +25,17 @@ Pré-requisito: o backend instalado (veja o README da raiz: venv e `pip install 
 ```powershell
 npm run e2e:db                  # sobe o banco do e2e
 npm run e2e                     # todos os roteiros (~16 min)
-npm run e2e -- n06              # só um roteiro (também: n01 ... n13)
+npm run e2e -- n06              # só um roteiro (também: n01 ... n14)
 npm run e2e:db:parar            # apaga o banco do e2e (próxima execução parte do zero)
 ```
 
-Prints da Release Candidate (fora do `npm run e2e`): `npm run e2e:tour` roda `manage.py seed_demo --remover-outros` no banco descartável do e2e, grava `evidencias-rc/` (`RC-01` a `RC-37` + `INDICE.md`) e gera `frontend/evidencias-rc.zip` com essa pasta e com `docs/execucoes-rc/`.
+Prints da Release Candidate (fora do `npm run e2e`): `npm run e2e:tour` roda `manage.py seed_demo --remover-outros` no banco descartável do e2e, grava `evidencias-rc/` (`RC-01` a `RC-42` + `INDICE.md`) e gera `frontend/evidencias-rc.zip` com essa pasta e com `docs/execucoes-rc/`.
 
 Para prints limpos da Descoberta, recrie o banco (`e2e:db:parar` e `e2e:db`) antes de rodar N02, N03, N04 e N05.
+
+## E-mails (recuperação de senha)
+
+O e2e usa o backend de e-mail **de arquivo** do Django: nada é enviado, e cada mensagem é gravada em `placematch-e2e-emails/` dentro da pasta temporária do sistema. O `n14` lê o link de lá (`esperarLinkDeSenha` em `apoio.ts`). O limite de pedidos de link e o de login ficam desligados no e2e (`playwright.config.ts`), porque todos os roteiros saem do mesmo IP.
 
 ## Resultados
 

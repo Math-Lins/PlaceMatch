@@ -61,6 +61,8 @@ Somente `registrar`, `login` e `login/refresh` são públicos. O frontend guarda
 | Autenticação | `POST` | `/api/auth/login/` | Público (sem login) | Entrar (login por e-mail) |
 | Autenticação | `POST` | `/api/auth/logout/` | Público (sem login) | Sair (encerrar a sessão) |
 | Autenticação | `POST` | `/api/auth/login/refresh/` | Público (sem login) | Renovar o token de acesso |
+| Autenticação | `POST` | `/api/auth/senha/solicitar/` | Público (sem login) | Pedir o link de redefinição de senha |
+| Autenticação | `POST` | `/api/auth/senha/redefinir/` | Público (sem login) | Redefinir a senha com o link do e-mail |
 | Autenticação | `GET` | `/api/auth/me/` | Qualquer usuário logado | Dados do usuário logado |
 | Perfis | `GET` | `/api/perfis/` | Qualquer usuário logado | Listar o próprio perfil |
 | Perfis | `POST` | `/api/perfis/` | Usuário comum (`buscando_vaga` ou `oferecendo_vaga`) | Criar o perfil |
@@ -250,6 +252,102 @@ HTTP 200
 | Status | Quando | Resposta real |
 |---|---|---|
 | `401` | Refresh inválido, expirado ou de conta suspensa | `{"detail": "O token é inválido", "code": "token_not_valid"}` |
+
+---
+
+### `POST /api/auth/senha/solicitar/` — Pedir o link de redefinição de senha
+
+**Quem pode:** Público (sem login).  
+**Operação (OpenAPI):** `auth_senha_solicitar`
+
+Envia por e-mail um link para criar uma nova senha. A resposta é **sempre** `200` com a mesma mensagem, exista a conta ou não, esteja ela ativa ou suspensa e mesmo quando o limite de pedidos foi passado (assim a rota não revela quais e-mails têm conta). O e-mail só é enviado para **conta ativa** (o administrador ativo também pode recuperar a senha; conta suspensa não recebe). **Limites** (por pedido, exista a conta ou não): 3 por e-mail a cada 15 minutos e 10 por IP por hora; acima disso a resposta continua `200`, sem enviar (`SENHA_LIMITE_EMAIL` e `SENHA_LIMITE_IP`). O link é `{FRONTEND_URL}/?screen=redefinir-senha&uid=...&token=...`, vale por 1 hora e deixa de valer quando a senha muda. Em desenvolvimento o e-mail aparece no console do servidor.
+
+**Corpo de entrada** (JSON)
+
+| Campo | Tipo | Obrigatório | Regras |
+|---|---|---|---|
+| `email` | texto | sim | E-mail da conta (sem diferenciar maiúsculas). |
+
+**Resposta de sucesso:** `200` — Mensagem neutra (igual para qualquer e-mail).
+
+**Exemplo**
+
+```bash
+curl -X POST "<BASE>/api/auth/senha/solicitar/" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "eva.martins@exemplo.com"}'
+```
+
+```json
+HTTP 200
+{
+  "detail": "Se o e-mail estiver cadastrado, enviaremos um link para redefinir a senha."
+}
+```
+
+**E-mail sem conta: mesma resposta**
+
+```bash
+curl -X POST "<BASE>/api/auth/senha/solicitar/" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "ninguem@exemplo.com"}'
+```
+
+```json
+HTTP 200
+{
+  "detail": "Se o e-mail estiver cadastrado, enviaremos um link para redefinir a senha."
+}
+```
+
+**Erros possíveis**
+
+| Status | Quando | Resposta real |
+|---|---|---|
+| `400` | E-mail ausente | `{"email": ["Informe o e-mail."]}` |
+| `400` | E-mail mal formado | `{"email": ["Informe um e-mail válido."]}` |
+
+---
+
+### `POST /api/auth/senha/redefinir/` — Redefinir a senha com o link do e-mail
+
+**Quem pode:** Público (sem login).  
+**Operação (OpenAPI):** `auth_senha_redefinir`
+
+Troca a senha usando o `uid` e o `token` do link. A nova senha segue as regras do cadastro. Link inválido, adulterado, expirado ou já usado (ou de conta suspensa) → `400` com a mesma mensagem. Se a senha for fraca, o `400` não gasta o link. No sucesso, **todas as sessões abertas do usuário são encerradas** (os refresh tokens vão para a lista de bloqueio) e o contador de tentativas de login do e-mail é zerado; é preciso entrar de novo com a nova senha.
+
+**Corpo de entrada** (JSON)
+
+| Campo | Tipo | Obrigatório | Regras |
+|---|---|---|---|
+| `uid` | texto | sim | Código do usuário recebido no link do e-mail (parâmetro `uid`). |
+| `token` | texto | sim | Token recebido no link do e-mail (parâmetro `token`). |
+| `nova_senha` | texto | sim | Nova senha (mesmas regras do cadastro: mínimo 8 caracteres, não só números, não muito comum). |
+
+**Resposta de sucesso:** `200` — Senha redefinida.
+
+**Exemplo**
+
+```bash
+curl -X POST "<BASE>/api/auth/senha/redefinir/" \
+  -H "Content-Type: application/json" \
+  -d '{"uid": "<UID>", "token": "<TOKEN_DO_LINK>", "nova_senha": "<SENHA>"}'
+```
+
+```json
+HTTP 200
+{
+  "detail": "Senha redefinida. Entre com a nova senha."
+}
+```
+
+**Erros possíveis**
+
+| Status | Quando | Resposta real |
+|---|---|---|
+| `400` | Link inválido, expirado ou já usado | `{"detail": "Link inválido ou expirado. Peça um novo link."}` |
+| `400` | Senha fraca | `{"nova_senha": ["A senha deve ter no mínimo 8 caracteres."]}` |
+| `400` | Campos ausentes | `{"uid": ["Informe o uid do link."], "token": ["Informe o token do link."], "nova_senha": ["Informe a nova senha."]}` |
 
 ---
 
@@ -997,7 +1095,7 @@ HTTP 201
       "usuario_id": 3
     },
     "score": 0.9295,
-    "data_match": "2026-11-18T01:35:55.030154-03:00"
+    "data_match": "2026-11-18T09:36:15.179370-03:00"
   }
 }
 ```
@@ -1092,7 +1190,7 @@ HTTP 200
       "usuario_id": 3
     },
     "score": 0.9295,
-    "data_match": "2026-11-18T01:35:55.030154-03:00"
+    "data_match": "2026-11-18T09:36:15.179370-03:00"
   }
 ]
 ```
@@ -1160,7 +1258,7 @@ HTTP 200
     "score": 0.9295,
     "ultima_mensagem": {
       "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-      "data_envio": "2026-11-18T04:35:55.873275Z",
+      "data_envio": "2026-11-18T12:36:15.803928Z",
       "remetente_id": 2
     },
     "nao_lidas": 1
@@ -1204,7 +1302,7 @@ HTTP 200
     "score": 0.9295,
     "ultima_mensagem": {
       "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-      "data_envio": "2026-11-18T04:35:55.873275Z",
+      "data_envio": "2026-11-18T12:36:15.803928Z",
       "remetente_id": 2
     },
     "nao_lidas": 1
@@ -1258,7 +1356,7 @@ HTTP 200
     "match_id": 1,
     "remetente_id": 1,
     "conteudo": "Oi, Bruno! O quarto ainda está disponível?",
-    "data_envio": "2026-11-18T01:35:55.720540-03:00",
+    "data_envio": "2026-11-18T09:36:15.718191-03:00",
     "lida": false
   },
   {
@@ -1266,7 +1364,7 @@ HTTP 200
     "match_id": 1,
     "remetente_id": 2,
     "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-    "data_envio": "2026-11-18T01:35:55.873275-03:00",
+    "data_envio": "2026-11-18T09:36:15.803928-03:00",
     "lida": true
   }
 ]
@@ -1287,7 +1385,7 @@ HTTP 200
     "match_id": 1,
     "remetente_id": 2,
     "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-    "data_envio": "2026-11-18T01:35:55.873275-03:00",
+    "data_envio": "2026-11-18T09:36:15.803928-03:00",
     "lida": true
   }
 ]
@@ -1342,7 +1440,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 1,
   "conteudo": "Oi, Bruno! O quarto ainda está disponível?",
-  "data_envio": "2026-11-18T01:35:55.720540-03:00",
+  "data_envio": "2026-11-18T09:36:15.718191-03:00",
   "lida": false
 }
 ```
@@ -1363,7 +1461,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 2,
   "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-  "data_envio": "2026-11-18T01:35:55.873275-03:00",
+  "data_envio": "2026-11-18T09:36:15.803928-03:00",
   "lida": false
 }
 ```
@@ -1416,7 +1514,7 @@ HTTP 201
   "denunciado": 4,
   "motivo": "spam",
   "status": "pendente",
-  "criada_em": "2026-11-18T04:35:56.962983Z"
+  "criada_em": "2026-11-18T12:36:16.697460Z"
 }
 ```
 
@@ -1478,8 +1576,8 @@ HTTP 200
     "status": "pendente",
     "resolvida_por": null,
     "resolucao": "",
-    "criada_em": "2026-11-18T04:35:56.962983Z",
-    "atualizada_em": "2026-11-18T04:35:56.963021Z"
+    "criada_em": "2026-11-18T12:36:16.697460Z",
+    "atualizada_em": "2026-11-18T12:36:16.697481Z"
   }
 ]
 ```
@@ -1673,10 +1771,10 @@ curl -X GET "<BASE>/api/admin/dashboard/" \
 HTTP 200
 {
   "kpis": {
-    "usuarios_total": 5,
+    "usuarios_total": 6,
     "usuarios_por_tipo": {
       "oferecendo_vaga": 2,
-      "buscando_vaga": 2,
+      "buscando_vaga": 3,
       "administrador": 1
     },
     "usuarios_suspensos": 0,
@@ -1777,7 +1875,7 @@ curl -X GET "<BASE>/api/admin/dashboard/?regiao=Boa%20Viagem&tipo=oferecendo_vag
 HTTP 200
 {
   "kpis": {
-    "usuarios_total": 5,
+    "usuarios_total": 6,
     "usuarios_por_tipo": {
       "oferecendo_vaga": 2
     },
@@ -1997,7 +2095,7 @@ HTTP 200
     "mensagens": 2
   },
   "filtros_aplicados": {},
-  "gerado_em": "2026-11-18T04:36:03.133304Z"
+  "gerado_em": "2026-11-18T12:36:23.279442Z"
 }
 ```
 
@@ -2059,27 +2157,27 @@ curl -X GET "<BASE>/api/admin/usuarios/?tipo=buscando_vaga&page_size=2" \
 ```json
 HTTP 200
 {
-  "count": 2,
+  "count": 3,
   "page": 1,
   "results": [
+    {
+      "id": 6,
+      "nome": "Eva Martins",
+      "email": "eva.martins@exemplo.com",
+      "tipo": "buscando_vaga",
+      "regiao": null,
+      "data_cadastro": "2026-11-18T12:36:07.991384Z",
+      "tem_perfil": false,
+      "ativo": true
+    },
     {
       "id": 5,
       "nome": "Diego Alves",
       "email": "diego.alves@exemplo.com",
       "tipo": "buscando_vaga",
       "regiao": null,
-      "data_cadastro": "2026-11-18T04:35:27.511199Z",
+      "data_cadastro": "2026-11-18T12:35:44.720289Z",
       "tem_perfil": false,
-      "ativo": true
-    },
-    {
-      "id": 2,
-      "nome": "Ana Souza",
-      "email": "ana.souza@exemplo.com",
-      "tipo": "buscando_vaga",
-      "regiao": "Boa Viagem",
-      "data_cadastro": "2026-11-18T04:35:21.188809Z",
-      "tem_perfil": true,
       "ativo": true
     }
   ]
@@ -2126,9 +2224,9 @@ curl -X GET "<BASE>/api/admin/usuarios/exportar/?ativo=true" \
 ```json
 HTTP 200  (text/csv)
 ﻿ID;Nome;E-mail;Tipo;Região;Data de Cadastro;Tem Perfil
+6;Eva Martins;eva.martins@exemplo.com;Buscando vaga;;18/11/2026;Não
 5;Diego Alves;diego.alves@exemplo.com;Buscando vaga;;18/11/2026;Não
 4;Carla Dias;carla.dias@exemplo.com;Oferecendo vaga;Casa Forte;18/11/2026;Sim
-3;Bruno Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;18/11/2026;Sim
 ```
 
 **Erros possíveis**
@@ -2153,7 +2251,7 @@ Histórico de operações, do mais recente para o mais antigo. O texto das mensa
 
 | Parâmetro | Tipo | Valores aceitos / descrição |
 |---|---|---|
-| `acao` | texto | Valores: `LOGIN`, `LOGIN_FALHA`, `CADASTRO`, `PERFIL_CRIADO`, `PERFIL_EDITADO`, `PERFIL_EXCLUIDO`, `CURTIDA`, `RECUSA`, `MATCH_CRIADO`, `MENSAGEM_ENVIADA`, `RELATORIO_EXPORTADO`, `DENUNCIA_CRIADA`, `DENUNCIA_RESOLVIDA`, `USUARIO_SUSPENSO`, `USUARIO_REATIVADO`. Ação registrada. |
+| `acao` | texto | Valores: `LOGIN`, `LOGIN_FALHA`, `CADASTRO`, `PERFIL_CRIADO`, `PERFIL_EDITADO`, `PERFIL_EXCLUIDO`, `CURTIDA`, `RECUSA`, `MATCH_CRIADO`, `MENSAGEM_ENVIADA`, `RELATORIO_EXPORTADO`, `DENUNCIA_CRIADA`, `DENUNCIA_RESOLVIDA`, `USUARIO_SUSPENSO`, `USUARIO_REATIVADO`, `SENHA_SOLICITADA`, `SENHA_REDEFINIDA`. Ação registrada. |
 | `usuario` | texto | Id, e-mail ou parte do nome do usuário. |
 | `entidade` | texto | Tipo de objeto afetado (`usuario`, `perfil`, `match`...). |
 | `q` | texto | Busca em e-mail, nome, username ou entidade. |
@@ -2178,8 +2276,8 @@ HTTP 200
   "page": 1,
   "results": [
     {
-      "id": 23,
-      "data_hora": "2026-11-18T04:35:55.037647Z",
+      "id": 26,
+      "data_hora": "2026-11-18T12:36:15.187486Z",
       "usuario": {
         "id": 3,
         "nome": "Bruno Lima",
@@ -2213,8 +2311,8 @@ HTTP 200
   "page": 1,
   "results": [
     {
-      "id": 26,
-      "data_hora": "2026-11-18T04:35:56.969550Z",
+      "id": 29,
+      "data_hora": "2026-11-18T12:36:16.701747Z",
       "usuario": {
         "id": 2,
         "nome": "Ana Souza",
@@ -2238,7 +2336,7 @@ HTTP 200
 
 | Status | Quando | Resposta real |
 |---|---|---|
-| `400` | Ação inválida | `{"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO."}` |
+| `400` | Ação inválida | `{"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA."}` |
 | `401` | Sem token | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
 | `401` | Token inválido ou expirado | `{"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}` |
 
@@ -2255,7 +2353,7 @@ Mesmos filtros da listagem (sem paginação). CSV com BOM e separador `;`. Regis
 
 | Parâmetro | Tipo | Valores aceitos / descrição |
 |---|---|---|
-| `acao` | texto | Valores: `LOGIN`, `LOGIN_FALHA`, `CADASTRO`, `PERFIL_CRIADO`, `PERFIL_EDITADO`, `PERFIL_EXCLUIDO`, `CURTIDA`, `RECUSA`, `MATCH_CRIADO`, `MENSAGEM_ENVIADA`, `RELATORIO_EXPORTADO`, `DENUNCIA_CRIADA`, `DENUNCIA_RESOLVIDA`, `USUARIO_SUSPENSO`, `USUARIO_REATIVADO`. Ação registrada. |
+| `acao` | texto | Valores: `LOGIN`, `LOGIN_FALHA`, `CADASTRO`, `PERFIL_CRIADO`, `PERFIL_EDITADO`, `PERFIL_EXCLUIDO`, `CURTIDA`, `RECUSA`, `MATCH_CRIADO`, `MENSAGEM_ENVIADA`, `RELATORIO_EXPORTADO`, `DENUNCIA_CRIADA`, `DENUNCIA_RESOLVIDA`, `USUARIO_SUSPENSO`, `USUARIO_REATIVADO`, `SENHA_SOLICITADA`, `SENHA_REDEFINIDA`. Ação registrada. |
 | `usuario` | texto | Id, e-mail ou parte do nome do usuário. |
 | `entidade` | texto | Tipo de objeto afetado. |
 | `q` | texto | Busca em e-mail, nome, username ou entidade. |
@@ -2274,16 +2372,16 @@ curl -X GET "<BASE>/api/admin/logs/exportar/?acao=LOGIN" \
 ```json
 HTTP 200  (text/csv)
 ﻿ID;Data/Hora;Usuário ID;Usuário Nome;Usuário E-mail;Ação;Descrição da Ação;Entidade;ID da Entidade;Detalhes;IP
-14;18/11/2026 01:35:52;2;Ana Souza;ana.souza@exemplo.com;LOGIN;Login;usuario;2;;127.0.0.1
-13;18/11/2026 01:35:48;1;e2e-admin@teste.com;e2e-admin@teste.com;LOGIN;Login;usuario;1;;127.0.0.1
-12;18/11/2026 01:35:45;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;;127.0.0.1
+14;18/11/2026 09:36:07;2;Ana Souza;ana.souza@exemplo.com;LOGIN;Login;usuario;2;;127.0.0.1
+13;18/11/2026 09:36:05;1;e2e-admin@teste.com;e2e-admin@teste.com;LOGIN;Login;usuario;1;;127.0.0.1
+12;18/11/2026 09:36:03;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;;127.0.0.1
 ```
 
 **Erros possíveis**
 
 | Status | Quando | Resposta real |
 |---|---|---|
-| `400` | Ação inválida | `{"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO."}` |
+| `400` | Ação inválida | `{"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA."}` |
 | `401` | Sem token | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
 | `401` | Token inválido ou expirado | `{"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}` |
 
@@ -2528,7 +2626,7 @@ HTTP 201
       "usuario_id": 3
     },
     "score": 0.9295,
-    "data_match": "2026-11-18T01:35:55.030154-03:00"
+    "data_match": "2026-11-18T09:36:15.179370-03:00"
   }
 }
 ```
@@ -2601,7 +2699,7 @@ HTTP 200
       "usuario_id": 3
     },
     "score": 0.9295,
-    "data_match": "2026-11-18T01:35:55.030154-03:00"
+    "data_match": "2026-11-18T09:36:15.179370-03:00"
   }
 ]
 ```
@@ -2624,7 +2722,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 1,
   "conteudo": "Oi, Bruno! O quarto ainda está disponível?",
-  "data_envio": "2026-11-18T01:35:55.720540-03:00",
+  "data_envio": "2026-11-18T09:36:15.718191-03:00",
   "lida": false
 }
 ```
@@ -2647,7 +2745,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 2,
   "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-  "data_envio": "2026-11-18T01:35:55.873275-03:00",
+  "data_envio": "2026-11-18T09:36:15.803928-03:00",
   "lida": false
 }
 ```

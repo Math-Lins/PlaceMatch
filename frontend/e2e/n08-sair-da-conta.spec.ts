@@ -34,6 +34,10 @@ test('N08 Sair da conta: volta ao início, voltar do navegador não reabre tela 
       expect(t.refresh).toBeNull();
       const resto = await page.evaluate(() => ['pm_disc_q', 'pm_disc_filters', 'pm_notif_last_visit'].map(k => sessionStorage.getItem(k)));
       expect(resto, 'busca, filtros e marco de notificações da pessoa anterior não podem sobrar').toEqual([null, null, null]);
+      // A busca da Descoberta agendada (debounce de 400 ms) não pode disparar depois de sair da tela/da conta.
+      await page.waitForTimeout(1200);
+      await expect(page.getByText('Sua sessão expirou. Entre novamente.'), 'consulta agendada disparou depois do logout').toHaveCount(0);
+      await expect(page.getByRole('heading', { name: 'Boas-vindas!' })).toBeVisible();
       await print(page, 'N08', 1, 'saiu');
     });
 

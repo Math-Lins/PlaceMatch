@@ -40,7 +40,7 @@ class SchemaValidoTest(APITestCase):
         schema = _schema()
         self.assertTrue(schema['openapi'].startswith('3.'))
         self.assertEqual(schema['info']['title'], 'API do PlaceMatch')
-        self.assertEqual(schema['info']['version'], '1.0.0-rc1')
+        self.assertEqual(schema['info']['version'], '1.0.0-rc2')
 
     def test_autenticacao_bearer_jwt_para_o_botao_authorize(self):
         esquemas = _schema()['components']['securitySchemes']
@@ -60,7 +60,7 @@ class CoberturaDasRotasTest(APITestCase):
 
     def test_todas_as_rotas_de_api_aparecem_no_schema(self):
         reais, documentadas = self._rotas_reais(), self._operacoes_do_schema()
-        self.assertGreaterEqual(len(reais), 28)
+        self.assertGreaterEqual(len(reais), 31)
         self.assertEqual(reais - documentadas, set(), 'rotas reais sem documentação')
         self.assertEqual(documentadas - reais, set(), 'documentação de rotas que não existem')
 

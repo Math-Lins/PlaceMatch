@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: API do PlaceMatch
-  version: 1.0.0-rc1
+  version: 1.0.0-rc2
   description: |-
     API REST do PlaceMatch: plataforma que conecta pessoas compatíveis para dividir moradia.
 
@@ -75,10 +75,10 @@ paths:
                 ExemploReal:
                   value:
                     kpis:
-                      usuarios_total: 5
+                      usuarios_total: 6
                       usuarios_por_tipo:
                         oferecendo_vaga: 2
-                        buscando_vaga: 2
+                        buscando_vaga: 3
                         administrador: 1
                       usuarios_suspensos: 0
                       perfis_total: 3
@@ -133,7 +133,7 @@ paths:
                 ComFiltros:
                   value:
                     kpis:
-                      usuarios_total: 5
+                      usuarios_total: 6
                       usuarios_por_tipo:
                         oferecendo_vaga: 2
                       usuarios_suspensos: 0
@@ -264,6 +264,8 @@ paths:
           - PERFIL_EXCLUIDO
           - RECUSA
           - RELATORIO_EXPORTADO
+          - SENHA_REDEFINIDA
+          - SENHA_SOLICITADA
           - USUARIO_REATIVADO
           - USUARIO_SUSPENSO
         description: Ação registrada.
@@ -346,8 +348,8 @@ paths:
                     count: 1
                     page: 1
                     results:
-                    - id: 23
-                      data_hora: '2026-11-18T04:35:55.037647Z'
+                    - id: 26
+                      data_hora: '2026-11-18T12:36:15.187486Z'
                       usuario:
                         id: 3
                         nome: Bruno Lima
@@ -366,8 +368,8 @@ paths:
                     count: 10
                     page: 1
                     results:
-                    - id: 26
-                      data_hora: '2026-11-18T04:35:56.969550Z'
+                    - id: 29
+                      data_hora: '2026-11-18T12:36:16.701747Z'
                       usuario:
                         id: 2
                         nome: Ana Souza
@@ -393,7 +395,7 @@ paths:
                     detail: 'Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO,
                       PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO,
                       MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA,
-                      USUARIO_SUSPENSO, USUARIO_REATIVADO.'
+                      USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA.'
                   summary: Ação inválida
           description: Dados inválidos (mensagem em português, por campo ou em `detail`).
         '401':
@@ -443,6 +445,8 @@ paths:
           - PERFIL_EXCLUIDO
           - RECUSA
           - RELATORIO_EXPORTADO
+          - SENHA_REDEFINIDA
+          - SENHA_SOLICITADA
           - USUARIO_REATIVADO
           - USUARIO_SUSPENSO
         description: Ação registrada.
@@ -505,10 +509,10 @@ paths:
               examples:
                 ExemploReal(primeirasLinhas):
                   value: "\uFEFFID;Data/Hora;Usuário ID;Usuário Nome;Usuário E-mail;Ação;Descrição
-                    da Ação;Entidade;ID da Entidade;Detalhes;IP\n14;18/11/2026 01:35:52;2;Ana
+                    da Ação;Entidade;ID da Entidade;Detalhes;IP\n14;18/11/2026 09:36:07;2;Ana
                     Souza;ana.souza@exemplo.com;LOGIN;Login;usuario;2;;127.0.0.1\n13;18/11/2026
-                    01:35:48;1;e2e-admin@teste.com;e2e-admin@teste.com;LOGIN;Login;usuario;1;;127.0.0.1\n12;18/11/2026
-                    01:35:45;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;;127.0.0.1"
+                    09:36:05;1;e2e-admin@teste.com;e2e-admin@teste.com;LOGIN;Login;usuario;1;;127.0.0.1\n12;18/11/2026
+                    09:36:03;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;;127.0.0.1"
                   summary: Exemplo real (primeiras linhas)
           description: Arquivo CSV de logs.
         '400':
@@ -522,7 +526,7 @@ paths:
                     detail: 'Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO,
                       PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO,
                       MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA,
-                      USUARIO_SUSPENSO, USUARIO_REATIVADO.'
+                      USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA.'
                   summary: Ação inválida
           description: Dados inválidos (mensagem em português, por campo ou em `detail`).
         '401':
@@ -631,8 +635,8 @@ paths:
                       status: pendente
                       resolvida_por: null
                       resolucao: ''
-                      criada_em: '2026-11-18T04:35:56.962983Z'
-                      atualizada_em: '2026-11-18T04:35:56.963021Z'
+                      criada_em: '2026-11-18T12:36:16.697460Z'
+                      atualizada_em: '2026-11-18T12:36:16.697481Z'
                   summary: Exemplo real
           description: Denúncias.
         '400':
@@ -1127,7 +1131,7 @@ paths:
                       matches: 1
                       mensagens: 2
                     filtros_aplicados: {}
-                    gerado_em: '2026-11-18T04:36:03.133304Z'
+                    gerado_em: '2026-11-18T12:36:23.279442Z'
                   summary: Exemplo real
             text/csv:
               schema:
@@ -1274,24 +1278,24 @@ paths:
               examples:
                 ExemploReal:
                   value:
-                    count: 2
+                    count: 3
                     page: 1
                     results:
+                    - id: 6
+                      nome: Eva Martins
+                      email: eva.martins@exemplo.com
+                      tipo: buscando_vaga
+                      regiao: null
+                      data_cadastro: '2026-11-18T12:36:07.991384Z'
+                      tem_perfil: false
+                      ativo: true
                     - id: 5
                       nome: Diego Alves
                       email: diego.alves@exemplo.com
                       tipo: buscando_vaga
                       regiao: null
-                      data_cadastro: '2026-11-18T04:35:27.511199Z'
+                      data_cadastro: '2026-11-18T12:35:44.720289Z'
                       tem_perfil: false
-                      ativo: true
-                    - id: 2
-                      nome: Ana Souza
-                      email: ana.souza@exemplo.com
-                      tipo: buscando_vaga
-                      regiao: Boa Viagem
-                      data_cadastro: '2026-11-18T04:35:21.188809Z'
-                      tem_perfil: true
                       ativo: true
                   summary: Exemplo real
           description: Página de usuários.
@@ -1402,10 +1406,10 @@ paths:
                 type: string
               examples:
                 ExemploReal(primeirasLinhas):
-                  value: "\uFEFFID;Nome;E-mail;Tipo;Região;Data de Cadastro;Tem Perfil\n5;Diego
+                  value: "\uFEFFID;Nome;E-mail;Tipo;Região;Data de Cadastro;Tem Perfil\n6;Eva
+                    Martins;eva.martins@exemplo.com;Buscando vaga;;18/11/2026;Não\n5;Diego
                     Alves;diego.alves@exemplo.com;Buscando vaga;;18/11/2026;Não\n4;Carla
-                    Dias;carla.dias@exemplo.com;Oferecendo vaga;Casa Forte;18/11/2026;Sim\n3;Bruno
-                    Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;18/11/2026;Sim"
+                    Dias;carla.dias@exemplo.com;Oferecendo vaga;Casa Forte;18/11/2026;Sim"
                   summary: Exemplo real (primeiras linhas)
           description: Arquivo CSV de usuários.
         '401':
@@ -1763,6 +1767,146 @@ paths:
                   summary: 'Corpo vazio: campos obrigatórios'
           description: Dados inválidos (mensagem em português, por campo ou em `detail`).
       x-quem-pode: Público (sem login)
+  /api/auth/senha/redefinir/:
+    post:
+      operationId: auth_senha_redefinir
+      description: Troca a senha usando o `uid` e o `token` do link. A nova senha
+        segue as regras do cadastro. Link inválido, adulterado, expirado ou já usado
+        (ou de conta suspensa) → `400` com a mesma mensagem. Se a senha for fraca,
+        o `400` não gasta o link. No sucesso, **todas as sessões abertas do usuário
+        são encerradas** (os refresh tokens vão para a lista de bloqueio) e o contador
+        de tentativas de login do e-mail é zerado; é preciso entrar de novo com a
+        nova senha.
+      summary: Redefinir a senha com o link do e-mail
+      tags:
+      - Autenticação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SenhaRedefinirRequisicaoRequest'
+            examples:
+              Redefinição:
+                value:
+                  uid: <UID>
+                  token: <TOKEN_DO_LINK>
+                  nova_senha: <SENHA>
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SenhaRedefinirRequisicaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SenhaRedefinirRequisicaoRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                ExemploReal:
+                  value:
+                    detail: Senha redefinida. Entre com a nova senha.
+                  summary: Exemplo real
+          description: Senha redefinida.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                LinkInválido,ExpiradoOuJáUsado:
+                  value:
+                    detail: Link inválido ou expirado. Peça um novo link.
+                  summary: Link inválido, expirado ou já usado
+                SenhaFraca:
+                  value:
+                    nova_senha:
+                    - A senha deve ter no mínimo 8 caracteres.
+                  summary: Senha fraca
+                CamposAusentes:
+                  value:
+                    uid:
+                    - Informe o uid do link.
+                    token:
+                    - Informe o token do link.
+                    nova_senha:
+                    - Informe a nova senha.
+                  summary: Campos ausentes
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+      x-quem-pode: Público (sem login)
+  /api/auth/senha/solicitar/:
+    post:
+      operationId: auth_senha_solicitar
+      description: 'Envia por e-mail um link para criar uma nova senha. A resposta
+        é **sempre** `200` com a mesma mensagem, exista a conta ou não, esteja ela
+        ativa ou suspensa e mesmo quando o limite de pedidos foi passado (assim a
+        rota não revela quais e-mails têm conta). O e-mail só é enviado para **conta
+        ativa** (o administrador ativo também pode recuperar a senha; conta suspensa
+        não recebe). **Limites** (por pedido, exista a conta ou não): 3 por e-mail
+        a cada 15 minutos e 10 por IP por hora; acima disso a resposta continua `200`,
+        sem enviar (`SENHA_LIMITE_EMAIL` e `SENHA_LIMITE_IP`). O link é `{FRONTEND_URL}/?screen=redefinir-senha&uid=...&token=...`,
+        vale por 1 hora e deixa de valer quando a senha muda. Em desenvolvimento o
+        e-mail aparece no console do servidor.'
+      summary: Pedir o link de redefinição de senha
+      tags:
+      - Autenticação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SenhaSolicitarRequisicaoRequest'
+            examples:
+              PedidoDeLink:
+                value:
+                  email: eva.martins@exemplo.com
+                summary: Pedido de link
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SenhaSolicitarRequisicaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SenhaSolicitarRequisicaoRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                ExemploReal:
+                  value:
+                    detail: Se o e-mail estiver cadastrado, enviaremos um link para
+                      redefinir a senha.
+                  summary: Exemplo real
+                E-mailSemConta:MesmaResposta:
+                  value:
+                    detail: Se o e-mail estiver cadastrado, enviaremos um link para
+                      redefinir a senha.
+                  summary: 'E-mail sem conta: mesma resposta'
+          description: Mensagem neutra (igual para qualquer e-mail).
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                E-mailAusente:
+                  value:
+                    email:
+                    - Informe o e-mail.
+                  summary: E-mail ausente
+                E-mailMalFormado:
+                  value:
+                    email:
+                    - Informe um e-mail válido.
+                  summary: E-mail mal formado
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+      x-quem-pode: Público (sem login)
   /api/conversas/:
     get:
       operationId: chat_conversas
@@ -1825,7 +1969,7 @@ paths:
                       score: 0.9295
                       ultima_mensagem:
                         conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                        data_envio: '2026-11-18T04:35:55.873275Z'
+                        data_envio: '2026-11-18T12:36:15.803928Z'
                         remetente_id: 2
                       nao_lidas: 1
                   summary: Exemplo real
@@ -1855,7 +1999,7 @@ paths:
                       score: 0.9295
                       ultima_mensagem:
                         conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                        data_envio: '2026-11-18T04:35:55.873275Z'
+                        data_envio: '2026-11-18T12:36:15.803928Z'
                         remetente_id: 2
                       nao_lidas: 1
                   summary: Com filtros
@@ -1995,7 +2139,7 @@ paths:
                         tipo: oferecendo_vaga
                         usuario_id: 3
                       score: 0.9295
-                      data_match: '2026-11-18T01:35:55.030154-03:00'
+                      data_match: '2026-11-18T09:36:15.179370-03:00'
                   summary: 'Curtida mútua: match criado'
           description: Avaliação registrada (sem match ainda).
         '400':
@@ -2379,7 +2523,7 @@ paths:
                         tipo: oferecendo_vaga
                         usuario_id: 3
                       score: 0.9295
-                      data_match: '2026-11-18T01:35:55.030154-03:00'
+                      data_match: '2026-11-18T09:36:15.179370-03:00'
                   summary: Exemplo real
           description: Matches (cada perfil traz os campos públicos).
         '401':
@@ -2444,13 +2588,13 @@ paths:
                       match_id: 1
                       remetente_id: 1
                       conteudo: Oi, Bruno! O quarto ainda está disponível?
-                      data_envio: '2026-11-18T01:35:55.720540-03:00'
+                      data_envio: '2026-11-18T09:36:15.718191-03:00'
                       lida: false
                     - id: 2
                       match_id: 1
                       remetente_id: 2
                       conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                      data_envio: '2026-11-18T01:35:55.873275-03:00'
+                      data_envio: '2026-11-18T09:36:15.803928-03:00'
                       lida: true
                   summary: Exemplo real
                 SóAsNovas(`?apos=1`):
@@ -2459,7 +2603,7 @@ paths:
                       match_id: 1
                       remetente_id: 2
                       conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                      data_envio: '2026-11-18T01:35:55.873275-03:00'
+                      data_envio: '2026-11-18T09:36:15.803928-03:00'
                       lida: true
                   summary: Só as novas (`?apos=1`)
           description: Mensagens.
@@ -2564,7 +2708,7 @@ paths:
                     match_id: 1
                     remetente_id: 1
                     conteudo: Oi, Bruno! O quarto ainda está disponível?
-                    data_envio: '2026-11-18T01:35:55.720540-03:00'
+                    data_envio: '2026-11-18T09:36:15.718191-03:00'
                     lida: false
                   summary: Exemplo real
                 RespostaDaOutraPessoa:
@@ -2573,7 +2717,7 @@ paths:
                     match_id: 1
                     remetente_id: 2
                     conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                    data_envio: '2026-11-18T01:35:55.873275-03:00'
+                    data_envio: '2026-11-18T09:36:15.803928-03:00'
                     lida: false
                   summary: Resposta da outra pessoa
           description: Mensagem criada.
@@ -2679,7 +2823,7 @@ paths:
                     denunciado: 4
                     motivo: spam
                     status: pendente
-                    criada_em: '2026-11-18T04:35:56.962983Z'
+                    criada_em: '2026-11-18T12:36:16.697460Z'
                   summary: Exemplo real
           description: Denúncia criada.
         '400':
@@ -4491,6 +4635,36 @@ components:
       - resolucao
       - resolvida_por
       - status
+    SenhaRedefinirRequisicaoRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          minLength: 1
+          description: Código do usuário recebido no link do e-mail (parâmetro `uid`).
+        token:
+          type: string
+          minLength: 1
+          description: Token recebido no link do e-mail (parâmetro `token`).
+        nova_senha:
+          type: string
+          minLength: 1
+          description: 'Nova senha (mesmas regras do cadastro: mínimo 8 caracteres,
+            não só números, não muito comum).'
+      required:
+      - nova_senha
+      - token
+      - uid
+    SenhaSolicitarRequisicaoRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          description: E-mail da conta (sem diferenciar maiúsculas).
+      required:
+      - email
     SuspenderRequisicaoRequest:
       type: object
       properties:

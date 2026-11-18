@@ -23,6 +23,18 @@ _TRADUCOES_SENHA = {
 }
 
 
+def validar_senha_nova(senha, usuario=None):
+    """Mesmas regras de senha do cadastro (validadores do Django, mensagens em português).
+    Levanta serializers.ValidationError com a lista de mensagens."""
+    if len(senha) < 8:
+        raise serializers.ValidationError('A senha deve ter no mínimo 8 caracteres.')
+    try:
+        django_validate_password(senha, user=usuario)
+    except DjangoValidationError as e:
+        raise serializers.ValidationError([_TRADUCOES_SENHA.get(msg, msg) for msg in e.messages])
+    return senha
+
+
 class RegistrarSerializer(serializers.ModelSerializer):
     # Contrato com o front: o nome continua chegando no campo `username`,
     # mas é gravado em `first_name`; o username real é gerado a partir do e-mail.
@@ -86,12 +98,7 @@ class RegistrarSerializer(serializers.ModelSerializer):
         return value
 
     def validate_password(self, value):
-        try:
-            django_validate_password(value)
-        except DjangoValidationError as e:
-            msgs = [_TRADUCOES_SENHA.get(msg, msg) for msg in e.messages]
-            raise serializers.ValidationError(msgs)
-        return value
+        return validar_senha_nova(value)
 
     def create(self, validated_data):
         try:

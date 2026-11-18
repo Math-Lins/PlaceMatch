@@ -17,7 +17,7 @@ test.describe('N01 Visitante', () => {
       await page.getByRole('button', { name: 'Entrar', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Boas-vindas de volta!' })).toBeVisible();
       await expect(page.getByPlaceholder('seu@email.com')).toBeVisible();
-      await expect(page.getByText('Esqueci minha senha'), 'o link sem fluxo de recuperação foi removido').toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Esqueci minha senha' }), 'a v1.0.0-rc2 trouxe de volta o link (agora com fluxo de recuperação)').toBeVisible();
       await print(page, 'N01', 2, 'login');
     });
 

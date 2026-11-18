@@ -25,6 +25,8 @@ const ACOES: { value: string; label: string }[] = [
   { value: 'DENUNCIA_RESOLVIDA', label: 'Denúncia resolvida' },
   { value: 'USUARIO_SUSPENSO', label: 'Usuário suspenso' },
   { value: 'USUARIO_REATIVADO', label: 'Usuário reativado' },
+  { value: 'SENHA_SOLICITADA', label: 'Redefinição de senha solicitada' },
+  { value: 'SENHA_REDEFINIDA', label: 'Senha redefinida' },
 ];
 
 // A API filtra a entidade pelo nome exato gravado no log.
@@ -33,7 +35,7 @@ const ENTIDADES = [{ value: '', label: 'Todas' }, ...Object.entries(ROTULO_ENTID
 /** Tom do selo por tipo de ação (alertas em vermelho, eventos positivos em mint). */
 function tomDaAcao(acao: string): 'coral' | 'mint' | 'neutro' | 'perigo' {
   if (/FALHA|SUSPENSO|EXCLUIDO|DENUNCIA_CRIADA/.test(acao)) return 'perigo';
-  if (/MATCH|CADASTRO|CRIADO|REATIVADO|RESOLVIDA/.test(acao)) return 'mint';
+  if (/MATCH|CADASTRO|CRIADO|REATIVADO|RESOLVIDA|SENHA_REDEFINIDA/.test(acao)) return 'mint';
   if (/CURTIDA|MENSAGEM/.test(acao)) return 'coral';
   return 'neutro';
 }

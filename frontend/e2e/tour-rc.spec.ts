@@ -15,7 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { envBackend, PY, API } from './playwright.config';
-import { ADMIN } from './apoio';
+import { ADMIN, esperarLinkDeSenha } from './apoio';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const PASTA = path.join(aqui, 'evidencias-rc');
@@ -390,4 +390,47 @@ test('tour da Release Candidate (desktop 1366×768 e celular 375×812)', async (
     await print(pm, 37, 'mobile-menu', 'Menu inferior (aba Notificações ativa)', 'Procura vaga');
   });
   await m.context.close();
+
+  // ── Recuperação de senha (v1.0.0-rc2): RC-38 a RC-42 (acrescentadas ao fim, sem renumerar as anteriores) ──
+  const r = await sessao(browser);
+  const pr = r.page;
+  const NOVA_SENHA = 'Moradia@2027';
+  let link = '';
+  await test.step('esqueci minha senha → confirmação → nova senha → redefinida → link inválido', async () => {
+    await pr.goto('/');
+    await pr.getByRole('button', { name: 'Entrar', exact: true }).click();
+    await pr.getByRole('button', { name: 'Esqueci minha senha' }).click();
+    await expect(pr.getByRole('heading', { name: 'Esqueci minha senha' })).toBeVisible();
+    await pr.getByPlaceholder('seu@email.com').fill(CAROLINA.email);
+    await print(pr, 38, 'esqueci-minha-senha', 'Esqueci minha senha (e-mail preenchido)', 'Visitante');
+
+    await pr.getByRole('button', { name: 'Enviar link' }).click();
+    await expect(pr.getByRole('heading', { name: 'Confira seu e-mail' })).toBeVisible({ timeout: 30_000 });
+    await print(pr, 39, 'confirmacao-de-envio', 'Confirmação de envio do link (mensagem neutra)', 'Visitante');
+
+    link = await esperarLinkDeSenha(CAROLINA.email);
+    await pr.goto(link);
+    await expect(pr.getByRole('heading', { name: 'Nova senha' })).toBeVisible();
+    await pr.getByPlaceholder('Mínimo 8 caracteres').fill('12345678');
+    await pr.getByPlaceholder('Repita a nova senha').fill('12345678');
+    await pr.getByRole('button', { name: 'Redefinir senha' }).click();
+    await expect(pr.getByText(/muito comum|numérica|parecida/)).toBeVisible({ timeout: 30_000 });
+    await print(pr, 40, 'nova-senha-com-erro', 'Nova senha com erro (senha fraca recusada)', 'Visitante');
+
+    await pr.getByPlaceholder('Mínimo 8 caracteres').fill(NOVA_SENHA);
+    await pr.getByPlaceholder('Repita a nova senha').fill(NOVA_SENHA);
+    await pr.getByRole('button', { name: 'Redefinir senha' }).click();
+    await expect(pr.getByRole('heading', { name: 'Senha redefinida!' })).toBeVisible({ timeout: 30_000 });
+    await print(pr, 41, 'senha-redefinida', 'Senha redefinida com sucesso', 'Visitante');
+
+    // Reabrir o mesmo link: a API recusa ao enviar a nova senha (o link já foi usado).
+    await pr.goto(link);
+    await expect(pr.getByRole('heading', { name: 'Nova senha' })).toBeVisible();
+    await pr.getByPlaceholder('Mínimo 8 caracteres').fill('Outra@Senha2027');
+    await pr.getByPlaceholder('Repita a nova senha').fill('Outra@Senha2027');
+    await pr.getByRole('button', { name: 'Redefinir senha' }).click();
+    await expect(pr.getByRole('heading', { name: 'Link inválido ou expirado' })).toBeVisible({ timeout: 30_000 });
+    await print(pr, 42, 'link-invalido', 'Link de redefinição inválido (já usado)', 'Visitante');
+  });
+  await r.context.close();
 });

@@ -1,4 +1,4 @@
-# 17/11/2026 21:35:38 -0300 | diretório: backend | comando: python manage.py matriz_permissoes --settings=placematch.test_settings
+# 18/11/2026 09:56:57 -0300 | diretório: backend | v1.0.0-rc2 | comando: python manage.py matriz_permissoes --settings=placematch.test_settings
 
 Criando banco de teste efemero...
 
@@ -26,128 +26,11 @@ GET  /api/admin/relatorios/                                   401         403   
 GET  /api/admin/relatorios/matches/                           401         403         403         200     
 GET  /api/admin/usuarios/                                     401         403         403         200     
 GET  /api/admin/usuarios/exportar/                            401         403         403         200     
+POST /api/auth/senha/solicitar/ (publica)                     200         200         200         200     
+POST /api/auth/senha/redefinir/ (link invalido)               400         400         400         400     
 ----------------------------------------------------------------------------------------------------------
 Legenda  2xx=OK  400=Bad Request  401=Sem auth  403=Proibido
 
 Banco de teste destruido.
-
-# código de saída: 0
-
-
-# 17/11/2026 21:36:03 -0300 | diretório: backend | comando: python manage.py test painel.tests.test_permissoes --settings=placematch.test_settings -v 2
-
-Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Found 60 test(s).
-Operations to perform:
-  Synchronize unmigrated apps: corsheaders, drf_spectacular, messages, painel, rest_framework, rest_framework_simplejwt, staticfiles
-  Apply all migrations: admin, auth, chat, contenttypes, logs, matches, moderacao, perfis, sessions, usuarios
-Synchronizing apps without migrations:
-  Creating tables...
-    Running deferred SQL...
-Running migrations:
-  Applying contenttypes.0001_initial... OK
-  Applying contenttypes.0002_remove_content_type_name... OK
-  Applying auth.0001_initial... OK
-  Applying auth.0002_alter_permission_name_max_length... OK
-  Applying auth.0003_alter_user_email_max_length... OK
-  Applying auth.0004_alter_user_username_opts... OK
-  Applying auth.0005_alter_user_last_login_null... OK
-  Applying auth.0006_require_contenttypes_0002... OK
-  Applying auth.0007_alter_validators_add_error_messages... OK
-  Applying auth.0008_alter_user_username_max_length... OK
-  Applying auth.0009_alter_user_last_name_max_length... OK
-  Applying auth.0010_alter_group_name_max_length... OK
-  Applying auth.0011_update_proxy_permissions... OK
-  Applying auth.0012_alter_user_first_name_max_length... OK
-  Applying usuarios.0001_initial... OK
-  Applying admin.0001_initial... OK
-  Applying admin.0002_logentry_remove_auto_add... OK
-  Applying admin.0003_logentry_add_action_flag_choices... OK
-  Applying perfis.0001_initial... OK
-  Applying perfis.0002_initial... OK
-  Applying perfis.0003_alter_perfil_nivel_organizacao_and_more... OK
-  Applying perfis.0004_perfil_novos_campos... OK
-  Applying perfis.0005_anuncio_imovel... OK
-  Applying perfis.0006_restricoes_de_banco... OK
-  Applying matches.0001_initial... OK
-  Applying matches.0002_restricoes_de_banco... OK
-  Applying chat.0001_initial... OK
-  Applying chat.0002_renomear_indice_mensagem... OK
-  Applying chat.0003_restricoes_de_banco... OK
-  Applying logs.0001_initial... OK
-  Applying logs.0002_alter_logoperacao_acao... OK
-  Applying moderacao.0001_initial... OK
-  Applying moderacao.0002_restricoes_de_banco... OK
-  Applying sessions.0001_initial... OK
-  Applying usuarios.0002_manager_email_iexact... OK
-  Applying usuarios.0003_copiar_username_para_first_name... OK
-  Applying usuarios.0004_restricoes_de_banco...test_admin_acessa_dashboard (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_dashboard) ... ok
-test_admin_acessa_logs (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_logs) ... ok
-test_admin_acessa_logs_exportar (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_logs_exportar) ... ok
-test_admin_acessa_relatorio_detalhe (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_relatorio_detalhe) ... ok
-test_admin_acessa_relatorios (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_relatorios) ... ok
-test_admin_acessa_usuarios (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_usuarios) ... ok
-test_admin_acessa_usuarios_exportar (painel.tests.test_permissoes.AdminAcessoTest.test_admin_acessa_usuarios_exportar) ... ok
-test_cadastro_tipo_administrador_mensagem_portugues (painel.tests.test_permissoes.CadastroTipoAdminTest.test_cadastro_tipo_administrador_mensagem_portugues) ... ok
-test_cadastro_tipo_administrador_rejeitado (painel.tests.test_permissoes.CadastroTipoAdminTest.test_cadastro_tipo_administrador_rejeitado) ... ok
-test_cadastro_tipo_valido_aceito (painel.tests.test_permissoes.CadastroTipoAdminTest.test_cadastro_tipo_valido_aceito) ... ok
-test_nao_participante_nao_envia_mensagem (painel.tests.test_permissoes.ChatAcessoTest.test_nao_participante_nao_envia_mensagem) ... ok
-test_nao_participante_nao_le_mensagens (painel.tests.test_permissoes.ChatAcessoTest.test_nao_participante_nao_le_mensagens) ... ok
-test_participante_envia_mensagem (painel.tests.test_permissoes.ChatAcessoTest.test_participante_envia_mensagem) ... ok
-test_participante_le_mensagens (painel.tests.test_permissoes.ChatAcessoTest.test_participante_le_mensagens) ... ok
-test_admin_nao_pode_curtir (painel.tests.test_permissoes.CurtidaMesmoTipoTest.test_admin_nao_pode_curtir) ... ok
-test_curtida_mesmo_tipo_mensagem_portugues (painel.tests.test_permissoes.CurtidaMesmoTipoTest.test_curtida_mesmo_tipo_mensagem_portugues) ... ok
-test_curtida_mesmo_tipo_retorna_400 (painel.tests.test_permissoes.CurtidaMesmoTipoTest.test_curtida_mesmo_tipo_retorna_400) ... ok
-test_curtida_tipo_oposto_aceita (painel.tests.test_permissoes.CurtidaMesmoTipoTest.test_curtida_tipo_oposto_aceita) ... ok
-test_admin_ve_todos_os_perfis (painel.tests.test_permissoes.ListaPerfisPropriasTest.test_admin_ve_todos_os_perfis) ... ok
-test_lista_nao_retorna_perfis_de_terceiros (painel.tests.test_permissoes.ListaPerfisPropriasTest.test_lista_nao_retorna_perfis_de_terceiros) ... ok
-test_lista_retorna_apenas_proprio (painel.tests.test_permissoes.ListaPerfisPropriasTest.test_lista_retorna_apenas_proprio) ... ok
-test_usuario_sem_perfil_recebe_lista_vazia (painel.tests.test_permissoes.ListaPerfisPropriasTest.test_usuario_sem_perfil_recebe_lista_vazia) ... ok
-test_login_conta_inativa_mensagem_portugues (painel.tests.test_permissoes.LoginContaInativaTest.test_login_conta_inativa_mensagem_portugues) ... ok
-test_login_conta_inativa_retorna_401 (painel.tests.test_permissoes.LoginContaInativaTest.test_login_conta_inativa_retorna_401) ... ok
-test_login_senha_errada_mensagem_portugues (painel.tests.test_permissoes.LoginContaInativaTest.test_login_senha_errada_mensagem_portugues) ... ok
-test_admin_ve_perfil_alheio (painel.tests.test_permissoes.PerfilAcessoEscritaTest.test_admin_ve_perfil_alheio) ... ok
-test_dono_edita_proprio_perfil (painel.tests.test_permissoes.PerfilAcessoEscritaTest.test_dono_edita_proprio_perfil) ... ok
-test_nao_dono_nao_edita_perfil (painel.tests.test_permissoes.PerfilAcessoEscritaTest.test_nao_dono_nao_edita_perfil) ... ok
-test_nao_dono_nao_exclui_perfil (painel.tests.test_permissoes.PerfilAcessoEscritaTest.test_nao_dono_nao_exclui_perfil) ... ok
-test_buscando_nao_ve_perfil_mesmo_tipo_sem_match (painel.tests.test_permissoes.PerfilRetrieveTest.test_buscando_nao_ve_perfil_mesmo_tipo_sem_match) ... ok
-test_buscando_ve_perfil_oposto (painel.tests.test_permissoes.PerfilRetrieveTest.test_buscando_ve_perfil_oposto) ... ok
-test_participante_ve_perfil_do_match (painel.tests.test_permissoes.PerfilRetrieveTest.test_participante_ve_perfil_do_match) ... ok
-test_sem_token_admin_dashboard (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_dashboard) ... ok
-test_sem_token_admin_logs (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_logs) ... ok
-test_sem_token_admin_logs_exportar (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_logs_exportar) ... ok
-test_sem_token_admin_relatorio_detalhe (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_relatorio_detalhe) ... ok
-test_sem_token_admin_relatorios (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_relatorios) ... ok
-test_sem_token_admin_usuarios (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_usuarios) ... ok
-test_sem_token_admin_usuarios_exportar (painel.tests.test_permissoes.SemTokenTest.test_sem_token_admin_usuarios_exportar) ... ok
-test_sem_token_conversas (painel.tests.test_permissoes.SemTokenTest.test_sem_token_conversas) ... ok
-test_sem_token_curtidas (painel.tests.test_permissoes.SemTokenTest.test_sem_token_curtidas) ... ok
-test_sem_token_descoberta (painel.tests.test_permissoes.SemTokenTest.test_sem_token_descoberta) ... ok
-test_sem_token_matches (painel.tests.test_permissoes.SemTokenTest.test_sem_token_matches) ... ok
-test_sem_token_mensagens (painel.tests.test_permissoes.SemTokenTest.test_sem_token_mensagens) ... ok
-test_sem_token_perfis_detalhe (painel.tests.test_permissoes.SemTokenTest.test_sem_token_perfis_detalhe) ... ok
-test_sem_token_perfis_lista (painel.tests.test_permissoes.SemTokenTest.test_sem_token_perfis_lista) ... ok
-test_buscando_bloqueado_em_dashboard (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_dashboard) ... ok
-test_buscando_bloqueado_em_logs (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_logs) ... ok
-test_buscando_bloqueado_em_logs_exportar (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_logs_exportar) ... ok
-test_buscando_bloqueado_em_relatorio_detalhe (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_relatorio_detalhe) ... ok
-test_buscando_bloqueado_em_relatorios (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_relatorios) ... ok
-test_buscando_bloqueado_em_usuarios (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_usuarios) ... ok
-test_buscando_bloqueado_em_usuarios_exportar (painel.tests.test_permissoes.UsuarioComumAdminTest.test_buscando_bloqueado_em_usuarios_exportar) ... ok
-test_oferecendo_bloqueado_em_dashboard (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_dashboard) ... ok
-test_oferecendo_bloqueado_em_logs (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_logs) ... ok
-test_oferecendo_bloqueado_em_logs_exportar (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_logs_exportar) ... ok
-test_oferecendo_bloqueado_em_relatorio_detalhe (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_relatorio_detalhe) ... ok
-test_oferecendo_bloqueado_em_relatorios (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_relatorios) ... ok
-test_oferecendo_bloqueado_em_usuarios (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_usuarios) ... ok
-test_oferecendo_bloqueado_em_usuarios_exportar (painel.tests.test_permissoes.UsuarioComumAdminTest.test_oferecendo_bloqueado_em_usuarios_exportar) ... ok
-
-----------------------------------------------------------------------
-Ran 60 tests in 1.611s
-
-OK
-Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
- OK
-System check identified no issues (0 silenced).
 
 # código de saída: 0

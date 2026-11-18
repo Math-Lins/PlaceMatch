@@ -1,10 +1,10 @@
-# 17/11/2026 23:02:29 -0300 | diretório: backend | comando: python manage.py test --settings=placematch.test_settings -v 2
+# 18/11/2026 09:55:00 -0300 | diretório: backend | v1.0.0-rc2 | comando: python manage.py test --settings=placematch.test_settings -v 2
 
-Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Found 589 test(s).
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 685 test(s).
 Operations to perform:
   Synchronize unmigrated apps: corsheaders, drf_spectacular, messages, painel, rest_framework, rest_framework_simplejwt, staticfiles
-  Apply all migrations: admin, auth, chat, contenttypes, logs, matches, moderacao, perfis, sessions, usuarios
+  Apply all migrations: admin, auth, chat, contenttypes, logs, matches, moderacao, perfis, sessions, token_blacklist, usuarios
 Synchronizing apps without migrations:
   Creating tables...
     Running deferred SQL...
@@ -40,9 +40,23 @@ Running migrations:
   Applying chat.0003_restricoes_de_banco... OK
   Applying logs.0001_initial... OK
   Applying logs.0002_alter_logoperacao_acao... OK
+  Applying logs.0003_alter_logoperacao_entidade_id... OK
+  Applying logs.0004_alter_logoperacao_acao... OK
   Applying moderacao.0001_initial... OK
   Applying moderacao.0002_restricoes_de_banco... OK
   Applying sessions.0001_initial... OK
+  Applying token_blacklist.0001_initial... OK
+  Applying token_blacklist.0002_outstandingtoken_jti_hex... OK
+  Applying token_blacklist.0003_auto_20171017_2007... OK
+  Applying token_blacklist.0004_auto_20171017_2013... OK
+  Applying token_blacklist.0005_remove_outstandingtoken_jti... OK
+  Applying token_blacklist.0006_auto_20171017_2113... OK
+  Applying token_blacklist.0007_auto_20171017_2214... OK
+  Applying token_blacklist.0008_migrate_to_bigautofield... OK
+  Applying token_blacklist.0010_fix_migrate_to_bigautofield... OK
+  Applying token_blacklist.0011_linearizes_history... OK
+  Applying token_blacklist.0012_alter_outstandingtoken_user... OK
+  Applying token_blacklist.0013_alter_blacklistedtoken_options_and_more... OK
   Applying usuarios.0002_manager_email_iexact... OK
   Applying usuarios.0003_copiar_username_para_first_name... OK
   Applying usuarios.0004_restricoes_de_banco...test_ctf19_listar_conversas (chat.test_funcionais_sprint9.FuncionaisChatTest.test_ctf19_listar_conversas) ... ok
@@ -143,7 +157,7 @@ test_exportar_gera_log_relatorio_exportado (logs.tests.LogExportarTest.test_expo
 test_nao_admin_recebe_403 (logs.tests.LogExportarTest.test_nao_admin_recebe_403) ... ok
 test_falha_no_log_nao_quebra_cadastro (logs.tests.LogFalhaGravacaoTest.test_falha_no_log_nao_quebra_cadastro) ... Erro ao gravar log (acao=CADASTRO, usuario=safe@test.com)
 Traceback (most recent call last):
-  File "C:\dev\projeto\PlaceMatch\backend\logs\servicos.py", line 22, in registrar
+  File "C:\dev\projeto\PlaceMatch\backend\logs\servicos.py", line 34, in registrar
     LogOperacao.objects.create(
     ~~~~~~~~~~~~~~~~~~~~~~~~~~^
         acao=acao,
@@ -579,6 +593,68 @@ test_autenticacao_bearer_jwt_para_o_botao_authorize (placematch.test_api_docs.Sc
 test_gera_sem_avisos_nem_erros (placematch.test_api_docs.SchemaValidoTest.test_gera_sem_avisos_nem_erros)
 Equivale a `manage.py spectacular --validate --fail-on-warn`. ... ok
 test_openapi_3_com_titulo_e_versao (placematch.test_api_docs.SchemaValidoTest.test_openapi_3_com_titulo_e_versao) ... ok
+test_celula_br_nao_altera_valores_normais (placematch.test_auditoria_rc.AUD01InjecaoDeFormulaNoCsvTest.test_celula_br_nao_altera_valores_normais) ... ok
+test_celula_br_neutraliza_formulas_em_texto (placematch.test_auditoria_rc.AUD01InjecaoDeFormulaNoCsvTest.test_celula_br_neutraliza_formulas_em_texto) ... ok
+test_exportacao_de_logs_neutraliza_o_nome_do_usuario (placematch.test_auditoria_rc.AUD01InjecaoDeFormulaNoCsvTest.test_exportacao_de_logs_neutraliza_o_nome_do_usuario) ... ok
+test_exportacao_de_usuarios_neutraliza_o_nome (placematch.test_auditoria_rc.AUD01InjecaoDeFormulaNoCsvTest.test_exportacao_de_usuarios_neutraliza_o_nome) ... ok
+test_relatorio_de_matches_neutraliza_nome_do_perfil (placematch.test_auditoria_rc.AUD01InjecaoDeFormulaNoCsvTest.test_relatorio_de_matches_neutraliza_nome_do_perfil) ... ok
+test_relatorio_de_usuarios_neutraliza_o_nome (placematch.test_auditoria_rc.AUD01InjecaoDeFormulaNoCsvTest.test_relatorio_de_usuarios_neutraliza_o_nome) ... ok
+test_logs_com_pagina_gigante_devolve_lista_vazia (placematch.test_auditoria_rc.AUD02PaginacaoAlemDoFimTest.test_logs_com_pagina_gigante_devolve_lista_vazia) ... ok
+test_pagina_normal_continua_funcionando (placematch.test_auditoria_rc.AUD02PaginacaoAlemDoFimTest.test_pagina_normal_continua_funcionando) ... ok
+test_usuarios_com_pagina_gigante_devolve_lista_vazia (placematch.test_auditoria_rc.AUD02PaginacaoAlemDoFimTest.test_usuarios_com_pagina_gigante_devolve_lista_vazia) ... ok
+test_curtida_repetida_na_corrida_responde_400_e_nao_500 (placematch.test_auditoria_rc.AUD03CurtidaDuplicadaConcorrenteTest.test_curtida_repetida_na_corrida_responde_400_e_nao_500) ... ok
+test_denuncia_com_nul_na_descricao_responde_400 (placematch.test_auditoria_rc.AUD04CaracterNuloTest.test_denuncia_com_nul_na_descricao_responde_400) ... ok
+test_fotos_do_imovel_com_nul_e_rejeitada (placematch.test_auditoria_rc.AUD04CaracterNuloTest.test_fotos_do_imovel_com_nul_e_rejeitada) ... ok
+test_login_com_nul_no_email_responde_400 (placematch.test_auditoria_rc.AUD04CaracterNuloTest.test_login_com_nul_no_email_responde_400) ... ok
+test_mensagem_com_nul_e_rejeitada (placematch.test_auditoria_rc.AUD04CaracterNuloTest.test_mensagem_com_nul_e_rejeitada) ... ok
+test_parametro_de_busca_com_nul_responde_400 (placematch.test_auditoria_rc.AUD04CaracterNuloTest.test_parametro_de_busca_com_nul_responde_400) ... ok
+test_texto_normal_com_emoji_e_acento_continua_valido (placematch.test_auditoria_rc.AUD04CaracterNuloTest.test_texto_normal_com_emoji_e_acento_continua_valido) ... ok
+test_administrador_continua_vendo_perfil_de_suspenso (placematch.test_auditoria_rc.AUD05PerfilDeContaSuspensaTest.test_administrador_continua_vendo_perfil_de_suspenso) ... ok
+test_perfil_de_conta_ativa_continua_visivel (placematch.test_auditoria_rc.AUD05PerfilDeContaSuspensaTest.test_perfil_de_conta_ativa_continua_visivel) ... ok
+test_perfil_de_suspenso_nao_aparece_para_outro_usuario (placematch.test_auditoria_rc.AUD05PerfilDeContaSuspensaTest.test_perfil_de_suspenso_nao_aparece_para_outro_usuario) ... ok
+test_as_22h_de_brasilia_o_ultimo_dia_da_serie_e_hoje (placematch.test_auditoria_rc.AUD06PeriodoPadraoDoPainelUsaFusoLocalTest.test_as_22h_de_brasilia_o_ultimo_dia_da_serie_e_hoje) ... ok
+test_cabecalho_invalido_usa_o_ip_da_conexao (placematch.test_auditoria_rc.AUD07IpInvalidoNoCabecalhoNaoApagaOLogTest.test_cabecalho_invalido_usa_o_ip_da_conexao) ... ok
+test_cabecalho_valido_continua_sendo_usado (placematch.test_auditoria_rc.AUD07IpInvalidoNoCabecalhoNaoApagaOLogTest.test_cabecalho_valido_continua_sendo_usado) ... ok
+test_ipv6_valido_e_aceito (placematch.test_auditoria_rc.AUD07IpInvalidoNoCabecalhoNaoApagaOLogTest.test_ipv6_valido_e_aceito) ... ok
+test_sem_cabecalho_usa_o_ip_da_conexao (placematch.test_auditoria_rc.AUD07IpInvalidoNoCabecalhoNaoApagaOLogTest.test_sem_cabecalho_usa_o_ip_da_conexao) ... ok
+test_descoberta_mantem_score_e_ordem (placematch.test_auditoria_rc.AUD08ConsultasNasListasTest.test_descoberta_mantem_score_e_ordem) ... ok
+test_descoberta_tem_numero_fixo_de_consultas (placematch.test_auditoria_rc.AUD08ConsultasNasListasTest.test_descoberta_tem_numero_fixo_de_consultas) ... ok
+test_matches_tem_numero_fixo_de_consultas (placematch.test_auditoria_rc.AUD08ConsultasNasListasTest.test_matches_tem_numero_fixo_de_consultas) ... ok
+test_com_proxy_confiavel_usa_o_ip_informado_pelo_proxy (placematch.test_auditoria_rc2.AUD09LimiteDeTentativasDeLoginTest.test_com_proxy_confiavel_usa_o_ip_informado_pelo_proxy) ... ok
+test_conta_suspensa_tambem_conta_como_falha (placematch.test_auditoria_rc2.AUD09LimiteDeTentativasDeLoginTest.test_conta_suspensa_tambem_conta_como_falha) ... ok
+test_desligado_nao_bloqueia (placematch.test_auditoria_rc2.AUD09LimiteDeTentativasDeLoginTest.test_desligado_nao_bloqueia) ... ok
+test_email_inexistente_tambem_conta_e_nao_bloqueia_outros_emails (placematch.test_auditoria_rc2.AUD09LimiteDeTentativasDeLoginTest.test_email_inexistente_tambem_conta_e_nao_bloqueia_outros_emails) ... ok
+test_limite_por_email_vale_de_qualquer_ip_e_ignora_maiusculas (placematch.test_auditoria_rc2.AUD09LimiteDeTentativasDeLoginTest.test_limite_por_email_vale_de_qualquer_ip_e_ignora_maiusculas) ... ok
+test_login_correto_zera_o_contador_do_email (placematch.test_auditoria_rc2.AUD09LimiteDeTentativasDeLoginTest.test_login_correto_zera_o_contador_do_email) ... ok
+test_logins_corretos_nao_consomem_o_limite (placematch.test_auditoria_rc2.AUD09LimiteDeTentativasDeLoginTest.test_logins_corretos_nao_consomem_o_limite) ... ok
+test_outro_ip_nao_e_afetado (placematch.test_auditoria_rc2.AUD09LimiteDeTentativasDeLoginTest.test_outro_ip_nao_e_afetado) ... ok
+test_sexta_tentativa_falha_do_mesmo_ip_responde_429 (placematch.test_auditoria_rc2.AUD09LimiteDeTentativasDeLoginTest.test_sexta_tentativa_falha_do_mesmo_ip_responde_429) ... ok
+test_x_forwarded_for_forjado_nao_escapa_do_limite (placematch.test_auditoria_rc2.AUD09LimiteDeTentativasDeLoginTest.test_x_forwarded_for_forjado_nao_escapa_do_limite) ... ok
+test_depois_de_analisada_pode_denunciar_de_novo (placematch.test_auditoria_rc2.AUD10DenunciaDuplicadaTest.test_depois_de_analisada_pode_denunciar_de_novo) ... ok
+test_outro_denunciante_ou_outro_alvo_nao_e_afetado (placematch.test_auditoria_rc2.AUD10DenunciaDuplicadaTest.test_outro_denunciante_ou_outro_alvo_nao_e_afetado) ... ok
+test_segunda_denuncia_pendente_contra_o_mesmo_usuario_e_recusada (placematch.test_auditoria_rc2.AUD10DenunciaDuplicadaTest.test_segunda_denuncia_pendente_contra_o_mesmo_usuario_e_recusada) ... ok
+test_debug_true_explicito_continua_funcionando (placematch.test_auditoria_rc2.AUD11DebugPadraoTest.test_debug_true_explicito_continua_funcionando) ... ok
+test_sem_a_variavel_debug_e_com_chave_forte_sobe_com_debug_false (placematch.test_auditoria_rc2.AUD11DebugPadraoTest.test_sem_a_variavel_debug_e_com_chave_forte_sobe_com_debug_false) ... ok
+test_sem_a_variavel_debug_fica_desligado_e_exige_secret_key (placematch.test_auditoria_rc2.AUD11DebugPadraoTest.test_sem_a_variavel_debug_fica_desligado_e_exige_secret_key) ... ok
+test_dashboard_considera_o_periodo_padrao_quando_so_uma_data_e_enviada (placematch.test_auditoria_rc2.AUD12PeriodoMaximoTest.test_dashboard_considera_o_periodo_padrao_quando_so_uma_data_e_enviada) ... ok
+test_dashboard_sem_parametros_continua_ok (placematch.test_auditoria_rc2.AUD12PeriodoMaximoTest.test_dashboard_sem_parametros_continua_ok) ... ok
+test_data_anterior_a_2000_responde_400 (placematch.test_auditoria_rc2.AUD12PeriodoMaximoTest.test_data_anterior_a_2000_responde_400) ... ok
+test_data_minima_2000_01_01_e_aceita (placematch.test_auditoria_rc2.AUD12PeriodoMaximoTest.test_data_minima_2000_01_01_e_aceita) ... ok
+test_mensagens_antigas_continuam (placematch.test_auditoria_rc2.AUD12PeriodoMaximoTest.test_mensagens_antigas_continuam) ... ok
+test_periodo_de_exatamente_366_dias_e_aceito (placematch.test_auditoria_rc2.AUD12PeriodoMaximoTest.test_periodo_de_exatamente_366_dias_e_aceito) ... ok
+test_periodo_de_mais_de_366_dias_responde_400_em_todas_as_rotas (placematch.test_auditoria_rc2.AUD12PeriodoMaximoTest.test_periodo_de_mais_de_366_dias_responde_400_em_todas_as_rotas) ... ok
+test_logout_nao_exige_access_e_aceita_refresh_gerado_direto (placematch.test_auditoria_rc2.AUD15LogoutEBlacklistTest.test_logout_nao_exige_access_e_aceita_refresh_gerado_direto) ... ok
+test_logout_repetido_ou_token_invalido_responde_401 (placematch.test_auditoria_rc2.AUD15LogoutEBlacklistTest.test_logout_repetido_ou_token_invalido_responde_401) ... ok
+test_logout_sem_refresh_ou_com_tipo_errado_responde_400 (placematch.test_auditoria_rc2.AUD15LogoutEBlacklistTest.test_logout_sem_refresh_ou_com_tipo_errado_responde_400) ... ok
+test_refresh_de_conta_suspensa_responde_401 (placematch.test_auditoria_rc2.AUD15LogoutEBlacklistTest.test_refresh_de_conta_suspensa_responde_401) ... ok
+test_refresh_depois_do_logout_responde_401 (placematch.test_auditoria_rc2.AUD15LogoutEBlacklistTest.test_refresh_depois_do_logout_responde_401) ... ok
+test_refresh_do_proximo_login_nao_e_afetado_pelo_logout_anterior (placematch.test_auditoria_rc2.AUD15LogoutEBlacklistTest.test_refresh_do_proximo_login_nao_e_afetado_pelo_logout_anterior) ... ok
+test_refresh_rotacionado_antigo_deixa_de_valer (placematch.test_auditoria_rc2.AUD15LogoutEBlacklistTest.test_refresh_rotacionado_antigo_deixa_de_valer) ... ok
+test_registro_as_23_59_59_e_meio_entra_no_relatorio_de_denuncias (placematch.test_auditoria_rc2.AUD16FimDoDiaInclusoTest.test_registro_as_23_59_59_e_meio_entra_no_relatorio_de_denuncias) ... ok
+test_registro_no_ultimo_microssegundo_do_dia_entra_no_filtro (placematch.test_auditoria_rc2.AUD16FimDoDiaInclusoTest.test_registro_no_ultimo_microssegundo_do_dia_entra_no_filtro) ... ok
+test_campo_e_bigint_e_guarda_ids_acima_de_2_bilhoes (placematch.test_auditoria_rc2.AUD18EntidadeIdDe64BitsTest.test_campo_e_bigint_e_guarda_ids_acima_de_2_bilhoes) ... ok
+test_envio_normal_continua_201 (placematch.test_auditoria_rc2.AUD19MatchApagadoNoEnvioTest.test_envio_normal_continua_201) ... ok
+test_match_que_some_entre_a_checagem_e_a_gravacao_responde_404 (placematch.test_auditoria_rc2.AUD19MatchApagadoNoEnvioTest.test_match_que_some_entre_a_checagem_e_a_gravacao_responde_404) ... ok
 test_apos_invalido_400 (placematch.test_correcoes_sprint9.CorrecaoChatTest.test_apos_invalido_400) ... ok
 test_conteudo_precisa_ser_texto (placematch.test_correcoes_sprint9.CorrecaoChatTest.test_conteudo_precisa_ser_texto) ... ok
 test_enviar_com_usuario_suspenso_403_com_mensagem (placematch.test_correcoes_sprint9.CorrecaoChatTest.test_enviar_com_usuario_suspenso_403_com_mensagem) ... ok
@@ -677,12 +753,60 @@ test_ctv24_cabecalho_sem_token (usuarios.test_funcionais_sprint9.ValidacaoTokens
 test_ctv25_refresh_invalido (usuarios.test_funcionais_sprint9.ValidacaoTokensTest.test_ctv25_refresh_invalido) ... ok
 test_ctv26_refresh_ausente (usuarios.test_funcionais_sprint9.ValidacaoTokensTest.test_ctv26_refresh_ausente) ... ok
 test_ctv27_token_de_usuario_suspenso (usuarios.test_funcionais_sprint9.ValidacaoTokensTest.test_ctv27_token_de_usuario_suspenso) ... ok
+test_desligado_nao_limita (usuarios.test_recuperacao_senha.LimitesDePedidosTest.test_desligado_nao_limita) ... ok
+test_limite_por_ip (usuarios.test_recuperacao_senha.LimitesDePedidosTest.test_limite_por_ip) ... ok
+test_pedidos_de_email_inexistente_tambem_contam_e_outro_email_nao_e_afetado (usuarios.test_recuperacao_senha.LimitesDePedidosTest.test_pedidos_de_email_inexistente_tambem_contam_e_outro_email_nao_e_afetado) ... ok
+test_quarto_pedido_do_mesmo_email_nao_envia_e_responde_igual (usuarios.test_recuperacao_senha.LimitesDePedidosTest.test_quarto_pedido_do_mesmo_email_nao_envia_e_responde_igual) ... ok
+test_taxa_de_15_minutos_e_interpretada (usuarios.test_recuperacao_senha.LimitesDePedidosTest.test_taxa_de_15_minutos_e_interpretada) ... ok
+test_x_forwarded_for_forjado_nao_escapa_do_limite_por_ip (usuarios.test_recuperacao_senha.LimitesDePedidosTest.test_x_forwarded_for_forjado_nao_escapa_do_limite_por_ip) ... ok
+test_filtro_por_acao_na_api_de_logs (usuarios.test_recuperacao_senha.LogsDaRecuperacaoTest.test_filtro_por_acao_na_api_de_logs) ... ok
+test_pedido_de_email_inexistente_nao_gera_log (usuarios.test_recuperacao_senha.LogsDaRecuperacaoTest.test_pedido_de_email_inexistente_nao_gera_log) ... ok
+test_senha_fraca_nao_gera_log_de_redefinicao (usuarios.test_recuperacao_senha.LogsDaRecuperacaoTest.test_senha_fraca_nao_gera_log_de_redefinicao) ... ok
+test_solicitacao_e_redefinicao_sao_registradas_sem_dados_sensiveis (usuarios.test_recuperacao_senha.LogsDaRecuperacaoTest.test_solicitacao_e_redefinicao_sao_registradas_sem_dados_sensiveis) ... ok
+test_campos_ausentes_ou_com_tipo_errado (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_campos_ausentes_ou_com_tipo_errado) ... ok
+test_conta_suspensa_depois_do_pedido_nao_consegue_redefinir (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_conta_suspensa_depois_do_pedido_nao_consegue_redefinir) ... ok
+test_nao_exige_login (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_nao_exige_login) ... ok
+test_redefinicao_valida_permite_entrar_com_a_nova_senha_e_recusa_a_antiga (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_redefinicao_valida_permite_entrar_com_a_nova_senha_e_recusa_a_antiga) ... ok
+test_senha_fraca_e_recusada_sem_gastar_o_link (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_senha_fraca_e_recusada_sem_gastar_o_link) ... ok
+test_sessoes_abertas_sao_encerradas (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_sessoes_abertas_sao_encerradas) ... ok
+test_sessoes_de_outro_usuario_nao_sao_afetadas (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_sessoes_de_outro_usuario_nao_sao_afetadas) ... ok
+test_token_adulterado (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_token_adulterado) ... ok
+test_token_de_outro_usuario_nao_vale_para_este_uid (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_token_de_outro_usuario_nao_vale_para_este_uid) ... ok
+test_token_expirado_apos_1_hora (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_token_expirado_apos_1_hora) ... ok
+test_token_usado_nao_vale_de_novo (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_token_usado_nao_vale_de_novo) ... ok
+test_uid_invalido (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_uid_invalido) ... ok
+test_zera_o_contador_de_tentativas_de_login_do_email (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_zera_o_contador_de_tentativas_de_login_do_email) ... ok
+test_catalogo_de_acoes_tem_as_17_e_rotulos_em_portugues (usuarios.test_recuperacao_senha.Registro17AcoesTest.test_catalogo_de_acoes_tem_as_17_e_rotulos_em_portugues) ... ok
+test_administrador_ativo_pode_recuperar_a_senha (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_administrador_ativo_pode_recuperar_a_senha) ... ok
+test_conta_suspensa_recebe_a_mesma_resposta_mas_nao_recebe_e_mail (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_conta_suspensa_recebe_a_mesma_resposta_mas_nao_recebe_e_mail) ... ok
+test_conteudo_do_email (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_conteudo_do_email) ... ok
+test_corpo_invalido_responde_400 (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_corpo_invalido_responde_400) ... ok
+test_email_sem_diferenciar_maiusculas_e_com_espacos (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_email_sem_diferenciar_maiusculas_e_com_espacos) ... ok
+test_envia_so_para_conta_cadastrada (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_envia_so_para_conta_cadastrada) ... ok
+test_falha_no_envio_nao_vira_500_nem_revela (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_falha_no_envio_nao_vira_500_nem_revela) ... Falha ao enviar o e-mail de redefinição de senha (usuario_id=1)
+Traceback (most recent call last):
+  File "C:\dev\projeto\PlaceMatch\backend\usuarios\senha.py", line 90, in enviar_link_de_redefinicao
+    mensagem.send()
+    ~~~~~~~~~~~~~^^
+  File "C:\Users\TASCM\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\TASCM\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\TASCM\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py", line 1241, in _execute_mock_call
+    raise effect
+OSError: SMTP fora do ar
+ok
+test_link_usa_frontend_url (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_link_usa_frontend_url) ... ok
+test_nao_exige_login_e_ignora_cabecalho_de_autorizacao_invalido (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_nao_exige_login_e_ignora_cabecalho_de_autorizacao_invalido) ... ok
+test_resposta_identica_para_email_existente_e_inexistente (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_resposta_identica_para_email_existente_e_inexistente) ... ok
 
 ----------------------------------------------------------------------
-Ran 589 tests in 69.997s
+Ran 685 tests in 78.640s
 
 OK
-Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
  OK
 System check identified no issues (0 silenced).
 
@@ -708,7 +832,7 @@ System check identified no issues (0 silenced).
 
 [CT-V88] status=201 body={"id": 1, "match_id": 1, "remetente_id": 1, "conteudo": "ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá
 
-[CT-V134] status=200 body={"count": 1, "page": 1, "results": [{"id": 1, "data_hora": "2026-11-18T02:02:48.716017Z", "usuario": {"id": 1, "nome": "buscando", "email": "buscando@t.com"}, "acao": "LOGIN", "acao_label": "Login", "entidade": "", "entidade_id": null, "detalhes": {}, "ip": null}]}
+[CT-V134] status=200 body={"count": 1, "page": 1, "results": [{"id": 1, "data_hora": "2026-11-18T12:55:24.030232Z", "usuario": {"id": 1, "nome": "buscando", "email": "buscando@t.com"}, "acao": "LOGIN", "acao_label": "Login", "entidade": "", "entidade_id": null, "detalhes": {}, "ip": null}]}
 
 [CT-V108] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
 
@@ -724,7 +848,7 @@ System check identified no issues (0 silenced).
 
 [CT-V114] status=200 body={"count": 0, "page": 1, "results": []}
 
-[CT-V115] status=400 body={"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO."}
+[CT-V115] status=400 body={"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA."}
 
 [CT-V116] status=200 body={"count": 0, "page": 1, "results": []}
 
@@ -845,7 +969,7 @@ System check identified no issues (0 silenced).
 
 [CT-V96] status=400 body={"detail": "Você não pode denunciar a si mesmo."}
 
-[CT-V97] status=201 body={"id": 1, "denunciado": 2, "motivo": "spam", "status": "pendente", "criada_em": "2026-11-18T02:03:09.141652Z"}
+[CT-V97] status=201 body={"id": 1, "denunciado": 2, "motivo": "spam", "status": "pendente", "criada_em": "2026-11-18T12:55:35.397699Z"}
 
 [CT-V98] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON."}
 
@@ -865,7 +989,7 @@ System check identified no issues (0 silenced).
 
 [CT-V124] status=200 body={"count": 3, "page": 9999, "results": []}
 
-[CT-V125] status=200 body={"count": 3, "page": 1, "results": [{"id": 3, "nome": "adm", "email": "adm@t.com", "tipo": "administrador", "regiao": null, "data_cadastro": "2026-11-18T02:03:19.716966Z", "tem_perfil": false, "ativo": true}, {"id": 2, "nome": "oferece", "email": "oferece@t.com", "tipo": "oferecendo_vaga", "regiao":
+[CT-V125] status=200 body={"count": 3, "page": 1, "results": [{"id": 3, "nome": "adm", "email": "adm@t.com", "tipo": "administrador", "regiao": null, "data_cadastro": "2026-11-18T12:55:42.966293Z", "tem_perfil": false, "ativo": true}, {"id": 2, "nome": "oferece", "email": "oferece@t.com", "tipo": "oferecendo_vaga", "regiao":
 
 [CT-V126] status=400 body={"detail": "Valor inválido para ativo. Use true ou false."}
 
@@ -875,7 +999,7 @@ System check identified no issues (0 silenced).
 
 [CT-V129] status=400 body={"detail": "Tipo inválido. Use: buscando_vaga, oferecendo_vaga, administrador."}
 
-[CT-V130] status=200 body={"titulo": "Matches", "colunas": ["Data", "Perfil A", "Perfil B", "Região A", "Região B", "Score (%)", "Mensagens", "Ativa"], "linhas": [], "totais": {"matches": 0, "mensagens": 0}, "filtros_aplicados": {"data_inicio": "0001-01-01"}, "gerado_em": "2026-11-18T02:03:20.067336Z"}
+[CT-V130] status=400 body={"detail": "data_inicio não pode ser anterior a 01/01/2000."}
 
 [CT-V28] status=400 body={"nome": ["Este campo não pode ficar em branco."]}
 
@@ -973,7 +1097,7 @@ System check identified no issues (0 silenced).
 
 [CT-V17] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON com e-mail e senha."}
 
-[CT-V18] status=200 body={"refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTU3MjIzMywiaWF0IjoxNzk0OTY3NDMzLCJqdGkiOiI2MzNkMTg4ZDhkNzM0YTkxYTFjM2I1NWE1MWY0ZTViZCIsInVzZXJfaWQiOiIxIn0.P4V8nIpT_fK5dhCEFlZ3d5G0jfszp17GiKoXLVVGb-M", "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0
+[CT-V18] status=200 body={"refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTYxMTM5NSwiaWF0IjoxNzk1MDA2NTk1LCJqdGkiOiIwYTI0OGRjYjQ5OWM0ZmVlOGZlNjM3NDU5YjMwMzM3ZiIsInVzZXJfaWQiOiIxIn0.m5Hx_RmjLhy2qmqa2cUEayudoa0D10Kx9IYCM3Rr3kA", "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0
 
 [CT-V19] status=400 body={"email": ["Informe o e-mail."]}
 
@@ -993,4 +1117,8 @@ System check identified no issues (0 silenced).
 
 [CT-V27] status=401 body={"detail": "Usuário está inativo", "code": "user_inactive"}
 
+# código de saída: 0
+
+# 18/11/2026 09:56:39 -0300 | diretório: backend | comando: python manage.py makemigrations --check --dry-run --settings=placematch.test_settings
+No changes detected
 # código de saída: 0

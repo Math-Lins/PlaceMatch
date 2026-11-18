@@ -9,8 +9,11 @@ Uso (API em http://127.0.0.1:8001, administrador já criado com `criar_admin`):
 
 Segredos: tokens saem como <TOKEN>/<REFRESH> e senhas como <SENHA>.
 """
+import email
+import glob
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -26,6 +29,19 @@ registros = []
 ctx = {}
 
 
+def link_do_ultimo_email():
+    """Lê o e-mail de redefinição gravado pelo backend de arquivo (EMAIL_FILE_PATH) e devolve (uid, token)."""
+    pasta = os.environ['EMAIL_FILE_PATH']
+    arquivos = sorted(glob.glob(os.path.join(pasta, '*.log')), key=os.path.getmtime)
+    msg = email.message_from_bytes(open(arquivos[-1], 'rb').read())
+    for parte in msg.walk():
+        if parte.get_content_type() == 'text/plain':
+            texto = parte.get_payload(decode=True).decode('utf-8')
+            achou = re.search(r'uid=([^&\s]+)&token=([^\s]+)', texto)
+            return achou.group(1), achou.group(2)
+    raise RuntimeError('e-mail de redefinição não encontrado')
+
+
 def mascarar(valor, requisicao=False):
     """Troca tokens (e, na requisição, senhas) por marcadores, em qualquer profundidade."""
     if isinstance(valor, dict):
@@ -35,8 +51,12 @@ def mascarar(valor, requisicao=False):
                 saida[k] = '<TOKEN>'
             elif k == 'refresh' and isinstance(v, str):
                 saida[k] = '<REFRESH>'
-            elif k == 'password' and requisicao:
+            elif k in ('password', 'nova_senha') and requisicao:
                 saida[k] = '<SENHA>'
+            elif k == 'uid' and requisicao:
+                saida[k] = '<UID>'
+            elif k == 'token' and requisicao:
+                saida[k] = '<TOKEN_DO_LINK>'
             else:
                 saida[k] = mascarar(v, requisicao)
         return saida
@@ -131,6 +151,20 @@ def main():
     chamar('logout_ok', 'POST', '/api/auth/logout/', {'refresh': ana_sair})
     chamar('logout_invalido', 'POST', '/api/auth/logout/', {'refresh': ana_sair})
     chamar('logout_vazio', 'POST', '/api/auth/logout/', {})
+
+    # ── Recuperação de senha (use a API com EMAIL_BACKEND de arquivo e EMAIL_FILE_PATH igual ao do ambiente deste script) ──
+    chamar('registrar_eva', 'POST', '/api/auth/registrar/',
+           {'username': 'Eva Martins', 'email': 'eva.martins@exemplo.com', 'password': SENHA, 'tipo': 'buscando_vaga'})
+    chamar('senha_solicitar_ok', 'POST', '/api/auth/senha/solicitar/', {'email': 'eva.martins@exemplo.com'})
+    chamar('senha_solicitar_inexistente', 'POST', '/api/auth/senha/solicitar/', {'email': 'ninguem@exemplo.com'})
+    chamar('senha_solicitar_vazio', 'POST', '/api/auth/senha/solicitar/', {})
+    chamar('senha_solicitar_invalido', 'POST', '/api/auth/senha/solicitar/', {'email': 'isso-nao-e-email'})
+    uid_eva, token_eva = link_do_ultimo_email()
+    chamar('senha_redefinir_vazio', 'POST', '/api/auth/senha/redefinir/', {})
+    chamar('senha_redefinir_fraca', 'POST', '/api/auth/senha/redefinir/', {'uid': uid_eva, 'token': token_eva, 'nova_senha': '123'})
+    chamar('senha_redefinir_ok', 'POST', '/api/auth/senha/redefinir/', {'uid': uid_eva, 'token': token_eva, 'nova_senha': 'NovaSenhaExemplo123'})
+    chamar('senha_redefinir_invalido', 'POST', '/api/auth/senha/redefinir/', {'uid': uid_eva, 'token': token_eva, 'nova_senha': 'OutraSenhaExemplo123'},
+           nota='O mesmo link usado uma segunda vez.')
     chamar('me_ok', 'GET', '/api/auth/me/', token=ana, papel='logado')
     chamar('me_sem_token', 'GET', '/api/auth/me/')
     chamar('me_token_invalido', 'GET', '/api/auth/me/', token='token.invalido', papel='logado')

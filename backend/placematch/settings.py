@@ -153,7 +153,7 @@ SPECTACULAR_SETTINGS = {
         '**Erros:** sempre em português — `{"detail": "mensagem"}` ou `{"campo": ["mensagem"]}`.\n\n'
         'Os exemplos são respostas reais da API em um banco de teste (listas longas abreviadas).'
     ),
-    'VERSION': '1.0.0-rc1',
+    'VERSION': '1.0.0-rc2',
     'SERVE_INCLUDE_SCHEMA': False,
     'SCHEMA_PATH_PREFIX': r'/api',
     'TAGS': [
@@ -216,3 +216,27 @@ if _flag('SECURE_PROXY_SSL_HEADER'):
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Origens do frontend em produção (separadas por vírgula), além das de desenvolvimento.
 CORS_ALLOWED_ORIGINS += [o.strip() for o in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()]
+
+# ─── Recuperação de senha (veja usuarios/senha.py e "Recuperação de senha" no README) ──
+
+# O link do e-mail vale por 1 hora (e deixa de valer assim que a senha muda).
+PASSWORD_RESET_TIMEOUT = 3600
+# Endereço do frontend usado no link do e-mail: {FRONTEND_URL}/?screen=redefinir-senha&uid=...&token=...
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+# Pedidos de link: por e-mail e por IP (mesmo formato do login; vazio ou 'off' desliga).
+SENHA_LIMITE_EMAIL = os.getenv('SENHA_LIMITE_EMAIL', '3/15min')
+SENHA_LIMITE_IP = os.getenv('SENHA_LIMITE_IP', '10/hour')
+
+# E-mail. Desenvolvimento: sem EMAIL_HOST o e-mail é impresso no console do servidor (onde está o link).
+# Produção: defina EMAIL_HOST (e as demais EMAIL_*) para enviar por SMTP. Nunca versione valores reais.
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND') or (
+    'django.core.mail.backends.smtp.EmailBackend' if os.getenv('EMAIL_HOST') else 'django.core.mail.backends.console.EmailBackend'
+)
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587') or 587)
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'PlaceMatch <nao-responda@placematch.local>')
+if os.getenv('EMAIL_FILE_PATH'):  # só para o backend de arquivo (usado no e2e)
+    EMAIL_FILE_PATH = os.getenv('EMAIL_FILE_PATH')

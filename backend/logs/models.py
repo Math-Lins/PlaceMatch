@@ -19,6 +19,8 @@ class LogOperacao(models.Model):
         ('DENUNCIA_RESOLVIDA', 'Denúncia resolvida'),
         ('USUARIO_SUSPENSO', 'Usuário suspenso'),
         ('USUARIO_REATIVADO', 'Usuário reativado'),
+        ('SENHA_SOLICITADA', 'Redefinição de senha solicitada'),
+        ('SENHA_REDEFINIDA', 'Senha redefinida'),
     ]
 
     usuario = models.ForeignKey(

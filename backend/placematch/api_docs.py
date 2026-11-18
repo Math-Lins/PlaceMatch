@@ -37,6 +37,14 @@ LoginRequisicao = _classe('LoginRequisicao', {
     'email': s.CharField(help_text='E-mail do usuário (sem diferenciar maiúsculas).'),
     'password': s.CharField(help_text='Senha.'),
 })
+SenhaSolicitarRequisicao = _classe('SenhaSolicitarRequisicao', {
+    'email': s.EmailField(help_text='E-mail da conta (sem diferenciar maiúsculas).'),
+})
+SenhaRedefinirRequisicao = _classe('SenhaRedefinirRequisicao', {
+    'uid': s.CharField(help_text='Código do usuário recebido no link do e-mail (parâmetro `uid`).'),
+    'token': s.CharField(help_text='Token recebido no link do e-mail (parâmetro `token`).'),
+    'nova_senha': s.CharField(help_text='Nova senha (mesmas regras do cadastro: mínimo 8 caracteres, não só números, não muito comum).'),
+})
 RefreshRequisicao = _classe('RefreshRequisicao', {
     'refresh': s.CharField(help_text='Token de renovação recebido no login.'),
 })
@@ -156,7 +164,7 @@ P_PAGINA = [
 TIPOS_USUARIO = ['buscando_vaga', 'oferecendo_vaga', 'administrador']
 ACOES_LOG = ['LOGIN', 'LOGIN_FALHA', 'CADASTRO', 'PERFIL_CRIADO', 'PERFIL_EDITADO', 'PERFIL_EXCLUIDO', 'CURTIDA', 'RECUSA',
              'MATCH_CRIADO', 'MENSAGEM_ENVIADA', 'RELATORIO_EXPORTADO', 'DENUNCIA_CRIADA', 'DENUNCIA_RESOLVIDA',
-             'USUARIO_SUSPENSO', 'USUARIO_REATIVADO']
+             'USUARIO_SUSPENSO', 'USUARIO_REATIVADO', 'SENHA_SOLICITADA', 'SENHA_REDEFINIDA']
 RELATORIOS = ['matches', 'compatibilidade-regiao', 'atividade', 'usuarios', 'denuncias']
 
 COMUM = 'Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador recebe 403'
@@ -216,6 +224,31 @@ OPERACOES = {
         request=RefreshRequisicao, req_ex=[('refresh_ok', 'Renovação')],
         ok=(200, TokensResposta, 'refresh_ok', 'Novo access e novo refresh.', []),
         erros=[(401, 'refresh_invalido', 'Refresh inválido, expirado ou de conta suspensa')],
+    ),
+    'auth_senha_solicitar': dict(
+        metodo='POST', rota='/api/auth/senha/solicitar/', tag='Autenticação', quem=PUBLICO, publico=True,
+        resumo='Pedir o link de redefinição de senha',
+        descricao=('Envia por e-mail um link para criar uma nova senha. A resposta é **sempre** `200` com a mesma mensagem, exista a conta ou não, '
+                   'esteja ela ativa ou suspensa e mesmo quando o limite de pedidos foi passado (assim a rota não revela quais e-mails têm conta). '
+                   'O e-mail só é enviado para **conta ativa** (o administrador ativo também pode recuperar a senha; conta suspensa não recebe). '
+                   '**Limites** (por pedido, exista a conta ou não): 3 por e-mail a cada 15 minutos e 10 por IP por hora; acima disso a resposta continua '
+                   '`200`, sem enviar (`SENHA_LIMITE_EMAIL` e `SENHA_LIMITE_IP`). O link é `{FRONTEND_URL}/?screen=redefinir-senha&uid=...&token=...`, '
+                   'vale por 1 hora e deixa de valer quando a senha muda. Em desenvolvimento o e-mail aparece no console do servidor.'),
+        request=SenhaSolicitarRequisicao, req_ex=[('senha_solicitar_ok', 'Pedido de link')],
+        ok=(200, ErroDetalhe, 'senha_solicitar_ok', 'Mensagem neutra (igual para qualquer e-mail).', [('senha_solicitar_inexistente', 'E-mail sem conta: mesma resposta')]),
+        erros=[(400, 'senha_solicitar_vazio', 'E-mail ausente'), (400, 'senha_solicitar_invalido', 'E-mail mal formado')],
+    ),
+    'auth_senha_redefinir': dict(
+        metodo='POST', rota='/api/auth/senha/redefinir/', tag='Autenticação', quem=PUBLICO, publico=True,
+        resumo='Redefinir a senha com o link do e-mail',
+        descricao=('Troca a senha usando o `uid` e o `token` do link. A nova senha segue as regras do cadastro. Link inválido, adulterado, expirado ou já '
+                   'usado (ou de conta suspensa) → `400` com a mesma mensagem. Se a senha for fraca, o `400` não gasta o link. '
+                   'No sucesso, **todas as sessões abertas do usuário são encerradas** (os refresh tokens vão para a lista de bloqueio) e o contador de '
+                   'tentativas de login do e-mail é zerado; é preciso entrar de novo com a nova senha.'),
+        request=SenhaRedefinirRequisicao, req_ex=[('senha_redefinir_ok', 'Redefinição')],
+        ok=(200, ErroDetalhe, 'senha_redefinir_ok', 'Senha redefinida.', []),
+        erros=[(400, 'senha_redefinir_invalido', 'Link inválido, expirado ou já usado'), (400, 'senha_redefinir_fraca', 'Senha fraca'),
+               (400, 'senha_redefinir_vazio', 'Campos ausentes')],
     ),
     'auth_me': dict(
         metodo='GET', rota='/api/auth/me/', tag='Autenticação', quem=LOGADO,

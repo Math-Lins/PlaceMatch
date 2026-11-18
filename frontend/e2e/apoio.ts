@@ -1,5 +1,6 @@
 import { test as base, expect, type Browser, type Locator, type Page, type BrowserContext } from '@playwright/test';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -281,4 +282,61 @@ export async function prepararMatch(browser: Browser, prefixo: string, viewport?
     A: { ...a, perfil: pa } as SessaoUsuario,
     B: { ...b, perfil: pb } as SessaoUsuario,
   };
+}
+
+
+// ── E-mails (recuperação de senha) ─────────────────────────────────────────────
+
+/** Pasta dos e-mails do e2e (a mesma de playwright.config.ts: o backend usa o backend de arquivo do Django). */
+export const PASTA_EMAILS = path.join(os.tmpdir(), 'placematch-e2e-emails');
+
+function decodificarParte(cabecalho: string, corpo: string): string {
+  const codificacao = /content-transfer-encoding:\s*([\w-]+)/i.exec(cabecalho)?.[1]?.toLowerCase();
+  if (codificacao === 'base64') return Buffer.from(corpo.replace(/\s+/g, ''), 'base64').toString('utf8');
+  if (codificacao === 'quoted-printable') {
+    const bytes = corpo.replace(/=\r?\n/g, '').replace(/=([0-9A-Fa-f]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+    return Buffer.from(bytes, 'latin1').toString('utf8');
+  }
+  return corpo;
+}
+
+/** Texto (text/plain) e HTML de um e-mail gravado em arquivo, já decodificados. */
+export function lerEmail(bruto: string): { para: string; texto: string; html: string } {
+  const para = /^To:\s*(.+)$/im.exec(bruto)?.[1]?.trim() ?? '';
+  const limite = /boundary="?([^"\r\n;]+)"?/i.exec(bruto)?.[1];
+  const partes = limite ? bruto.split(`--${limite}`).slice(1, -1) : [bruto];
+  let texto = '';
+  let html = '';
+  for (const parte of partes) {
+    const corte = parte.search(/\r?\n\r?\n/);
+    const cabecalho = parte.slice(0, corte);
+    const corpo = parte.slice(corte).replace(/^\r?\n\r?\n/, '');
+    if (/content-type:\s*text\/html/i.test(cabecalho)) html = decodificarParte(cabecalho, corpo);
+    else if (/content-type:\s*text\/plain/i.test(cabecalho)) texto = decodificarParte(cabecalho, corpo);
+  }
+  return { para, texto, html };
+}
+
+/** Todos os e-mails gravados para `destino` (mais antigos primeiro). */
+export function emailsPara(destino: string): { para: string; texto: string; html: string }[] {
+  if (!fs.existsSync(PASTA_EMAILS)) return [];
+  return fs.readdirSync(PASTA_EMAILS)
+    .map(nome => ({ nome, t: fs.statSync(path.join(PASTA_EMAILS, nome)).mtimeMs }))
+    .sort((a, b) => a.t - b.t)
+    .map(f => lerEmail(fs.readFileSync(path.join(PASTA_EMAILS, f.nome), 'utf8')))
+    .filter(e => e.para.toLowerCase().includes(destino.toLowerCase()));
+}
+
+/** Espera chegar um e-mail novo para `destino` (além dos `jaExistentes`) e devolve o link de redefinição de senha. */
+export async function esperarLinkDeSenha(destino: string, jaExistentes = 0, limiteMs = 30_000): Promise<string> {
+  const fim = Date.now() + limiteMs;
+  while (Date.now() < fim) {
+    const todos = emailsPara(destino);
+    if (todos.length > jaExistentes) {
+      const link = /https?:\/\/\S+screen=redefinir-senha\S*/.exec(todos[todos.length - 1].texto)?.[0];
+      if (link) return link;
+    }
+    await new Promise(r => setTimeout(r, 300));
+  }
+  throw new Error(`Nenhum e-mail de redefinição para ${destino} em ${PASTA_EMAILS}`);
 }

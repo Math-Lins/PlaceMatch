@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -26,6 +27,8 @@ for (const k of ['E2E_ADMIN_EMAIL', 'E2E_ADMIN_SENHA', 'E2E_DB_PASSWORD']) {
 export const WEB = env.E2E_WEB_PORT || '5173';
 export const API = env.E2E_API_PORT || '8001';
 export const PY = env.E2E_PYTHON || 'python';
+/** Pasta onde o backend grava os e-mails no e2e (backend de arquivo do Django). Os roteiros leem o link daqui. */
+export const PASTA_EMAILS = path.join(os.tmpdir(), 'placematch-e2e-emails');
 
 // Variáveis repassadas ao Django (banco descartável do e2e; nunca o banco de desenvolvimento).
 export const envBackend = {
@@ -39,6 +42,12 @@ export const envBackend = {
   // Todos os roteiros entram do mesmo IP: sem isso o limite de tentativas de login (padrão 5/min) bloquearia o e2e.
   LOGIN_LIMITE_IP: 'off',
   LOGIN_LIMITE_EMAIL: 'off',
+  // Recuperação de senha: e-mails em arquivo (nada é enviado), link apontando para o Vite do e2e e sem limite de pedidos.
+  EMAIL_BACKEND: 'django.core.mail.backends.filebased.EmailBackend',
+  EMAIL_FILE_PATH: PASTA_EMAILS,
+  FRONTEND_URL: `http://127.0.0.1:${WEB}`,
+  SENHA_LIMITE_EMAIL: 'off',
+  SENHA_LIMITE_IP: 'off',
   ALLOWED_HOSTS: 'localhost,127.0.0.1',
   ADMIN_EMAIL: env.E2E_ADMIN_EMAIL,
   ADMIN_SENHA: env.E2E_ADMIN_SENHA,

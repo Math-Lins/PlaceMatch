@@ -20,3 +20,9 @@ PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
 # Limite de login desligado nos testes comuns (os testes de limite ligam com override_settings).
 LOGIN_LIMITE_IP = None
 LOGIN_LIMITE_EMAIL = None
+SENHA_LIMITE_EMAIL = None
+SENHA_LIMITE_IP = None
+FRONTEND_URL = 'http://localhost:5173'
+
+# E-mails dos testes (e da matriz de permissões) ficam na memória: nada é impresso nem enviado.
+EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'

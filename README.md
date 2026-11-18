@@ -10,14 +10,14 @@ Encontrar um colega de apartamento hoje é um processo manual e pouco confiável
 
 | Módulo | O que faz |
 |---|---|
-| **Usuários e autenticação** | Cadastro (nome com espaços e acentos, e-mail único sem diferenciar maiúsculas, senha validada), login por e-mail, JWT com renovação automática. O administrador só é criado por linha de comando. |
+| **Usuários e autenticação** | Cadastro (nome com espaços e acentos, e-mail único sem diferenciar maiúsculas, senha validada), login por e-mail, JWT com renovação automática, logout que invalida o refresh e **recuperação de senha por e-mail** (link de 1 hora). O administrador só é criado por linha de comando. |
 | **Perfis** | Um perfil por usuário: dados pessoais, orçamento, tipo de imóvel, fumante, pets, visitas, horário e escalas de hábitos. Quem oferece vaga preenche também o **anúncio** (título, descrição, até 5 fotos por URL). Criação, edição completa e exclusão. |
 | **Descoberta** | Perfis do tipo oposto ordenados por score, com busca por texto e filtros (região, tipo de imóvel, pets, fumante, orçamento, score mínimo, ordenação). Algoritmo de 6 critérios: [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md). |
 | **Curtidas e matches** | Curtir ou recusar. Quando as duas pessoas se curtem, o match é criado com o score. |
 | **Chat** | Conversa entre as duas pessoas de um match (até 1000 caracteres), não lidas, busca e atualização automática. |
 | **Moderação** | Denúncias (spam, ofensivo, perfil falso, outro); o administrador resolve ou descarta e pode suspender/reativar contas. Conta suspensa não entra e some da descoberta, dos matches e do chat. |
 | **Painel administrativo** | Dashboard (KPIs e séries), 5 relatórios com filtros, lista de usuários e exportação em CSV. |
-| **Logs** | Registro automático de 15 tipos de operação, com listagem filtrada e exportação. Senhas e textos de mensagens nunca são gravados. |
+| **Logs** | Registro automático de 17 tipos de operação, com listagem filtrada e exportação. Senhas e textos de mensagens nunca são gravados. |
 
 Perfis de acesso: `buscando_vaga`, `oferecendo_vaga` (cadastro pela tela "Criar conta") e `administrador` (somente pelo comando `criar_admin`; não participa de descoberta, curtidas nem chat).
 
@@ -72,6 +72,9 @@ cd ..
 | `ADMIN_EMAIL` / `ADMIN_SENHA` | Usados pelo comando `criar_admin` | (definir) |
 | `LOGIN_LIMITE_IP` / `LOGIN_LIMITE_EMAIL` | Limite de tentativas de login **que falham** (`429` ao passar): por IP e por e-mail. Formato `N/min` ou `N/hour`; vazio ou `off` desliga. | `5/min` / `10/hour` |
 | `PROXIES_CONFIAVEIS` | Quantos proxies confiáveis existem na frente da API (`0` = ignora o `X-Forwarded-For`). | `0` |
+| `FRONTEND_URL` | Endereço do frontend usado no link do e-mail de recuperação de senha. | `http://localhost:5173` |
+| `SENHA_LIMITE_EMAIL` / `SENHA_LIMITE_IP` | Pedidos de link de recuperação: por e-mail (`3/15min`) e por IP (`10/hour`). Acima do limite a API responde o mesmo `200`, sem enviar. Vazio ou `off` desliga. | `3/15min` / `10/hour` |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` | SMTP para enviar o e-mail de recuperação. Sem `EMAIL_HOST`, o e-mail é impresso no console do servidor. | (vazio) / `587` / — / — / `True` / `PlaceMatch <nao-responda@placematch.local>` |
 | `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SECURE_PROXY_SSL_HEADER`, `CORS_ALLOWED_ORIGINS` | Só para produção (veja "Implantação em produção"). | desligados |
 
 `frontend/.env`: `VITE_API_URL`, a URL da API. Sem a variável, o frontend usa `http://127.0.0.1:8000` (o CORS do backend libera `localhost:5173` e `127.0.0.1:5173`).
@@ -200,7 +203,7 @@ npx tsc --noEmit
 npm run build
 ```
 
-**Navegação (e2e, Playwright)** — 13 roteiros em desktop e mobile, com **banco descartável** próprio (container `placematch_e2e_db`, porta 5433); não toca no banco de desenvolvimento. Detalhes em [`frontend/e2e/README.md`](./frontend/e2e/README.md).
+**Navegação (e2e, Playwright)** — 14 roteiros em desktop e mobile, com **banco descartável** próprio (container `placematch_e2e_db`, porta 5433); não toca no banco de desenvolvimento. Detalhes em [`frontend/e2e/README.md`](./frontend/e2e/README.md).
 
 ```powershell
 cd frontend
@@ -221,7 +224,28 @@ npm run e2e:db                                 # banco descartável do e2e (recr
 npm run e2e:tour
 ```
 
-O `e2e:tour` roda `seed_demo --remover-outros` **no banco descartável do e2e**, percorre o sistema em desktop (1366×768) e celular (375×812) e grava `frontend/e2e/evidencias-rc/` (`RC-01` a `RC-37` + `INDICE.md`). Depois gera `frontend/evidencias-rc.zip` com essa pasta e com `docs/execucoes-rc/` (saídas das verificações finais: testes do backend, `verificar_banco`, matriz de permissões, validação do OpenAPI, build e e2e).
+O `e2e:tour` roda `seed_demo --remover-outros` **no banco descartável do e2e**, percorre o sistema em desktop (1366×768) e celular (375×812) e grava `frontend/e2e/evidencias-rc/` (`RC-01` a `RC-42` + `INDICE.md`). Depois gera `frontend/evidencias-rc.zip` com essa pasta e com `docs/execucoes-rc/` (saídas das verificações finais: testes do backend, `verificar_banco`, matriz de permissões, validação do OpenAPI, build e e2e).
+
+## Recuperação de senha
+
+Fluxo: **login → "Esqueci minha senha" → e-mail → link → nova senha**.
+
+1. Na tela de login, **Esqueci minha senha** (`?screen=esqueci-senha`) pede o e-mail. A API (`POST /api/auth/senha/solicitar/`) responde **sempre `200` com a mesma mensagem** ("Se o e-mail estiver cadastrado, enviaremos um link para redefinir a senha."), exista a conta ou não, para não revelar quais e-mails têm cadastro.
+2. O e-mail (texto e HTML, em português) traz o link `{FRONTEND_URL}/?screen=redefinir-senha&uid=...&token=...`. O token usa o `default_token_generator` do Django: **vale por 1 hora** (`PASSWORD_RESET_TIMEOUT`) e **deixa de valer assim que a senha muda** (inclusive pelo próprio uso).
+3. A tela **Nova senha** (`POST /api/auth/senha/redefinir/`) pede a senha duas vezes, com as mesmas regras do cadastro (mínimo de 8 caracteres, não só números, não muito comum, não parecida com os dados da conta). Senha fraca é recusada **sem gastar o link**. Link inválido, adulterado, expirado ou já usado mostra "Link inválido ou expirado" com atalho para pedir outro. O frontend tira `uid` e `token` da barra de endereço assim que os lê.
+4. Ao redefinir, **todas as sessões abertas da conta são encerradas** (os refresh tokens vão para a lista de bloqueio) e o contador de tentativas de login do e-mail é zerado.
+
+Decisões:
+
+- **Conta suspensa** não recebe e-mail (a resposta continua igual) e um link antigo dela é recusado: a rota não contorna a suspensão. O pedido fica no log (`conta_suspensa`).
+- **Administrador** ativo recupera a senha como qualquer usuário (a posse da caixa de e-mail é a prova de identidade); sem isso, só pela linha de comando.
+- **Limites**: 3 pedidos por e-mail a cada 15 minutos e 10 por IP por hora, contando todos os pedidos (a conta existindo ou não). Acima disso a resposta é a mesma `200`, sem enviar.
+- **Quem já está logado** e abre o link continua na tela de nova senha (as telas de recuperação são públicas, como login e cadastro); ao redefinir, a sessão daquela aba é encerrada junto com as demais.
+- **Logs**: `SENHA_SOLICITADA` e `SENHA_REDEFINIDA` (rótulos em português no filtro da aba Logs). Nunca gravam senha, token, uid, e-mail digitado nem o link.
+
+**Onde ver o link em desenvolvimento**: sem `EMAIL_HOST`, o Django imprime o e-mail no **console do servidor** (`runserver`) e, logo abaixo, uma linha `[DESENVOLVIMENTO] Link de redefinição de senha para ...` com o link inteiro, pronto para copiar (o corpo do e-mail sai com a codificação do MIME, com `=3D` e quebras de linha). No Docker: `docker compose logs -f backend`. No e2e, os e-mails ficam em arquivos na pasta temporária do sistema (`placematch-e2e-emails`).
+
+**SMTP em produção** (valores só no `.env` do servidor, nunca no repositório): `EMAIL_HOST`, `EMAIL_PORT` (587), `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` (`True`) e `DEFAULT_FROM_EMAIL`; defina também `FRONTEND_URL` com o endereço público do frontend. Se o envio falhar, a API continua respondendo a mesma mensagem e o erro vai para o log do servidor.
 
 ## Implantação em produção
 
@@ -270,7 +294,7 @@ PlaceMatch/
 
 ## Versão
 
-**Release Candidate v1.0.0-rc1**
+**Release Candidate v1.0.0-rc2** (inclui a recuperação de senha por e-mail; as evidências estão em [`docs/execucoes-rc/`](./docs/execucoes-rc/) e em `frontend/evidencias-rc.zip`)
 
 ## EQUIPE
 

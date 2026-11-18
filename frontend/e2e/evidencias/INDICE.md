@@ -123,3 +123,10 @@ Prints da **rodada final da Sprint 10** (16/11/2026), numerados como `Nxx-yy-des
 3. **Imagens externas bloqueadas:** os testes não acessam a internet. Os cards usam o ícone de casa no lugar da foto, as pré-visualizações
    usam uma imagem local de 1 pixel e, em telas de detalhe do perfil (N06-07), a foto de capa aparece como texto alternativo quebrado.
 4. **Pendência conhecida (baixa):** a capa do detalhe de um perfil usa `<img>` sem imagem de reserva; com a foto fora do ar mostra o texto alternativo.
+
+## Acréscimos da v1.0.0-rc2
+
+Prints novos (os demais acima são da Sprint 10 e não foram regravados): **N01-02** (login, agora com o link "Esqueci minha senha"; regravado de propósito),
+**N05-09** (falha de rede ao curtir), **N12-03** (login com falha ao carregar a conta), **N12-04** (conta criada sem login automático),
+**N13-11** e **N13-12** (recuperação de senha no celular, 375×812) e **N14-01 a N14-05** (roteiro de recuperação de senha:
+esqueci minha senha, confirmação neutra, nova senha com erro, senha redefinida e link inválido).

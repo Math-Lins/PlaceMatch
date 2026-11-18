@@ -145,6 +145,7 @@ Esta seção só acrescenta os números por etapa; os registros acima ficam como
 | RC: correção da taxa de match e seeds (v1.0.0-rc1) | **589** | 13 roteiros, 25 testes | |
 | Auditoria da RC, 1ª rodada | **616** (+27 em `placematch/test_auditoria_rc.py`; 9 asserções de permissões/chat tornadas exatas) | 13 roteiros | Detalhes em [`auditoria-rc.md`](./auditoria-rc.md) |
 | Auditoria da RC, 2ª rodada | **651** (+35 em `placematch/test_auditoria_rc2.py`) | 13 roteiros (passos novos em N01, N02, N06, N08, N10, N11 e N12) | Limite de login, logout/blacklist, período máximo etc. |
+| v1.0.0-rc2 (recuperação de senha por e-mail) | **685** (+34 em `usuarios/test_recuperacao_senha.py`) | **14 roteiros, 30 testes** (novo `n14`; N13c no mobile; passos em N01 e N08) | Evidências em [`execucoes-rc/`](./execucoes-rc/) |
 
 Verificações da etapa 3: `tsc --noEmit` e `npm run build` sem erros; `spectacular --validate` sem avisos; `matriz_permissoes` sem divergências; `verificar_banco --falhar` sobre os dados de demonstração: 13 verificações OK, 1 aviso esperado (matches de uma conta suspensa) e 0 erros.
 

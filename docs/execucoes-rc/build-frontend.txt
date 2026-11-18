@@ -1,4 +1,11 @@
-# 17/11/2026 21:51:16 -0300 | diretório: frontend | comando: npm run build
+# 18/11/2026 10:34:46 -0300 | diretório: frontend | v1.0.0-rc2 | comando: npx tsc --noEmit
+
+# código de saída: 0
+
+# 18/11/2026 10:35:29 -0300 | diretório: frontend | comando: npx tsc --noEmit --noUnusedLocals --noUnusedParameters
+# código de saída: 0
+
+# 18/11/2026 10:35:54 -0300 | diretório: frontend | comando: npm run build
 
 
 > placematch-frontend@1.0.0 build
@@ -9,7 +16,7 @@ transforming...
 ✓ 36 modules transformed.
 rendering chunks...
 computing gzip size...
-dist/index.html                                              0.72 kB │ gzip:   0.39 kB
+dist/index.html                                              0.72 kB │ gzip:   0.38 kB
 dist/assets/nunito-vietnamese-700-normal-Ch8EUCfz.woff2      5.96 kB
 dist/assets/nunito-vietnamese-400-normal-BHkVbP3T.woff2      6.12 kB
 dist/assets/nunito-vietnamese-500-normal-BpqpEYcO.woff2      6.14 kB
@@ -82,22 +89,17 @@ dist/assets/nunito-latin-ext-600-normal-BKUpuB78.woff       21.30 kB
 dist/assets/nunito-latin-ext-800-normal-CDcxIxx8.woff       21.42 kB
 dist/assets/capa-inicio-Bz8Igd4J.jpg                        94.70 kB
 dist/assets/index-DcDj6HBy.css                              23.20 kB │ gzip:   4.60 kB
-dist/assets/index-DebfdW8Z.js                              383.60 kB │ gzip: 106.19 kB
+dist/assets/index-v6pRa40R.js                              395.32 kB │ gzip: 109.05 kB
 
-✓ built in 5.88s
-[33m[PLUGIN_TIMINGS] [0mPlugin hooks ran for 3.9s of this 5.8s build (67%).
-2 hooks are listed without a time. Their calls overlapped, so the time inside one call includes work from other calls. To find their cost, profile the build with `node --cpu-prof`:
+✓ built in 5.08s
+[PLUGIN_TIMINGS] Plugin hooks ran for 3.0s of this 5.1s build (60%).
+The slowest hooks, timed inside each callback (the wait before a callback starts is excluded, the time it awaits is included):
+  - @tailwindcss/vite:generate:build transform (36%, 1.8s, 11 calls)
+Additional hook time came from the hooks below and from hooks under 1s.
+1 hook is listed without a time. Its calls overlapped, so the time inside one call includes work from other calls. To find its cost, profile the build with `node --cpu-prof`:
   - vite:css transform (11 calls)
-  - @tailwindcss/vite:generate:build transform (11 calls)
 See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
 
-
 # código de saída: 0
 
-
-# 17/11/2026 21:51:36 -0300 | diretório: frontend | comando: npx tsc --noEmit
-
-
-# código de saída: 0
-
-# 17/11/2026 21:52:06 -0300 | npm run lint: não executado — o package.json não define script "lint" (scripts: dev, build, preview, format, e2e, e2e:tour, e2e:db, e2e:db:parar).
+# npm run lint: não executado — o package.json não define script "lint" (scripts: dev, build, preview, format, e2e, e2e:tour, e2e:db, e2e:db:parar).

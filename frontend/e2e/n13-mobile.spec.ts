@@ -84,3 +84,27 @@ test('N13b Mobile: match e chat sem estourar a largura', async ({ browser }) => 
     await B.context.close();
   }
 });
+
+test('N13c Mobile (375 px): recuperação de senha sem estourar a largura', async ({ page }) => {
+  expect(page.viewportSize()?.width).toBe(375);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await semEstouro(page, 'login com o link "Esqueci minha senha"');
+  await page.getByRole('button', { name: 'Esqueci minha senha' }).click();
+  await expect(page.getByRole('heading', { name: 'Esqueci minha senha' })).toBeVisible();
+  await semEstouro(page, 'esqueci minha senha');
+  await print(page, 'N13', 11, 'esqueci-senha-mobile');
+  await page.getByPlaceholder('seu@email.com').fill(`ninguem-${Date.now()}@teste.com`);
+  await page.getByRole('button', { name: 'Enviar link' }).click();
+  await expect(page.getByRole('heading', { name: 'Confira seu e-mail' })).toBeVisible({ timeout: 30_000 });
+  await semEstouro(page, 'confirmação de envio');
+  await page.goto('/?screen=redefinir-senha&uid=MQ&token=abc-123');
+  await expect(page.getByRole('heading', { name: 'Nova senha' })).toBeVisible();
+  await page.getByRole('button', { name: 'Redefinir senha' }).click();
+  await expect(page.getByText('Informe uma senha.')).toBeVisible();
+  await semEstouro(page, 'nova senha com erro');
+  await print(page, 'N13', 12, 'nova-senha-mobile');
+  await page.goto('/?screen=redefinir-senha');
+  await expect(page.getByRole('heading', { name: 'Link inválido ou expirado' })).toBeVisible();
+  await semEstouro(page, 'link inválido');
+});

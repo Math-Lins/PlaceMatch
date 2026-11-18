@@ -241,6 +241,18 @@ export async function login(email: string, password: string): Promise<void> {
   setTokens(res.access, res.refresh);
 }
 
+/** Pede o link de redefinição por e-mail. A resposta é sempre a mesma (exista a conta ou não). */
+export async function solicitarRedefinicaoSenha(email: string): Promise<string> {
+  const r = await req<{ detail: string }>('/api/auth/senha/solicitar/', { method: 'POST', body: JSON.stringify({ email }) });
+  return r.detail;
+}
+
+/** Troca a senha com o `uid` e o `token` do link do e-mail. Encerra todas as sessões abertas da conta. */
+export async function redefinirSenha(uid: string, token: string, nova_senha: string): Promise<string> {
+  const r = await req<{ detail: string }>('/api/auth/senha/redefinir/', { method: 'POST', body: JSON.stringify({ uid, token, nova_senha }) });
+  return r.detail;
+}
+
 export async function buscarMeuUsuario(): Promise<Usuario> {
   return req<Usuario>('/api/auth/me/');
 }

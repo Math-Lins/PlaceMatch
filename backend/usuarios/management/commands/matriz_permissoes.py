@@ -189,6 +189,11 @@ class Command(BaseCommand):
              [(anon, None), (cli_b, None), (cli_o, None), (cli_a, None)]),
             ('GET  /api/admin/usuarios/exportar/',
              [(anon, None), (cli_b, None), (cli_o, None), (cli_a, None)]),
+            # Recuperacao de senha: rotas publicas (qualquer perfil recebe o mesmo resultado)
+            ('POST /api/auth/senha/solicitar/ (publica)',
+             [(c, {'email': user_b.email}) for c in (anon, cli_b, cli_o, cli_a)]),
+            ('POST /api/auth/senha/redefinir/ (link invalido)',
+             [(c, {'uid': 'abc', 'token': 'x', 'nova_senha': 'NovaSenha@2026x'}) for c in (anon, cli_b, cli_o, cli_a)]),
         ]
 
         # ── Impressao da tabela ───────────────────────────────────────────────

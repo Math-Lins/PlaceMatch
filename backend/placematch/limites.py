@@ -12,7 +12,10 @@ configure um cache compartilhado (Redis, banco…). O IP é o `REMOTE_ADDR`; atr
 `PROXIES_CONFIAVEIS` (quantidade de proxies) para usar o `X-Forwarded-For` — sem isso o cabeçalho é ignorado,
 senão qualquer cliente trocaria o IP e escaparia do limite.
 """
+import re
+
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from rest_framework.exceptions import ErrorDetail, Throttled
 from rest_framework.throttling import SimpleRateThrottle
 
@@ -37,6 +40,17 @@ class _LimitePorFalhas(SimpleRateThrottle):
     def get_rate(self):
         taxa = getattr(settings, self.nome_da_taxa, None)
         return taxa if taxa and str(taxa).lower() != 'off' else None
+
+    _UNIDADES = {'s': 1, 'sec': 1, 'second': 1, 'm': 60, 'min': 60, 'minute': 60, 'h': 3600, 'hour': 3600, 'd': 86400, 'day': 86400}
+
+    def parse_rate(self, rate):
+        """Aceita 'N/min', 'N/hour' e também múltiplos como '3/15min'."""
+        if rate is None:
+            return (None, None)
+        achou = re.fullmatch(r'\s*(\d+)\s*/\s*(\d*)\s*([a-z]+)\s*', str(rate).lower())
+        if not achou or achou.group(3) not in self._UNIDADES:
+            raise ImproperlyConfigured(f'Taxa inválida em {self.nome_da_taxa}: {rate!r} (use, por exemplo, 5/min, 10/hour ou 3/15min).')
+        return int(achou.group(1)), int(achou.group(2) or 1) * self._UNIDADES[achou.group(3)]
 
     def chave(self, request):
         raise NotImplementedError
@@ -83,7 +97,17 @@ class LimiteLoginPorEmail(_LimitePorFalhas):
         email = dados.get('email')
         if not isinstance(email, str) or not email.strip():
             return None
-        return self.cache_format % {'scope': self.scope, 'ident': email.strip().lower()}
+        return self.chave_do_email(email)
+
+    @classmethod
+    def chave_do_email(cls, email):
+        return cls.cache_format % {'scope': cls.scope, 'ident': email.strip().lower()}
+
+
+def zerar_tentativas_de_login(email):
+    """Zera o contador de falhas de login do e-mail (usado ao redefinir a senha)."""
+    from django.core.cache import cache
+    cache.delete(LimiteLoginPorEmail.chave_do_email(email))
 
 
 class LimitesDeLogin:
@@ -108,3 +132,43 @@ class LimitesDeLogin:
     def acertou(self):
         # só o contador do e-mail: o do IP expira sozinho (1 minuto)
         self.travas[1].zerar()
+
+
+# ── Pedidos de recuperação de senha ─────────────────────────────────────────────
+# Aqui CADA pedido consome o limite (não só as falhas), exista a conta ou não: acima do limite a API
+# responde o mesmo 200 de sempre, sem enviar o e-mail (o limite não pode revelar nada).
+
+
+class LimiteSenhaPorIp(_LimitePorFalhas):
+    scope = 'senha_ip'
+    nome_da_taxa = 'SENHA_LIMITE_IP'
+
+    def chave(self, request):
+        return self.cache_format % {'scope': self.scope, 'ident': _ip_do_cliente(request)}
+
+
+class LimiteSenhaPorEmail(_LimitePorFalhas):
+    scope = 'senha_email'
+    nome_da_taxa = 'SENHA_LIMITE_EMAIL'
+
+    def __init__(self, email=''):
+        super().__init__()
+        self.email = (email or "").strip().lower()
+
+    def chave(self, request):
+        return self.cache_format % {'scope': self.scope, 'ident': self.email} if self.email else None
+
+
+class LimitesDeSenha:
+    """Pedidos por e-mail (padrão 3 a cada 15 min) e por IP (padrão 10 por hora)."""
+
+    def __init__(self, request, email):
+        self.request = request
+        self.travas = [LimiteSenhaPorIp(), LimiteSenhaPorEmail(email)]
+
+    def permitido(self):
+        return all(t.allow_request(self.request, None) for t in self.travas)
+
+    def contar(self):
+        for t in self.travas:
+            t.registrar_falha()

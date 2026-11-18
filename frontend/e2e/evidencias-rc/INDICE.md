@@ -1,6 +1,6 @@
 # Evidências da Release Candidate — interface final
 
-Gerado por `e2e/tour-rc.spec.ts` (`npm run e2e:tour`) em 17/11/2026, 21:55:27, com os dados de demonstração de `manage.py seed_demo` (banco descartável do e2e).
+Gerado por `e2e/tour-rc.spec.ts` (`npm run e2e:tour`) em 18/11/2026, 10:41:07, com os dados de demonstração de `manage.py seed_demo` (banco descartável do e2e).
 
 | Arquivo | Tela | Perfil de acesso | Viewport |
 |---|---|---|---|
@@ -41,3 +41,8 @@ Gerado por `e2e/tour-rc.spec.ts` (`npm run e2e:tour`) em 17/11/2026, 21:55:27, c
 | RC-35-mobile-chat.png | Chat | Procura vaga | 375×812 (celular, escala 2x) |
 | RC-36-mobile-meu-perfil.png | Meu Perfil | Procura vaga | 375×812 (celular, escala 2x) |
 | RC-37-mobile-menu.png | Menu inferior (aba Notificações ativa) | Procura vaga | 375×812 (celular, escala 2x) |
+| RC-38-esqueci-minha-senha.png | Esqueci minha senha (e-mail preenchido) | Visitante | 1366×768 (desktop) |
+| RC-39-confirmacao-de-envio.png | Confirmação de envio do link (mensagem neutra) | Visitante | 1366×768 (desktop) |
+| RC-40-nova-senha-com-erro.png | Nova senha com erro (senha fraca recusada) | Visitante | 1366×768 (desktop) |
+| RC-41-senha-redefinida.png | Senha redefinida com sucesso | Visitante | 1366×768 (desktop) |
+| RC-42-link-invalido.png | Link de redefinição inválido (já usado) | Visitante | 1366×768 (desktop) |
