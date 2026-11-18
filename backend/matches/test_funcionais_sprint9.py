@@ -115,7 +115,7 @@ class ValidacaoCurtidaTest(BaseSprint9):
         self.uo.is_active = False
         self.uo.save()
         res = self._post('CT-V67', {'perfil_destino': self.po.id, 'tipo': 'curtir'})
-        self.assertIn(res.status_code, (400, 404), corpo_texto(res))
+        self.assertEqual(res.status_code, 404, corpo_texto(res))
 
 
 class ValidacaoFiltrosDescobertaTest(BaseSprint9):

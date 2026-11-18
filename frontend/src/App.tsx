@@ -10,6 +10,7 @@ import {
   logout,
   setOn401,
   ApiError,
+  perfilIndisponivel,
   listarDescoberta,
   enviarCurtida,
   listarMatches,
@@ -192,20 +193,20 @@ function perfilBasicoParaProfile(p: PerfilBasico | undefined, score: number): Pr
 // ─── Shared UI Components ─────────────────────────────────────────────────────
 // Cores, botões, selos e estados vêm de ./ui (padrão único com o painel admin).
 
-function Btn({ label, onClick, outline = false, danger = false, small = false, disabled = false, style: extraStyle }: {
-  label: string; onClick?: () => void; outline?: boolean; danger?: boolean; small?: boolean; disabled?: boolean; style?: React.CSSProperties;
+function Btn({ label, onClick, outline = false, danger = false, small = false, disabled = false, style: extraStyle, type = 'button' }: {
+  label: string; onClick?: () => void; outline?: boolean; danger?: boolean; small?: boolean; disabled?: boolean; style?: React.CSSProperties; type?: 'button' | 'submit';
 }) {
   const variante = danger ? (outline ? 'destrutivoContorno' : 'destrutivo') : outline ? 'secundario' : 'primario';
   return (
-    <Botao variante={variante} tamanho={small ? 'compacto' : 'normal'} onClick={onClick} disabled={disabled} larguraTotal style={extraStyle}>
+    <Botao variante={variante} tamanho={small ? 'compacto' : 'normal'} onClick={onClick} disabled={disabled} larguraTotal style={extraStyle} type={type}>
       {label}
     </Botao>
   );
 }
 
-function Input({ label, type = 'text', placeholder, value, onChange, error, maxLength, inputMode, id }: {
+function Input({ label, type = 'text', placeholder, value, onChange, error, maxLength, inputMode, id, autoComplete }: {
   label: string; type?: string; placeholder?: string; value?: string; onChange?: (v: string) => void; error?: string; maxLength?: number;
-  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']; id?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']; id?: string; autoComplete?: string;
 }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -222,6 +223,7 @@ function Input({ label, type = 'text', placeholder, value, onChange, error, maxL
         value={value}
         maxLength={maxLength}
         inputMode={inputMode}
+        autoComplete={autoComplete}
         aria-invalid={!!error}
         onChange={e => onChange?.(e.target.value)}
         style={estiloCampo({ erro: !!error })}
@@ -768,9 +770,11 @@ function LoginScreen({ nav, onLoginSuccess, loginMsg }: { nav: (s: Screen) => vo
           <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>Boas-vindas de volta!</h2>
           <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.muted, margin: '0 0 32px' }}>Entre com sua conta para continuar.</p>
 
+          {/* <form>: Enter em qualquer campo envia (teclado); noValidate mantém as mensagens em português. */}
+          <form noValidate onSubmit={e => { e.preventDefault(); handleEntrar(); }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={setEmail} error={fieldErrors.email} />
-            <Input label="Senha" type="password" placeholder="••••••••" value={senha} onChange={setSenha} error={fieldErrors.senha} />
+            <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={setEmail} error={fieldErrors.email} autoComplete="username" />
+            <Input label="Senha" type="password" placeholder="••••••••" value={senha} onChange={setSenha} error={fieldErrors.senha} autoComplete="current-password" />
           </div>
 
           {erro && (
@@ -780,8 +784,9 @@ function LoginScreen({ nav, onLoginSuccess, loginMsg }: { nav: (s: Screen) => vo
           )}
 
           <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <Btn label={loading ? 'Entrando…' : 'Entrar'} onClick={handleEntrar} disabled={loading} />
+            <Btn label={loading ? 'Entrando…' : 'Entrar'} type="submit" disabled={loading} />
           </div>
+          </form>
 
           <p style={{ textAlign: 'center', marginTop: '24px', fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted }}>
             Ainda não tem uma conta?{' '}
@@ -861,12 +866,13 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
           <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>Criar conta</h2>
           <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.muted, margin: '0 0 28px' }}>Vamos conectar você ao lugar certo.</p>
 
+          <form noValidate onSubmit={e => { e.preventDefault(); handleContinuar(); }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <Input label="Nome completo" placeholder="Seu nome" value={nome} onChange={setNome} error={fieldErrors.username} maxLength={150} />
-            <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={setEmail} error={fieldErrors.email} />
+            <Input label="Nome completo" placeholder="Seu nome" value={nome} onChange={setNome} error={fieldErrors.username} maxLength={150} autoComplete="name" />
+            <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={setEmail} error={fieldErrors.email} autoComplete="username" />
             <div className="grid md:grid-cols-2 gap-4">
-              <Input label="Senha" type="password" placeholder="Mínimo 8 caracteres" value={senha} onChange={setSenha} error={fieldErrors.password} />
-              <Input label="Confirmar senha" type="password" placeholder="Repita a senha" value={confirmSenha} onChange={setConfirmSenha} error={fieldErrors.confirmSenha} />
+              <Input label="Senha" type="password" placeholder="Mínimo 8 caracteres" value={senha} onChange={setSenha} error={fieldErrors.password} autoComplete="new-password" />
+              <Input label="Confirmar senha" type="password" placeholder="Repita a senha" value={confirmSenha} onChange={setConfirmSenha} error={fieldErrors.confirmSenha} autoComplete="new-password" />
             </div>
           </div>
 
@@ -889,8 +895,9 @@ function RegisterScreen({ nav, onLoginSuccess }: { nav: (s: Screen) => void; onL
           {erro && <MensagemErro>{erro}</MensagemErro>}
 
           <div style={{ marginTop: '28px' }}>
-            <Btn label={loading ? 'Criando conta…' : 'Continuar'} onClick={handleContinuar} disabled={loading} />
+            <Btn label={loading ? 'Criando conta…' : 'Continuar'} type="submit" disabled={loading} />
           </div>
+          </form>
 
           <p style={{ textAlign: 'center', marginTop: '20px', fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted }}>
             Já tem uma conta?{' '}
@@ -949,8 +956,12 @@ function etapaDoCampo(campo: string): number | null {
   return null;
 }
 
+/** Número digitado no formato brasileiro: "1500", "1500,50", "1.500" e "1.500,50" (o ponto separa milhares). */
 function numBR(v: string): number {
-  return Number(v.trim().replace(',', '.'));
+  const t = v.trim();
+  if (t.includes(',')) return Number(t.replace(/\./g, '').replace(',', '.'));
+  if (/^\d{1,3}(\.\d{3})+$/.test(t)) return Number(t.replace(/\./g, ''));
+  return Number(t);
 }
 
 function urlHttpValida(u: string): boolean {
@@ -1498,7 +1509,11 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [apiError, setApiError] = useState('');
+  const [acaoErro, setAcaoErro] = useState('');
   const [loadingProfiles, setLoadingProfiles] = useState(true);
+  // Só a resposta da busca mais recente vale: com a digitação rápida, uma resposta antiga
+  // (que chega depois) não pode sobrescrever a lista da busca atual.
+  const buscaAtualRef = useRef(0);
   const [searchQ, setSearchQ] = useState<string>(() => {
     try { return sessionStorage.getItem('pm_disc_q') ?? ''; } catch { return ''; }
   });
@@ -1527,8 +1542,10 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
   ].filter(Boolean).length;
 
   const doFetch = (q: string, f: DiscoveryFilters) => {
+    const busca = ++buscaAtualRef.current;
     setLoadingProfiles(true);
     setApiError('');
+    setAcaoErro('');
     const params: DescobertaParams = {};
     if (q) params.q = q;
     if (f.regiao) params.regiao = [f.regiao];
@@ -1540,8 +1557,13 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
     if (f.score_min > 0) params.score_min = f.score_min;
     if (f.ordenar !== 'compatibilidade') params.ordenar = f.ordenar;
     listarDescoberta(params)
-      .then(data => { setProfiles(data.map(perfilDescobertoParaProfile)); setLoadingProfiles(false); })
+      .then(data => {
+        if (busca !== buscaAtualRef.current) return;
+        setProfiles(data.map(perfilDescobertoParaProfile));
+        setLoadingProfiles(false);
+      })
       .catch(err => {
+        if (busca !== buscaAtualRef.current) return;
         setApiError(err instanceof ApiError ? err.message : 'Não foi possível carregar os perfis. Verifique sua conexão e tente novamente.');
         setLoadingProfiles(false);
       });
@@ -1588,6 +1610,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
   const handleLike = async (p: Profile) => {
     if (loadingId !== null) return;
     setLoadingId(p.id);
+    setAcaoErro('');
     try {
       const res = await enviarCurtida(p.id, 'curtir');
       if (res.match) {
@@ -1597,8 +1620,13 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
         nav('match');
         return;
       }
-    } catch {
-      // Remove o card mesmo em caso de erro de rede
+    } catch (err) {
+      // Perfil que não está mais disponível (já avaliado, conta suspensa...) sai da lista;
+      // qualquer outra falha (rede, servidor) mantém o card e avisa, para tentar de novo.
+      if (!perfilIndisponivel(err)) {
+        setAcaoErro(err instanceof ApiError ? err.message : 'Não foi possível registrar sua curtida. Tente novamente.');
+        return;
+      }
     } finally {
       setLoadingId(null);
     }
@@ -1608,10 +1636,14 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
   const handleDislike = async (p: Profile) => {
     if (loadingId !== null) return;
     setLoadingId(p.id);
+    setAcaoErro('');
     try {
       await enviarCurtida(p.id, 'recusar');
-    } catch {
-      // Remove o card mesmo em caso de erro de rede
+    } catch (err) {
+      if (!perfilIndisponivel(err)) {
+        setAcaoErro(err instanceof ApiError ? err.message : 'Não foi possível registrar sua recusa. Tente novamente.');
+        return;
+      }
     } finally {
       setLoadingId(null);
     }
@@ -1694,6 +1726,8 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
             altura="420px"
           />
         ) : null}
+
+        {acaoErro && <div style={{ marginBottom: '12px' }}><MensagemErro>{acaoErro}</MensagemErro></div>}
 
         {/* Mobile: single card */}
         {!loadingProfiles && !apiError && profiles.length > 0 && (() => {
@@ -1877,12 +1911,15 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
   onLike?: (p: Profile) => Promise<void>;
 }) {
   const [liking, setLiking] = useState(false);
+  const [erroAcao, setErroAcao] = useState('');
   // Vindo do chat (já há match) não faz sentido curtir/recusar: o detalhe é só leitura.
   const somenteLeitura = backScreen === 'chat';
+  const mensagemDaFalha = (e: unknown) => (e instanceof ApiError ? e.message : 'Não foi possível concluir a ação. Tente novamente.');
   const handleRecusar = async () => {
     if (!onRecusar) { nav(backScreen); return; }
+    setErroAcao('');
     setLiking(true);
-    try { await onRecusar(profile); } finally { setLiking(false); }
+    try { await onRecusar(profile); } catch (e) { setErroAcao(mensagemDaFalha(e)); } finally { setLiking(false); }
   };
   const [fotoAtiva, setFotoAtiva] = useState<string>(profile.fotosImovel?.[0] ?? '');
   const [showDenuncia, setShowDenuncia] = useState(false);
@@ -1893,9 +1930,12 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
 
   const handleLike = async () => {
     if (!onLike || liking) return;
+    setErroAcao('');
     setLiking(true);
     try {
       await onLike(profile);
+    } catch (e) {
+      setErroAcao(mensagemDaFalha(e));
     } finally {
       setLiking(false);
     }
@@ -1969,6 +2009,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
             </div>
           </div>
 
+          {erroAcao && <div style={{ marginBottom: '12px' }}><MensagemErro>{erroAcao}</MensagemErro></div>}
           {!somenteLeitura && (
             <div style={{ display: 'flex', gap: '12px' }}>
               <Btn label="✕ Recusar" outline onClick={handleRecusar} disabled={liking} />
@@ -2046,6 +2087,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
           <ListaHabitos valores={[profile.organized, profile.messy, profile.ruido, profile.social]} />
         </CartaoSecao>
 
+        {erroAcao && <div style={{ marginBottom: '12px' }}><MensagemErro>{erroAcao}</MensagemErro></div>}
         {!somenteLeitura && <Btn label={liking ? 'Enviando…' : '💛 Curtir perfil'} onClick={onLike ? handleLike : () => nav('match')} />}
         <div style={{ textAlign: 'center', marginTop: '12px' }}>
           <button onClick={() => setShowDenuncia(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontFamily: FONTE_TEXTO, fontSize: '14px', fontWeight: 700, padding: '12px 8px', minHeight: '44px', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
@@ -3327,7 +3369,10 @@ export default function App() {
       setMeuPerfil(perfil);
       nav(perfil ? 'discovery' : 'profile-create');
     } catch {
-      nav('profile-create');
+      // Não deu para carregar a conta (rede/servidor): desfaz o login e avisa na tela de entrada.
+      // Mandar a pessoa para "Criar perfil" faria quem já tem perfil achar que perdeu os dados.
+      logout();
+      throw new ApiError('Não foi possível carregar sua conta. Verifique sua conexão e tente novamente.');
     }
   };
 
@@ -3373,7 +3418,8 @@ export default function App() {
           profile={selectedProfile}
           backScreen={prevScreen}
           onRecusar={async (p) => {
-            try { await enviarCurtida(p.id, 'recusar'); } catch { /* a Descoberta recarrega a lista de qualquer forma */ }
+            // Falha de rede/servidor: o erro sobe para a tela de detalhe, que avisa e permite tentar de novo.
+            try { await enviarCurtida(p.id, 'recusar'); } catch (e) { if (!perfilIndisponivel(e)) throw e; }
             nav('discovery');
           }}
           onLike={async (p) => {
@@ -3388,7 +3434,8 @@ export default function App() {
               } else {
                 nav('discovery');
               }
-            } catch {
+            } catch (e) {
+              if (!perfilIndisponivel(e)) throw e;
               nav('discovery');
             }
           }}

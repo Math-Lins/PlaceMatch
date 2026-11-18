@@ -34,7 +34,8 @@ test('N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil'
     await print(page, 'N07', 2, 'edicao-erros');
   });
 
-  const novo = { nome: 'Nome Editado Completo', idade: '31', regiao: 'Olinda', min: '1000', max: '2000' };
+  // Formato brasileiro: "1.000" é mil (e não 1,0) e "2.000,50" é dois mil e cinquenta centavos (AUD-F01).
+  const novo = { nome: 'Nome Editado Completo', idade: '31', regiao: 'Olinda', min: '1.000', max: '2.000,50' };
   await test.step('3. editar todos os campos e salvar', async () => {
     await page.getByRole('textbox', { name: /^Link da sua foto/ }).fill(FOTO_OK);
     await page.getByPlaceholder('Seu nome completo').fill(novo.nome);
@@ -59,7 +60,7 @@ test('N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil'
     await expect(page.getByRole('heading', { name: novo.nome })).toBeVisible();
     await expect(page.locator(`img[alt="${novo.nome}"]`), 'a foto do link aparece no Meu Perfil').toBeVisible();
     await expect(page.getByText(`${novo.idade} anos · ${novo.regiao}`)).toBeVisible();
-    await expect(page.getByText('R$ 1.000 – R$ 2.000', { exact: true })).toBeVisible();
+    await expect(page.getByText('R$ 1.000 – R$ 2.000,50', { exact: true })).toBeVisible();
     await expect(page.getByText('Casa', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('3 pessoas')).toBeVisible();
     await expect(page.getByText('Recebe visitas', { exact: true })).toBeVisible();
@@ -90,6 +91,23 @@ test('N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil'
     await modal.getByRole('button', { name: 'Cancelar' }).click();
     await expect(modal).toBeHidden();
     await expect(page.getByRole('heading', { name: 'Meu Perfil' })).toBeVisible();
+  });
+
+  await test.step('6b. teclado no modal: o foco entra, o Tab fica preso nele e o Esc devolve o foco (AUD-F06)', async () => {
+    const abrir = page.getByRole('button', { name: 'Excluir perfil' });
+    await abrir.click();
+    const modal = page.getByRole('dialog', { name: 'Excluir perfil' });
+    await expect(modal).toBeFocused();
+    const dentro = () => page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'));
+    for (let i = 0; i < 6; i++) {
+      await page.keyboard.press('Tab');
+      expect(await dentro(), `Tab nº ${i + 1} saiu do modal`).toBe(true);
+    }
+    await page.keyboard.press('Shift+Tab');
+    expect(await dentro()).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(modal).toBeHidden();
+    await expect(abrir, 'o foco deve voltar ao botão que abriu o modal').toBeFocused();
   });
 
   await test.step('7. confirmar a exclusão leva à criação de perfil', async () => {

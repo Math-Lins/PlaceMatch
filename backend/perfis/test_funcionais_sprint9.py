@@ -163,7 +163,7 @@ class ValidacaoPerfilTest(BaseSprint9):
     def test_ctv54_admin_nao_cria_perfil(self):
         res = self.como(self.adm).post(URL, PERFIL_OK, format='json')
         reg('CT-V54', res)
-        self.assertIn(res.status_code, (400, 403), corpo_texto(res))
+        self.assertEqual(res.status_code, 403, corpo_texto(res))
 
     def test_ctv55_orcamento_com_digitos_demais(self):
         self._400_campo(self._criar('CT-V55', orcamento_max=10 ** 12), 'orcamento_max')

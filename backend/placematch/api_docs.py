@@ -230,7 +230,7 @@ OPERACOES = {
         metodo='GET', rota='/api/perfis/{id}/', tag='Perfis', quem=LOGADO,
         resumo='Consultar um perfil',
         descricao=('Permitido para: o próprio perfil, perfis do **tipo oposto** (os da Descoberta), perfis de quem tem match com você '
-                   'e o administrador. Qualquer outro caso → 403.'),
+                   'e o administrador. Qualquer outro caso → 403. Perfil de conta suspensa (de outra pessoa) → 404; só o administrador o enxerga.'),
         ok=(200, PerfilSerializer, 'perfil_consultar', 'Perfil.', []),
         erros=[(403, 'perfil_consultar_mesmo_tipo', 'Perfil do mesmo tipo, sem match'), (404, 'perfil_consultar_inexistente', 'Perfil inexistente')],
     ),

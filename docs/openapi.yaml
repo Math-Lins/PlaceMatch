@@ -2887,7 +2887,8 @@ paths:
       operationId: perfis_consultar
       description: 'Permitido para: o próprio perfil, perfis do **tipo oposto** (os
         da Descoberta), perfis de quem tem match com você e o administrador. Qualquer
-        outro caso → 403.'
+        outro caso → 403. Perfil de conta suspensa (de outra pessoa) → 404; só o administrador
+        o enxerga.'
       summary: Consultar um perfil
       parameters:
       - in: path

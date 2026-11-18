@@ -24,18 +24,29 @@ function setTokens(access: string, refresh: string): void {
   sessionStorage.setItem('pm_refresh', refresh);
 }
 
+// Tudo o que é da pessoa logada e fica na aba: tokens, busca/filtros da Descoberta e o marco das notificações.
+// Sair da conta (ou perder a sessão) apaga tudo, para a próxima pessoa não herdar o estado da anterior.
+const CHAVES_DA_SESSAO = ['pm_access', 'pm_refresh', 'pm_disc_q', 'pm_disc_filters', 'pm_notif_last_visit'];
+
 export function logout(): void {
-  sessionStorage.removeItem('pm_access');
-  sessionStorage.removeItem('pm_refresh');
+  for (const chave of CHAVES_DA_SESSAO) sessionStorage.removeItem(chave);
 }
 
 export class ApiError extends Error {
   fieldErrors: Record<string, string>;
-  constructor(message: string, fieldErrors: Record<string, string> = {}) {
+  /** Status HTTP da resposta (undefined quando nem chegou resposta, ex.: sem rede). */
+  status?: number;
+  constructor(message: string, fieldErrors: Record<string, string> = {}, status?: number) {
     super(message);
     this.name = 'ApiError';
     this.fieldErrors = fieldErrors;
+    this.status = status;
   }
+}
+
+/** A API recusou a curtida/recusa porque o perfil não está mais disponível (já avaliado, suspenso...): 400 ou 404. */
+export function perfilIndisponivel(e: unknown): boolean {
+  return e instanceof ApiError && (e.status === 400 || e.status === 404);
 }
 
 /** Extrai a primeira mensagem de texto de um erro do DRF (string, lista ou objeto aninhado). */
@@ -152,10 +163,10 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (res.status === 401) {
     // só chega aqui na rota de login (credenciais erradas ou conta suspensa)
     const detail = (body as Record<string, string>)?.detail ?? '';
-    throw new ApiError(detail || 'E-mail ou senha incorretos.');
+    throw new ApiError(detail || 'E-mail ou senha incorretos.', {}, 401);
   }
 
-  if (res.status >= 500) throw new ApiError(MSG_FALHA);
+  if (res.status >= 500) throw new ApiError(MSG_FALHA, {}, res.status);
 
   if (!res.ok) {
     const fieldErrors: Record<string, string> = {};
@@ -179,7 +190,7 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
       naoCampo ||
       firstMsg ||
       (res.status === 404 ? 'Recurso não encontrado.' : MSG_FALHA);
-    throw new ApiError(String(msg), fieldErrors);
+    throw new ApiError(String(msg), fieldErrors, res.status);
   }
 
   return body as T;

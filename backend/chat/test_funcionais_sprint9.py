@@ -85,7 +85,7 @@ class ValidacaoMensagemTest(_BaseChat):
     def test_ctv85_usuario_sem_perfil(self):
         sem = criar_usuario('sem@t.com', 'buscando_vaga')
         res = self._post('CT-V85', {'conteudo': 'oi'}, usuario=sem)
-        self.assertIn(res.status_code, (400, 403))
+        self.assertEqual(res.status_code, 400, corpo_texto(res))
     def test_ctv86_apos_invalido(self):
         res = self.como(self.ub).get(_msgs(self.match.id), {'apos': 'abc'})
         reg('CT-V86', res)
@@ -94,7 +94,7 @@ class ValidacaoMensagemTest(_BaseChat):
         self.uo.is_active = False
         self.uo.save()
         res = self._post('CT-V87', {'conteudo': 'oi'})
-        self.assertIn(res.status_code, (403, 404), corpo_texto(res))
+        self.assertEqual(res.status_code, 403, corpo_texto(res))
 
     def test_ctv88_conteudo_exatamente_1000(self):
         res = self._post('CT-V88', {'conteudo': 'á' * 1000})

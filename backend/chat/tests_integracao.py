@@ -203,7 +203,7 @@ class FluxoCompletoTest(APITestCase):
         _criar_perfil(client_c, 'Carlos')
 
         res = client_c.get(f'/api/matches/{match_id}/mensagens/')
-        self.assertIn(res.status_code, [http_status.HTTP_403_FORBIDDEN, http_status.HTTP_404_NOT_FOUND])
+        self.assertEqual(res.status_code, http_status.HTTP_403_FORBIDDEN, res.content)
 
     def test_terceiro_usuario_nao_pode_enviar_mensagem(self):
         match_id = self._gerar_match()
@@ -217,4 +217,4 @@ class FluxoCompletoTest(APITestCase):
             {'conteudo': 'Intruso'},
             format='json',
         )
-        self.assertIn(res.status_code, [http_status.HTTP_403_FORBIDDEN, http_status.HTTP_404_NOT_FOUND])
+        self.assertEqual(res.status_code, http_status.HTTP_403_FORBIDDEN, res.content)

@@ -21,6 +21,22 @@ def corpo_invalido(request):
     return None
 
 
+PAGINA_MAXIMA = 1_000_000_000  # evita OFFSET maior que o bigint do banco (resultaria em erro 500)
+
+
+def ler_paginacao(params, tamanho_padrao=20, tamanho_maximo=100):
+    """Lê `page` e `page_size` da query string. Valores inválidos viram o padrão; nunca levanta."""
+    try:
+        page = min(PAGINA_MAXIMA, max(1, int(params.get('page', 1))))
+    except (ValueError, TypeError):
+        page = 1
+    try:
+        page_size = min(tamanho_maximo, max(1, int(params.get('page_size', tamanho_padrao))))
+    except (ValueError, TypeError):
+        page_size = tamanho_padrao
+    return page, page_size
+
+
 def validar_escolha_param(valor, validos, rotulo, feminino=False):
     """Valida `valor` (None/'' = não informado) contra `validos`. Retorna Response ou None."""
     if valor in (None, ''):

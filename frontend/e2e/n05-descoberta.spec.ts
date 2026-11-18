@@ -95,4 +95,37 @@ test('N05 Descoberta: busca, filtros, chips, limpar, estado vazio e detalhe do a
     await expect(busca).toHaveValue('');
     await print(page, 'N05', 8, 'limpou');
   });
+
+  await test.step('9. busca rápida: a resposta antiga (lenta) não sobrescreve a busca mais recente (AUD-F04)', async () => {
+    // A 1ª busca ("Casa Forte") responde só depois de 2,5 s; a 2ª ("Boa Viagem") responde na hora.
+    await page.route('**/api/descoberta/**', async route => {
+      if (route.request().url().includes('q=Casa')) await new Promise(r => setTimeout(r, 2500));
+      await route.continue();
+    });
+    await busca.fill('Casa Forte');
+    await page.waitForTimeout(700); // passa o debounce de 400 ms: a 1ª requisição sai e fica pendente
+    await busca.fill('Boa Viagem');
+    await expect(a1()).toBeVisible();
+    await page.waitForTimeout(3500); // dá tempo para a resposta antiga chegar
+    await expect(a1(), 'a lista deve continuar sendo a da busca mais recente').toBeVisible();
+    await expect(visiveis(page.getByText('Anuncio CasaForte N05')), 'a resposta antiga sobrescreveu a lista').toHaveCount(0);
+    await page.unroute('**/api/descoberta/**');
+    await busca.fill('');
+    await expect(a2()).toBeVisible();
+  });
+
+  await test.step('10. falha de rede ao curtir: o card fica, a tela avisa e dá para tentar de novo (AUD-F03)', async () => {
+    await busca.fill('Casa Forte');
+    await expect(a2()).toBeVisible();
+    await expect(visiveis(page.getByRole('button', { name: 'Curtir perfil' }))).toHaveCount(1, { timeout: 20_000 });
+    await page.route('**/api/curtidas/', route => route.abort());
+    await visiveis(page.getByRole('button', { name: 'Curtir perfil' })).first().click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Não foi possível concluir a operação.' })).toBeVisible();
+    await expect(a2(), 'o card não pode sumir se a curtida não foi gravada').toBeVisible();
+    await print(page, 'N05', 9, 'falha-ao-curtir');
+    await page.unroute('**/api/curtidas/');
+    await visiveis(page.getByRole('button', { name: 'Curtir perfil' })).first().click();
+    await expect(visiveis(page.getByText('Anuncio CasaForte N05'))).toHaveCount(0, { timeout: 20_000 });
+    await expect(page.getByRole('alert').filter({ hasText: 'Não foi possível concluir a operação.' })).toHaveCount(0);
+  });
 });

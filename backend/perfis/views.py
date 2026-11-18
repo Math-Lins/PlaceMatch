@@ -1,7 +1,7 @@
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from rest_framework import viewsets, permissions
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from .models import Perfil
 from .serializers import PerfilSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -69,6 +69,9 @@ class PerfilViewSet(viewsets.ModelViewSet):
                 return obj
             if obj.usuario == user:
                 return obj
+            # Conta suspensa não aparece para os outros usuários (a Descoberta também a esconde).
+            if not obj.usuario.is_active:
+                raise NotFound('Perfil não encontrado.')
             # Perfil de tipo oposto (visível na Descoberta).
             if obj.usuario.tipo == _TIPO_OPOSTO.get(user.tipo):
                 return obj

@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation
 
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -176,15 +177,16 @@ class DescobertaView(APIView):
 
         # ── Calcular scores ───────────────────────────────────────────────────
         candidatos_lista = list(candidatos)
-        scores = {}
-        for p in candidatos_lista:
-            pa_id = min(meu_perfil.id, p.id)
-            pb_id = max(meu_perfil.id, p.id)
-            try:
-                compat = Compatibilidade.objects.get(perfil_a_id=pa_id, perfil_b_id=pb_id)
-                scores[p.id] = round(compat.score, 4)
-            except Compatibilidade.DoesNotExist:
-                scores[p.id] = 0.0
+        # Uma única consulta com as compatibilidades do usuário (antes: uma consulta por candidato).
+        compat_por_perfil = {}
+        for pa_id, pb_id, score in Compatibilidade.objects.filter(
+            Q(perfil_a_id=meu_perfil.id) | Q(perfil_b_id=meu_perfil.id)
+        ).values_list('perfil_a_id', 'perfil_b_id', 'score'):
+            compat_por_perfil[pb_id if pa_id == meu_perfil.id else pa_id] = score
+        scores = {
+            p.id: round(compat_por_perfil[p.id], 4) if p.id in compat_por_perfil else 0.0
+            for p in candidatos_lista
+        }
 
         # ── Filtro por score mínimo ───────────────────────────────────────────
         if score_min_val is not None:
@@ -260,11 +262,20 @@ class CurtidaView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        Curtida.objects.create(
-            perfil_origem=meu_perfil,
-            perfil_destino=perfil_destino,
-            tipo=tipo,
-        )
+        try:
+            with transaction.atomic():
+                Curtida.objects.create(
+                    perfil_origem=meu_perfil,
+                    perfil_destino=perfil_destino,
+                    tipo=tipo,
+                )
+        except IntegrityError:
+            # Duas requisições simultâneas (duplo clique) passaram juntas pela checagem acima:
+            # a restrição única do banco barra a segunda.
+            return Response(
+                {'detail': 'Você já avaliou este perfil.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         from logs.servicos import registrar
         acao_log = 'CURTIDA' if tipo == 'curtir' else 'RECUSA'
@@ -333,7 +344,7 @@ class MatchListView(APIView):
             Match.objects
             .filter(Q(perfil_a=meu_perfil) | Q(perfil_b=meu_perfil))
             .filter(perfil_a__usuario__is_active=True, perfil_b__usuario__is_active=True)
-            .select_related('perfil_a', 'perfil_b')
+            .select_related('perfil_a', 'perfil_a__usuario', 'perfil_b', 'perfil_b__usuario')
             .order_by('-score', '-data_match')
         )
         return Response(MatchSerializer(matches, many=True).data)

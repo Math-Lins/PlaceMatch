@@ -1,4 +1,4 @@
-import { cadastrarComPerfil, expect, menu, novoPerfil, print, test, tokens } from './apoio';
+import { cadastrarComPerfil, entrar, expect, menu, novoPerfil, print, sair, test, tokens } from './apoio';
 
 test.describe('N12 Sessão', () => {
   test('access inválido/expirado: a próxima ação renova a sessão sem deslogar', async ({ page }) => {
@@ -56,5 +56,24 @@ test.describe('N12 Sessão', () => {
     await test.step('2. sem laço: depois do login a navegação segue normal', async () => {
       await expect(page.getByPlaceholder('seu@email.com')).toBeVisible();
     });
+  });
+
+  test('login com falha ao carregar a conta: avisa, não manda para "Criar perfil" e dá para tentar de novo (AUD-F07)', async ({ page }) => {
+    const u = novoPerfil('n12c', 'busca');
+    await cadastrarComPerfil(page, u);
+    await sair(page);
+
+    await page.route('**/api/auth/me/', route => route.abort());
+    await entrar(page, u.email, u.senha);
+    await expect(page.getByText('Não foi possível carregar sua conta. Verifique sua conexão e tente novamente.')).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole('heading', { name: 'Boas-vindas de volta!' })).toBeVisible();
+    await expect(page.getByText(/^Etapa \d de/), 'quem já tem perfil não pode cair na criação de perfil').toHaveCount(0);
+    const t = await tokens(page);
+    expect(t.access).toBeNull();
+    await print(page, 'N12', 3, 'login-falha-ao-carregar-conta');
+
+    await page.unroute('**/api/auth/me/');
+    await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+    await expect(page.getByRole('heading', { name: /^(Descoberta|Vagas para você)$/ })).toBeVisible({ timeout: 60_000 });
   });
 });

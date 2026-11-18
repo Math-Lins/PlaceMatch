@@ -89,10 +89,7 @@ class AcessoMensagensTest(TestCase):
     def test_nao_participante_nao_lista_mensagens(self):
         self.client.force_authenticate(user=self.user_c)
         res = self.client.get(f'/api/matches/{self.match.id}/mensagens/')
-        self.assertIn(res.status_code, [
-            http_status.HTTP_403_FORBIDDEN,
-            http_status.HTTP_404_NOT_FOUND,
-        ])
+        self.assertEqual(res.status_code, http_status.HTTP_403_FORBIDDEN, res.content)
 
     def test_nao_participante_nao_envia_mensagem(self):
         self.client.force_authenticate(user=self.user_c)
@@ -100,10 +97,7 @@ class AcessoMensagensTest(TestCase):
             f'/api/matches/{self.match.id}/mensagens/',
             {'conteudo': 'Intruso'},
         )
-        self.assertIn(res.status_code, [
-            http_status.HTTP_403_FORBIDDEN,
-            http_status.HTTP_404_NOT_FOUND,
-        ])
+        self.assertEqual(res.status_code, http_status.HTTP_403_FORBIDDEN, res.content)
 
     def test_sem_token_get_retorna_401(self):
         res = self.client.get(f'/api/matches/{self.match.id}/mensagens/')

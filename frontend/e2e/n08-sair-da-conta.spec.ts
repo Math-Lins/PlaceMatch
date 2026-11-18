@@ -12,12 +12,23 @@ test('N08 Sair da conta: volta ao início, voltar do navegador não reabre tela 
   try {
     await cadastrarComPerfil(aba2.page, u2);
 
+    await test.step('0. a pessoa deixa estado na aba: busca da Descoberta e marco das notificações (AUD-F02)', async () => {
+      await menu(page, 'Descoberta').click();
+      await page.getByPlaceholder('Buscar por nome, região...').fill('estado-da-pessoa-1');
+      await menu(page, 'Notificações').click();
+      await expect(page.getByRole('heading', { name: 'Notificações' })).toBeVisible();
+      await expect.poll(() => page.evaluate(() => sessionStorage.getItem('pm_notif_last_visit'))).not.toBeNull();
+      expect(await page.evaluate(() => sessionStorage.getItem('pm_disc_q'))).toBe('estado-da-pessoa-1');
+    });
+
     await test.step('1. Sair da conta leva à tela inicial e apaga a sessão', async () => {
       await sair(page);
       await expect(page.getByRole('heading', { name: 'Boas-vindas!' })).toBeVisible();
       const t = await tokens(page);
       expect(t.access).toBeNull();
       expect(t.refresh).toBeNull();
+      const resto = await page.evaluate(() => ['pm_disc_q', 'pm_disc_filters', 'pm_notif_last_visit'].map(k => sessionStorage.getItem(k)));
+      expect(resto, 'busca, filtros e marco de notificações da pessoa anterior não podem sobrar').toEqual([null, null, null]);
       await print(page, 'N08', 1, 'saiu');
     });
 

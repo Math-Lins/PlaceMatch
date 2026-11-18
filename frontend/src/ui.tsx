@@ -250,17 +250,43 @@ export function MensagemErro({ children }: { children: React.ReactNode }) {
 export function Modal({ titulo, onFechar, children, larguraMax = '440px', folha = false, podeFechar = true, rotuloFechar = 'Fechar', ariaLabel, rodape }: {
   titulo: string; ariaLabel?: string; rodape?: React.ReactNode; onFechar: () => void; children: React.ReactNode; larguraMax?: string; folha?: boolean; podeFechar?: boolean; rotuloFechar?: string;
 }) {
+  const dialogoRef = React.useRef<HTMLDivElement>(null);
+
+  // Foco: ao abrir, vai para o diálogo; ao fechar, volta para o elemento que o abriu.
   React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && podeFechar) onFechar(); };
+    const abriuCom = document.activeElement as HTMLElement | null;
+    dialogoRef.current?.focus({ preventScroll: true });
+    return () => { if (abriuCom && document.contains(abriuCom)) abriuCom.focus({ preventScroll: true }); };
+  }, []);
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && podeFechar) { onFechar(); return; }
+      if (e.key !== 'Tab') return;
+      // Prende o Tab dentro do diálogo (modal): quem usa o teclado não "sai" para a tela de trás.
+      const dialogo = dialogoRef.current;
+      if (!dialogo) return;
+      const focaveis = Array.from(dialogo.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ));
+      if (focaveis.length === 0) { e.preventDefault(); return; }
+      const primeiro = focaveis[0];
+      const ultimo = focaveis[focaveis.length - 1];
+      const ativo = document.activeElement;
+      if (!dialogo.contains(ativo) || (ativo === dialogo && !e.shiftKey)) { e.preventDefault(); primeiro.focus(); }
+      else if (e.shiftKey && (ativo === primeiro || ativo === dialogo)) { e.preventDefault(); ultimo.focus(); }
+      else if (!e.shiftKey && ativo === ultimo) { e.preventDefault(); primeiro.focus(); }
+    };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onFechar, podeFechar]);
   return (
     <div
+      ref={dialogoRef} tabIndex={-1}
       role="dialog" aria-modal="true" aria-label={ariaLabel ?? titulo}
       onClick={() => { if (podeFechar) onFechar(); }}
       className={folha ? 'items-end md:items-center md:p-4' : 'items-center'}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(42,36,32,0.5)', zIndex: 200, display: 'flex', justifyContent: 'center', padding: folha ? 0 : '16px' }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(42,36,32,0.5)', zIndex: 200, display: 'flex', justifyContent: 'center', padding: folha ? 0 : '16px', outline: 'none' }}
     >
       <div
         onClick={e => e.stopPropagation()}

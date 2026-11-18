@@ -7,7 +7,7 @@ from rest_framework import permissions
 from .models import LogOperacao
 from .servicos import registrar
 from painel.exportacao import gerar_csv_response
-from painel.filtros import validar_e_parsear_datas, validar_escolha_param
+from painel.filtros import ler_paginacao, validar_e_parsear_datas, validar_escolha_param
 from painel.permissoes import AdminPermission
 from placematch import validacao
 from drf_spectacular.utils import extend_schema
@@ -93,19 +93,11 @@ class LogListView(APIView):
         if erro:
             return erro
 
-        try:
-            page = max(1, int(request.query_params.get('page', 1)))
-        except (ValueError, TypeError):
-            page = 1
-
-        try:
-            page_size = min(100, max(1, int(request.query_params.get('page_size', 20))))
-        except (ValueError, TypeError):
-            page_size = 20
+        page, page_size = ler_paginacao(request.query_params)
 
         count = qs.count()
         offset = (page - 1) * page_size
-        logs = qs[offset:offset + page_size]
+        logs = qs[offset:offset + page_size] if offset < count else []
 
         return Response({
             'count': count,

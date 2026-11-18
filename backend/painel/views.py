@@ -15,7 +15,7 @@ from chat.models import Mensagem
 from logs.servicos import registrar
 from .exportacao import gerar_csv_response
 from .filtros import (
-    TIPOS_USUARIO, validar_bool_param, validar_e_parsear_datas, validar_escolha_param,
+    TIPOS_USUARIO, ler_paginacao, validar_bool_param, validar_e_parsear_datas, validar_escolha_param,
 )
 from .permissoes import AdminPermission
 from drf_spectacular.utils import extend_schema
@@ -128,7 +128,7 @@ class DashboardView(APIView):
             return erro
 
         # Período padrão: últimos 30 dias
-        agora = timezone.now()
+        agora = timezone.localtime()  # data LOCAL (America/Sao_Paulo), não a data UTC
         hoje_inicio = make_aware(
             timezone.datetime(agora.year, agora.month, agora.day, 0, 0, 0)
         )
@@ -729,18 +729,11 @@ class AdminUsuariosView(APIView):
 
         qs = _filtrar_usuarios(params, data_inicio, data_fim)
 
-        try:
-            page = max(1, int(params.get('page', 1)))
-        except (ValueError, TypeError):
-            page = 1
-        try:
-            page_size = min(100, max(1, int(params.get('page_size', 20))))
-        except (ValueError, TypeError):
-            page_size = 20
+        page, page_size = ler_paginacao(params)
 
         count = qs.count()
         offset = (page - 1) * page_size
-        usuarios = qs[offset:offset + page_size]
+        usuarios = qs[offset:offset + page_size] if offset < count else []
 
         return Response({
             'count': count,

@@ -222,10 +222,10 @@ def gerar():
           '| `200` OK | Sucesso | Consultas e atualizações |',
           '| `201` Created | Recurso criado | Cadastro, perfil, curtida, mensagem, denúncia |',
           '| `204` No Content | Sucesso sem corpo | Exclusão de perfil |',
-          '| `400` Bad Request | Dados inválidos | Campo ausente/inválido, filtro inválido, regra de negócio |',
+          '| `400` Bad Request | Dados inválidos | Campo ausente/inválido, filtro inválido, regra de negócio, texto com caractere nulo (U+0000, no corpo JSON ou na query string) |',
           '| `401` Unauthorized | Não autenticado | Sem token, token inválido/expirado, credenciais erradas, conta suspensa |',
           '| `403` Forbidden | Sem permissão | Administrador em recurso de usuário, usuário comum em `/api/admin/`, perfil/match de outra pessoa |',
-          '| `404` Not Found | Não encontrado | Perfil, match, denúncia, usuário ou relatório inexistente; perfil de conta suspensa na curtida |',
+          '| `404` Not Found | Não encontrado | Perfil, match, denúncia, usuário ou relatório inexistente; perfil de conta suspensa na consulta e na curtida |',
           '| `500` | Erro interno | Não esperado: nenhuma entrada inválida deve gerar `500` |', '']
 
     L += ['## Índice de endpoints', '', '| Grupo | Método | Rota | Quem pode | Função |', '|---|---|---|---|---|']

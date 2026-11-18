@@ -7,11 +7,15 @@ from django.http import HttpResponse
 from django.utils import timezone
 
 
+_INICIO_DE_FORMULA = ('=', '+', '-', '@', '\t', '\r')
+
+
 def celula_br(valor):
     """
     Converte um valor para o formato brasileiro usado nos CSVs:
     datas dd/mm/aaaa, data e hora dd/mm/aaaa hh:mm:ss (fuso local),
-    decimais com vírgula e booleanos Sim/Não. Demais valores ficam como estão.
+    decimais com vírgula e booleanos Sim/Não. Textos que começam com = + - @ ganham um apóstrofo
+    na frente (proteção contra injeção de fórmula). Demais valores ficam como estão.
     """
     if valor is None:
         return ''
@@ -25,6 +29,10 @@ def celula_br(valor):
         return valor.strftime('%d/%m/%Y')
     if isinstance(valor, (float, Decimal)):
         return f'{float(valor):.2f}'.replace('.', ',')
+    if isinstance(valor, str) and valor[:1] in _INICIO_DE_FORMULA:
+        # Injeção de fórmula: o Excel/LibreOffice executa células que começam com = + - @ (ou TAB/CR).
+        # O apóstrofo faz a planilha tratar o conteúdo como texto.
+        return "'" + valor
     return valor
 
 

@@ -140,7 +140,7 @@ class ValidacaoLoginTest(APITestCase):
     def test_ctv17_login_corpo_nao_objeto_nao_gera_500(self):
         res = self._login('CT-V17', ['a@t.com'])
         self.assertLess(res.status_code, 500, corpo_texto(res))
-        self.assertIn(res.status_code, (400, 401))
+        self.assertEqual(res.status_code, 400)
     def test_ctv18_login_email_com_maiusculas(self):
         """E-mail é único sem distinguir caixa; o login deveria seguir a mesma regra."""
         res = self._login('CT-V18', {'email': 'A@T.COM', 'password': SENHA})

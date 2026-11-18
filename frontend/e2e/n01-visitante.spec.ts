@@ -41,6 +41,16 @@ test.describe('N01 Visitante', () => {
       await expect(page.getByRole('heading', { name: 'Criar conta' })).toBeVisible();
     });
 
+    await test.step('5b. Enter no campo de senha envia o login (teclado) — AUD-F05', async () => {
+      await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+      await page.getByPlaceholder('seu@email.com').fill('nao-existe@teste.com');
+      await page.getByPlaceholder('••••••••').fill('SenhaErrada123');
+      await page.getByPlaceholder('••••••••').press('Enter');
+      await expect(page.getByText('E-mail ou senha incorretos.')).toBeVisible({ timeout: 30_000 });
+      await page.getByRole('button', { name: 'Criar conta' }).click();
+      await expect(page.getByRole('heading', { name: 'Criar conta' })).toBeVisible();
+    });
+
     await test.step('6. fontes Outfit e Nunito carregadas localmente', async () => {
       const carregadas = await page.evaluate(async () => {
         await Promise.all([document.fonts.load('700 16px Outfit'), document.fonts.load('400 16px Nunito')]);
