@@ -13,7 +13,7 @@ Idempotente: rodar de novo não duplica denúncias nem logs (são recriados).
 
   --remover-outros   apaga antes todos os usuários que não são seed nem administrador
                      (ex.: contas criadas pelos testes e2e). SÓ em banco descartável.
-Senha de todos os usuários seed: Test@1234 (veja seed_perfis).
+A senha dos usuários seed é a definida em seed_perfis (não é impressa).
 """
 
 import random

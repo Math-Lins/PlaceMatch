@@ -1,4 +1,4 @@
-# 17/11/2026 22:34:30 -0300 | diretório: backend | comando: python manage.py test --settings=placematch.test_settings -v 2
+# 17/11/2026 23:02:29 -0300 | diretório: backend | comando: python manage.py test --settings=placematch.test_settings -v 2
 
 Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
 Found 589 test(s).
@@ -679,7 +679,7 @@ test_ctv26_refresh_ausente (usuarios.test_funcionais_sprint9.ValidacaoTokensTest
 test_ctv27_token_de_usuario_suspenso (usuarios.test_funcionais_sprint9.ValidacaoTokensTest.test_ctv27_token_de_usuario_suspenso) ... ok
 
 ----------------------------------------------------------------------
-Ran 589 tests in 52.807s
+Ran 589 tests in 69.997s
 
 OK
 Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
@@ -708,7 +708,7 @@ System check identified no issues (0 silenced).
 
 [CT-V88] status=201 body={"id": 1, "match_id": 1, "remetente_id": 1, "conteudo": "ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá
 
-[CT-V134] status=200 body={"count": 1, "page": 1, "results": [{"id": 1, "data_hora": "2026-11-18T01:34:54.387381Z", "usuario": {"id": 1, "nome": "buscando", "email": "buscando@t.com"}, "acao": "LOGIN", "acao_label": "Login", "entidade": "", "entidade_id": null, "detalhes": {}, "ip": null}]}
+[CT-V134] status=200 body={"count": 1, "page": 1, "results": [{"id": 1, "data_hora": "2026-11-18T02:02:48.716017Z", "usuario": {"id": 1, "nome": "buscando", "email": "buscando@t.com"}, "acao": "LOGIN", "acao_label": "Login", "entidade": "", "entidade_id": null, "detalhes": {}, "ip": null}]}
 
 [CT-V108] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
 
@@ -845,7 +845,7 @@ System check identified no issues (0 silenced).
 
 [CT-V96] status=400 body={"detail": "Você não pode denunciar a si mesmo."}
 
-[CT-V97] status=201 body={"id": 1, "denunciado": 2, "motivo": "spam", "status": "pendente", "criada_em": "2026-11-18T01:35:07.451156Z"}
+[CT-V97] status=201 body={"id": 1, "denunciado": 2, "motivo": "spam", "status": "pendente", "criada_em": "2026-11-18T02:03:09.141652Z"}
 
 [CT-V98] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON."}
 
@@ -865,7 +865,7 @@ System check identified no issues (0 silenced).
 
 [CT-V124] status=200 body={"count": 3, "page": 9999, "results": []}
 
-[CT-V125] status=200 body={"count": 3, "page": 1, "results": [{"id": 3, "nome": "adm", "email": "adm@t.com", "tipo": "administrador", "regiao": null, "data_cadastro": "2026-11-18T01:35:15.019582Z", "tem_perfil": false, "ativo": true}, {"id": 2, "nome": "oferece", "email": "oferece@t.com", "tipo": "oferecendo_vaga", "regiao":
+[CT-V125] status=200 body={"count": 3, "page": 1, "results": [{"id": 3, "nome": "adm", "email": "adm@t.com", "tipo": "administrador", "regiao": null, "data_cadastro": "2026-11-18T02:03:19.716966Z", "tem_perfil": false, "ativo": true}, {"id": 2, "nome": "oferece", "email": "oferece@t.com", "tipo": "oferecendo_vaga", "regiao":
 
 [CT-V126] status=400 body={"detail": "Valor inválido para ativo. Use true ou false."}
 
@@ -875,7 +875,7 @@ System check identified no issues (0 silenced).
 
 [CT-V129] status=400 body={"detail": "Tipo inválido. Use: buscando_vaga, oferecendo_vaga, administrador."}
 
-[CT-V130] status=200 body={"titulo": "Matches", "colunas": ["Data", "Perfil A", "Perfil B", "Região A", "Região B", "Score (%)", "Mensagens", "Ativa"], "linhas": [], "totais": {"matches": 0, "mensagens": 0}, "filtros_aplicados": {"data_inicio": "0001-01-01"}, "gerado_em": "2026-11-18T01:35:15.213602Z"}
+[CT-V130] status=200 body={"titulo": "Matches", "colunas": ["Data", "Perfil A", "Perfil B", "Região A", "Região B", "Score (%)", "Mensagens", "Ativa"], "linhas": [], "totais": {"matches": 0, "mensagens": 0}, "filtros_aplicados": {"data_inicio": "0001-01-01"}, "gerado_em": "2026-11-18T02:03:20.067336Z"}
 
 [CT-V28] status=400 body={"nome": ["Este campo não pode ficar em branco."]}
 
@@ -973,7 +973,7 @@ System check identified no issues (0 silenced).
 
 [CT-V17] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON com e-mail e senha."}
 
-[CT-V18] status=200 body={"refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTU3MDU0MCwiaWF0IjoxNzk0OTY1NzQwLCJqdGkiOiJmZmNjOTIwNGU3MjI0NjcxYTkzZmRiZGZmNjM1MTBmMyIsInVzZXJfaWQiOiIxIn0.VyYxUgtf1F6qngijDR07EZdg8DrViGA0R75HinaQaH4", "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0
+[CT-V18] status=200 body={"refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTU3MjIzMywiaWF0IjoxNzk0OTY3NDMzLCJqdGkiOiI2MzNkMTg4ZDhkNzM0YTkxYTFjM2I1NWE1MWY0ZTViZCIsInVzZXJfaWQiOiIxIn0.P4V8nIpT_fK5dhCEFlZ3d5G0jfszp17GiKoXLVVGb-M", "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0
 
 [CT-V19] status=400 body={"email": ["Informe o e-mail."]}
 

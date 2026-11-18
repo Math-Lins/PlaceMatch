@@ -293,11 +293,6 @@ def main():
         print(f'  Mensagens:        {Mensagem.objects.count()}')
         print(f'  Denúncias:        {Denuncia.objects.count()}')
         print('\n=== Seed concluído com sucesso! ===\n')
-        print('Credenciais de acesso:')
-        print('  Admin:       admin@admin.com.br  /  123456')
-        print('  Inquilino:   inquilino@teste.com  /  Teste@123')
-        print('  Anunciante:  anunciante@teste.com  /  Teste@123')
-        print('  Extras:      <nome>.busca@teste.com / <nome>.oferece@teste.com  /  Teste@123')
 
 
 if __name__ == '__main__':

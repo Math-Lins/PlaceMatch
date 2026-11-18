@@ -59,3 +59,34 @@ Registros: usuarios=23 | perfis=22 | compatibilidades=117 | curtidas=32 | matche
 Resumo: 14 verificações — 13 OK, 1 aviso(s), 0 erro(s).
 
 # código de saída: 0
+
+
+# ---- 17/11/2026 23:04:43 -0300 | Terceira execução: BANCO DE DESENVOLVIMENTO APÓS LIMPEZA (placematch_db, porta 5432; limpeza feita pelo usuário) ----
+# 17/11/2026 23:04:27 -0300 | diretório: backend | comando: python manage.py verificar_banco --detalhes
+
+VERIFICAÇÃO DO BANCO — PlaceMatch
+Banco: placematch (postgresql) em localhost:5432
+Registros: usuarios=24 | perfis=22 | compatibilidades=121 | curtidas=162 | matches=57 | mensagens=237 | denuncias=12 | logs=40
+
+[OK   ]  1. Registros órfãos (FK para registro inexistente): 0
+[OK   ]  2. Matches sem curtida mútua: 0
+[OK   ]  3. Match: pares duplicados (A,B) e (B,A): 0
+[OK   ]  4. Match: pares invertidos (perfil_a > perfil_b): 0
+[OK   ]  5. Compatibilidade: pares duplicados (A,B) e (B,A): 0
+[OK   ]  6. Compatibilidade: pares invertidos (perfil_a > perfil_b): 0
+[OK   ]  7. Compatibilidade faltando entre perfis de tipos opostos: 0
+[OK   ]  8. Compatibilidade entre perfis que não são de tipos opostos: 0
+[OK   ]  9. Mensagens enviadas por quem não participa do match: 0
+[AVISO] 10. Usuários comuns sem perfil: 1
+          dica: Pode ser um cadastro recente que ainda não concluiu o perfil.
+          ids/itens: 4
+[OK   ] 11. Administradores com perfil: 0
+[OK   ] 12. Curtidas entre perfis do mesmo tipo: 0
+[OK   ] 13. Matches entre perfis do mesmo tipo: 0
+[AVISO] 14. Matches com conta suspensa (ocultos na API): 7
+          dica: Esperado enquanto a conta estiver suspensa.
+          ids/itens: 6, 22, 29, 32, 40, 45, 46
+
+Resumo: 14 verificações — 12 OK, 2 aviso(s), 0 erro(s).
+
+# código de saída: 0

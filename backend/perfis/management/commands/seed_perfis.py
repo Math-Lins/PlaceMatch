@@ -4,7 +4,7 @@ python manage.py seed_perfis
 Cria usuários + perfis de demonstração (Recife, perto da UNINASSAU), com fotos de perfil
 e anúncios com fotos dos imóveis. Perfis variados para cobrir os extremos do algoritmo.
 
-Senha padrão de todos: Test@1234
+Todos os usuários de demonstração usam a mesma senha (definida no código deste comando; não é impressa).
 
 As fotos são links públicos (Unsplash e randomuser.me). Sem internet, a interface mostra a
 imagem substituta; o roteiro de prints (frontend/e2e/tour-rc.spec.ts) serve cópias locais.
@@ -361,5 +361,3 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f'\nConcluído: {criados} criados, {atualizados} atualizados.'
         ))
-        if criados > 0:
-            self.stdout.write('Senha de todos os seeds: Test@1234')
