@@ -21,6 +21,7 @@ class LogOperacao(models.Model):
         ('USUARIO_REATIVADO', 'Usuário reativado'),
         ('SENHA_SOLICITADA', 'Redefinição de senha solicitada'),
         ('SENHA_REDEFINIDA', 'Senha redefinida'),
+        ('IA_TESTE', 'Teste da IA (painel)'),
     ]
 
     usuario = models.ForeignKey(

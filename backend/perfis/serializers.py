@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from matches.serializers import CamposIAMixin
 from .models import Perfil
 
 
@@ -152,3 +154,11 @@ class PerfilSerializer(serializers.ModelSerializer):
                 'orcamento_max': 'O orçamento máximo deve ser maior ou igual ao mínimo.'
             })
         return attrs
+
+
+
+class PerfilDetalheSerializer(CamposIAMixin, PerfilSerializer):
+    """Consulta de um perfil (GET /api/perfis/{id}/): inclui a Afinidade por IA com o usuário logado."""
+
+    class Meta(PerfilSerializer.Meta):
+        fields = PerfilSerializer.Meta.fields + ['afinidade_ia', 'temas_em_comum']

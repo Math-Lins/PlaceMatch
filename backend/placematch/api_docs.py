@@ -10,8 +10,9 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, OpenApiResponse
 from rest_framework import serializers as s
 
-from matches.serializers import MatchSerializer, PerfilDescobertoSerializer
-from perfis.serializers import PerfilSerializer
+from ia.serializers import IATestarSerializer
+from matches.serializers import MatchSerializer, PerfilDescobertoSerializer, TemaSerializer
+from perfis.serializers import PerfilDetalheSerializer, PerfilSerializer
 from placematch.exemplos_api import EXEMPLOS
 from chat.serializers import MensagemSerializer
 from usuarios.serializers import RegistrarSerializer, UsuarioSerializer
@@ -147,6 +148,47 @@ LogItem = _classe('LogItem', {
 })
 LogsPagina = _classe('LogsPagina', {'count': s.IntegerField(), 'page': s.IntegerField(), 'results': LogItem(many=True)})
 
+CriterioCompatibilidade = _classe('CriterioCompatibilidade', {
+    'criterio': s.ChoiceField(choices=['orcamento', 'regiao', 'rotina', 'habitos', 'moradia', 'idade', 'afinidade_ia']),
+    'nome': s.CharField(help_text='Nome do critério para exibição.'),
+    'peso': s.FloatField(help_text='Peso configurado (os 7 somam 1).'),
+    'peso_efetivo': s.FloatField(help_text='Peso usado neste par. Sem a afinidade por IA, os outros 6 são divididos por 0,90.'),
+    'valor': s.FloatField(allow_null=True, help_text='Semelhança no critério, de 0 a 1 (`null` quando o critério não entrou).'),
+    'contribuicao': s.FloatField(help_text='peso_efetivo × valor; a soma das contribuições é o score (± arredondamento).'),
+    'considerado': s.BooleanField(help_text='false só para `afinidade_ia` sem embedding de um dos perfis ou com a IA desligada.'),
+})
+CompatibilidadeResposta = _classe('CompatibilidadeDetalhe', {
+    'perfil_id': s.IntegerField(), 'nome': s.CharField(),
+    'score': s.FloatField(help_text='Score total, de 0 a 1 (o mesmo gravado e mostrado na Descoberta).'),
+    'criterios': CriterioCompatibilidade(many=True),
+    'afinidade_ia': s.FloatField(allow_null=True, help_text='Afinidade calibrada entre as bios, de 0 a 1.'),
+    'similaridade_ia': s.FloatField(allow_null=True, help_text='Cosseno bruto entre os dois embeddings (-1 a 1).'),
+    'temas_em_comum': TemaSerializer(many=True), 'temas_meu_perfil': TemaSerializer(many=True),
+    'temas_outro_perfil': TemaSerializer(many=True),
+    'ia_disponivel': s.BooleanField(help_text='IA ligada e modelo carregado (ou baixado e pronto para carregar).'),
+    'motivo_sem_ia': s.CharField(allow_null=True, help_text='Quando `afinidade_ia` é null, explica o porquê.'),
+})
+_TemaContagem = _classe('TemaContagem', {'id': s.CharField(), 'nome': s.CharField(), 'perfis': s.IntegerField(help_text='Perfis com o tema.')})
+IAStatusResposta = _classe('IAStatus', {
+    'habilitada': s.BooleanField(help_text='IA_HABILITADA.'), 'disponivel': s.BooleanField(),
+    'situacao': s.ChoiceField(choices=['nao_carregado', 'disponivel', 'indisponivel', 'desabilitada'],
+                              help_text='Estado do modelo neste processo do servidor.'),
+    'erro': s.CharField(allow_null=True, help_text='Última falha ao carregar o modelo.'),
+    'modelo': s.CharField(), 'dimensoes': s.IntegerField(), 'modelo_baixado': s.BooleanField(),
+    'tempo_carregamento_ms': s.FloatField(allow_null=True),
+    'perfis_total': s.IntegerField(), 'perfis_com_texto_suficiente': s.IntegerField(help_text='Bio (+ anúncio) com 20+ letras.'),
+    'perfis_com_embedding': s.IntegerField(), 'perfis_sem_embedding_com_texto': s.IntegerField(help_text='Corrija com `gerar_embeddings`.'),
+    'temas_cadastrados': s.IntegerField(), 'temas': _TemaContagem(many=True),
+    'tempo_medio_geracao_ms': s.FloatField(allow_null=True), 'ultima_atualizacao': s.DateTimeField(allow_null=True),
+    'calibracao': s.DictField(child=s.FloatField(), help_text='Peso, piso e teto do cosseno e limiares dos temas (matches/algoritmo/config.py).'),
+})
+IATestarResposta = _classe('IATestarResposta', {
+    'similaridade': s.FloatField(help_text='Cosseno bruto (-1 a 1).'), 'afinidade': s.FloatField(help_text='Afinidade calibrada (0 a 1).'),
+    'temas_a': TemaSerializer(many=True), 'temas_b': TemaSerializer(many=True), 'temas_em_comum': TemaSerializer(many=True),
+    'tempo_ms': s.FloatField(help_text='Tempo de processamento (os dois embeddings e os temas).'),
+    'modelo': s.CharField(),
+})
+
 
 # ── Parâmetros de consulta ───────────────────────────────────────────────────────
 
@@ -164,7 +206,7 @@ P_PAGINA = [
 TIPOS_USUARIO = ['buscando_vaga', 'oferecendo_vaga', 'administrador']
 ACOES_LOG = ['LOGIN', 'LOGIN_FALHA', 'CADASTRO', 'PERFIL_CRIADO', 'PERFIL_EDITADO', 'PERFIL_EXCLUIDO', 'CURTIDA', 'RECUSA',
              'MATCH_CRIADO', 'MENSAGEM_ENVIADA', 'RELATORIO_EXPORTADO', 'DENUNCIA_CRIADA', 'DENUNCIA_RESOLVIDA',
-             'USUARIO_SUSPENSO', 'USUARIO_REATIVADO', 'SENHA_SOLICITADA', 'SENHA_REDEFINIDA']
+             'USUARIO_SUSPENSO', 'USUARIO_REATIVADO', 'SENHA_SOLICITADA', 'SENHA_REDEFINIDA', 'IA_TESTE']
 RELATORIOS = ['matches', 'compatibilidade-regiao', 'atividade', 'usuarios', 'denuncias']
 
 COMUM = 'Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador recebe 403'
@@ -268,7 +310,8 @@ OPERACOES = {
         resumo='Criar o perfil',
         descricao=('Cria o perfil do usuário logado (um por usuário). Quem oferece vaga pode enviar também os campos do anúncio '
                    '(`titulo_anuncio`, `descricao_imovel`, `fotos_imovel`, `foto_perfil_url`). Ao salvar, as compatibilidades com os perfis '
-                   'do tipo oposto são recalculadas.'),
+                   'do tipo oposto são recalculadas. Com a bio (+ anúncio) de 20 letras ou mais, o modelo de IA local gera o embedding '
+                   'usado no critério "Afinidade de perfil (IA)"; o texto não sai do servidor.'),
         request=PerfilSerializer, req_ex=[('perfil_criar', 'Perfil de quem procura vaga'), ('perfil_criar_anuncio', 'Perfil com anúncio (oferecendo vaga)')],
         ok=(201, PerfilSerializer, 'perfil_criar', 'Perfil criado.', [('perfil_criar_anuncio', 'Perfil com anúncio')]),
         erros=[(400, 'perfil_criar_invalido', 'Campos inválidos'), (400, 'perfil_criar_duplicado', 'Usuário já tem perfil'),
@@ -278,8 +321,10 @@ OPERACOES = {
         metodo='GET', rota='/api/perfis/{id}/', tag='Perfis', quem=LOGADO,
         resumo='Consultar um perfil',
         descricao=('Permitido para: o próprio perfil, perfis do **tipo oposto** (os da Descoberta), perfis de quem tem match com você '
-                   'e o administrador. Qualquer outro caso → 403. Perfil de conta suspensa (de outra pessoa) → 404; só o administrador o enxerga.'),
-        ok=(200, PerfilSerializer, 'perfil_consultar', 'Perfil.', []),
+                   'e o administrador. Qualquer outro caso → 403. Perfil de conta suspensa (de outra pessoa) → 404; só o administrador o enxerga. '
+                   '`afinidade_ia` (0 a 1 ou null) e `temas_em_comum` comparam a bio do perfil com a sua; vêm `null`/`[]` no próprio perfil, '
+                   'para o administrador e quando uma das bios tem menos de 20 letras.'),
+        ok=(200, PerfilDetalheSerializer, 'perfil_consultar', 'Perfil (com `afinidade_ia` e `temas_em_comum` em relação a você).', []),
         erros=[(403, 'perfil_consultar_mesmo_tipo', 'Perfil do mesmo tipo, sem match'), (404, 'perfil_consultar_inexistente', 'Perfil inexistente')],
     ),
     'perfis_atualizar': dict(
@@ -312,7 +357,9 @@ OPERACOES = {
         metodo='GET', rota='/api/descoberta/', tag='Descoberta e Matches', quem=COMUM,
         resumo='Descobrir perfis compatíveis',
         descricao=('Lista os perfis do **tipo oposto** com o score de compatibilidade (0 a 1), por score decrescente. Exige perfil criado. '
-                   'Não aparecem: o próprio perfil, perfis já avaliados, perfis já em match e contas suspensas.'),
+                   'Não aparecem: o próprio perfil, perfis já avaliados, perfis já em match e contas suspensas. '
+                   'Cada item traz também `afinidade_ia` (afinidade entre as bios calculada pelo modelo de IA local, 0 a 1, ou null quando '
+                   'uma das bios é curta ou a IA está desligada) e `temas_em_comum`. O detalhamento do score está em `GET /api/compatibilidade/{perfil_id}/`.'),
         params=[
             P('q', OpenApiTypes.STR, 'Texto: nome, região ou título do anúncio.', exemplo='praia'),
             P('regiao', OpenApiTypes.STR, 'Região exata. Repetível: `?regiao=A&regiao=B`.', exemplo='Boa Viagem'),
@@ -344,6 +391,19 @@ OPERACOES = {
         resumo='Listar os matches',
         descricao='Matches do usuário logado, por score decrescente. Matches com conta suspensa não aparecem. Sem perfil → lista vazia.',
         ok=(200, MatchSerializer(many=True), 'matches_ok', 'Matches (cada perfil traz os campos públicos).', []), erros=[],
+    ),
+    'compatibilidade_detalhe': dict(
+        metodo='GET', rota='/api/compatibilidade/{perfil_id}/', tag='Descoberta e Matches', quem=COMUM,
+        resumo='Detalhar a compatibilidade com um perfil',
+        descricao=('Score total e o detalhamento dos 7 critérios entre você e um perfil do **tipo oposto** (conta ativa): peso configurado, '
+                   'peso efetivo, valor de 0 a 1 e contribuição de cada um. Inclui a **Afinidade por IA** (cosseno entre os embeddings das bios, '
+                   'calibrado para 0 a 1), os temas de cada bio e os temas em comum. Se um dos perfis não tem embedding (bio com menos de 20 letras) '
+                   'ou a IA está desligada, o critério de IA fica de fora e os outros 6 pesos são renormalizados (`motivo_sem_ia` explica). '
+                   'Nada aqui chama o modelo: os embeddings já estão gravados.'),
+        params=[OpenApiParameter('perfil_id', OpenApiTypes.INT, OpenApiParameter.PATH, description='Id do PERFIL (não do usuário).')],
+        ok=(200, CompatibilidadeResposta, 'compatibilidade_ok', 'Detalhamento do score.', [('compatibilidade_sem_ia', 'Bio curta: critério de IA ignorado')]),
+        erros=[(400, 'compatibilidade_sem_perfil', 'Usuário ainda sem perfil'), (403, 'compatibilidade_mesmo_tipo', 'Perfil do mesmo tipo'),
+               (403, 'compatibilidade_admin', 'Administrador'), (404, 'compatibilidade_inexistente', 'Perfil inexistente ou de conta suspensa')],
     ),
     # ───────── Chat ─────────
     'chat_conversas': dict(
@@ -499,6 +559,27 @@ OPERACOES = {
         ],
         csv_ok=('usuarios_exportar', 'Arquivo CSV de usuários.'), erros=[],
     ),
+    # ───────── Afinidade por IA ─────────
+    'ia_status': dict(
+        metodo='GET', rota='/api/admin/ia/status/', tag='Afinidade por IA', quem=ADMIN,
+        resumo='Situação da IA',
+        descricao=('Modelo, dimensões, se a IA está ligada e disponível, perfis com embedding × total, temas cadastrados (com quantos perfis '
+                   'têm cada um), tempo médio de geração de um embedding e data da última atualização. Não carrega o modelo: `disponivel` '
+                   'reflete o estado atual (carregado, falhou ou baixado e pronto para carregar).'),
+        ok=(200, IAStatusResposta, 'ia_status', 'Situação da IA.', []),
+        erros=[(403, 'ia_status_comum', 'Usuário comum')],
+    ),
+    'ia_testar': dict(
+        metodo='POST', rota='/api/admin/ia/testar/', tag='Afinidade por IA', quem=ADMIN,
+        resumo='Testar a IA com dois textos',
+        descricao=('Compara dois textos (até 1000 caracteres cada) com o modelo local: similaridade bruta (cosseno), afinidade calibrada (0 a 1), '
+                   'temas detectados em cada texto, temas em comum e o tempo de processamento. Registra o log `IA_TESTE` só com o tamanho dos '
+                   'textos e o resultado (**os textos não são gravados**). Com a IA desligada ou o modelo indisponível → 503.'),
+        request=IATestarSerializer, req_ex=[('ia_testar_ok', 'Mesmo interesse com palavras diferentes'), ('ia_testar_opostos', 'Festas × silêncio')],
+        ok=(200, IATestarResposta, 'ia_testar_ok', 'Resultado da comparação.', [('ia_testar_opostos', 'Festas × silêncio')]),
+        erros=[(400, 'ia_testar_invalido', 'Texto vazio ou com mais de 1000 caracteres'), (403, 'ia_testar_comum', 'Usuário comum'),
+               (503, 'ia_testar_indisponivel', 'IA desligada ou modelo indisponível')],
+    ),
     # ───────── Logs ─────────
     'logs_listar': dict(
         metodo='GET', rota='/api/admin/logs/', tag='Logs', quem=ADMIN,
@@ -539,6 +620,7 @@ DESCRICAO_STATUS = {
     403: 'Sem permissão para este recurso.',
     404: 'Recurso não encontrado.',
     429: 'Tentativas de login demais: aguarde o tempo do cabeçalho `Retry-After` (em segundos).',
+    503: 'Serviço indisponível no momento (ex.: modelo de IA não carregado).',
 }
 # Exemplos de 401 reaproveitados em todas as rotas autenticadas
 ERROS_401 = [('me_sem_token', 'Sem token'), ('me_token_invalido', 'Token inválido ou expirado')]

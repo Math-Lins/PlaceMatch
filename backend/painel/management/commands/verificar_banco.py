@@ -15,6 +15,7 @@ from django.db import connection
 from django.db.models import Exists, F, OuterRef, Q
 
 from chat.models import Mensagem
+from ia.models import EmbeddingPerfil
 from logs.models import LogOperacao
 from matches.models import Compatibilidade, Curtida, Match
 from moderacao.models import Denuncia
@@ -45,7 +46,7 @@ def _resultado(nome, queryset, gravidade, limite, dica='', campo='id'):
 
 
 class Command(BaseCommand):
-    help = 'Confere a consistência dos dados (órfãos, matches, pares, compatibilidade, mensagens, perfis) e imprime um relatório.'
+    help = 'Confere a consistência dos dados (órfãos, matches, pares, compatibilidade, mensagens, perfis, embeddings) e imprime um relatório.'
 
     def add_arguments(self, parser):
         parser.add_argument('--detalhes', action='store_true', help='lista os ids afetados')
@@ -72,6 +73,7 @@ class Command(BaseCommand):
             ('Denúncia → denunciante', _orfaos(Denuncia, 'denunciante_id', Usuario)),
             ('Denúncia → resolvida_por', _orfaos(Denuncia, 'resolvida_por_id', Usuario)),
             ('Log → usuário', _orfaos(LogOperacao, 'usuario_id', Usuario)),
+            ('Embedding IA → perfil', _orfaos(EmbeddingPerfil, 'perfil_id', Perfil)),
         ]
         total = sum(qs.count() for _, qs in orfaos)
         detalhe = [f'{nome}={qs.count()}' for nome, qs in orfaos if qs.count()]
@@ -142,6 +144,18 @@ class Command(BaseCommand):
         suspensos = Match.objects.filter(Q(perfil_a__usuario__is_active=False) | Q(perfil_b__usuario__is_active=False))
         r.append(_resultado('Matches com conta suspensa (ocultos na API)', suspensos, 'AVISO', limite,
                             'Esperado enquanto a conta estiver suspensa.'))
+
+        # 9. Afinidade por IA: perfis com bio suficiente (20+ letras) sem embedding do modelo atual
+        from ia import servico
+        if servico.habilitada():
+            com_embedding = set(EmbeddingPerfil.objects.filter(modelo=servico.nome_modelo()).values_list('perfil_id', flat=True))
+            sem_embedding = sorted(
+                p.id for p in Perfil.objects.select_related('usuario').only('id', 'bio', 'titulo_anuncio', 'descricao_imovel', 'usuario__tipo')
+                if p.id not in com_embedding and servico.texto_suficiente(servico.texto_do_perfil(p))
+            )
+            r.append(Resultado('Perfis com bio suficiente sem embedding (Afinidade por IA)', 'AVISO', len(sem_embedding),
+                               sem_embedding[:limite],
+                               'Ficam sem o 7º critério (pesos renormalizados). Corrija com: python manage.py gerar_embeddings'))
         return r
 
     # ── saída ───────────────────────────────────────────────────────────────────
@@ -156,6 +170,7 @@ class Command(BaseCommand):
             'compatibilidades': Compatibilidade.objects.count(), 'curtidas': Curtida.objects.count(),
             'matches': Match.objects.count(), 'mensagens': Mensagem.objects.count(),
             'denuncias': Denuncia.objects.count(), 'logs': LogOperacao.objects.count(),
+            'embeddings_ia': EmbeddingPerfil.objects.count(),
         }
         self.stdout.write('Registros: ' + ' | '.join(f'{k}={v}' for k, v in contagens.items()))
         self.stdout.write('')

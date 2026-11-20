@@ -6,3 +6,5 @@ venv/
 .venv/
 db.sqlite3
 .git/
+# Modelo de IA (~230 MB): baixado por manage.py baixar_modelo_ia; no Docker de desenvolvimento chega pelo volume
+.modelos/

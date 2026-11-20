@@ -75,48 +75,48 @@ paths:
                 ExemploReal:
                   value:
                     kpis:
-                      usuarios_total: 6
+                      usuarios_total: 7
                       usuarios_por_tipo:
-                        oferecendo_vaga: 2
+                        oferecendo_vaga: 3
                         buscando_vaga: 3
                         administrador: 1
                       usuarios_suspensos: 0
-                      perfis_total: 3
+                      perfis_total: 4
                       curtidas_total: 2
                       recusas_total: 1
                       matches_total: 1
                       taxa_match: 100.0
                       mensagens_total: 2
                       conversas_ativas: 1
-                      score_medio: 0.9295
+                      score_medio: 0.8436
                       denuncias_pendentes: 0
                     series:
                       matches_por_dia:
-                      - data: '2026-10-20'
-                        total: 0
-                      - data: '2026-10-21'
-                        total: 0
                       - data: '2026-10-22'
+                        total: 0
+                      - data: '2026-10-23'
+                        total: 0
+                      - data: '2026-10-24'
                         total: 0
                       curtidas_por_dia:
-                      - data: '2026-10-20'
-                        total: 0
-                      - data: '2026-10-21'
-                        total: 0
                       - data: '2026-10-22'
+                        total: 0
+                      - data: '2026-10-23'
+                        total: 0
+                      - data: '2026-10-24'
                         total: 0
                       mensagens_por_dia:
-                      - data: '2026-10-20'
-                        total: 0
-                      - data: '2026-10-21'
-                        total: 0
                       - data: '2026-10-22'
+                        total: 0
+                      - data: '2026-10-23'
+                        total: 0
+                      - data: '2026-10-24'
                         total: 0
                     top_regioes:
                     - regiao: Boa Viagem
-                      perfis: 2
+                      perfis: 3
                       matches: 1
-                      score_medio: 0.9295
+                      score_medio: 0.8436
                     - regiao: Casa Forte
                       perfis: 1
                       matches: 0
@@ -133,46 +133,46 @@ paths:
                 ComFiltros:
                   value:
                     kpis:
-                      usuarios_total: 6
+                      usuarios_total: 7
                       usuarios_por_tipo:
-                        oferecendo_vaga: 2
+                        oferecendo_vaga: 3
                       usuarios_suspensos: 0
-                      perfis_total: 1
+                      perfis_total: 2
                       curtidas_total: 1
                       recusas_total: 0
                       matches_total: 1
                       taxa_match: 100.0
                       mensagens_total: 2
                       conversas_ativas: 1
-                      score_medio: 0.9295
+                      score_medio: 0.8436
                       denuncias_pendentes: 0
                     series:
                       matches_por_dia:
-                      - data: '2026-10-20'
-                        total: 0
-                      - data: '2026-10-21'
-                        total: 0
                       - data: '2026-10-22'
+                        total: 0
+                      - data: '2026-10-23'
+                        total: 0
+                      - data: '2026-10-24'
                         total: 0
                       curtidas_por_dia:
-                      - data: '2026-10-20'
-                        total: 0
-                      - data: '2026-10-21'
-                        total: 0
                       - data: '2026-10-22'
+                        total: 0
+                      - data: '2026-10-23'
+                        total: 0
+                      - data: '2026-10-24'
                         total: 0
                       mensagens_por_dia:
-                      - data: '2026-10-20'
-                        total: 0
-                      - data: '2026-10-21'
-                        total: 0
                       - data: '2026-10-22'
+                        total: 0
+                      - data: '2026-10-23'
+                        total: 0
+                      - data: '2026-10-24'
                         total: 0
                     top_regioes:
                     - regiao: Boa Viagem
-                      perfis: 2
+                      perfis: 3
                       matches: 1
-                      score_medio: 0.9295
+                      score_medio: 0.8436
                     - regiao: Casa Forte
                       perfis: 1
                       matches: 0
@@ -238,6 +238,237 @@ paths:
                   summary: Usuário comum
           description: Sem permissão para este recurso.
       x-quem-pode: Somente administrador
+  /api/admin/ia/status/:
+    get:
+      operationId: ia_status
+      description: 'Modelo, dimensões, se a IA está ligada e disponível, perfis com
+        embedding × total, temas cadastrados (com quantos perfis têm cada um), tempo
+        médio de geração de um embedding e data da última atualização. Não carrega
+        o modelo: `disponivel` reflete o estado atual (carregado, falhou ou baixado
+        e pronto para carregar).'
+      summary: Situação da IA
+      tags:
+      - Afinidade por IA
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IAStatus'
+              examples:
+                ExemploReal:
+                  value:
+                    habilitada: true
+                    disponivel: true
+                    situacao: disponivel
+                    erro: null
+                    modelo: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+                    dimensoes: 384
+                    modelo_baixado: true
+                    tempo_carregamento_ms: 5221.6
+                    perfis_total: 4
+                    perfis_com_texto_suficiente: 3
+                    perfis_com_embedding: 3
+                    perfis_sem_embedding_com_texto: 0
+                    temas_cadastrados: 16
+                    temas:
+                    - id: culinaria
+                      nome: Culinária
+                      perfis: 1
+                    - id: estudos
+                      nome: Estudos
+                      perfis: 0
+                    - id: trabalho_remoto
+                      nome: Trabalho remoto
+                      perfis: 2
+                    tempo_medio_geracao_ms: 37.08
+                    ultima_atualizacao: '2026-11-20T15:00:48.977342Z'
+                    calibracao:
+                      peso: 0.1
+                      cosseno_piso: 0.2
+                      cosseno_teto: 0.65
+                      limiar_tema: 0.45
+                      margem_tema: 0.13
+                      max_temas: 5
+                      min_caracteres_texto: 20
+                  summary: Exemplo real
+          description: Situação da IA.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                UsuárioComum:
+                  value:
+                    detail: Você não tem permissão para executar essa ação.
+                  summary: Usuário comum
+          description: Sem permissão para este recurso.
+      x-quem-pode: Somente administrador
+  /api/admin/ia/testar/:
+    post:
+      operationId: ia_testar
+      description: 'Compara dois textos (até 1000 caracteres cada) com o modelo local:
+        similaridade bruta (cosseno), afinidade calibrada (0 a 1), temas detectados
+        em cada texto, temas em comum e o tempo de processamento. Registra o log `IA_TESTE`
+        só com o tamanho dos textos e o resultado (**os textos não são gravados**).
+        Com a IA desligada ou o modelo indisponível → 503.'
+      summary: Testar a IA com dois textos
+      tags:
+      - Afinidade por IA
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IATestarRequest'
+            examples:
+              MesmoInteresseComPalavrasDiferentes:
+                value:
+                  texto_a: Adoro cozinhar para os amigos e testar receitas novas.
+                  texto_b: Faço jantares em casa no fim de semana e sempre sobra comida.
+                summary: Mesmo interesse com palavras diferentes
+              Festas×Silêncio:
+                value:
+                  texto_a: Adoro festas e baladas, minha casa vive cheia de gente
+                    com música alta.
+                  texto_b: Preciso de silêncio e de uma casa tranquila; durmo cedo
+                    e evito barulho.
+                summary: Festas × silêncio
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IATestarRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IATestarRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IATestarResposta'
+              examples:
+                ExemploReal:
+                  value:
+                    similaridade: 0.4829
+                    afinidade: 0.6287
+                    temas_a:
+                    - id: culinaria
+                      nome: Culinária
+                    temas_b:
+                    - id: culinaria
+                      nome: Culinária
+                    - id: trabalho_remoto
+                      nome: Trabalho remoto
+                    - id: organizacao
+                      nome: Organização e limpeza
+                    temas_em_comum:
+                    - id: culinaria
+                      nome: Culinária
+                    tempo_ms: 52.6
+                    modelo: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+                  summary: Exemplo real
+                Festas×Silêncio:
+                  value:
+                    similaridade: 0.2848
+                    afinidade: 0.1884
+                    temas_a:
+                    - id: musica
+                      nome: Música
+                    - id: festas
+                      nome: Festas e vida social
+                    temas_b:
+                    - id: silencio
+                      nome: Silêncio e tranquilidade
+                    temas_em_comum: []
+                    tempo_ms: 65.9
+                    modelo: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+                  summary: Festas × silêncio
+          description: Resultado da comparação.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                TextoVazioOuComMaisDe1000Caracteres:
+                  value:
+                    texto_a:
+                    - Este campo não pode ficar em branco.
+                    texto_b:
+                    - Certifique-se de que este campo não tenha mais de 1000 caracteres.
+                  summary: Texto vazio ou com mais de 1000 caracteres
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                UsuárioComum:
+                  value:
+                    detail: Você não tem permissão para executar essa ação.
+                  summary: Usuário comum
+          description: Sem permissão para este recurso.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                IADesligadaOuModeloIndisponível:
+                  value:
+                    detail: A Afinidade por IA está desligada neste servidor (IA_HABILITADA=False).
+                  summary: IA desligada ou modelo indisponível
+          description: 'Serviço indisponível no momento (ex.: modelo de IA não carregado).'
+      x-quem-pode: Somente administrador
   /api/admin/logs/:
     get:
       operationId: logs_listar
@@ -255,6 +486,7 @@ paths:
           - CURTIDA
           - DENUNCIA_CRIADA
           - DENUNCIA_RESOLVIDA
+          - IA_TESTE
           - LOGIN
           - LOGIN_FALHA
           - MATCH_CRIADO
@@ -348,8 +580,8 @@ paths:
                     count: 1
                     page: 1
                     results:
-                    - id: 26
-                      data_hora: '2026-11-18T12:36:15.187486Z'
+                    - id: 29
+                      data_hora: '2026-11-20T15:00:50.620168Z'
                       usuario:
                         id: 3
                         nome: Bruno Lima
@@ -359,7 +591,7 @@ paths:
                       entidade: match
                       entidade_id: 1
                       detalhes:
-                        score: 0.9295
+                        score: 0.8436
                         match_id: 1
                       ip: 127.0.0.1
                   summary: Exemplo real
@@ -368,8 +600,8 @@ paths:
                     count: 10
                     page: 1
                     results:
-                    - id: 29
-                      data_hora: '2026-11-18T12:36:16.701747Z'
+                    - id: 32
+                      data_hora: '2026-11-20T15:00:53.635089Z'
                       usuario:
                         id: 2
                         nome: Ana Souza
@@ -395,7 +627,8 @@ paths:
                     detail: 'Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO,
                       PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO,
                       MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA,
-                      USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA.'
+                      USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA,
+                      IA_TESTE.'
                   summary: Ação inválida
           description: Dados inválidos (mensagem em português, por campo ou em `detail`).
         '401':
@@ -436,6 +669,7 @@ paths:
           - CURTIDA
           - DENUNCIA_CRIADA
           - DENUNCIA_RESOLVIDA
+          - IA_TESTE
           - LOGIN
           - LOGIN_FALHA
           - MATCH_CRIADO
@@ -509,10 +743,10 @@ paths:
               examples:
                 ExemploReal(primeirasLinhas):
                   value: "\uFEFFID;Data/Hora;Usuário ID;Usuário Nome;Usuário E-mail;Ação;Descrição
-                    da Ação;Entidade;ID da Entidade;Detalhes;IP\n14;18/11/2026 09:36:07;2;Ana
-                    Souza;ana.souza@exemplo.com;LOGIN;Login;usuario;2;;127.0.0.1\n13;18/11/2026
-                    09:36:05;1;e2e-admin@teste.com;e2e-admin@teste.com;LOGIN;Login;usuario;1;;127.0.0.1\n12;18/11/2026
-                    09:36:03;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;;127.0.0.1"
+                    da Ação;Entidade;ID da Entidade;Detalhes;IP\n16;20/11/2026 12:00:33;2;Ana
+                    Souza;ana.souza@exemplo.com;LOGIN;Login;usuario;2;;127.0.0.1\n15;20/11/2026
+                    12:00:30;1;e2e-admin@teste.com;e2e-admin@teste.com;LOGIN;Login;usuario;1;;127.0.0.1\n14;20/11/2026
+                    12:00:26;6;Fábio Rocha;fabio.rocha@exemplo.com;LOGIN;Login;usuario;6;;127.0.0.1"
                   summary: Exemplo real (primeiras linhas)
           description: Arquivo CSV de logs.
         '400':
@@ -526,7 +760,8 @@ paths:
                     detail: 'Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO,
                       PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO,
                       MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA,
-                      USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA.'
+                      USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA,
+                      IA_TESTE.'
                   summary: Ação inválida
           description: Dados inválidos (mensagem em português, por campo ou em `detail`).
         '401':
@@ -635,8 +870,8 @@ paths:
                       status: pendente
                       resolvida_por: null
                       resolucao: ''
-                      criada_em: '2026-11-18T12:36:16.697460Z'
-                      atualizada_em: '2026-11-18T12:36:16.697481Z'
+                      criada_em: '2026-11-20T15:00:53.626645Z'
+                      atualizada_em: '2026-11-20T15:00:53.626645Z'
                   summary: Exemplo real
           description: Denúncias.
         '400':
@@ -1124,22 +1359,22 @@ paths:
                     - Perfil A
                     - Perfil B
                     linhas:
-                    - - '2026-11-18'
+                    - - '2026-11-20'
                       - Ana Souza
                       - Bruno Lima
                     totais:
                       matches: 1
                       mensagens: 2
                     filtros_aplicados: {}
-                    gerado_em: '2026-11-18T12:36:23.279442Z'
+                    gerado_em: '2026-11-20T15:01:06.237692Z'
                   summary: Exemplo real
             text/csv:
               schema:
                 type: string
               examples:
                 RelatórioDeUsuáriosEmCSV:
-                  value: "\uFEFFData de Cadastro;Nome;E-mail;Tipo;Região;Tem Perfil\n18/11/2026;e2e-admin@teste.com;e2e-admin@teste.com;Administrador;;Não\n18/11/2026;Ana
-                    Souza;ana.souza@exemplo.com;Buscando vaga;Boa Viagem;Sim\n18/11/2026;Bruno
+                  value: "\uFEFFData de Cadastro;Nome;E-mail;Tipo;Região;Tem Perfil\n20/11/2026;e2e-admin@teste.com;e2e-admin@teste.com;Administrador;;Não\n20/11/2026;Ana
+                    Souza;ana.souza@exemplo.com;Buscando vaga;Boa Viagem;Sim\n20/11/2026;Bruno
                     Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;Sim"
                   summary: Relatório de usuários em CSV
           description: Relatório em JSON (ou CSV com `formato=csv`).
@@ -1281,12 +1516,12 @@ paths:
                     count: 3
                     page: 1
                     results:
-                    - id: 6
+                    - id: 7
                       nome: Eva Martins
                       email: eva.martins@exemplo.com
                       tipo: buscando_vaga
                       regiao: null
-                      data_cadastro: '2026-11-18T12:36:07.991384Z'
+                      data_cadastro: '2026-11-20T15:00:34.035940Z'
                       tem_perfil: false
                       ativo: true
                     - id: 5
@@ -1294,7 +1529,7 @@ paths:
                       email: diego.alves@exemplo.com
                       tipo: buscando_vaga
                       regiao: null
-                      data_cadastro: '2026-11-18T12:35:44.720289Z'
+                      data_cadastro: '2026-11-20T14:59:47.828049Z'
                       tem_perfil: false
                       ativo: true
                   summary: Exemplo real
@@ -1406,10 +1641,10 @@ paths:
                 type: string
               examples:
                 ExemploReal(primeirasLinhas):
-                  value: "\uFEFFID;Nome;E-mail;Tipo;Região;Data de Cadastro;Tem Perfil\n6;Eva
-                    Martins;eva.martins@exemplo.com;Buscando vaga;;18/11/2026;Não\n5;Diego
-                    Alves;diego.alves@exemplo.com;Buscando vaga;;18/11/2026;Não\n4;Carla
-                    Dias;carla.dias@exemplo.com;Oferecendo vaga;Casa Forte;18/11/2026;Sim"
+                  value: "\uFEFFID;Nome;E-mail;Tipo;Região;Data de Cadastro;Tem Perfil\n7;Eva
+                    Martins;eva.martins@exemplo.com;Buscando vaga;;20/11/2026;Não\n6;Fábio
+                    Rocha;fabio.rocha@exemplo.com;Oferecendo vaga;Boa Viagem;20/11/2026;Sim\n5;Diego
+                    Alves;diego.alves@exemplo.com;Buscando vaga;;20/11/2026;Não"
                   summary: Exemplo real (primeiras linhas)
           description: Arquivo CSV de usuários.
         '401':
@@ -1907,6 +2142,178 @@ paths:
                   summary: E-mail mal formado
           description: Dados inválidos (mensagem em português, por campo ou em `detail`).
       x-quem-pode: Público (sem login)
+  /api/compatibilidade/{perfil_id}/:
+    get:
+      operationId: compatibilidade_detalhe
+      description: 'Score total e o detalhamento dos 7 critérios entre você e um perfil
+        do **tipo oposto** (conta ativa): peso configurado, peso efetivo, valor de
+        0 a 1 e contribuição de cada um. Inclui a **Afinidade por IA** (cosseno entre
+        os embeddings das bios, calibrado para 0 a 1), os temas de cada bio e os temas
+        em comum. Se um dos perfis não tem embedding (bio com menos de 20 letras)
+        ou a IA está desligada, o critério de IA fica de fora e os outros 6 pesos
+        são renormalizados (`motivo_sem_ia` explica). Nada aqui chama o modelo: os
+        embeddings já estão gravados.'
+      summary: Detalhar a compatibilidade com um perfil
+      parameters:
+      - in: path
+        name: perfil_id
+        schema:
+          type: integer
+        description: Id do PERFIL (não do usuário).
+        required: true
+      tags:
+      - Descoberta e Matches
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompatibilidadeDetalhe'
+              examples:
+                ExemploReal:
+                  value:
+                    perfil_id: 2
+                    nome: Bruno Lima
+                    score: 0.8436
+                    criterios:
+                    - criterio: orcamento
+                      nome: Orçamento
+                      peso: 0.23
+                      peso_efetivo: 0.23
+                      valor: 0.8182
+                      contribuicao: 0.1882
+                      considerado: true
+                    - criterio: regiao
+                      nome: Região
+                      peso: 0.14
+                      peso_efetivo: 0.14
+                      valor: 1.0
+                      contribuicao: 0.14
+                      considerado: true
+                    - criterio: rotina
+                      nome: Rotina
+                      peso: 0.14
+                      peso_efetivo: 0.14
+                      valor: 1.0
+                      contribuicao: 0.14
+                      considerado: true
+                    afinidade_ia: 0.0538
+                    similaridade_ia: 0.2242
+                    temas_em_comum: []
+                    temas_meu_perfil:
+                    - id: culinaria
+                      nome: Culinária
+                    temas_outro_perfil:
+                    - id: trabalho_remoto
+                      nome: Trabalho remoto
+                    - id: silencio
+                      nome: Silêncio e tranquilidade
+                    - id: organizacao
+                      nome: Organização e limpeza
+                    ia_disponivel: true
+                    motivo_sem_ia: null
+                  summary: Exemplo real
+                BioCurta:CritérioDeIAIgnorado:
+                  value:
+                    perfil_id: 4
+                    nome: Fábio Rocha
+                    score: 0.9313
+                    criterios:
+                    - criterio: orcamento
+                      nome: Orçamento
+                      peso: 0.23
+                      peso_efetivo: 0.2556
+                      valor: 0.8182
+                      contribuicao: 0.2091
+                      considerado: true
+                    - criterio: regiao
+                      nome: Região
+                      peso: 0.14
+                      peso_efetivo: 0.1556
+                      valor: 1.0
+                      contribuicao: 0.1556
+                      considerado: true
+                    - criterio: rotina
+                      nome: Rotina
+                      peso: 0.14
+                      peso_efetivo: 0.1556
+                      valor: 1.0
+                      contribuicao: 0.1556
+                      considerado: true
+                    afinidade_ia: null
+                    similaridade_ia: null
+                    temas_em_comum: []
+                    temas_meu_perfil:
+                    - id: culinaria
+                      nome: Culinária
+                    temas_outro_perfil: []
+                    ia_disponivel: true
+                    motivo_sem_ia: Este perfil ainda não tem análise de IA (bio muito
+                      curta); o score usa os outros 6 critérios.
+                  summary: 'Bio curta: critério de IA ignorado'
+          description: Detalhamento do score.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                UsuárioAindaSemPerfil:
+                  value:
+                    detail: Você precisa criar um perfil antes de consultar a compatibilidade.
+                  summary: Usuário ainda sem perfil
+          description: Dados inválidos (mensagem em português, por campo ou em `detail`).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                SemToken:
+                  value:
+                    detail: As credenciais de autenticação não foram fornecidas.
+                  summary: Sem token
+                TokenInválidoOuExpirado:
+                  value:
+                    detail: O token informado não é válido para qualquer tipo de token
+                    code: token_not_valid
+                    messages:
+                    - token_class: AccessToken
+                      token_type: access
+                      message: O token é inválido
+                  summary: Token inválido ou expirado
+          description: 'Não autenticado: token ausente, inválido ou expirado (ou credenciais
+            inválidas no login).'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                PerfilDoMesmoTipo:
+                  value:
+                    detail: Você só pode consultar a compatibilidade com perfis do
+                      tipo oposto.
+                  summary: Perfil do mesmo tipo
+                Administrador:
+                  value:
+                    detail: O administrador não participa deste recurso.
+          description: Sem permissão para este recurso.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroDetalhe'
+              examples:
+                PerfilInexistenteOuDeContaSuspensa:
+                  value:
+                    detail: Perfil não encontrado.
+                  summary: Perfil inexistente ou de conta suspensa
+          description: Recurso não encontrado.
+      x-quem-pode: Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador
+        recebe 403
   /api/conversas/:
     get:
       operationId: chat_conversas
@@ -1966,10 +2373,10 @@ paths:
                         orcamento_max: '1300.00'
                         aceita_pets: true
                         fumante: false
-                      score: 0.9295
+                      score: 0.8436
                       ultima_mensagem:
                         conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                        data_envio: '2026-11-18T12:36:15.803928Z'
+                        data_envio: '2026-11-20T15:00:52.432878Z'
                         remetente_id: 2
                       nao_lidas: 1
                   summary: Exemplo real
@@ -1996,10 +2403,10 @@ paths:
                         orcamento_max: '1300.00'
                         aceita_pets: true
                         fumante: false
-                      score: 0.9295
+                      score: 0.8436
                       ultima_mensagem:
                         conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                        data_envio: '2026-11-18T12:36:15.803928Z'
+                        data_envio: '2026-11-20T15:00:52.432878Z'
                         remetente_id: 2
                       nao_lidas: 1
                   summary: Com filtros
@@ -2138,8 +2545,8 @@ paths:
                         foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
                         tipo: oferecendo_vaga
                         usuario_id: 3
-                      score: 0.9295
-                      data_match: '2026-11-18T09:36:15.179370-03:00'
+                      score: 0.8436
+                      data_match: '2026-11-20T12:00:50.568916-03:00'
                   summary: 'Curtida mútua: match criado'
           description: Avaliação registrada (sem match ainda).
         '400':
@@ -2219,7 +2626,10 @@ paths:
       operationId: descoberta_listar
       description: 'Lista os perfis do **tipo oposto** com o score de compatibilidade
         (0 a 1), por score decrescente. Exige perfil criado. Não aparecem: o próprio
-        perfil, perfis já avaliados, perfis já em match e contas suspensas.'
+        perfil, perfis já avaliados, perfis já em match e contas suspensas. Cada item
+        traz também `afinidade_ia` (afinidade entre as bios calculada pelo modelo
+        de IA local, 0 a 1, ou null quando uma das bios é curta ou a IA está desligada)
+        e `temas_em_comum`. O detalhamento do score está em `GET /api/compatibilidade/{perfil_id}/`.'
       summary: Descobrir perfis compatíveis
       parameters:
       - in: query
@@ -2316,7 +2726,33 @@ paths:
               examples:
                 ExemploReal:
                   value:
-                  - - id: 2
+                  - - id: 4
+                      nome: Fábio Rocha
+                      idade: 29
+                      regiao: Boa Viagem
+                      bio: Oi!
+                      orcamento_min: '800.00'
+                      orcamento_max: '1300.00'
+                      fumante: false
+                      aceita_pets: true
+                      tolerancia_bagunca: 2
+                      nivel_organizacao: 4
+                      perfil_horario: flexivel
+                      nivel_ruido: 2
+                      nivel_social: 3
+                      aceita_visitas: as_vezes
+                      tipo_imovel: apartamento
+                      qtd_moradores: 2
+                      titulo_anuncio: ''
+                      descricao_imovel: ''
+                      fotos_imovel: []
+                      foto_perfil_url: ''
+                      tipo: oferecendo_vaga
+                      score: 0.9313
+                      usuario_id: 6
+                      afinidade_ia: null
+                      temas_em_comum: []
+                    - id: 2
                       nome: Bruno Lima
                       idade: 29
                       regiao: Boa Viagem
@@ -2341,8 +2777,10 @@ paths:
                       - https://exemplo.com/fotos/sala.jpg
                       foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
                       tipo: oferecendo_vaga
-                      score: 0.9295
+                      score: 0.8436
                       usuario_id: 3
+                      afinidade_ia: 0.0538
+                      temas_em_comum: []
                     - id: 3
                       nome: Carla Dias
                       idade: 29
@@ -2366,8 +2804,10 @@ paths:
                       fotos_imovel: []
                       foto_perfil_url: ''
                       tipo: oferecendo_vaga
-                      score: 0.7295
+                      score: 0.6608
                       usuario_id: 4
+                      afinidade_ia: 0.0764
+                      temas_em_comum: []
                   summary: Exemplo real
                 ComFiltros:
                   value:
@@ -2396,8 +2836,10 @@ paths:
                       - https://exemplo.com/fotos/sala.jpg
                       foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
                       tipo: oferecendo_vaga
-                      score: 0.9295
+                      score: 0.8436
                       usuario_id: 3
+                      afinidade_ia: 0.0538
+                      temas_em_comum: []
                   summary: Com filtros
           description: Perfis compatíveis (`score` de 0 a 1).
         '400':
@@ -2522,8 +2964,8 @@ paths:
                         foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
                         tipo: oferecendo_vaga
                         usuario_id: 3
-                      score: 0.9295
-                      data_match: '2026-11-18T09:36:15.179370-03:00'
+                      score: 0.8436
+                      data_match: '2026-11-20T12:00:50.568916-03:00'
                   summary: Exemplo real
           description: Matches (cada perfil traz os campos públicos).
         '401':
@@ -2588,13 +3030,13 @@ paths:
                       match_id: 1
                       remetente_id: 1
                       conteudo: Oi, Bruno! O quarto ainda está disponível?
-                      data_envio: '2026-11-18T09:36:15.718191-03:00'
+                      data_envio: '2026-11-20T12:00:52.314104-03:00'
                       lida: false
                     - id: 2
                       match_id: 1
                       remetente_id: 2
                       conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                      data_envio: '2026-11-18T09:36:15.803928-03:00'
+                      data_envio: '2026-11-20T12:00:52.432878-03:00'
                       lida: true
                   summary: Exemplo real
                 SóAsNovas(`?apos=1`):
@@ -2603,7 +3045,7 @@ paths:
                       match_id: 1
                       remetente_id: 2
                       conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                      data_envio: '2026-11-18T09:36:15.803928-03:00'
+                      data_envio: '2026-11-20T12:00:52.432878-03:00'
                       lida: true
                   summary: Só as novas (`?apos=1`)
           description: Mensagens.
@@ -2708,7 +3150,7 @@ paths:
                     match_id: 1
                     remetente_id: 1
                     conteudo: Oi, Bruno! O quarto ainda está disponível?
-                    data_envio: '2026-11-18T09:36:15.718191-03:00'
+                    data_envio: '2026-11-20T12:00:52.314104-03:00'
                     lida: false
                   summary: Exemplo real
                 RespostaDaOutraPessoa:
@@ -2717,7 +3159,7 @@ paths:
                     match_id: 1
                     remetente_id: 2
                     conteudo: Oi, Ana! Está sim. Quer visitar amanhã?
-                    data_envio: '2026-11-18T09:36:15.803928-03:00'
+                    data_envio: '2026-11-20T12:00:52.432878-03:00'
                     lida: false
                   summary: Resposta da outra pessoa
           description: Mensagem criada.
@@ -2823,7 +3265,7 @@ paths:
                     denunciado: 4
                     motivo: spam
                     status: pendente
-                    criada_em: '2026-11-18T12:36:16.697460Z'
+                    criada_em: '2026-11-20T15:00:53.626645Z'
                   summary: Exemplo real
           description: Denúncia criada.
         '400':
@@ -2944,7 +3386,9 @@ paths:
       description: Cria o perfil do usuário logado (um por usuário). Quem oferece
         vaga pode enviar também os campos do anúncio (`titulo_anuncio`, `descricao_imovel`,
         `fotos_imovel`, `foto_perfil_url`). Ao salvar, as compatibilidades com os
-        perfis do tipo oposto são recalculadas.
+        perfis do tipo oposto são recalculadas. Com a bio (+ anúncio) de 20 letras
+        ou mais, o modelo de IA local gera o embedding usado no critério "Afinidade
+        de perfil (IA)"; o texto não sai do servidor.
       summary: Criar o perfil
       tags:
       - Perfis
@@ -3130,7 +3574,9 @@ paths:
       description: 'Permitido para: o próprio perfil, perfis do **tipo oposto** (os
         da Descoberta), perfis de quem tem match com você e o administrador. Qualquer
         outro caso → 403. Perfil de conta suspensa (de outra pessoa) → 404; só o administrador
-        o enxerga.'
+        o enxerga. `afinidade_ia` (0 a 1 ou null) e `temas_em_comum` comparam a bio
+        do perfil com a sua; vêm `null`/`[]` no próprio perfil, para o administrador
+        e quando uma das bios tem menos de 20 letras.'
       summary: Consultar um perfil
       parameters:
       - in: path
@@ -3148,7 +3594,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Perfil'
+                $ref: '#/components/schemas/PerfilDetalhe'
               examples:
                 ExemploReal:
                   value:
@@ -3177,8 +3623,11 @@ paths:
                     - https://exemplo.com/fotos/quarto.jpg
                     - https://exemplo.com/fotos/sala.jpg
                     foto_perfil_url: https://exemplo.com/fotos/bruno.jpg
+                    afinidade_ia: 0.0
+                    temas_em_comum: []
                   summary: Exemplo real
-          description: Perfil.
+          description: Perfil (com `afinidade_ia` e `temas_em_comum` em relação a
+            você).
         '401':
           content:
             application/json:
@@ -3559,6 +4008,62 @@ components:
         * `raramente` - Raramente
         * `as_vezes` - Às vezes
         * `frequentemente` - Frequentemente
+    CompatibilidadeDetalhe:
+      type: object
+      properties:
+        perfil_id:
+          type: integer
+        nome:
+          type: string
+        score:
+          type: number
+          format: double
+          description: Score total, de 0 a 1 (o mesmo gravado e mostrado na Descoberta).
+        criterios:
+          type: array
+          items:
+            $ref: '#/components/schemas/CriterioCompatibilidade'
+        afinidade_ia:
+          type: number
+          format: double
+          nullable: true
+          description: Afinidade calibrada entre as bios, de 0 a 1.
+        similaridade_ia:
+          type: number
+          format: double
+          nullable: true
+          description: Cosseno bruto entre os dois embeddings (-1 a 1).
+        temas_em_comum:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tema'
+        temas_meu_perfil:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tema'
+        temas_outro_perfil:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tema'
+        ia_disponivel:
+          type: boolean
+          description: IA ligada e modelo carregado (ou baixado e pronto para carregar).
+        motivo_sem_ia:
+          type: string
+          nullable: true
+          description: Quando `afinidade_ia` é null, explica o porquê.
+      required:
+      - afinidade_ia
+      - criterios
+      - ia_disponivel
+      - motivo_sem_ia
+      - nome
+      - perfil_id
+      - score
+      - similaridade_ia
+      - temas_em_comum
+      - temas_meu_perfil
+      - temas_outro_perfil
     ContaResposta:
       type: object
       properties:
@@ -3669,6 +4174,64 @@ components:
       - conteudo
       - data_envio
       - remetente_id
+    CriterioCompatibilidade:
+      type: object
+      properties:
+        criterio:
+          $ref: '#/components/schemas/CriterioEnum'
+        nome:
+          type: string
+          description: Nome do critério para exibição.
+        peso:
+          type: number
+          format: double
+          description: Peso configurado (os 7 somam 1).
+        peso_efetivo:
+          type: number
+          format: double
+          description: Peso usado neste par. Sem a afinidade por IA, os outros 6 são
+            divididos por 0,90.
+        valor:
+          type: number
+          format: double
+          nullable: true
+          description: Semelhança no critério, de 0 a 1 (`null` quando o critério
+            não entrou).
+        contribuicao:
+          type: number
+          format: double
+          description: peso_efetivo × valor; a soma das contribuições é o score (±
+            arredondamento).
+        considerado:
+          type: boolean
+          description: false só para `afinidade_ia` sem embedding de um dos perfis
+            ou com a IA desligada.
+      required:
+      - considerado
+      - contribuicao
+      - criterio
+      - nome
+      - peso
+      - peso_efetivo
+      - valor
+    CriterioEnum:
+      enum:
+      - orcamento
+      - regiao
+      - rotina
+      - habitos
+      - moradia
+      - idade
+      - afinidade_ia
+      type: string
+      description: |-
+        * `orcamento` - orcamento
+        * `regiao` - regiao
+        * `rotina` - rotina
+        * `habitos` - habitos
+        * `moradia` - moradia
+        * `idade` - idade
+        * `afinidade_ia` - afinidade_ia
     CurtidaRequisicaoRequest:
       type: object
       properties:
@@ -3908,6 +4471,139 @@ components:
       required:
       - faixa
       - total
+    IAStatus:
+      type: object
+      properties:
+        habilitada:
+          type: boolean
+          description: IA_HABILITADA.
+        disponivel:
+          type: boolean
+        situacao:
+          allOf:
+          - $ref: '#/components/schemas/SituacaoEnum'
+          description: |-
+            Estado do modelo neste processo do servidor.
+
+            * `nao_carregado` - nao_carregado
+            * `disponivel` - disponivel
+            * `indisponivel` - indisponivel
+            * `desabilitada` - desabilitada
+        erro:
+          type: string
+          nullable: true
+          description: Última falha ao carregar o modelo.
+        modelo:
+          type: string
+        dimensoes:
+          type: integer
+        modelo_baixado:
+          type: boolean
+        tempo_carregamento_ms:
+          type: number
+          format: double
+          nullable: true
+        perfis_total:
+          type: integer
+        perfis_com_texto_suficiente:
+          type: integer
+          description: Bio (+ anúncio) com 20+ letras.
+        perfis_com_embedding:
+          type: integer
+        perfis_sem_embedding_com_texto:
+          type: integer
+          description: Corrija com `gerar_embeddings`.
+        temas_cadastrados:
+          type: integer
+        temas:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemaContagem'
+        tempo_medio_geracao_ms:
+          type: number
+          format: double
+          nullable: true
+        ultima_atualizacao:
+          type: string
+          format: date-time
+          nullable: true
+        calibracao:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+          description: Peso, piso e teto do cosseno e limiares dos temas (matches/algoritmo/config.py).
+      required:
+      - calibracao
+      - dimensoes
+      - disponivel
+      - erro
+      - habilitada
+      - modelo
+      - modelo_baixado
+      - perfis_com_embedding
+      - perfis_com_texto_suficiente
+      - perfis_sem_embedding_com_texto
+      - perfis_total
+      - situacao
+      - temas
+      - temas_cadastrados
+      - tempo_carregamento_ms
+      - tempo_medio_geracao_ms
+      - ultima_atualizacao
+    IATestarRequest:
+      type: object
+      properties:
+        texto_a:
+          type: string
+          minLength: 1
+          description: Primeiro texto (1 a 1000 caracteres; não pode ser só espaços).
+          maxLength: 1000
+        texto_b:
+          type: string
+          minLength: 1
+          description: Segundo texto (1 a 1000 caracteres; não pode ser só espaços).
+          maxLength: 1000
+      required:
+      - texto_a
+      - texto_b
+    IATestarResposta:
+      type: object
+      properties:
+        similaridade:
+          type: number
+          format: double
+          description: Cosseno bruto (-1 a 1).
+        afinidade:
+          type: number
+          format: double
+          description: Afinidade calibrada (0 a 1).
+        temas_a:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tema'
+        temas_b:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tema'
+        temas_em_comum:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tema'
+        tempo_ms:
+          type: number
+          format: double
+          description: Tempo de processamento (os dois embeddings e os temas).
+        modelo:
+          type: string
+      required:
+      - afinidade
+      - modelo
+      - similaridade
+      - temas_a
+      - temas_b
+      - temas_em_comum
+      - tempo_ms
     LogItem:
       type: object
       properties:
@@ -4311,6 +5007,8 @@ components:
       - usuario_id
     PerfilDescoberto:
       type: object
+      description: 'afinidade_ia e temas_em_comum lidos de context[''ia''] = {perfil_id:
+        {...}} (ia.explicacao.afinidades_para).'
       properties:
         id:
           type: integer
@@ -4389,7 +5087,21 @@ components:
         usuario_id:
           type: integer
           readOnly: true
+        afinidade_ia:
+          type: number
+          format: double
+          nullable: true
+          description: Afinidade por IA entre as bios (0 a 1). `null` quando um dos
+            dois perfis não tem bio suficiente (20+ letras) ou a IA está desligada.
+          readOnly: true
+        temas_em_comum:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tema'
+          description: Temas de convivência detectados nas duas bios.
+          readOnly: true
       required:
+      - afinidade_ia
       - id
       - idade
       - nome
@@ -4397,8 +5109,107 @@ components:
       - orcamento_min
       - regiao
       - score
+      - temas_em_comum
       - tipo
       - usuario_id
+    PerfilDetalhe:
+      type: object
+      description: 'Consulta de um perfil (GET /api/perfis/{id}/): inclui a Afinidade
+        por IA com o usuário logado.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        usuario:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 150
+        idade:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        regiao:
+          type: string
+          maxLength: 200
+        bio:
+          type: string
+        orcamento_min:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        orcamento_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        fumante:
+          type: boolean
+        aceita_pets:
+          type: boolean
+        tolerancia_bagunca:
+          type: integer
+          maximum: 5
+          minimum: 1
+        nivel_organizacao:
+          type: integer
+          maximum: 5
+          minimum: 1
+        perfil_horario:
+          $ref: '#/components/schemas/PerfilHorarioEnum'
+        nivel_ruido:
+          type: integer
+          maximum: 5
+          minimum: 1
+        nivel_social:
+          type: integer
+          maximum: 5
+          minimum: 1
+        aceita_visitas:
+          $ref: '#/components/schemas/AceitaVisitasEnum'
+        tipo_imovel:
+          $ref: '#/components/schemas/TipoImovelEnum'
+        qtd_moradores:
+          type: integer
+          maximum: 4
+          minimum: 1
+        titulo_anuncio:
+          type: string
+          maxLength: 120
+        descricao_imovel:
+          type: string
+        fotos_imovel: {}
+        foto_perfil_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        afinidade_ia:
+          type: number
+          format: double
+          nullable: true
+          description: Afinidade por IA entre as bios (0 a 1). `null` quando um dos
+            dois perfis não tem bio suficiente (20+ letras) ou a IA está desligada.
+          readOnly: true
+        temas_em_comum:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tema'
+          description: Temas de convivência detectados nas duas bios.
+          readOnly: true
+      required:
+      - afinidade_ia
+      - id
+      - idade
+      - nome
+      - orcamento_max
+      - orcamento_min
+      - regiao
+      - temas_em_comum
+      - usuario
     PerfilHorarioEnum:
       enum:
       - madrugador
@@ -4665,6 +5476,18 @@ components:
           description: E-mail da conta (sem diferenciar maiúsculas).
       required:
       - email
+    SituacaoEnum:
+      enum:
+      - nao_carregado
+      - disponivel
+      - indisponivel
+      - desabilitada
+      type: string
+      description: |-
+        * `nao_carregado` - nao_carregado
+        * `disponivel` - disponivel
+        * `indisponivel` - indisponivel
+        * `desabilitada` - desabilitada
     SuspenderRequisicaoRequest:
       type: object
       properties:
@@ -4673,6 +5496,32 @@ components:
           minLength: 1
           description: Motivo (até 500 caracteres).
           maxLength: 500
+    Tema:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Identificador do tema (ex.: `culinaria`).'
+        nome:
+          type: string
+          description: 'Nome do tema (ex.: "Culinária").'
+      required:
+      - id
+      - nome
+    TemaContagem:
+      type: object
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+        perfis:
+          type: integer
+          description: Perfis com o tema.
+      required:
+      - id
+      - nome
+      - perfis
     TipoImovelEnum:
       enum:
       - apartamento
@@ -4815,5 +5664,8 @@ tags:
 - name: Painel administrativo
   description: Dashboard, relatórios, lista de usuários e exportações CSV (somente
     administrador).
+- name: Afinidade por IA
+  description: 'Modelo de linguagem local que compara as bios (7º critério do score):
+    situação e teste (somente administrador).'
 - name: Logs
   description: Histórico de operações do sistema (somente administrador).

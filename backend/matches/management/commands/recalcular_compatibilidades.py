@@ -33,7 +33,7 @@ class Command(BaseCommand):
         buscando = list(
             Perfil.objects
             .filter(usuario__tipo='buscando_vaga')
-            .select_related('usuario')
+            .select_related('usuario', 'embedding_ia')
         )
 
         self.stdout.write(

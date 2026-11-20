@@ -4,6 +4,11 @@ python manage.py seed_perfis
 Cria usuários + perfis de demonstração (Recife, perto da UNINASSAU), com fotos de perfil
 e anúncios com fotos dos imóveis. Perfis variados para cobrir os extremos do algoritmo.
 
+As bios (2 a 4 frases, interesses claros) foram escritas para a Afinidade por IA ter o que comparar:
+há pares com o MESMO interesse escrito com palavras diferentes (Isabela × Henrique: cozinhar para os
+amigos × jantares em casa; Rafael × Clara: casa quieta × silêncio; Lucas × Júlia: cachoeiras e trilhas)
+e pares opostos (Mariana e Rafael × Marcos: rotina e silêncio × festas). Veja docs/algoritmo-compatibilidade.md.
+
 Todos os usuários de demonstração usam a mesma senha (definida no código deste comando; não é impressa).
 
 As fotos são links públicos (Unsplash e randomuser.me). Sem internet, a interface mostra a
@@ -50,7 +55,7 @@ SEED_USERS = [
     # (email, username, tipo, perfil_dict)
     ('ana@seed.pm', f'ana{SEED_TAG}', 'buscando_vaga', dict(
         nome='Ana Luísa', idade=23, regiao='Graças',
-        bio='Estudante de arquitetura na UNINASSAU. Organizada, madrugadora e não fumo. Tenho uma gata muito tranquila.',
+        bio='Curso arquitetura na UNINASSAU e passo boa parte do tempo desenhando projetos e maquetes. Acordo cedo, gosto de tudo no lugar e não fumo. Tenho uma gata, a Mel, que vem morar comigo e adora colo.',
         orcamento_min=800, orcamento_max=1400,
         fumante=False, aceita_pets=True,
         tolerancia_bagunca=2, nivel_organizacao=5,
@@ -60,7 +65,7 @@ SEED_USERS = [
     )),
     ('pedro@seed.pm', f'pedro{SEED_TAG}', 'buscando_vaga', dict(
         nome='Pedro Henrique', idade=26, regiao='Boa Viagem',
-        bio='Desenvolvedor remoto. Noturno, gosto de música e de receber os amigos no fim de semana.',
+        bio='Sou desenvolvedor e trabalho de casa, conectado o dia inteiro no notebook. À noite toco guitarra e escuto rock alto. No fim de semana gosto de juntar a galera para jogar videogame e pedir pizza.',
         orcamento_min=600, orcamento_max=1200,
         fumante=True, aceita_pets=False,
         tolerancia_bagunca=5, nivel_organizacao=1,
@@ -70,7 +75,7 @@ SEED_USERS = [
     )),
     ('camila@seed.pm', f'camila{SEED_TAG}', 'buscando_vaga', dict(
         nome='Camila Souza', idade=24, regiao='Espinheiro',
-        bio='Mestranda em comunicação. Flexível, sociável e adoro bichos.',
+        bio='Faço mestrado em comunicação e escrevo para um blog de cultura. Sou sociável, adoro conversar na cozinha e maratonar séries com quem divide a casa. Amo bichos e sempre tive cachorro.',
         orcamento_min=900, orcamento_max=1600,
         fumante=False, aceita_pets=True,
         tolerancia_bagunca=3, nivel_organizacao=3,
@@ -80,7 +85,7 @@ SEED_USERS = [
     )),
     ('rafael@seed.pm', f'rafael{SEED_TAG}', 'buscando_vaga', dict(
         nome='Rafael Costa', idade=25, regiao='Graças',
-        bio='Engenheiro civil. Muito organizado, madrugador e prefiro silêncio em casa.',
+        bio='Engenheiro civil, saio cedo para a obra e chego cansado. Preciso de calma para me concentrar e dormir bem, então valorizo uma casa quieta e arrumada. Nas horas vagas leio sobre história.',
         orcamento_min=850, orcamento_max=1500,
         fumante=False, aceita_pets=False,
         tolerancia_bagunca=2, nivel_organizacao=5,
@@ -90,7 +95,7 @@ SEED_USERS = [
     )),
     ('liz@seed.pm', f'liz{SEED_TAG}', 'buscando_vaga', dict(
         nome='Elizabete Ramos', idade=21, regiao='Boa Vista',
-        bio='Artista plástica. Noturna, adoro receber amigos e fumo socialmente.',
+        bio='Sou artista plástica: pinto telas, faço colagens e vivo com as mãos sujas de tinta. Trabalho até tarde, recebo amigos artistas e fumo socialmente. Gosto de casa colorida e cheia de vida.',
         orcamento_min=400, orcamento_max=800,
         fumante=True, aceita_pets=False,
         tolerancia_bagunca=5, nivel_organizacao=1,
@@ -100,7 +105,7 @@ SEED_USERS = [
     )),
     ('joao@seed.pm', f'joao{SEED_TAG}', 'oferecendo_vaga', dict(
         nome='João Vitor', idade=28, regiao='Graças',
-        bio='Professor universitário. Gosto de rotina, silêncio e ambientes organizados.',
+        bio='Professor universitário de literatura. Corrijo provas e preparo aulas em casa, então gosto de silêncio e de tudo organizado. À noite leio um bom romance com uma xícara de chá.',
         orcamento_min=1000, orcamento_max=1800,
         fumante=False, aceita_pets=False,
         tolerancia_bagunca=1, nivel_organizacao=5,
@@ -117,7 +122,7 @@ SEED_USERS = [
     )),
     ('mariana@seed.pm', f'mariana{SEED_TAG}', 'buscando_vaga', dict(
         nome='Mariana Oliveira', idade=22, regiao='Derby',
-        bio='Estudante de medicina. Madrugadora por necessidade, organizada e focada.',
+        bio='Estudo medicina e minha rotina é de livros, plantões e provas. Acordo antes das seis para revisar a matéria e durmo cedo. Procuro um lugar organizado onde dê para se concentrar.',
         orcamento_min=750, orcamento_max=1300,
         fumante=False, aceita_pets=True,
         tolerancia_bagunca=2, nivel_organizacao=4,
@@ -127,7 +132,7 @@ SEED_USERS = [
     )),
     ('lucas@seed.pm', f'lucas{SEED_TAG}', 'buscando_vaga', dict(
         nome='Lucas Mendes', idade=24, regiao='Casa Forte',
-        bio='Designer freelancer. Flexível e criativo, curto receber amigos e tenho um cachorro.',
+        bio='Designer freelancer, trabalho com ilustração de casa. Nos fins de semana pego a estrada com meu cachorro para cachoeiras e trilhas. Curto receber os amigos para um café.',
         orcamento_min=900, orcamento_max=1700,
         fumante=False, aceita_pets=True,
         tolerancia_bagunca=4, nivel_organizacao=3,
@@ -137,7 +142,7 @@ SEED_USERS = [
     )),
     ('fernanda@seed.pm', f'fernanda{SEED_TAG}', 'buscando_vaga', dict(
         nome='Fernanda Lima', idade=27, regiao='Boa Viagem',
-        bio='Advogada. Reservada, prefiro ambientes tranquilos e sem pets.',
+        bio='Advogada, passo o dia no escritório e à noite quero paz. Gosto de ler romances policiais, tomar um chá e dormir cedo. Não tenho pets e prefiro poucas visitas.',
         orcamento_min=1200, orcamento_max=2200,
         fumante=False, aceita_pets=False,
         tolerancia_bagunca=1, nivel_organizacao=5,
@@ -147,7 +152,7 @@ SEED_USERS = [
     )),
     ('thiago@seed.pm', f'thiago{SEED_TAG}', 'oferecendo_vaga', dict(
         nome='Thiago Santos', idade=29, regiao='Boa Vista',
-        bio='Músico. Noturno e criativo, casa sempre cheia de amigos. Fumo.',
+        bio='Sou músico profissional: toco em bares, dou aulas de violão e ensaio com a banda em casa. A casa vive cheia de amigos, arte e conversa até tarde. Fumo.',
         orcamento_min=500, orcamento_max=1000,
         fumante=True, aceita_pets=True,
         tolerancia_bagunca=5, nivel_organizacao=2,
@@ -164,7 +169,7 @@ SEED_USERS = [
     )),
     ('isabela@seed.pm', f'isabela{SEED_TAG}', 'buscando_vaga', dict(
         nome='Isabela Nunes', idade=23, regiao='Graças',
-        bio='Estudante de nutrição. Cozinho muito, gosto de rotina e de ambientes limpos.',
+        bio='Estudo nutrição e adoro cozinhar para os amigos: pão caseiro, bolos e marmitas da semana saem da minha cozinha. Gosto de rotina, de acordar cedo e de ambiente limpo.',
         orcamento_min=850, orcamento_max=1500,
         fumante=False, aceita_pets=True,
         tolerancia_bagunca=2, nivel_organizacao=4,
@@ -174,7 +179,7 @@ SEED_USERS = [
     )),
     ('guilherme@seed.pm', f'guilherme{SEED_TAG}', 'buscando_vaga', dict(
         nome='Guilherme Alves', idade=25, regiao='Madalena',
-        bio='Estudante de direito. Noturno, sociável, gosto de república e de festas.',
+        bio='Estudante de direito que não perde uma festa. Gosto de casa movimentada, de chamar a turma para o esquenta e de sair para dançar até tarde. Fumo e não ligo para barulho.',
         orcamento_min=600, orcamento_max=1100,
         fumante=True, aceita_pets=False,
         tolerancia_bagunca=4, nivel_organizacao=2,
@@ -184,7 +189,7 @@ SEED_USERS = [
     )),
     ('patricia@seed.pm', f'patricia{SEED_TAG}', 'buscando_vaga', dict(
         nome='Patrícia Gomes', idade=31, regiao='Espinheiro',
-        bio='Analista financeira. Muito organizada, prefiro silêncio e rotina.',
+        bio='Analista financeira, trabalho com números o dia todo e chego em casa precisando de silêncio. Sou muito organizada, tenho horários fixos e evito barulho depois das 22h.',
         orcamento_min=1100, orcamento_max=2000,
         fumante=False, aceita_pets=False,
         tolerancia_bagunca=1, nivel_organizacao=5,
@@ -194,7 +199,7 @@ SEED_USERS = [
     )),
     ('diego@seed.pm', f'diego{SEED_TAG}', 'buscando_vaga', dict(
         nome='Diego Ferreira', idade=22, regiao='Torre',
-        bio='Estudante de publicidade. Flexível e tranquilo, gosto de séries em casa.',
+        bio='Estudante de publicidade, fã de cinema e de séries. Meu programa favorito é maratonar uma temporada inteira com pipoca no sofá. Sou tranquilo e me adapto fácil à rotina da casa.',
         orcamento_min=700, orcamento_max=1300,
         fumante=False, aceita_pets=True,
         tolerancia_bagunca=3, nivel_organizacao=3,
@@ -204,7 +209,7 @@ SEED_USERS = [
     )),
     ('vitoria@seed.pm', f'vitoria{SEED_TAG}', 'buscando_vaga', dict(
         nome='Vitória Cardoso', idade=20, regiao='Boa Vista',
-        bio='Caloura de psicologia. Sociável e flexível, aceito qualquer tipo de imóvel.',
+        bio='Caloura de psicologia e rata de academia: treino todo dia de manhã e corro na beira-mar no fim de semana. Sou sociável, adoro conhecer gente nova e topo qualquer tipo de imóvel.',
         orcamento_min=500, orcamento_max=900,
         fumante=False, aceita_pets=True,
         tolerancia_bagunca=4, nivel_organizacao=3,
@@ -215,7 +220,7 @@ SEED_USERS = [
     # ── Mais quem oferece vaga, para diversificar a Descoberta ───────────────
     ('beatriz@seed.pm', f'beatriz{SEED_TAG}', 'oferecendo_vaga', dict(
         nome='Beatriz Almeida', idade=24, regiao='Derby',
-        bio='Estudante de design. Organizada, madrugadora e adoro ter pets em casa.',
+        bio='Estudante de design e apaixonada por animais: divido o apê com dois cachorros resgatados. Acordo cedo, mantenho a casa arrumada e adoro plantas na varanda.',
         orcamento_min=800, orcamento_max=1400,
         fumante=False, aceita_pets=True,
         tolerancia_bagunca=2, nivel_organizacao=4,
@@ -232,7 +237,7 @@ SEED_USERS = [
     )),
     ('renato@seed.pm', f'renato{SEED_TAG}', 'oferecendo_vaga', dict(
         nome='Renato Barbosa', idade=27, regiao='Boa Viagem',
-        bio='Engenheiro de software. Noturno e sociável, trabalho remoto e fumo de vez em quando.',
+        bio='Engenheiro de software. Meu escritório é a sala de casa: atendo clientes por videochamada e programo até tarde. Nas horas livres jogo online com os amigos.',
         orcamento_min=900, orcamento_max=1600,
         fumante=True, aceita_pets=False,
         tolerancia_bagunca=4, nivel_organizacao=3,
@@ -249,7 +254,7 @@ SEED_USERS = [
     )),
     ('clara@seed.pm', f'clara{SEED_TAG}', 'oferecendo_vaga', dict(
         nome='Clara Freitas', idade=25, regiao='Espinheiro',
-        bio='Terapeuta. Reservada, prefiro silêncio, rotina e ambientes limpos.',
+        bio='Terapeuta, atendo em consultório e valorizo muito o silêncio em casa. Medito todas as manhãs, durmo cedo e mantenho tudo limpo e em ordem. Prefiro morar sozinha e com tranquilidade.',
         orcamento_min=1000, orcamento_max=1800,
         fumante=False, aceita_pets=False,
         tolerancia_bagunca=1, nivel_organizacao=5,
@@ -265,7 +270,7 @@ SEED_USERS = [
     )),
     ('henrique@seed.pm', f'henrique{SEED_TAG}', 'oferecendo_vaga', dict(
         nome='Henrique Moura', idade=23, regiao='Casa Forte',
-        bio='Estudante de gastronomia. Flexível, curto cozinhar e receber amigos no fim de semana.',
+        bio='Estudo gastronomia e faço jantares em casa no fim de semana. Testo receitas novas, faço pão de fermentação natural e sempre sobra comida para quem mora comigo.',
         orcamento_min=700, orcamento_max=1200,
         fumante=False, aceita_pets=True,
         tolerancia_bagunca=3, nivel_organizacao=3,
@@ -281,7 +286,7 @@ SEED_USERS = [
     )),
     ('julia@seed.pm', f'julia{SEED_TAG}', 'oferecendo_vaga', dict(
         nome='Júlia Prado', idade=22, regiao='Madalena',
-        bio='Professora de ioga. Tranquila, vegetariana e apaixonada por animais.',
+        bio='Professora de ioga e vegetariana. Meus fins de semana são de trilha, acampamento e mar, sempre com meus dois gatos esperando em casa. Gosto de cuidar da horta e de reaproveitar tudo.',
         orcamento_min=600, orcamento_max=1100,
         fumante=False, aceita_pets=True,
         tolerancia_bagunca=3, nivel_organizacao=4,
@@ -297,7 +302,7 @@ SEED_USERS = [
     )),
     ('marcos@seed.pm', f'marcos{SEED_TAG}', 'oferecendo_vaga', dict(
         nome='Marcos Vinícius', idade=29, regiao='Boa Viagem',
-        bio='Empresário. Noturno e animado, casa grande com espaço para todos. Fumo.',
+        bio='Empresário e festeiro assumido: todo sábado tem festa na piscina, churrasco e música alta até de madrugada. Sempre tem gente nova chegando para a resenha. Fumo e aceito pets.',
         orcamento_min=800, orcamento_max=1500,
         fumante=True, aceita_pets=True,
         tolerancia_bagunca=5, nivel_organizacao=2,

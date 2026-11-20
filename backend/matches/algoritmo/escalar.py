@@ -3,8 +3,12 @@ Implementação escalar do algoritmo de compatibilidade.
 
 Mesma lógica do compatibilidade.py original, mas dirigida por tabelas
 definidas em config.py — sem if/else espalhados.
+
+detalhar_score(a, b) devolve o valor de cada critério (usado por GET /api/compatibilidade/{id}/);
+calcular_score(a, b) devolve só o score final.
 """
 
+from .afinidade import calibrar, combinar, cosseno, vetor_do_perfil
 from .config import (
     PESOS,
     DIV_ESCALA_5, DIV_MORADORES, DIV_IDADE,
@@ -32,11 +36,15 @@ def _sim_imovel(a: str, b: str) -> float:
     return IMOVEL_MATRIX[i][j]
 
 
-def calcular_score(perfil_a, perfil_b) -> float:
+def detalhar_score(perfil_a, perfil_b, pesos=None) -> dict:
     """
-    Calcula o score de compatibilidade entre dois perfis.
-    Retorna um float entre 0.0 e 1.0.
+    Valor (0..1) de cada critério e score final entre dois perfis.
+
+    Retorno: {'criterios': {chave: valor}, 'cosseno': float|None, 'afinidade_ia': float|None, 'score': float}
+    ('afinidade_ia' é None quando um dos perfis não tem embedding ou a IA está desligada).
     """
+    if pesos is None:
+        pesos = PESOS
 
     # -- Orçamento ------------------------------------------------------------
     min_a, max_a = float(perfil_a.orcamento_min), float(perfil_a.orcamento_max)
@@ -71,14 +79,26 @@ def calcular_score(perfil_a, perfil_b) -> float:
     diff_idade = abs(perfil_a.idade - perfil_b.idade)
     sim_idade  = max(0.0, 1.0 - diff_idade / DIV_IDADE)
 
-    # -- Score final ----------------------------------------------------------
-    score = (
-        PESOS['orcamento'] * sim_orcamento
-        + PESOS['regiao']  * sim_regiao
-        + PESOS['rotina']  * sim_rotina
-        + PESOS['habitos'] * sim_habitos
-        + PESOS['moradia'] * sim_moradia
-        + PESOS['idade']   * sim_idade
-    )
+    # -- Afinidade de perfil (IA) ---------------------------------------------
+    cos = cosseno(vetor_do_perfil(perfil_a), vetor_do_perfil(perfil_b))
+    sim_ia = calibrar(cos)
 
-    return round(max(0.0, min(1.0, score)), 4)
+    # -- Score final ----------------------------------------------------------
+    sims = (sim_orcamento, sim_regiao, sim_rotina, sim_habitos, sim_moradia, sim_idade)
+    return {
+        'criterios': {
+            'orcamento': sim_orcamento, 'regiao': sim_regiao, 'rotina': sim_rotina,
+            'habitos': sim_habitos, 'moradia': sim_moradia, 'idade': sim_idade,
+        },
+        'cosseno': cos,
+        'afinidade_ia': sim_ia,
+        'score': combinar(sims, sim_ia, pesos),
+    }
+
+
+def calcular_score(perfil_a, perfil_b, pesos=None) -> float:
+    """
+    Calcula o score de compatibilidade entre dois perfis.
+    Retorna um float entre 0.0 e 1.0.
+    """
+    return detalhar_score(perfil_a, perfil_b, pesos)['score']

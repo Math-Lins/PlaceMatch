@@ -7,7 +7,9 @@ Prepara um banco de DEMONSTRAÇÃO completo (use só em banco descartável ou de
      para o painel admin ter gráficos com movimento;
   3. uma curtida pendente (Henrique → Ana) para demonstrar o interesse mútuo;
   4. três denúncias (duas pendentes e uma procedente) e uma conta suspensa (Guilherme);
-  5. registros de log coerentes com os dados criados.
+  5. registros de log coerentes com os dados criados;
+  6. embeddings das bios (Afinidade por IA) e recálculo das compatibilidades (gerar_embeddings).
+     Sem o modelo de IA, avisa e segue com os 6 critérios.
 
 Idempotente: rodar de novo não duplica denúncias nem logs (são recriados).
 
@@ -152,6 +154,15 @@ class Command(BaseCommand):
             # data_hora é auto_now_add: grava a data histórica depois de criar.
             for reg, orig in zip(criados, registros):
                 LogOperacao.objects.filter(pk=reg.pk).update(data_hora=orig.data_hora)
+
+        # ── 6. Afinidade por IA: embeddings das bios + recálculo dos scores ──────
+        from ia import servico
+        if servico.disponivel(carregar=True):
+            call_command('gerar_embeddings', stdout=self.stdout)
+        else:
+            self.stdout.write(self.style.WARNING(
+                'Modelo de IA indisponível: os scores usam só os 6 critérios. '
+                'Rode "python manage.py baixar_modelo_ia" e depois "python manage.py gerar_embeddings".'))
 
         self.stdout.write(self.style.SUCCESS(
             f'\nDemonstração pronta: {len(seeds)} usuários, {matches.count()} matches, '

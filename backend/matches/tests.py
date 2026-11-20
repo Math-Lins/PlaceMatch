@@ -2,6 +2,8 @@ import itertools
 import random
 import sys
 
+import numpy as np
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
@@ -15,7 +17,7 @@ from matches.compatibilidade import (
     _sim_visitas,
     _sim_imovel,
 )
-from matches.algoritmo import calcular_scores_lote
+from matches.algoritmo import calcular_scores_lote, detalhar_score
 from matches.servicos import recalcular_lote
 
 Usuario = get_user_model()
@@ -571,13 +573,26 @@ class EquivalenciaVetorialEscalarReforcoTest(TestCase):
     """
 
     @staticmethod
-    def _make(pid, **kw):
+    def _vetor_ia(pid):
+        """7º critério: vetor normalizado pseudoaleatório (1 em cada 4 perfis SEM embedding → renormalização).
+        Metade dos vetores é puxada para uma mesma direção, para cobrir afinidades altas, médias e zeradas."""
+        if pid % 4 == 0:
+            return None
+        rng = np.random.default_rng(pid)
+        v = rng.standard_normal(384)
+        if pid % 2:
+            v += np.ones(384) / np.sqrt(384) * rng.uniform(0, 60)
+        return v / np.linalg.norm(v)
+
+    @classmethod
+    def _make(cls, pid, **kw):
         defaults = dict(
             id=pid, orcamento_min=800.0, orcamento_max=1500.0,
             regiao='Boa Viagem', fumante=False, aceita_pets=True,
             tolerancia_bagunca=3, nivel_organizacao=3, perfil_horario='flexivel',
             nivel_ruido=3, nivel_social=3, aceita_visitas='as_vezes',
             tipo_imovel='indiferente', qtd_moradores=2, idade=25,
+            vetor_ia=cls._vetor_ia(pid),
         )
         defaults.update(kw)
         return SimpleNamespace(**defaults)
@@ -688,13 +703,21 @@ class EquivalenciaVetorialEscalarReforcoTest(TestCase):
 
         total_pares = 0
         max_diff = 0.0
+        pares_com_ia = 0
+        afinidades = set()
 
         # Dois sentidos: grupo_a como base e grupo_b como base
         for base_grupo, outro_grupo in [(grupo_a, grupo_b), (grupo_b, grupo_a)]:
             for base in base_grupo:
                 _, scores_lote = calcular_scores_lote(base, outro_grupo)
                 for outro, score_lote in zip(outro_grupo, scores_lote.tolist()):
-                    score_esc = calcular_score(base, outro)
+                    det = detalhar_score(base, outro)
+                    score_esc = det['score']
+                    if det['afinidade_ia'] is not None:
+                        pares_com_ia += 1
+                        afinidades.add(round(det['afinidade_ia'], 1))
+                    # mesma combinação e mesmo arredondamento: tem de ser IDÊNTICO (inclusive com a afinidade por IA)
+                    self.assertEqual(score_lote, score_esc, msg=f'base.id={base.id} outro.id={outro.id}')
                     diff = abs(score_lote - score_esc)
                     if diff > max_diff:
                         max_diff = diff
@@ -708,8 +731,14 @@ class EquivalenciaVetorialEscalarReforcoTest(TestCase):
                         ),
                     )
 
+        # o 7º critério entrou em parte dos pares, com afinidades de 0 a 1, e ficou de fora no resto
+        self.assertGreater(pares_com_ia, total_pares // 3)
+        self.assertLess(pares_com_ia, total_pares)
+        self.assertTrue({0.0, 1.0} <= afinidades and len(afinidades) >= 5, afinidades)
+
         print(
-            f'\n[EquivalenciaReforco] pares comparados: {total_pares:,} | '
+            f'\n[EquivalenciaReforco] pares comparados: {total_pares:,} '
+            f'({pares_com_ia:,} com afinidade por IA) | '
             f'maior diferença absoluta: {max_diff:.2e}',
             file=sys.stderr,
         )

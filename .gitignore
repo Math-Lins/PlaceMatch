@@ -47,3 +47,6 @@ htmlcov/
 # --- Evidências geradas (e2e) ---
 frontend/evidencias-rc.zip
 frontend/e2e/resultados-tour/
+
+# --- Modelos de IA (baixados por manage.py baixar_modelo_ia) ---
+backend/.modelos/

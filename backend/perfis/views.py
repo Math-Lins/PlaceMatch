@@ -2,8 +2,9 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.response import Response
 from .models import Perfil
-from .serializers import PerfilSerializer
+from .serializers import PerfilDetalheSerializer, PerfilSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from placematch.api_docs import doc
 
@@ -21,6 +22,15 @@ class NaoAdministradorNaCriacao(permissions.BasePermission):
         if request.method == 'POST' and request.user.tipo == 'administrador':
             return False
         return True
+
+
+def _perfil_do_usuario(user):
+    if getattr(user, 'tipo', '') == 'administrador':
+        return None
+    try:
+        return Perfil.objects.select_related('embedding_ia').get(usuario=user)
+    except Perfil.DoesNotExist:
+        return None
 
 
 # Mapa de tipo → tipo oposto (apenas usuários comuns participam da descoberta).
@@ -53,6 +63,16 @@ class PerfilViewSet(viewsets.ModelViewSet):
         # Demais ações (retrieve, update, destroy) recebem queryset completo;
         # get_object() aplica as restrições de acesso adicionais.
         return Perfil.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        """Perfil + afinidade_ia e temas_em_comum com o perfil do usuário logado (null/[] no próprio perfil e para o admin)."""
+        obj = self.get_object()
+        contexto = self.get_serializer_context()
+        meu = _perfil_do_usuario(request.user)
+        if meu is not None and meu.pk != obj.pk and obj.usuario.tipo == _TIPO_OPOSTO.get(request.user.tipo):
+            from ia.explicacao import afinidades_para
+            contexto['ia'] = afinidades_para(meu, [obj])
+        return Response(PerfilDetalheSerializer(obj, context=contexto).data)
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:

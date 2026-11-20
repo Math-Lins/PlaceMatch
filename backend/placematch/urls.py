@@ -14,4 +14,5 @@ urlpatterns = [
     path('api/', include('logs.urls')),
     path('api/', include('painel.urls')),
     path('api/', include('moderacao.urls')),
+    path('api/', include('ia.urls')),
 ]

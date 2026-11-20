@@ -321,10 +321,11 @@ class LogsDaRecuperacaoTest(Base):
         self.assertFalse(LogOperacao.objects.filter(acao='SENHA_REDEFINIDA').exists())
 
 
-class Registro17AcoesTest(BaseSprint9):
-    def test_catalogo_de_acoes_tem_as_17_e_rotulos_em_portugues(self):
+class RegistroAcoesTest(BaseSprint9):
+    def test_catalogo_de_acoes_tem_as_18_e_rotulos_em_portugues(self):
         from logs.models import LogOperacao as L
         rotulos = dict(L.ACAO_CHOICES)
-        self.assertEqual(len(rotulos), 17)
+        self.assertEqual(len(rotulos), 18)  # 17 + IA_TESTE (Afinidade por IA)
+        self.assertEqual(rotulos['IA_TESTE'], 'Teste da IA (painel)')
         self.assertEqual(rotulos['SENHA_SOLICITADA'], 'Redefinição de senha solicitada')
         self.assertEqual(rotulos['SENHA_REDEFINIDA'], 'Senha redefinida')

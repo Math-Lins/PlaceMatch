@@ -10,6 +10,10 @@ Medições:
   C) Análise de sensibilidade dos pesos (sem banco, em memória)
      20 bases × 1 000 outros; top-10 overlap para +-5pp em cada critério.
 
+Afinidade por IA (7º critério): os perfis sintéticos recebem vetores normalizados de 384 dimensões
+(1 em cada 5 SEM vetor, como bios curtas → pesos renormalizados). Em B, os vetores são gravados em
+ia.EmbeddingPerfil, então o recálculo mede também a leitura dos embeddings (select_related).
+
 Saídas:
   docs/benchmark/benchmark_compatibilidade.csv
   docs/benchmark/sensibilidade_pesos.csv
@@ -36,6 +40,8 @@ from django.db import connection, transaction
 from django.db.models import Q
 from django.test.utils import CaptureQueriesContext
 
+from ia import servico as servico_ia
+from ia.models import EmbeddingPerfil
 from matches.algoritmo import PESOS, calcular_score, calcular_scores_lote
 from matches.models import Compatibilidade
 from matches.servicos import recalcular_lote, recalcular_loop
@@ -49,6 +55,18 @@ _HORARIOS = ['madrugador', 'noturno', 'flexivel']
 _VISITAS  = ['raramente', 'as_vezes', 'frequentemente']
 _IMOVEIS  = ['apartamento', 'casa', 'republica', 'indiferente']
 _REGIOES  = ['Boa Viagem', 'Recife', 'Olinda', 'Piedade', 'Candeias']
+
+
+_DIRECAO_IA = np.random.default_rng(2026).standard_normal(384)
+
+
+def _vetor_ia(pid: int):
+    """Embedding sintético normalizado (None para 1 em cada 5 perfis: bio curta)."""
+    if pid % 5 == 0:
+        return None
+    g = np.random.default_rng(pid)
+    v = g.standard_normal(384) + _DIRECAO_IA * g.uniform(0, 2)
+    return v / np.linalg.norm(v)
 
 
 def _ns(pid: int, rng: random.Random) -> SimpleNamespace:
@@ -70,6 +88,7 @@ def _ns(pid: int, rng: random.Random) -> SimpleNamespace:
         tipo_imovel=rng.choice(_IMOVEIS),
         qtd_moradores=rng.randint(1, 4),
         idade=rng.randint(18, 60),
+        vetor_ia=_vetor_ia(pid),
     )
 
 
@@ -100,7 +119,7 @@ def _perfil_db(usuario, idx: int) -> Perfil:
 def _redistribuir(pesos_base: dict, criterio: str, delta: float) -> dict:
     """
     Varia o peso de `criterio` em `delta` pp e redistribui a variação
-    proporcionalmente entre os outros 5 critérios, mantendo soma = 1.0.
+    proporcionalmente entre os outros 6 critérios, mantendo soma = 1.0.
     """
     novo = dict(pesos_base)
     novo[criterio] = max(0.0, pesos_base[criterio] + delta)
@@ -322,6 +341,15 @@ class Command(BaseCommand):
         )
         perfil_novo = perfil_novo_list[0]
         perfil_novo.usuario = u_busc  # garante acesso sem query extra
+
+        # Embeddings sintéticos (7º critério), também via bulk_create
+        modelo = servico_ia.nome_modelo()
+        novos = list(Perfil.objects.filter(usuario__in=list(u_ofere) + [u_busc]).values_list('id', flat=True))
+        EmbeddingPerfil.objects.bulk_create([
+            EmbeddingPerfil(perfil_id=pid, vetor=EmbeddingPerfil.empacotar(v), modelo=modelo, hash_texto='-' * 64, temas=[])
+            for pid in novos if (v := _vetor_ia(pid if pid != perfil_novo.id else 1)) is not None
+        ], batch_size=1000)
+        perfil_novo = Perfil.objects.select_related('usuario', 'embedding_ia').get(pk=perfil_novo.id)
 
         N_real = Perfil.objects.filter(usuario__tipo='oferecendo_vaga').count()
 

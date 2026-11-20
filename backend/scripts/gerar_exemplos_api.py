@@ -7,6 +7,10 @@ mensagens e uma denúncia.
 Uso (API em http://127.0.0.1:8001, administrador já criado com `criar_admin`):
     ADMIN_EMAIL=admin@exemplo.com ADMIN_SENHA=... python scripts/gerar_exemplos_api.py saida.json [http://127.0.0.1:8001]
 
+Afinidade por IA: a API principal precisa do modelo baixado (`baixar_modelo_ia`). Para capturar o 503 de
+POST /api/admin/ia/testar/, suba uma SEGUNDA API no MESMO banco com IA_HABILITADA=False e informe-a em
+BASE_SEM_IA (ex.: http://127.0.0.1:8002); sem ela, esse exemplo não é gerado.
+
 Segredos: tokens saem como <TOKEN>/<REFRESH> e senhas como <SENHA>.
 """
 import email
@@ -20,6 +24,7 @@ import urllib.parse
 import urllib.request
 
 BASE = (sys.argv[2] if len(sys.argv) > 2 else 'http://127.0.0.1:8001').rstrip('/')
+BASE_SEM_IA = os.environ.get('BASE_SEM_IA', '').rstrip('/')
 SAIDA = sys.argv[1] if len(sys.argv) > 1 else 'exemplos_api.json'
 SENHA = 'SenhaExemplo123'  # só existe no banco descartável; nos exemplos aparece como <SENHA>
 ADMIN_EMAIL = os.environ['ADMIN_EMAIL']
@@ -65,9 +70,9 @@ def mascarar(valor, requisicao=False):
     return valor
 
 
-def chamar(id_, metodo, rota, corpo=None, token=None, papel='publico', nota=''):
+def chamar(id_, metodo, rota, corpo=None, token=None, papel='publico', nota='', base=None):
     """Faz a chamada, guarda o registro e devolve (status, corpo JSON ou texto)."""
-    url = BASE + rota
+    url = (base or BASE) + rota
     dados = json.dumps(corpo).encode() if corpo is not None else None
     req = urllib.request.Request(url, data=dados, method=metodo)
     if dados is not None:
@@ -127,6 +132,8 @@ def main():
            {'username': 'Carla Dias', 'email': 'carla.dias@exemplo.com', 'password': SENHA, 'tipo': 'oferecendo_vaga'})
     chamar('registrar_diego', 'POST', '/api/auth/registrar/',
            {'username': 'Diego Alves', 'email': 'diego.alves@exemplo.com', 'password': SENHA, 'tipo': 'buscando_vaga'})
+    chamar('registrar_fabio', 'POST', '/api/auth/registrar/',
+           {'username': 'Fábio Rocha', 'email': 'fabio.rocha@exemplo.com', 'password': SENHA, 'tipo': 'oferecendo_vaga'})
     chamar('registrar_email_duplicado', 'POST', '/api/auth/registrar/',
            {'username': 'Ana Souza', 'email': 'ANA.SOUZA@exemplo.com', 'password': SENHA, 'tipo': 'buscando_vaga'})
     chamar('registrar_campos_invalidos', 'POST', '/api/auth/registrar/',
@@ -143,6 +150,7 @@ def main():
     bruno, _ = login('login_bruno', 'bruno.lima@exemplo.com', SENHA)
     carla, _ = login('login_carla', 'carla.dias@exemplo.com', SENHA)
     diego, _ = login('login_diego', 'diego.alves@exemplo.com', SENHA)
+    fabio, _ = login('login_fabio', 'fabio.rocha@exemplo.com', SENHA)
     admin, _ = login('login_admin', ADMIN_EMAIL, ADMIN_SENHA)
 
     chamar('refresh_ok', 'POST', '/api/auth/login/refresh/', {'refresh': ana_ref})
@@ -180,6 +188,11 @@ def main():
                   'titulo_anuncio': 'Casa com quintal', 'tipo_imovel': 'casa', 'fotos_imovel': [], 'foto_perfil_url': ''},
                   token=carla, papel='comum')
     ctx['perfil_carla'] = r['id']
+    # Fábio: bio curta e sem anúncio → sem embedding (o critério de IA é ignorado nos scores dele)
+    s, r = chamar('perfil_criar_fabio', 'POST', '/api/perfis/', {**PERFIL_BRUNO, 'nome': 'Fábio Rocha', 'bio': 'Oi!',
+                  'titulo_anuncio': '', 'descricao_imovel': '', 'fotos_imovel': [], 'foto_perfil_url': ''},
+                  token=fabio, papel='comum')
+    ctx['perfil_fabio'] = r['id']
     chamar('perfil_criar_invalido', 'POST', '/api/perfis/', {**PERFIL_ANA, 'idade': 17, 'orcamento_min': 2000, 'orcamento_max': 1000,
            'nivel_ruido': 9, 'bio': 'b' * 501}, token=diego, papel='comum')
     chamar('perfil_criar_duplicado', 'POST', '/api/perfis/', PERFIL_ANA, token=ana, papel='comum')
@@ -215,6 +228,18 @@ def main():
     chamar('curtida_vazia', 'POST', '/api/curtidas/', {}, token=ana, papel='comum')
     chamar('curtida_admin', 'POST', '/api/curtidas/', {'perfil_destino': ctx['perfil_ana'], 'tipo': 'curtir'}, token=admin, papel='admin')
     chamar('matches_ok', 'GET', '/api/matches/', token=ana, papel='logado')
+
+    # ── Detalhamento da compatibilidade (7 critérios, com a Afinidade por IA) ──
+    chamar('compatibilidade_ok', 'GET', f"/api/compatibilidade/{ctx['perfil_bruno']}/", token=ana, papel='comum',
+           nota='Ana (buscando vaga) e Bruno (oferecendo vaga): as duas bios têm embedding.')
+    chamar('compatibilidade_sem_ia', 'GET', f"/api/compatibilidade/{ctx['perfil_fabio']}/", token=ana, papel='comum',
+           nota='A bio de Fábio tem menos de 20 letras: o critério de IA fica de fora e os 6 pesos são renormalizados.')
+    chamar('compatibilidade_sem_perfil', 'GET', f"/api/compatibilidade/{ctx['perfil_bruno']}/", token=diego, papel='comum',
+           nota='Diego ainda não criou o perfil.')
+    chamar('compatibilidade_mesmo_tipo', 'GET', f"/api/compatibilidade/{ctx['perfil_carla']}/", token=bruno, papel='comum',
+           nota='Bruno e Carla oferecem vaga (mesmo tipo).')
+    chamar('compatibilidade_admin', 'GET', f"/api/compatibilidade/{ctx['perfil_bruno']}/", token=admin, papel='admin')
+    chamar('compatibilidade_inexistente', 'GET', '/api/compatibilidade/999999/', token=ana, papel='comum')
 
     # ── Chat ──
     chamar('conversas_antes', 'GET', '/api/conversas/', token=ana, papel='comum')
@@ -265,6 +290,24 @@ def main():
     chamar('admin_reativar', 'POST', f"/api/admin/moderacao/usuarios/{ctx['usuario_carla']}/reativar/", token=admin, papel='admin')
     chamar('admin_reativar_ativo', 'POST', f"/api/admin/moderacao/usuarios/{ctx['usuario_carla']}/reativar/", token=admin, papel='admin')
     chamar('admin_suspender_inexistente', 'POST', '/api/admin/moderacao/usuarios/999999/suspender/', {}, token=admin, papel='admin')
+
+    # ── Afinidade por IA (administrador) ──
+    chamar('ia_status', 'GET', '/api/admin/ia/status/', token=admin, papel='admin')
+    chamar('ia_status_comum', 'GET', '/api/admin/ia/status/', token=ana, papel='comum')
+    chamar('ia_testar_ok', 'POST', '/api/admin/ia/testar/',
+           {'texto_a': 'Adoro cozinhar para os amigos e testar receitas novas.',
+            'texto_b': 'Faço jantares em casa no fim de semana e sempre sobra comida.'}, token=admin, papel='admin',
+           nota='Mesmo interesse (culinária) escrito com palavras diferentes.')
+    chamar('ia_testar_opostos', 'POST', '/api/admin/ia/testar/',
+           {'texto_a': 'Adoro festas e baladas, minha casa vive cheia de gente com música alta.',
+            'texto_b': 'Preciso de silêncio e de uma casa tranquila; durmo cedo e evito barulho.'}, token=admin, papel='admin')
+    chamar('ia_testar_invalido', 'POST', '/api/admin/ia/testar/', {'texto_a': '   ', 'texto_b': 'x' * 1001}, token=admin, papel='admin')
+    chamar('ia_testar_comum', 'POST', '/api/admin/ia/testar/', {'texto_a': 'Adoro cozinhar.', 'texto_b': 'Faço jantares.'},
+           token=ana, papel='comum')
+    if BASE_SEM_IA:
+        chamar('ia_testar_indisponivel', 'POST', '/api/admin/ia/testar/',
+               {'texto_a': 'Adoro cozinhar para os amigos.', 'texto_b': 'Faço jantares em casa.'}, token=admin, papel='admin',
+               nota='Servidor com IA_HABILITADA=False (o mesmo vale para o modelo indisponível).', base=BASE_SEM_IA)
 
     # ── Painel e logs ──
     chamar('dashboard', 'GET', '/api/admin/dashboard/', token=admin, papel='admin')

@@ -4,7 +4,7 @@
 
 ## Visão geral
 
-API REST em JSON (Django REST Framework), versão **1.0.0-rc2**, com 31 operações em 26 rotas, organizadas em 7 grupos: Autenticação, Perfis, Descoberta e Matches, Chat, Moderação, Painel administrativo e Logs.
+API REST em JSON (Django REST Framework), versão **1.0.0-rc2**, com 34 operações em 29 rotas, organizadas em 7 grupos: Autenticação, Perfis, Descoberta e Matches, Chat, Moderação, Painel administrativo e Logs.
 
 | Recurso | Onde |
 |---|---|
@@ -73,6 +73,7 @@ Somente `registrar`, `login` e `login/refresh` são públicos. O frontend guarda
 | Descoberta e Matches | `GET` | `/api/descoberta/` | Usuário comum (`buscando_vaga` ou `oferecendo_vaga`) | Descobrir perfis compatíveis |
 | Descoberta e Matches | `POST` | `/api/curtidas/` | Usuário comum (`buscando_vaga` ou `oferecendo_vaga`) | Curtir ou recusar um perfil |
 | Descoberta e Matches | `GET` | `/api/matches/` | Qualquer usuário logado | Listar os matches |
+| Descoberta e Matches | `GET` | `/api/compatibilidade/{perfil_id}/` | Usuário comum (`buscando_vaga` ou `oferecendo_vaga`) | Detalhar a compatibilidade com um perfil |
 | Chat | `GET` | `/api/conversas/` | Usuário comum (`buscando_vaga` ou `oferecendo_vaga`) | Listar conversas |
 | Chat | `GET` | `/api/matches/{match_id}/mensagens/` | Participante do match | Listar mensagens de um match |
 | Chat | `POST` | `/api/matches/{match_id}/mensagens/` | Participante do match | Enviar mensagem |
@@ -449,7 +450,7 @@ HTTP 200
 **Quem pode:** Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador recebe 403.  
 **Operação (OpenAPI):** `perfis_criar`
 
-Cria o perfil do usuário logado (um por usuário). Quem oferece vaga pode enviar também os campos do anúncio (`titulo_anuncio`, `descricao_imovel`, `fotos_imovel`, `foto_perfil_url`). Ao salvar, as compatibilidades com os perfis do tipo oposto são recalculadas.
+Cria o perfil do usuário logado (um por usuário). Quem oferece vaga pode enviar também os campos do anúncio (`titulo_anuncio`, `descricao_imovel`, `fotos_imovel`, `foto_perfil_url`). Ao salvar, as compatibilidades com os perfis do tipo oposto são recalculadas. Com a bio (+ anúncio) de 20 letras ou mais, o modelo de IA local gera o embedding usado no critério "Afinidade de perfil (IA)"; o texto não sai do servidor.
 
 **Corpo de entrada** (JSON)
 
@@ -572,7 +573,7 @@ HTTP 201
 **Quem pode:** Qualquer usuário logado.  
 **Operação (OpenAPI):** `perfis_consultar`
 
-Permitido para: o próprio perfil, perfis do **tipo oposto** (os da Descoberta), perfis de quem tem match com você e o administrador. Qualquer outro caso → 403. Perfil de conta suspensa (de outra pessoa) → 404; só o administrador o enxerga.
+Permitido para: o próprio perfil, perfis do **tipo oposto** (os da Descoberta), perfis de quem tem match com você e o administrador. Qualquer outro caso → 403. Perfil de conta suspensa (de outra pessoa) → 404; só o administrador o enxerga. `afinidade_ia` (0 a 1 ou null) e `temas_em_comum` comparam a bio do perfil com a sua; vêm `null`/`[]` no próprio perfil, para o administrador e quando uma das bios tem menos de 20 letras.
 
 **Parâmetros de rota**
 
@@ -580,7 +581,7 @@ Permitido para: o próprio perfil, perfis do **tipo oposto** (os da Descoberta),
 |---|---|
 | `id` | Id do **perfil**. |
 
-**Resposta de sucesso:** `200` — Perfil.
+**Resposta de sucesso:** `200` — Perfil (com `afinidade_ia` e `temas_em_comum` em relação a você).
 
 **Exemplo** — Ana (buscando vaga) consulta o anúncio de Bruno (tipo oposto).
 
@@ -616,7 +617,9 @@ HTTP 200
     "https://exemplo.com/fotos/quarto.jpg",
     "https://exemplo.com/fotos/sala.jpg"
   ],
-  "foto_perfil_url": "https://exemplo.com/fotos/bruno.jpg"
+  "foto_perfil_url": "https://exemplo.com/fotos/bruno.jpg",
+  "afinidade_ia": 0.0,
+  "temas_em_comum": []
 }
 ```
 
@@ -854,7 +857,7 @@ HTTP 204
 **Quem pode:** Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador recebe 403.  
 **Operação (OpenAPI):** `descoberta_listar`
 
-Lista os perfis do **tipo oposto** com o score de compatibilidade (0 a 1), por score decrescente. Exige perfil criado. Não aparecem: o próprio perfil, perfis já avaliados, perfis já em match e contas suspensas.
+Lista os perfis do **tipo oposto** com o score de compatibilidade (0 a 1), por score decrescente. Exige perfil criado. Não aparecem: o próprio perfil, perfis já avaliados, perfis já em match e contas suspensas. Cada item traz também `afinidade_ia` (afinidade entre as bios calculada pelo modelo de IA local, 0 a 1, ou null quando uma das bios é curta ou a IA está desligada) e `temas_em_comum`. O detalhamento do score está em `GET /api/compatibilidade/{perfil_id}/`.
 
 **Parâmetros de consulta** (todos opcionais)
 
@@ -883,6 +886,34 @@ curl -X GET "<BASE>/api/descoberta/" \
 HTTP 200
 [
   {
+    "id": 4,
+    "nome": "Fábio Rocha",
+    "idade": 29,
+    "regiao": "Boa Viagem",
+    "bio": "Oi!",
+    "orcamento_min": "800.00",
+    "orcamento_max": "1300.00",
+    "fumante": false,
+    "aceita_pets": true,
+    "tolerancia_bagunca": 2,
+    "nivel_organizacao": 4,
+    "perfil_horario": "flexivel",
+    "nivel_ruido": 2,
+    "nivel_social": 3,
+    "aceita_visitas": "as_vezes",
+    "tipo_imovel": "apartamento",
+    "qtd_moradores": 2,
+    "titulo_anuncio": "",
+    "descricao_imovel": "",
+    "fotos_imovel": [],
+    "foto_perfil_url": "",
+    "tipo": "oferecendo_vaga",
+    "score": 0.9313,
+    "usuario_id": 6,
+    "afinidade_ia": null,
+    "temas_em_comum": []
+  },
+  {
     "id": 2,
     "nome": "Bruno Lima",
     "idade": 29,
@@ -908,8 +939,10 @@ HTTP 200
     ],
     "foto_perfil_url": "https://exemplo.com/fotos/bruno.jpg",
     "tipo": "oferecendo_vaga",
-    "score": 0.9295,
-    "usuario_id": 3
+    "score": 0.8436,
+    "usuario_id": 3,
+    "afinidade_ia": 0.0538,
+    "temas_em_comum": []
   },
   {
     "id": 3,
@@ -934,8 +967,10 @@ HTTP 200
     "fotos_imovel": [],
     "foto_perfil_url": "",
     "tipo": "oferecendo_vaga",
-    "score": 0.7295,
-    "usuario_id": 4
+    "score": 0.6608,
+    "usuario_id": 4,
+    "afinidade_ia": 0.0764,
+    "temas_em_comum": []
   }
 ]
 ```
@@ -976,8 +1011,10 @@ HTTP 200
     ],
     "foto_perfil_url": "https://exemplo.com/fotos/bruno.jpg",
     "tipo": "oferecendo_vaga",
-    "score": 0.9295,
-    "usuario_id": 3
+    "score": 0.8436,
+    "usuario_id": 3,
+    "afinidade_ia": 0.0538,
+    "temas_em_comum": []
   }
 ]
 ```
@@ -1094,8 +1131,8 @@ HTTP 201
       "tipo": "oferecendo_vaga",
       "usuario_id": 3
     },
-    "score": 0.9295,
-    "data_match": "2026-11-18T09:36:15.179370-03:00"
+    "score": 0.8436,
+    "data_match": "2026-11-20T12:00:50.568916-03:00"
   }
 }
 ```
@@ -1189,8 +1226,8 @@ HTTP 200
       "tipo": "oferecendo_vaga",
       "usuario_id": 3
     },
-    "score": 0.9295,
-    "data_match": "2026-11-18T09:36:15.179370-03:00"
+    "score": 0.8436,
+    "data_match": "2026-11-20T12:00:50.568916-03:00"
   }
 ]
 ```
@@ -1201,6 +1238,167 @@ HTTP 200
 |---|---|---|
 | `401` | Sem token | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
 | `401` | Token inválido ou expirado | `{"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}` |
+
+---
+
+### `GET /api/compatibilidade/{perfil_id}/` — Detalhar a compatibilidade com um perfil
+
+**Quem pode:** Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador recebe 403.  
+**Operação (OpenAPI):** `compatibilidade_detalhe`
+
+Score total e o detalhamento dos 7 critérios entre você e um perfil do **tipo oposto** (conta ativa): peso configurado, peso efetivo, valor de 0 a 1 e contribuição de cada um. Inclui a **Afinidade por IA** (cosseno entre os embeddings das bios, calibrado para 0 a 1), os temas de cada bio e os temas em comum. Se um dos perfis não tem embedding (bio com menos de 20 letras) ou a IA está desligada, o critério de IA fica de fora e os outros 6 pesos são renormalizados (`motivo_sem_ia` explica). Nada aqui chama o modelo: os embeddings já estão gravados.
+
+**Parâmetros de rota**
+
+| Parâmetro | Descrição |
+|---|---|
+| `perfil_id` |  |
+
+**Parâmetros de consulta** (todos opcionais)
+
+| Parâmetro | Tipo | Valores aceitos / descrição |
+|---|---|---|
+| `perfil_id` | inteiro | Id do PERFIL (não do usuário). |
+
+**Resposta de sucesso:** `200` — Detalhamento do score.
+
+**Exemplo** — Ana (buscando vaga) e Bruno (oferecendo vaga): as duas bios têm embedding.
+
+```bash
+curl -X GET "<BASE>/api/compatibilidade/2/" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+```json
+HTTP 200
+{
+  "perfil_id": 2,
+  "nome": "Bruno Lima",
+  "score": 0.8436,
+  "criterios": [
+    {
+      "criterio": "orcamento",
+      "nome": "Orçamento",
+      "peso": 0.23,
+      "peso_efetivo": 0.23,
+      "valor": 0.8182,
+      "contribuicao": 0.1882,
+      "considerado": true
+    },
+    {
+      "criterio": "regiao",
+      "nome": "Região",
+      "peso": 0.14,
+      "peso_efetivo": 0.14,
+      "valor": 1.0,
+      "contribuicao": 0.14,
+      "considerado": true
+    },
+    {
+      "criterio": "rotina",
+      "nome": "Rotina",
+      "peso": 0.14,
+      "peso_efetivo": 0.14,
+      "valor": 1.0,
+      "contribuicao": 0.14,
+      "considerado": true
+    }
+  ],
+  "afinidade_ia": 0.0538,
+  "similaridade_ia": 0.2242,
+  "temas_em_comum": [],
+  "temas_meu_perfil": [
+    {
+      "id": "culinaria",
+      "nome": "Culinária"
+    }
+  ],
+  "temas_outro_perfil": [
+    {
+      "id": "trabalho_remoto",
+      "nome": "Trabalho remoto"
+    },
+    {
+      "id": "silencio",
+      "nome": "Silêncio e tranquilidade"
+    },
+    {
+      "id": "organizacao",
+      "nome": "Organização e limpeza"
+    }
+  ],
+  "ia_disponivel": true,
+  "motivo_sem_ia": null
+}
+```
+
+**Bio curta: critério de IA ignorado** — A bio de Fábio tem menos de 20 letras: o critério de IA fica de fora e os 6 pesos são renormalizados.
+
+```bash
+curl -X GET "<BASE>/api/compatibilidade/4/" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+```json
+HTTP 200
+{
+  "perfil_id": 4,
+  "nome": "Fábio Rocha",
+  "score": 0.9313,
+  "criterios": [
+    {
+      "criterio": "orcamento",
+      "nome": "Orçamento",
+      "peso": 0.23,
+      "peso_efetivo": 0.2556,
+      "valor": 0.8182,
+      "contribuicao": 0.2091,
+      "considerado": true
+    },
+    {
+      "criterio": "regiao",
+      "nome": "Região",
+      "peso": 0.14,
+      "peso_efetivo": 0.1556,
+      "valor": 1.0,
+      "contribuicao": 0.1556,
+      "considerado": true
+    },
+    {
+      "criterio": "rotina",
+      "nome": "Rotina",
+      "peso": 0.14,
+      "peso_efetivo": 0.1556,
+      "valor": 1.0,
+      "contribuicao": 0.1556,
+      "considerado": true
+    }
+  ],
+  "afinidade_ia": null,
+  "similaridade_ia": null,
+  "temas_em_comum": [],
+  "temas_meu_perfil": [
+    {
+      "id": "culinaria",
+      "nome": "Culinária"
+    }
+  ],
+  "temas_outro_perfil": [],
+  "ia_disponivel": true,
+  "motivo_sem_ia": "Este perfil ainda não tem análise de IA (bio muito curta); o score usa os outros 6 critérios."
+}
+```
+
+**Erros possíveis**
+
+| Status | Quando | Resposta real |
+|---|---|---|
+| `400` | Usuário ainda sem perfil | `{"detail": "Você precisa criar um perfil antes de consultar a compatibilidade."}` |
+| `401` | Sem token | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
+| `401` | Token inválido ou expirado | `{"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}` |
+| `403` | Perfil do mesmo tipo | `{"detail": "Você só pode consultar a compatibilidade com perfis do tipo oposto."}` |
+| `403` | Administrador | `{"detail": "O administrador não participa deste recurso."}` |
+| `404` | Perfil inexistente ou de conta suspensa | `{"detail": "Perfil não encontrado."}` |
 
 ---
 
@@ -1255,10 +1453,10 @@ HTTP 200
       "aceita_pets": true,
       "fumante": false
     },
-    "score": 0.9295,
+    "score": 0.8436,
     "ultima_mensagem": {
       "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-      "data_envio": "2026-11-18T12:36:15.803928Z",
+      "data_envio": "2026-11-20T15:00:52.432878Z",
       "remetente_id": 2
     },
     "nao_lidas": 1
@@ -1299,10 +1497,10 @@ HTTP 200
       "aceita_pets": true,
       "fumante": false
     },
-    "score": 0.9295,
+    "score": 0.8436,
     "ultima_mensagem": {
       "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-      "data_envio": "2026-11-18T12:36:15.803928Z",
+      "data_envio": "2026-11-20T15:00:52.432878Z",
       "remetente_id": 2
     },
     "nao_lidas": 1
@@ -1356,7 +1554,7 @@ HTTP 200
     "match_id": 1,
     "remetente_id": 1,
     "conteudo": "Oi, Bruno! O quarto ainda está disponível?",
-    "data_envio": "2026-11-18T09:36:15.718191-03:00",
+    "data_envio": "2026-11-20T12:00:52.314104-03:00",
     "lida": false
   },
   {
@@ -1364,7 +1562,7 @@ HTTP 200
     "match_id": 1,
     "remetente_id": 2,
     "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-    "data_envio": "2026-11-18T09:36:15.803928-03:00",
+    "data_envio": "2026-11-20T12:00:52.432878-03:00",
     "lida": true
   }
 ]
@@ -1385,7 +1583,7 @@ HTTP 200
     "match_id": 1,
     "remetente_id": 2,
     "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-    "data_envio": "2026-11-18T09:36:15.803928-03:00",
+    "data_envio": "2026-11-20T12:00:52.432878-03:00",
     "lida": true
   }
 ]
@@ -1440,7 +1638,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 1,
   "conteudo": "Oi, Bruno! O quarto ainda está disponível?",
-  "data_envio": "2026-11-18T09:36:15.718191-03:00",
+  "data_envio": "2026-11-20T12:00:52.314104-03:00",
   "lida": false
 }
 ```
@@ -1461,7 +1659,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 2,
   "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-  "data_envio": "2026-11-18T09:36:15.803928-03:00",
+  "data_envio": "2026-11-20T12:00:52.432878-03:00",
   "lida": false
 }
 ```
@@ -1514,7 +1712,7 @@ HTTP 201
   "denunciado": 4,
   "motivo": "spam",
   "status": "pendente",
-  "criada_em": "2026-11-18T12:36:16.697460Z"
+  "criada_em": "2026-11-20T15:00:53.626645Z"
 }
 ```
 
@@ -1576,8 +1774,8 @@ HTTP 200
     "status": "pendente",
     "resolvida_por": null,
     "resolucao": "",
-    "criada_em": "2026-11-18T12:36:16.697460Z",
-    "atualizada_em": "2026-11-18T12:36:16.697481Z"
+    "criada_em": "2026-11-20T15:00:53.626645Z",
+    "atualizada_em": "2026-11-20T15:00:53.626645Z"
   }
 ]
 ```
@@ -1771,63 +1969,63 @@ curl -X GET "<BASE>/api/admin/dashboard/" \
 HTTP 200
 {
   "kpis": {
-    "usuarios_total": 6,
+    "usuarios_total": 7,
     "usuarios_por_tipo": {
-      "oferecendo_vaga": 2,
+      "oferecendo_vaga": 3,
       "buscando_vaga": 3,
       "administrador": 1
     },
     "usuarios_suspensos": 0,
-    "perfis_total": 3,
+    "perfis_total": 4,
     "curtidas_total": 2,
     "recusas_total": 1,
     "matches_total": 1,
     "taxa_match": 100.0,
     "mensagens_total": 2,
     "conversas_ativas": 1,
-    "score_medio": 0.9295,
+    "score_medio": 0.8436,
     "denuncias_pendentes": 0
   },
   "series": {
     "matches_por_dia": [
       {
-        "data": "2026-10-20",
-        "total": 0
-      },
-      {
-        "data": "2026-10-21",
-        "total": 0
-      },
-      {
         "data": "2026-10-22",
+        "total": 0
+      },
+      {
+        "data": "2026-10-23",
+        "total": 0
+      },
+      {
+        "data": "2026-10-24",
         "total": 0
       }
     ],
     "curtidas_por_dia": [
       {
-        "data": "2026-10-20",
-        "total": 0
-      },
-      {
-        "data": "2026-10-21",
-        "total": 0
-      },
-      {
         "data": "2026-10-22",
+        "total": 0
+      },
+      {
+        "data": "2026-10-23",
+        "total": 0
+      },
+      {
+        "data": "2026-10-24",
         "total": 0
       }
     ],
     "mensagens_por_dia": [
       {
-        "data": "2026-10-20",
-        "total": 0
-      },
-      {
-        "data": "2026-10-21",
-        "total": 0
-      },
-      {
         "data": "2026-10-22",
+        "total": 0
+      },
+      {
+        "data": "2026-10-23",
+        "total": 0
+      },
+      {
+        "data": "2026-10-24",
         "total": 0
       }
     ]
@@ -1835,9 +2033,9 @@ HTTP 200
   "top_regioes": [
     {
       "regiao": "Boa Viagem",
-      "perfis": 2,
+      "perfis": 3,
       "matches": 1,
-      "score_medio": 0.9295
+      "score_medio": 0.8436
     },
     {
       "regiao": "Casa Forte",
@@ -1875,61 +2073,61 @@ curl -X GET "<BASE>/api/admin/dashboard/?regiao=Boa%20Viagem&tipo=oferecendo_vag
 HTTP 200
 {
   "kpis": {
-    "usuarios_total": 6,
+    "usuarios_total": 7,
     "usuarios_por_tipo": {
-      "oferecendo_vaga": 2
+      "oferecendo_vaga": 3
     },
     "usuarios_suspensos": 0,
-    "perfis_total": 1,
+    "perfis_total": 2,
     "curtidas_total": 1,
     "recusas_total": 0,
     "matches_total": 1,
     "taxa_match": 100.0,
     "mensagens_total": 2,
     "conversas_ativas": 1,
-    "score_medio": 0.9295,
+    "score_medio": 0.8436,
     "denuncias_pendentes": 0
   },
   "series": {
     "matches_por_dia": [
       {
-        "data": "2026-10-20",
-        "total": 0
-      },
-      {
-        "data": "2026-10-21",
-        "total": 0
-      },
-      {
         "data": "2026-10-22",
+        "total": 0
+      },
+      {
+        "data": "2026-10-23",
+        "total": 0
+      },
+      {
+        "data": "2026-10-24",
         "total": 0
       }
     ],
     "curtidas_por_dia": [
       {
-        "data": "2026-10-20",
-        "total": 0
-      },
-      {
-        "data": "2026-10-21",
-        "total": 0
-      },
-      {
         "data": "2026-10-22",
+        "total": 0
+      },
+      {
+        "data": "2026-10-23",
+        "total": 0
+      },
+      {
+        "data": "2026-10-24",
         "total": 0
       }
     ],
     "mensagens_por_dia": [
       {
-        "data": "2026-10-20",
-        "total": 0
-      },
-      {
-        "data": "2026-10-21",
-        "total": 0
-      },
-      {
         "data": "2026-10-22",
+        "total": 0
+      },
+      {
+        "data": "2026-10-23",
+        "total": 0
+      },
+      {
+        "data": "2026-10-24",
         "total": 0
       }
     ]
@@ -1937,9 +2135,9 @@ HTTP 200
   "top_regioes": [
     {
       "regiao": "Boa Viagem",
-      "perfis": 2,
+      "perfis": 3,
       "matches": 1,
-      "score_medio": 0.9295
+      "score_medio": 0.8436
     },
     {
       "regiao": "Casa Forte",
@@ -2085,7 +2283,7 @@ HTTP 200
   ],
   "linhas": [
     [
-      "2026-11-18",
+      "2026-11-20",
       "Ana Souza",
       "Bruno Lima"
     ]
@@ -2095,7 +2293,7 @@ HTTP 200
     "mensagens": 2
   },
   "filtros_aplicados": {},
-  "gerado_em": "2026-11-18T12:36:23.279442Z"
+  "gerado_em": "2026-11-20T15:01:06.237692Z"
 }
 ```
 
@@ -2109,9 +2307,9 @@ curl -X GET "<BASE>/api/admin/relatorios/usuarios/?formato=csv" \
 ```json
 HTTP 200  (text/csv)
 ﻿Data de Cadastro;Nome;E-mail;Tipo;Região;Tem Perfil
-18/11/2026;e2e-admin@teste.com;e2e-admin@teste.com;Administrador;;Não
-18/11/2026;Ana Souza;ana.souza@exemplo.com;Buscando vaga;Boa Viagem;Sim
-18/11/2026;Bruno Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;Sim
+20/11/2026;e2e-admin@teste.com;e2e-admin@teste.com;Administrador;;Não
+20/11/2026;Ana Souza;ana.souza@exemplo.com;Buscando vaga;Boa Viagem;Sim
+20/11/2026;Bruno Lima;bruno.lima@exemplo.com;Oferecendo vaga;Boa Viagem;Sim
 ```
 
 **Erros possíveis**
@@ -2161,12 +2359,12 @@ HTTP 200
   "page": 1,
   "results": [
     {
-      "id": 6,
+      "id": 7,
       "nome": "Eva Martins",
       "email": "eva.martins@exemplo.com",
       "tipo": "buscando_vaga",
       "regiao": null,
-      "data_cadastro": "2026-11-18T12:36:07.991384Z",
+      "data_cadastro": "2026-11-20T15:00:34.035940Z",
       "tem_perfil": false,
       "ativo": true
     },
@@ -2176,7 +2374,7 @@ HTTP 200
       "email": "diego.alves@exemplo.com",
       "tipo": "buscando_vaga",
       "regiao": null,
-      "data_cadastro": "2026-11-18T12:35:44.720289Z",
+      "data_cadastro": "2026-11-20T14:59:47.828049Z",
       "tem_perfil": false,
       "ativo": true
     }
@@ -2224,9 +2422,9 @@ curl -X GET "<BASE>/api/admin/usuarios/exportar/?ativo=true" \
 ```json
 HTTP 200  (text/csv)
 ﻿ID;Nome;E-mail;Tipo;Região;Data de Cadastro;Tem Perfil
-6;Eva Martins;eva.martins@exemplo.com;Buscando vaga;;18/11/2026;Não
-5;Diego Alves;diego.alves@exemplo.com;Buscando vaga;;18/11/2026;Não
-4;Carla Dias;carla.dias@exemplo.com;Oferecendo vaga;Casa Forte;18/11/2026;Sim
+7;Eva Martins;eva.martins@exemplo.com;Buscando vaga;;20/11/2026;Não
+6;Fábio Rocha;fabio.rocha@exemplo.com;Oferecendo vaga;Boa Viagem;20/11/2026;Sim
+5;Diego Alves;diego.alves@exemplo.com;Buscando vaga;;20/11/2026;Não
 ```
 
 **Erros possíveis**
@@ -2251,7 +2449,7 @@ Histórico de operações, do mais recente para o mais antigo. O texto das mensa
 
 | Parâmetro | Tipo | Valores aceitos / descrição |
 |---|---|---|
-| `acao` | texto | Valores: `LOGIN`, `LOGIN_FALHA`, `CADASTRO`, `PERFIL_CRIADO`, `PERFIL_EDITADO`, `PERFIL_EXCLUIDO`, `CURTIDA`, `RECUSA`, `MATCH_CRIADO`, `MENSAGEM_ENVIADA`, `RELATORIO_EXPORTADO`, `DENUNCIA_CRIADA`, `DENUNCIA_RESOLVIDA`, `USUARIO_SUSPENSO`, `USUARIO_REATIVADO`, `SENHA_SOLICITADA`, `SENHA_REDEFINIDA`. Ação registrada. |
+| `acao` | texto | Valores: `LOGIN`, `LOGIN_FALHA`, `CADASTRO`, `PERFIL_CRIADO`, `PERFIL_EDITADO`, `PERFIL_EXCLUIDO`, `CURTIDA`, `RECUSA`, `MATCH_CRIADO`, `MENSAGEM_ENVIADA`, `RELATORIO_EXPORTADO`, `DENUNCIA_CRIADA`, `DENUNCIA_RESOLVIDA`, `USUARIO_SUSPENSO`, `USUARIO_REATIVADO`, `SENHA_SOLICITADA`, `SENHA_REDEFINIDA`, `IA_TESTE`. Ação registrada. |
 | `usuario` | texto | Id, e-mail ou parte do nome do usuário. |
 | `entidade` | texto | Tipo de objeto afetado (`usuario`, `perfil`, `match`...). |
 | `q` | texto | Busca em e-mail, nome, username ou entidade. |
@@ -2276,8 +2474,8 @@ HTTP 200
   "page": 1,
   "results": [
     {
-      "id": 26,
-      "data_hora": "2026-11-18T12:36:15.187486Z",
+      "id": 29,
+      "data_hora": "2026-11-20T15:00:50.620168Z",
       "usuario": {
         "id": 3,
         "nome": "Bruno Lima",
@@ -2288,7 +2486,7 @@ HTTP 200
       "entidade": "match",
       "entidade_id": 1,
       "detalhes": {
-        "score": 0.9295,
+        "score": 0.8436,
         "match_id": 1
       },
       "ip": "127.0.0.1"
@@ -2311,8 +2509,8 @@ HTTP 200
   "page": 1,
   "results": [
     {
-      "id": 29,
-      "data_hora": "2026-11-18T12:36:16.701747Z",
+      "id": 32,
+      "data_hora": "2026-11-20T15:00:53.635089Z",
       "usuario": {
         "id": 2,
         "nome": "Ana Souza",
@@ -2336,7 +2534,7 @@ HTTP 200
 
 | Status | Quando | Resposta real |
 |---|---|---|
-| `400` | Ação inválida | `{"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA."}` |
+| `400` | Ação inválida | `{"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA, IA_TESTE."}` |
 | `401` | Sem token | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
 | `401` | Token inválido ou expirado | `{"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}` |
 
@@ -2353,7 +2551,7 @@ Mesmos filtros da listagem (sem paginação). CSV com BOM e separador `;`. Regis
 
 | Parâmetro | Tipo | Valores aceitos / descrição |
 |---|---|---|
-| `acao` | texto | Valores: `LOGIN`, `LOGIN_FALHA`, `CADASTRO`, `PERFIL_CRIADO`, `PERFIL_EDITADO`, `PERFIL_EXCLUIDO`, `CURTIDA`, `RECUSA`, `MATCH_CRIADO`, `MENSAGEM_ENVIADA`, `RELATORIO_EXPORTADO`, `DENUNCIA_CRIADA`, `DENUNCIA_RESOLVIDA`, `USUARIO_SUSPENSO`, `USUARIO_REATIVADO`, `SENHA_SOLICITADA`, `SENHA_REDEFINIDA`. Ação registrada. |
+| `acao` | texto | Valores: `LOGIN`, `LOGIN_FALHA`, `CADASTRO`, `PERFIL_CRIADO`, `PERFIL_EDITADO`, `PERFIL_EXCLUIDO`, `CURTIDA`, `RECUSA`, `MATCH_CRIADO`, `MENSAGEM_ENVIADA`, `RELATORIO_EXPORTADO`, `DENUNCIA_CRIADA`, `DENUNCIA_RESOLVIDA`, `USUARIO_SUSPENSO`, `USUARIO_REATIVADO`, `SENHA_SOLICITADA`, `SENHA_REDEFINIDA`, `IA_TESTE`. Ação registrada. |
 | `usuario` | texto | Id, e-mail ou parte do nome do usuário. |
 | `entidade` | texto | Tipo de objeto afetado. |
 | `q` | texto | Busca em e-mail, nome, username ou entidade. |
@@ -2372,16 +2570,16 @@ curl -X GET "<BASE>/api/admin/logs/exportar/?acao=LOGIN" \
 ```json
 HTTP 200  (text/csv)
 ﻿ID;Data/Hora;Usuário ID;Usuário Nome;Usuário E-mail;Ação;Descrição da Ação;Entidade;ID da Entidade;Detalhes;IP
-14;18/11/2026 09:36:07;2;Ana Souza;ana.souza@exemplo.com;LOGIN;Login;usuario;2;;127.0.0.1
-13;18/11/2026 09:36:05;1;e2e-admin@teste.com;e2e-admin@teste.com;LOGIN;Login;usuario;1;;127.0.0.1
-12;18/11/2026 09:36:03;5;Diego Alves;diego.alves@exemplo.com;LOGIN;Login;usuario;5;;127.0.0.1
+16;20/11/2026 12:00:33;2;Ana Souza;ana.souza@exemplo.com;LOGIN;Login;usuario;2;;127.0.0.1
+15;20/11/2026 12:00:30;1;e2e-admin@teste.com;e2e-admin@teste.com;LOGIN;Login;usuario;1;;127.0.0.1
+14;20/11/2026 12:00:26;6;Fábio Rocha;fabio.rocha@exemplo.com;LOGIN;Login;usuario;6;;127.0.0.1
 ```
 
 **Erros possíveis**
 
 | Status | Quando | Resposta real |
 |---|---|---|
-| `400` | Ação inválida | `{"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA."}` |
+| `400` | Ação inválida | `{"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA, IA_TESTE."}` |
 | `401` | Sem token | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
 | `401` | Token inválido ou expirado | `{"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}` |
 
@@ -2480,6 +2678,34 @@ curl -X GET "<BASE>/api/descoberta/" \
 HTTP 200
 [
   {
+    "id": 4,
+    "nome": "Fábio Rocha",
+    "idade": 29,
+    "regiao": "Boa Viagem",
+    "bio": "Oi!",
+    "orcamento_min": "800.00",
+    "orcamento_max": "1300.00",
+    "fumante": false,
+    "aceita_pets": true,
+    "tolerancia_bagunca": 2,
+    "nivel_organizacao": 4,
+    "perfil_horario": "flexivel",
+    "nivel_ruido": 2,
+    "nivel_social": 3,
+    "aceita_visitas": "as_vezes",
+    "tipo_imovel": "apartamento",
+    "qtd_moradores": 2,
+    "titulo_anuncio": "",
+    "descricao_imovel": "",
+    "fotos_imovel": [],
+    "foto_perfil_url": "",
+    "tipo": "oferecendo_vaga",
+    "score": 0.9313,
+    "usuario_id": 6,
+    "afinidade_ia": null,
+    "temas_em_comum": []
+  },
+  {
     "id": 2,
     "nome": "Bruno Lima",
     "idade": 29,
@@ -2505,8 +2731,10 @@ HTTP 200
     ],
     "foto_perfil_url": "https://exemplo.com/fotos/bruno.jpg",
     "tipo": "oferecendo_vaga",
-    "score": 0.9295,
-    "usuario_id": 3
+    "score": 0.8436,
+    "usuario_id": 3,
+    "afinidade_ia": 0.0538,
+    "temas_em_comum": []
   },
   {
     "id": 3,
@@ -2531,8 +2759,10 @@ HTTP 200
     "fotos_imovel": [],
     "foto_perfil_url": "",
     "tipo": "oferecendo_vaga",
-    "score": 0.7295,
-    "usuario_id": 4
+    "score": 0.6608,
+    "usuario_id": 4,
+    "afinidade_ia": 0.0764,
+    "temas_em_comum": []
   }
 ]
 ```
@@ -2625,8 +2855,8 @@ HTTP 201
       "tipo": "oferecendo_vaga",
       "usuario_id": 3
     },
-    "score": 0.9295,
-    "data_match": "2026-11-18T09:36:15.179370-03:00"
+    "score": 0.8436,
+    "data_match": "2026-11-20T12:00:50.568916-03:00"
   }
 }
 ```
@@ -2698,8 +2928,8 @@ HTTP 200
       "tipo": "oferecendo_vaga",
       "usuario_id": 3
     },
-    "score": 0.9295,
-    "data_match": "2026-11-18T09:36:15.179370-03:00"
+    "score": 0.8436,
+    "data_match": "2026-11-20T12:00:50.568916-03:00"
   }
 ]
 ```
@@ -2722,7 +2952,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 1,
   "conteudo": "Oi, Bruno! O quarto ainda está disponível?",
-  "data_envio": "2026-11-18T09:36:15.718191-03:00",
+  "data_envio": "2026-11-20T12:00:52.314104-03:00",
   "lida": false
 }
 ```
@@ -2745,7 +2975,7 @@ HTTP 201
   "match_id": 1,
   "remetente_id": 2,
   "conteudo": "Oi, Ana! Está sim. Quer visitar amanhã?",
-  "data_envio": "2026-11-18T09:36:15.803928-03:00",
+  "data_envio": "2026-11-20T12:00:52.432878-03:00",
   "lida": false
 }
 ```

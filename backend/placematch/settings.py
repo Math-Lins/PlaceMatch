@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'logs',
     'painel',
     'moderacao',
+    'ia',
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
@@ -163,6 +164,7 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Chat', 'description': 'Conversas e mensagens entre as duas pessoas de um match.'},
         {'name': 'Moderação', 'description': 'Denúncias de usuários, análise pelo administrador e suspensão de contas.'},
         {'name': 'Painel administrativo', 'description': 'Dashboard, relatórios, lista de usuários e exportações CSV (somente administrador).'},
+        {'name': 'Afinidade por IA', 'description': 'Modelo de linguagem local que compara as bios (7º critério do score): situação e teste (somente administrador).'},
         {'name': 'Logs', 'description': 'Histórico de operações do sistema (somente administrador).'},
     ],
     'SERVERS': [{'url': 'http://localhost:8000', 'description': 'Desenvolvimento local'}],
@@ -240,3 +242,12 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'PlaceMatch <nao-responda@placematch.local>')
 if os.getenv('EMAIL_FILE_PATH'):  # só para o backend de arquivo (usado no e2e)
     EMAIL_FILE_PATH = os.getenv('EMAIL_FILE_PATH')
+
+# ─── Afinidade por IA (veja ia/servico.py e "Afinidade por IA" no README) ──────
+
+# Liga/desliga o 7º critério do score. Desligada, o sistema usa só os 6 critérios (pesos renormalizados).
+IA_HABILITADA = os.getenv('IA_HABILITADA', 'True').strip().lower() in ('true', '1', 'sim', 'yes')
+# Pasta onde o modelo de linguagem é baixado (python manage.py baixar_modelo_ia). Fora do git.
+IA_MODELO_DIR = os.getenv('IA_MODELO_DIR', '') or str(BASE_DIR / '.modelos')
+# Implementação dos embeddings: 'fastembed' (modelo real) ou 'falso' (determinístico, só para testes).
+IA_EMBEDDER = os.getenv('IA_EMBEDDER', 'fastembed')

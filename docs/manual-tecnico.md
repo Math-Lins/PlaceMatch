@@ -68,6 +68,7 @@ flowchart LR
 | CORS | django-cors-headers | 4.9.0 | Liberar o frontend |
 | Banco | PostgreSQL + psycopg2-binary | 16 / 2.9.13 | Persistência |
 | Processamento | NumPy | 2.x | Cálculo de compatibilidade em lote |
+| Afinidade por IA | fastembed + ONNX Runtime | 0.9.1 / 1.32.0 | Modelo de linguagem local (`paraphrase-multilingual-MiniLM-L12-v2`, 384 dimensões) que compara as bios; sem PyTorch e sem serviço externo |
 | Configuração | python-dotenv | 1.2.3 | Leitura do `.env` |
 | Linguagem do frontend | TypeScript | 5.9 | — |
 | Interface | React | 19.3 | Componentes e estado |
@@ -93,7 +94,8 @@ Cada app Django segue a mesma organização: `models.py` (tabelas), `serializers
 | `chat/` | Conversas e mensagens dentro de um match | `seed_mensagens` |
 | `moderacao/` | Denúncias, decisão do administrador, suspensão e reativação | — |
 | `painel/` | Dashboard, relatórios, lista de usuários, exportação CSV, filtros comuns | `verificar_banco` |
-| `logs/` | Registro de operações (17 ações) e consulta/exportação | — |
+| `logs/` | Registro de operações (18 ações) e consulta/exportação | — |
+| `ia/` | Afinidade por IA: serviço do modelo (`servico.py`, carga única e thread-safe), embeddings das bios (`embeddings.py`), temas de convivência (`temas.py`), rotas de administrador | `baixar_modelo_ia`, `gerar_embeddings` |
 | `scripts/` | Geração dos exemplos reais da API e do `docs/api.md` | — |
 
 ### 3.2 Frontend (`frontend/src/`)
@@ -127,6 +129,7 @@ Oito tabelas do sistema, mais as internas do Django e a lista de bloqueio de tok
 | `chat_mensagem` | Mensagem dentro de um match; o remetente é um dos dois perfis do match |
 | `moderacao_denuncia` | Denúncia, motivo, status (`pendente`, `resolvida`, `descartada`) e decisão |
 | `logs_logoperacao` | Trilha de auditoria (ação, usuário, entidade, IP, detalhes sem dados sensíveis) |
+| `ia_embeddingperfil` | Embedding da bio (384 floats em 1536 bytes), modelo, hash do texto, temas detectados e tempo de geração; um por perfil |
 
 ```mermaid
 erDiagram

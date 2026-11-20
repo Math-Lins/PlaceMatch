@@ -26,3 +26,8 @@ FRONTEND_URL = 'http://localhost:5173'
 
 # E-mails dos testes (e da matriz de permissões) ficam na memória: nada é impresso nem enviado.
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+
+# Afinidade por IA: embedder falso e determinístico (nenhum modelo é baixado nem carregado nos testes).
+# O único teste com o modelo real (ia/tests/test_integracao_modelo.py) troca para 'fastembed' e é pulado sem o modelo.
+IA_HABILITADA = True
+IA_EMBEDDER = 'falso'

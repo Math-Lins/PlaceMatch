@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from .afinidade import arredondar_cosseno, calibrar, combinar, vetor_do_perfil
 from .config import (
     PESOS,
     DIV_ESCALA_5, DIV_MORADORES, DIV_IDADE,
@@ -29,8 +30,11 @@ def calcular_scores_lote(base, outros, pesos=None) -> tuple[np.ndarray, np.ndarr
     """
     Calcula a compatibilidade de `base` contra cada perfil em `outros`.
 
-    pesos : dict opcional com as 6 chaves de PESOS.  Se None, usa PESOS de
+    pesos : dict opcional com as chaves de PESOS.  Se None, usa PESOS de
             config.py.  Útil para análise de sensibilidade sem alterar o config.
+
+    Afinidade por IA: os vetores dos perfis que têm embedding viram uma matriz (m × 384) e os cossenos
+    saem de um único produto matriz × vetor; perfis sem embedding ficam sem o 7º critério (renormalizado).
 
     Parâmetros
     ----------
@@ -125,20 +129,28 @@ def calcular_scores_lote(base, outros, pesos=None) -> tuple[np.ndarray, np.ndarr
     id_b    = np.array([float(p.idade) for p in outros_list], dtype=np.float64)
     sim_ida = np.maximum(0.0, 1.0 - np.abs(id_a - id_b) / DIV_IDADE)
 
+    # ── Afinidade de perfil (IA) ───────────────────────────────────────────
+    sim_ia: list = [None] * n
+    va = vetor_do_perfil(base)
+    if va is not None:
+        vetores = [vetor_do_perfil(p) for p in outros_list]
+        com_vetor = [i for i, v in enumerate(vetores) if v is not None]
+        if com_vetor:
+            cossenos = np.vstack([vetores[i] for i in com_vetor]) @ va
+            for i, c in zip(com_vetor, cossenos.tolist()):
+                sim_ia[i] = calibrar(arredondar_cosseno(c))
+
     # ── Score final ────────────────────────────────────────────────────────
-    # A soma ponderada é feita em Python float para que a ordem e o modo de
-    # arredondamento sejam idênticos ao de calcular_score (escalar).  Sem isso,
+    # A soma ponderada é feita em Python float (afinidade.combinar, a mesma função do escalar) para
+    # que a ordem e o modo de arredondamento sejam idênticos ao de calcular_score.  Sem isso,
     # operações em array NumPy podem diferir em 1 ULP no raw, cruzando um
     # limite de arredondamento em 4 casas e produzindo um score divergente.
     scores = np.array([
-        round(max(0.0, min(1.0,
-            pesos['orcamento'] * float(sim_orc[i])
-            + pesos['regiao']  * float(sim_reg[i])
-            + pesos['rotina']  * float(sim_rot[i])
-            + pesos['habitos'] * float(sim_hab[i])
-            + pesos['moradia'] * float(sim_mor[i])
-            + pesos['idade']   * float(sim_ida[i])
-        )), 4)
+        combinar(
+            (float(sim_orc[i]), float(sim_reg[i]), float(sim_rot[i]),
+             float(sim_hab[i]), float(sim_mor[i]), float(sim_ida[i])),
+            sim_ia[i], pesos,
+        )
         for i in range(n)
     ], dtype=np.float64)
     return ids, scores

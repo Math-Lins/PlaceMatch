@@ -1,6 +1,6 @@
 # Banco de dados — dicionário de dados final
 
-PostgreSQL **16.15 (Debian 16.15-1.pgdg13+2)**. Gerado a partir do banco de desenvolvimento em 16/11/2026 (catálogos `information_schema`, `pg_constraint` e `pg_indexes`). O esquema completo, tal como está no banco, está em [`esquema.sql`](./esquema.sql).
+PostgreSQL **16.15 (Debian 16.15-1.pgdg13+2)**. Gerado a partir do banco de desenvolvimento em 16/11/2026 (catálogos `information_schema`, `pg_constraint` e `pg_indexes`) e atualizado em 20/11/2026 com a tabela `ia_embeddingperfil` (Afinidade por IA). O esquema completo, tal como as migrations atuais criam, está em [`esquema.sql`](./esquema.sql).
 
 As demais tabelas (`auth_*`, `django_*`) são do próprio Django. Regras de negócio protegidas **no banco** aparecem na coluna "Restrição"; as validações da API estão em [`api.md`](./api.md).
 
@@ -18,8 +18,9 @@ As demais tabelas (`auth_*`, `django_*`) são do próprio Django. Regras de neg�
 | `chat_mensagem` | Mensagem | 6 colunas | Mensagem de chat dentro de um match. |
 | `moderacao_denuncia` | Denúncia | 10 colunas | Denúncia de um usuário contra outro e sua análise pelo administrador. |
 | `logs_logoperacao` | Log de operação | 8 colunas | Trilha de auditoria das operações do sistema (nunca guarda senhas nem texto de mensagens). |
+| `ia_embeddingperfil` | Embedding do perfil | 8 colunas | Vetor (embedding) do texto do perfil gerado pelo modelo de IA local, com os temas detectados. Um por perfil. |
 
-**Relações:** Usuario 1—0..1 Perfil · Perfil 1—N Curtida (origem e destino) · Perfil N—N Perfil por Match e por Compatibilidade · Match 1—N Mensagem · Perfil 1—N Mensagem (remetente) · Usuario 1—N Denuncia (denunciante, denunciado e resolvida_por) · Usuario 1—N LogOperacao.
+**Relações:** Usuario 1—0..1 Perfil · Perfil 1—N Curtida (origem e destino) · Perfil N—N Perfil por Match e por Compatibilidade · Match 1—N Mensagem · Perfil 1—N Mensagem (remetente) · Usuario 1—N Denuncia (denunciante, denunciado e resolvida_por) · Usuario 1—N LogOperacao · Perfil 1—0..1 EmbeddingPerfil.
 
 **Padrão:** `BD` = valor padrão definido no PostgreSQL; `app` = valor padrão aplicado pelo Django (o ORM preenche antes de gravar; o banco não tem esse padrão).
 
@@ -206,9 +207,9 @@ Trilha de auditoria das operações do sistema (nunca guarda senhas nem texto de
 | Coluna | Tipo (PostgreSQL) | Nulo | Padrão | Chave | Restrição | Índice | Descrição |
 |---|---|---|---|---|---|---|---|
 | `id` | `bigint` | não | BD: `identity` | PK | — | — | Identificador. |
-| `acao` | `varchar(30)` | não | — | — | — | `logs_logope_acao_494c7d_idx` | Uma das 15 ações registradas (LOGIN, CADASTRO, MATCH_CRIADO...). |
+| `acao` | `varchar(30)` | não | — | — | — | `logs_logope_acao_494c7d_idx` | Uma das 18 ações registradas (LOGIN, CADASTRO, MATCH_CRIADO, IA_TESTE...). |
 | `entidade` | `varchar(100)` | não | app: `` | — | — | — | Tipo do objeto afetado. |
-| `entidade_id` | `integer` | sim | — | — | `logs_logoperacao_entidade_id_check: ((entidade_id >= 0))` | — | Id do objeto afetado. |
+| `entidade_id` | `bigint` | sim | — | — | — | — | Id do objeto afetado. |
 | `detalhes` | `jsonb` | não | app: `{}` | — | — | — | Dados extras em JSON. |
 | `ip` | `inet` | sim | — | — | — | — | Endereço IP da requisição. |
 | `data_hora` | `timestamptz` | não | — | — | — | `logs_logope_acao_494c7d_idx`<br>`logs_logope_usuario_0274c1_idx`<br>`logs_logoperacao_data_hora_c7b6d2c1` | Momento da operação. |
@@ -219,11 +220,28 @@ Trilha de auditoria das operações do sistema (nunca guarda senhas nem texto de
 - índice `logs_logope_acao_494c7d_idx` em (acao, data_hora)
 - índice `logs_logope_usuario_0274c1_idx` em (usuario_id, data_hora)
 
+## `ia_embeddingperfil` — Embedding do perfil (Afinidade por IA)
+
+Vetor do texto do perfil ("Sobre você" + título e descrição do anúncio, para quem oferece vaga), gerado pelo modelo local `paraphrase-multilingual-MiniLM-L12-v2`. Só existe para textos com 20 letras ou mais. É regerado apenas quando `hash_texto` (ou o modelo) muda. Nenhum texto é guardado aqui: só o vetor e o hash.
+
+| Coluna | Tipo (PostgreSQL) | Nulo | Padrão | Chave | Restrição | Índice | Descrição |
+|---|---|---|---|---|---|---|---|
+| `id` | `bigint` | não | BD: `identity` | PK | — | — | Identificador. |
+| `perfil_id` | `bigint` | não | — | FK → perfis_perfil.id (NO ACTION) · UQ | — | `ia_embeddingperfil_perfil_id_key` | Perfil dono do embedding (um por perfil; o Django apaga o embedding junto com o perfil). |
+| `vetor` | `bytea` | não | — | — | `embedding_vetor_384_ck: ((length(vetor) = 1536))` | — | 384 números float32 (little-endian), vetor normalizado (norma 1): o cosseno é o produto escalar. |
+| `modelo` | `varchar(200)` | não | — | — | — | — | Modelo que gerou o vetor; vetor de outro modelo é ignorado e regerado. |
+| `hash_texto` | `varchar(64)` | não | — | — | — | — | SHA-256 do texto de origem. |
+| `temas` | `jsonb` | não | app: `[]` | — | — | — | Ids dos temas de convivência detectados (`ia/temas.py`). |
+| `tempo_ms` | `double precision` | não | app: `0.0` | — | `embedding_tempo_positivo_ck: ((tempo_ms >= (0.0)::double precision))` | — | Tempo de geração, em milissegundos. |
+| `atualizado_em` | `timestamptz` | não | app: agora | — | — | — | Última geração. |
+
 ## Regras protegidas no banco (resumo)
 
 | Tabela | Restrição | Regra |
 |---|---|---|
 | `chat_mensagem` | `mensagem_conteudo_max_1000_ck` | `((length(conteudo) <= 1000))` |
+| `ia_embeddingperfil` | `embedding_vetor_384_ck` | `((length(vetor) = 1536))` |
+| `ia_embeddingperfil` | `embedding_tempo_positivo_ck` | `((tempo_ms >= (0.0)::double precision))` |
 | `chat_mensagem` | `mensagem_conteudo_min_1_ck` | `((length(conteudo) >= 1))` |
 | `matches_compatibilidade` | `compat_perfis_distintos_ck` | `((NOT (perfil_a_id = perfil_b_id)))` |
 | `matches_compatibilidade` | `compat_score_0_1_ck` | `(((score >= (0.0)::double precision) AND (score <= (1.0)::double precision)))` |
@@ -252,7 +270,7 @@ Trilha de auditoria das operações do sistema (nunca guarda senhas nem texto de
 | `perfis_perfil` | `perfil_visitas_valido_ck` | `(((aceita_visitas) = ANY ((ARRAY['raramente', 'as_vezes', 'frequentemente']))))` |
 | `usuarios_usuario` | `usuario_tipo_valido_ck` | `(((tipo) = ANY ((ARRAY['buscando_vaga', 'oferecendo_vaga', 'administrador']))))` |
 
-Unicidades: `matches_compatibilidade (perfil_a, perfil_b)`, `matches_curtida (perfil_origem, perfil_destino)`, `matches_match (perfil_a, perfil_b)`, `perfis_perfil.usuario_id`, `usuarios_usuario.email`, `usuarios_usuario.username` e `usuario_email_lower_uniq` (e-mail sem diferenciar maiúsculas).
+Unicidades: `ia_embeddingperfil.perfil_id`, `matches_compatibilidade (perfil_a, perfil_b)`, `matches_curtida (perfil_origem, perfil_destino)`, `matches_match (perfil_a, perfil_b)`, `perfis_perfil.usuario_id`, `usuarios_usuario.email`, `usuarios_usuario.username` e `usuario_email_lower_uniq` (e-mail sem diferenciar maiúsculas).
 
 ## Regras que só a aplicação garante
 
@@ -261,6 +279,7 @@ Unicidades: `matches_compatibilidade (perfil_a, perfil_b)`, `matches_curtida (pe
 - Match só existe com curtida mútua; remetente de mensagem é participante do match; compatibilidade existe para todo par de tipos opostos.
 - Formato de URL de `fotos_imovel` e `foto_perfil_url` e o máximo de 5 fotos.
 - Conta suspensa (`is_active=false`) é ocultada das listagens pela API.
+- Todo perfil com texto suficiente (20+ letras) tem embedding do modelo atual (aviso no `verificar_banco`; corrija com `python manage.py gerar_embeddings`).
 
 ## Como regenerar
 
@@ -268,7 +287,8 @@ Unicidades: `matches_compatibilidade (perfil_a, perfil_b)`, `matches_curtida (pe
 # esquema (tabelas do sistema)
 docker exec placematch_db pg_dump -U placematch_user -d placematch --schema-only --no-owner --no-privileges \
   -t usuarios_usuario -t usuarios_usuario_groups -t usuarios_usuario_user_permissions -t perfis_perfil \
-  -t matches_compatibilidade -t matches_curtida -t matches_match -t chat_mensagem -t moderacao_denuncia -t logs_logoperacao > esquema.sql
+  -t matches_compatibilidade -t matches_curtida -t matches_match -t chat_mensagem -t moderacao_denuncia -t logs_logoperacao \
+  -t ia_embeddingperfil > esquema.sql
 
 # consistência dos dados
 docker exec placematch_backend python manage.py verificar_banco --detalhes

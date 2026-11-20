@@ -8,8 +8,10 @@ from rest_framework import status, permissions
 from perfis.models import Perfil
 from .models import Compatibilidade, Curtida, Match
 from .serializers import PerfilDescobertoSerializer, CurtidaSerializer, MatchSerializer
+from .servicos import detalhar_compatibilidade
 from drf_spectacular.utils import extend_schema
 from placematch.api_docs import doc
+from ia.explicacao import afinidades_para
 
 
 def _get_perfil(user):
@@ -141,7 +143,7 @@ class DescobertaView(APIView):
             .exclude(id=meu_perfil.id)
             .exclude(id__in=ja_avaliados)
             .exclude(id__in=ja_matches_ids)
-            .select_related('usuario')
+            .select_related('usuario', 'embedding_ia')  # embedding: afinidade_ia e temas sem N+1
         )
 
         # ── Aplicar filtros opcionais ─────────────────────────────────────────
@@ -208,7 +210,7 @@ class DescobertaView(APIView):
         serializer = PerfilDescobertoSerializer(
             ordenados,
             many=True,
-            context={'scores': scores},
+            context={'scores': scores, 'ia': afinidades_para(meu_perfil, ordenados)},
         )
         return Response(serializer.data)
 
@@ -348,3 +350,36 @@ class MatchListView(APIView):
             .order_by('-score', '-data_match')
         )
         return Response(MatchSerializer(matches, many=True).data)
+
+
+_TIPO_OPOSTO = {'buscando_vaga': 'oferecendo_vaga', 'oferecendo_vaga': 'buscando_vaga'}
+
+
+class CompatibilidadeDetalheView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(**doc('compatibilidade_detalhe'))
+    def get(self, request, perfil_id):
+        if request.user.tipo == 'administrador':
+            return Response(
+                {'detail': 'O administrador não participa deste recurso.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        meu_perfil = (Perfil.objects.select_related('usuario', 'embedding_ia')
+                      .filter(usuario=request.user).first())
+        if meu_perfil is None:
+            return Response(
+                {'detail': 'Você precisa criar um perfil antes de consultar a compatibilidade.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # id fora da faixa do BigAutoField nunca existe (e não pode chegar ao banco)
+        outro = (Perfil.objects.select_related('usuario', 'embedding_ia').filter(pk=perfil_id).first()
+                 if perfil_id <= 2**63 - 1 else None)
+        if outro is None or not outro.usuario.is_active:
+            return Response({'detail': 'Perfil não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        if outro.usuario.tipo != _TIPO_OPOSTO.get(request.user.tipo):
+            return Response(
+                {'detail': 'Você só pode consultar a compatibilidade com perfis do tipo oposto.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return Response(detalhar_compatibilidade(meu_perfil, outro))
