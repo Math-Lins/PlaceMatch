@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from django.core.exceptions import ObjectDoesNotExist
+
 from django.db.models import Count, Avg, Exists, OuterRef, Q
 from django.db.models.functions import TruncDate
 from django.utils import timezone
@@ -527,7 +529,7 @@ def _dados_relatorio_usuarios(data_inicio, data_fim, tipo):
             regiao = p.regiao
             tem_perfil = _sim_nao(True)
             totais['com_perfil'] += 1
-        except Exception:
+        except ObjectDoesNotExist:  # usuário sem perfil
             regiao = ''
             tem_perfil = _sim_nao(False)
 
@@ -668,7 +670,7 @@ def _serializar_usuario_admin(u):
     try:
         regiao = u.perfil.regiao
         tem_perfil = True
-    except Exception:
+    except ObjectDoesNotExist:  # usuário sem perfil
         regiao = None
         tem_perfil = False
     return {
@@ -774,7 +776,7 @@ class AdminUsuariosExportarView(APIView):
             try:
                 regiao = u.perfil.regiao
                 tem_perfil = _sim_nao(True)
-            except Exception:
+            except ObjectDoesNotExist:  # usuário sem perfil
                 regiao = ''
                 tem_perfil = _sim_nao(False)
             linhas.append([

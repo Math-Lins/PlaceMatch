@@ -13,7 +13,6 @@ from rest_framework.test import APIClient
 from rest_framework import status as http_status
 
 from matches.models import Compatibilidade, Curtida, Match
-from moderacao.models import Denuncia
 from perfis.models import Perfil
 
 User = get_user_model()
@@ -341,7 +340,6 @@ class RegraExclusaoPerfilTest(TestCase):
 
     def test_regra_exclusao_perfil_remove_curtidas_matches_mensagens(self):
         """Após excluir usuário A: curtidas, match e mensagens são removidos."""
-        from logs.models import LogOperacao
         p_a_id = self.p_a.id
 
         self.u_a.delete()

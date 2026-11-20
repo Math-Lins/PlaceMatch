@@ -2,6 +2,14 @@
 
 Plataforma web que conecta pessoas compatíveis para dividir moradia, usando um score de compatibilidade calculado a partir de hábitos, rotina, orçamento, localização e preferências de convivência.
 
+| | |
+|---|---|
+| **Instituição** | UNINASSAU — Ciência da Computação, turma 8 NA |
+| **Disciplinas** | Fábrica de Software e Tópicos Avançados (2026.2) |
+| **Equipe** | Grupo 07 (integrantes e papéis em [Equipe](#equipe)) |
+| **Versão** | v1.0.0-rc2 (Release Candidate) |
+| **Documentação** | Índice completo em [`docs/README.md`](./docs/README.md) |
+
 ## Objetivo da solução
 
 Encontrar um colega de apartamento hoje é um processo manual e pouco confiável: grupos de WhatsApp, redes sociais e indicações, sem nenhum critério estruturado. O PlaceMatch reduz o "achismo": calcula um **score de compatibilidade** (0 a 100%) entre quem **procura uma vaga** e quem **oferece uma vaga**, aproxima as duas pessoas antes do primeiro contato e oferece chat, moderação e um painel administrativo para acompanhar o uso do sistema.
@@ -10,7 +18,7 @@ Encontrar um colega de apartamento hoje é um processo manual e pouco confiável
 
 | Módulo | O que faz |
 |---|---|
-| **Usuários e autenticação** | Cadastro (nome com espaços e acentos, e-mail único sem diferenciar maiúsculas, senha validada), login por e-mail, JWT com renovação automática, logout que invalida o refresh e **recuperação de senha por e-mail** (link de 1 hora). O administrador só é criado por linha de comando. |
+| **Usuários e autenticação** | Cadastro (nome com espaços e acentos, e-mail único sem diferenciar maiúsculas, senha validada), login por e-mail com **limite de tentativas que falham** (5 por minuto por IP e 10 por hora por e-mail; `429` ao passar), JWT com renovação automática, logout que invalida o refresh e **recuperação de senha por e-mail** (link de 1 hora). O administrador só é criado por linha de comando. |
 | **Perfis** | Um perfil por usuário: dados pessoais, orçamento, tipo de imóvel, fumante, pets, visitas, horário e escalas de hábitos. Quem oferece vaga preenche também o **anúncio** (título, descrição, até 5 fotos por URL). Criação, edição completa e exclusão. |
 | **Descoberta** | Perfis do tipo oposto ordenados por score, com busca por texto e filtros (região, tipo de imóvel, pets, fumante, orçamento, score mínimo, ordenação). Algoritmo de 6 critérios: [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md). |
 | **Curtidas e matches** | Curtir ou recusar. Quando as duas pessoas se curtem, o match é criado com o score. |
@@ -45,7 +53,7 @@ Versões exatas das dependências: [`backend/requirements.txt`](./backend/requir
 - **Docker Desktop** (PostgreSQL e, opcionalmente, backend e frontend).
 - Sem Docker para o backend/frontend: **Python 3.12 ou superior** (exigência do Django 6.1) e **Node.js 20.19+ ou 22.12+** (exigência do Vite 8).
 
-Os comandos estão em PowerShell (Windows). Em Linux/Mac, troque `Copy-Item` por `cp` e `venv\Scripts\activate` por `source venv/bin/activate`.
+Os comandos estão em PowerShell (Windows). Em Linux/Mac, troque `Copy-Item` por `cp` e `venv\Scripts\activate` por `source venv/bin/activate`. No **Git Bash** (Windows), use `cp` e `source venv/Scripts/activate` (com barras normais: no Bash a `\` é caractere de escape).
 
 ## Instalação e configuração
 
@@ -195,11 +203,19 @@ python manage.py verificar_banco --detalhes    # lista os ids afetados
 python manage.py verificar_banco --falhar      # termina com código 1 se houver ERRO (útil em CI)
 ```
 
+**Análise estática do backend** (ruff; configuração em `backend/ruff.toml`, revisão em [`docs/revisao-codigo.md`](./docs/revisao-codigo.md)):
+
+```powershell
+cd backend
+pip install -r requirements-dev.txt            # requirements.txt + ruff (só desenvolvimento)
+ruff check .                                   # "All checks passed!"
+```
+
 **Frontend** (tipos e build; o projeto não tem script de lint):
 
 ```powershell
 cd frontend
-npx tsc --noEmit
+npx tsc --noEmit                                         # use também --noUnusedLocals --noUnusedParameters
 npm run build
 ```
 
@@ -273,7 +289,7 @@ PlaceMatch/
 │   ├── painel/              # dashboard, relatórios, usuários, exportação CSV, verificar_banco
 │   ├── moderacao/           # denúncias, suspensão e reativação
 │   ├── scripts/             # geração dos exemplos reais e de docs/api.md
-│   ├── Dockerfile, docker-compose.yml, requirements.txt, .env.example
+│   ├── Dockerfile, docker-compose.yml, requirements.txt, requirements-dev.txt, ruff.toml, .env.example
 ├── frontend/                # SPA React (src/App.tsx, src/api.ts, src/admin/), e2e/ (Playwright)
 ├── docs/                    # documentação técnica
 └── README.md
@@ -281,14 +297,18 @@ PlaceMatch/
 
 ## Documentação
 
+Índice completo, com uma linha por arquivo: **[`docs/README.md`](./docs/README.md)**. Os principais:
+
 | Documento | Conteúdo |
 |---|---|
+| [`docs/manual-usuario.md`](./docs/manual-usuario.md) · [`docs/manual-tecnico.md`](./docs/manual-tecnico.md) | Manual do usuário e manual técnico |
 | [`docs/api.md`](./docs/api.md) | Referência de todos os endpoints, com exemplos reais |
 | **[`/api/docs/`](http://localhost:8000/api/docs/)** | Swagger UI interativo (com botão **Authorize** para o token JWT). Fica aberto a todos só com `DEBUG=True`; com `DEBUG=False`, exige login de administrador |
 | `/api/schema/` · [`docs/openapi.yaml`](./docs/openapi.yaml) | Schema OpenAPI 3 |
 | [`docs/banco-de-dados.md`](./docs/banco-de-dados.md) | Dicionário de dados e regras protegidas no banco |
 | [`docs/testes-sprint9.md`](./docs/testes-sprint9.md) | Campanha de testes e bugs corrigidos |
 | [`docs/execucoes-rc/`](./docs/execucoes-rc/) | Saídas das verificações finais da Release Candidate (testes, banco, permissões, OpenAPI, build, e2e) |
+| [`docs/auditoria-rc.md`](./docs/auditoria-rc.md) · [`docs/revisao-codigo.md`](./docs/revisao-codigo.md) | Auditorias da Release Candidate e revisão final do código (ruff, checklist por módulo, métricas) |
 | [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md) | Fórmulas, pesos e benchmark do score |
 | [`docs/modulo-chat.md`](./docs/modulo-chat.md) · [`docs/runbook-docker.md`](./docs/runbook-docker.md) | Chat e operação com Docker |
 

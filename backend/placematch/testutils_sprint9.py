@@ -28,7 +28,7 @@ def reg(ct_id, res):
     """Registra no stdout o resultado real de uma chamada."""
     try:
         corpo = json.dumps(res.json(), ensure_ascii=False)
-    except Exception:
+    except (ValueError, TypeError):  # corpo não é JSON ou resposta sem Content-Type (ex.: 204)
         corpo = (res.content or b'')[:200].decode('utf-8', 'replace')
     import sys
     linha = f'\n[{ct_id}] status={res.status_code} body={corpo[:300]}'
@@ -40,7 +40,7 @@ def corpo_texto(res):
     """Texto do corpo da resposta (para checar idioma/menção ao campo)."""
     try:
         return json.dumps(res.json(), ensure_ascii=False)
-    except Exception:
+    except (ValueError, TypeError):  # corpo não é JSON ou resposta sem Content-Type (ex.: 204)
         return (res.content or b'').decode('utf-8', 'replace')
 
 

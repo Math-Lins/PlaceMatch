@@ -8,7 +8,7 @@ from rest_framework.test import APIClient
 from rest_framework import status as http_status
 from types import SimpleNamespace
 from perfis.models import Perfil
-from matches.models import Compatibilidade, Curtida, Match
+from matches.models import Compatibilidade, Match
 from matches.compatibilidade import (
     calcular_score,
     _sim_horario,

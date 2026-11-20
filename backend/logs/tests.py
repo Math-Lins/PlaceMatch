@@ -5,7 +5,6 @@ from rest_framework import status
 from usuarios.models import Usuario
 from perfis.models import Perfil
 from matches.models import Match
-from chat.models import Mensagem
 from .models import LogOperacao
 
 
@@ -283,7 +282,7 @@ class LogExportarTest(APITestCase):
         url = reverse('logs-exportar')
         resp = self.client.get(url, {'acao': 'LOGIN'})
         content = resp.content.decode('utf-8-sig')
-        lines = [l for l in content.strip().split('\n') if l]
+        lines = [linha for linha in content.strip().split('\n') if linha]
         # cabeçalho + ao menos 1 linha de dados LOGIN
         self.assertGreater(len(lines), 1)
         # todas as linhas de dados devem ser LOGIN (coluna 6)

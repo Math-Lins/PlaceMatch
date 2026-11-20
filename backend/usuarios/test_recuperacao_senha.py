@@ -12,7 +12,7 @@ from rest_framework.test import APIClient
 
 from logs.models import LogOperacao
 from placematch.limites import LimiteSenhaPorEmail
-from placematch.testutils_sprint9 import SENHA, BaseSprint9, corpo_texto, criar_usuario
+from placematch.testutils_sprint9 import SENHA, BaseSprint9, corpo_texto
 from usuarios.senha import MENSAGEM_LINK_INVALIDO, MENSAGEM_SOLICITACAO
 
 SOLICITAR = '/api/auth/senha/solicitar/'

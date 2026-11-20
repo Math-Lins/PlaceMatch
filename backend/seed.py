@@ -15,7 +15,6 @@ Cria:
 """
 
 import os
-import sys
 import django
 import random
 from datetime import timedelta

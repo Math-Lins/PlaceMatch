@@ -1,0 +1,25 @@
+# Configuração mínima do ruff (análise estática do backend).
+# Uso (dentro de backend/, com requirements-dev.txt instalado):  ruff check .
+target-version = "py312"
+line-length = 120
+extend-exclude = ["venv", ".venv", "*/migrations/*"]
+
+[lint]
+# Conjunto clássico do ruff, fixado explicitamente para não mudar a cada versão:
+#   E4/E7/E9 = erros de sintaxe e de estilo que viram bug; F = pyflakes (imports e
+#   variáveis não usados, nomes indefinidos). Mais: E722 (except sem tipo),
+#   BLE001 (except Exception genérico) e T20 (print/pprint esquecidos).
+# Ordenação de imports (I) e regras de estilo ficam de fora de propósito: aplicá-las
+# seria reformatação em massa.
+select = ["E4", "E7", "E9", "F", "E722", "BLE001", "T20"]
+
+[lint.per-file-ignores]
+# Comandos de gerenciamento, scripts e seeds escrevem no terminal de propósito.
+"*/management/commands/*" = ["T20"]
+"scripts/*" = ["T20"]
+# seed.py precisa chamar django.setup() antes de importar os modelos (E402).
+"seed.py" = ["T20", "E402"]
+# Testes que imprimem progresso/evidência de propósito (saída registrada em docs/execucoes-rc).
+"matches/tests.py" = ["T20"]
+"moderacao/tests/test_fluxo_completo.py" = ["T20"]
+"placematch/testutils_sprint9.py" = ["T20"]

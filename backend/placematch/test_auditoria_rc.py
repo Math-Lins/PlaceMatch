@@ -16,7 +16,7 @@ from logs.servicos import registrar
 from matches.models import Curtida, Match
 from painel.exportacao import celula_br
 from perfis.models import Perfil
-from placematch.testutils_sprint9 import PERFIL_OK, BaseSprint9, corpo_texto, criar_perfil, criar_usuario
+from placematch.testutils_sprint9 import BaseSprint9, corpo_texto, criar_perfil, criar_usuario
 
 PERIGOSOS = ['=HYPERLINK("http://x","y")', '+1+1', '-2+3', '@SUM(A1)', '\t=1+1', '\r=1+1']
 

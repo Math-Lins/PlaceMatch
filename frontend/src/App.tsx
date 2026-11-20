@@ -3430,7 +3430,7 @@ export default function App() {
       const cutoff = lastVisit ? new Date(lastVisit) : null;
       const count = cutoff ? ms.filter(m => new Date(m.data_match) > cutoff).length : ms.length;
       setNotifsCount(count);
-    } catch { /* silent */ }
+    } catch { /* o contador do menu é só um aviso: se falhar, a próxima navegação tenta de novo */ }
   };
 
   const handleLogout = () => {

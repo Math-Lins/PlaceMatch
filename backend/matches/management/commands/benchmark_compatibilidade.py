@@ -280,7 +280,7 @@ class Command(BaseCommand):
                 finally:
                     # garante rollback mesmo em caso de erro
                     transaction.set_rollback(True)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - o erro é exibido com traceback e o benchmark segue
             self.stderr.write(self.style.ERROR(f'  ERRO B N={N_req}: {exc}'))
             self.stderr.write(traceback.format_exc())
             return None
@@ -332,8 +332,10 @@ class Command(BaseCommand):
 
         # warmup — descartado; mede o loop para decidir reps adaptativos
         t_wup = time.perf_counter()
-        recalcular_loop(perfil_novo);  limpar()
-        recalcular_lote(perfil_novo);  limpar()
+        recalcular_loop(perfil_novo)
+        limpar()
+        recalcular_lote(perfil_novo)
+        limpar()
         t_wup = time.perf_counter() - t_wup
 
         # Se o warmup do loop demorar mais de 30s, reduz reps para evitar timeout
@@ -462,7 +464,7 @@ class Command(BaseCommand):
         path = os.path.join(docs, 'ambiente.txt')
         try:
             cpu = platform.processor() or platform.machine() or 'N/A'
-        except Exception:
+        except Exception:  # noqa: BLE001 - informação opcional do ambiente
             cpu = 'N/A'
         db_cfg  = dj_settings.DATABASES.get('default', {})
         db_info = f"{db_cfg.get('ENGINE', 'N/A')}  db={db_cfg.get('NAME', 'N/A')}"

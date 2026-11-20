@@ -21,7 +21,7 @@ from logs.servicos import registrar
 from matches.models import Match
 from moderacao.models import Denuncia
 from placematch.limites import MENSAGEM_LIMITE
-from placematch.testutils_sprint9 import SENHA, BaseSprint9, corpo_texto, criar_perfil, criar_usuario
+from placematch.testutils_sprint9 import SENHA, BaseSprint9, corpo_texto, criar_usuario
 
 LOGIN = '/api/auth/login/'
 

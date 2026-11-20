@@ -1,7 +1,6 @@
 import datetime
 
 from django.urls import reverse
-from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework import status
 
@@ -423,12 +422,12 @@ class RelatorioMatchesTest(PainelBaseTestCase):
         # match score=0.8 → deve aparecer como 80.0 na coluna 'Score (%)'
         d = self._dados()
         idx_score = d['colunas'].index('Score (%)')
-        scores = [l[idx_score] for l in d['linhas']]
+        scores = [linha[idx_score] for linha in d['linhas']]
         self.assertAlmostEqual(float(scores[0]), 80.0, places=1)
 
     def test_linha_tem_ativa_sim(self):
         d = self._dados()
-        ativas = [l[-1] for l in d['linhas']]
+        ativas = [linha[-1] for linha in d['linhas']]
         self.assertIn('Sim', ativas)
 
     def test_csv_tem_cabecalho_e_linha(self):
@@ -438,7 +437,7 @@ class RelatorioMatchesTest(PainelBaseTestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn('text/csv', resp['Content-Type'])
         content = resp.content.decode('utf-8-sig')
-        lines = [l for l in content.strip().split('\n') if l]
+        lines = [linha for linha in content.strip().split('\n') if linha]
         self.assertGreater(len(lines), 1)
         self.assertIn('Data', lines[0])
         # separador

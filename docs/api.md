@@ -4,7 +4,7 @@
 
 ## Visão geral
 
-API REST em JSON (Django REST Framework), versão **1.0.0-rc1**, com 28 operações em 23 rotas, organizadas em 7 grupos: Autenticação, Perfis, Descoberta e Matches, Chat, Moderação, Painel administrativo e Logs.
+API REST em JSON (Django REST Framework), versão **1.0.0-rc2**, com 31 operações em 26 rotas, organizadas em 7 grupos: Autenticação, Perfis, Descoberta e Matches, Chat, Moderação, Painel administrativo e Logs.
 
 | Recurso | Onde |
 |---|---|

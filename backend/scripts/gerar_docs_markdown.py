@@ -15,6 +15,7 @@ import django  # noqa: E402
 
 django.setup()
 
+from django.conf import settings  # noqa: E402
 from drf_spectacular.types import OpenApiTypes  # noqa: E402
 from rest_framework import serializers  # noqa: E402
 
@@ -190,7 +191,8 @@ def gerar():
           '> Documento **gerado** por `backend/scripts/gerar_docs_api.py markdown` a partir das anotações do código '
           '(`backend/placematch/api_docs.py`) e de respostas **reais** da API. Não edite à mão: regenere (veja o final).', '',
           '## Visão geral', '',
-          'API REST em JSON (Django REST Framework), versão **1.0.0-rc1**, com 28 operações em 23 rotas, organizadas em 7 grupos: '
+          f'API REST em JSON (Django REST Framework), versão **{settings.SPECTACULAR_SETTINGS["VERSION"]}**, '
+          f'com {len(OPERACOES)} operações em {len({o["rota"] for o in OPERACOES.values()})} rotas, organizadas em {len(GRUPOS)} grupos: '
           'Autenticação, Perfis, Descoberta e Matches, Chat, Moderação, Painel administrativo e Logs.', '',
           '| Recurso | Onde |', '|---|---|',
           '| Documentação interativa (Swagger UI, com botão **Authorize**) | `<BASE>/api/docs/` |',

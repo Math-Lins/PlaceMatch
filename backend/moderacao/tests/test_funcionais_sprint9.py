@@ -1,7 +1,7 @@
 """Sprint 9 — testes funcionais (CT-F) e de validação (CT-V) de moderação."""
 from moderacao.models import Denuncia
 from placematch.testutils_sprint9 import (
-    BaseSprint9, corpo_texto, criar_usuario, reg, tem_ingles,
+    BaseSprint9, corpo_texto, reg, tem_ingles,
 )
 
 DEN = '/api/moderacao/denuncias/'
