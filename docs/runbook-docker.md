@@ -138,7 +138,7 @@ docker compose down -v
 docker compose up
 ```
 
-> ⚠️ Isso apaga todos os dados do banco local.
+> **Atenção:** isso apaga todos os dados do banco local.
 
 ### Migrações novas depois de um `git pull`
 

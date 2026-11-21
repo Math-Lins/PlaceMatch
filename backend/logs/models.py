@@ -23,6 +23,9 @@ class LogOperacao(models.Model):
         ('SENHA_REDEFINIDA', 'Senha redefinida'),
         ('IA_TESTE', 'Teste da IA (painel)'),
     ]
+    # Rótulo EXIBIDO (API e CSV) quando difere do rótulo das choices: trocar o texto das choices exigiria uma
+    # migração só por causa do nome. O código gravado (IA_TESTE) não muda.
+    ROTULO_EXIBIDO = {'IA_TESTE': 'Teste do ThoLuk (painel)'}
 
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -44,6 +47,9 @@ class LogOperacao(models.Model):
             models.Index(fields=['acao', 'data_hora']),
             models.Index(fields=['usuario', 'data_hora']),
         ]
+
+    def rotulo_acao(self) -> str:
+        return self.ROTULO_EXIBIDO.get(self.acao) or self.get_acao_display()
 
     def __str__(self):
         return f'{self.acao} - {self.usuario} - {self.data_hora}'

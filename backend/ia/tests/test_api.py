@@ -90,6 +90,7 @@ class CompatibilidadeDetalheTest(BaseIA):
         r = self._get(self.ub, self.po.id)
         self.assertEqual(r.status_code, 200)
         d = r.json()
+        self.assertEqual(d['nome_ia'], 'ThoLuk')
         self.assertEqual([c['criterio'] for c in d['criterios']],
                          ['orcamento', 'regiao', 'rotina', 'habitos', 'moradia', 'idade', 'afinidade_ia'])
         gravado = Compatibilidade.objects.get(perfil_a_id=min(self.pb.id, self.po.id), perfil_b_id=max(self.pb.id, self.po.id)).score
@@ -97,7 +98,7 @@ class CompatibilidadeDetalheTest(BaseIA):
         self.assertAlmostEqual(sum(c['contribuicao'] for c in d['criterios']), d['score'], places=3)
         self.assertAlmostEqual(sum(c['peso_efetivo'] for c in d['criterios']), 1.0, places=3)
         ia = d['criterios'][-1]
-        self.assertEqual((ia['nome'], ia['peso'], ia['peso_efetivo'], ia['considerado']), ('Afinidade de interesses (IA)', 0.1, 0.1, True))
+        self.assertEqual((ia['nome'], ia['peso'], ia['peso_efetivo'], ia['considerado']), ('Afinidade de interesses (ThoLuk)', 0.1, 0.1, True))
         self.assertEqual(ia['valor'], d['afinidade_ia'])
         self.assertEqual(d['criterios'][1]['valor'], 0.0)  # regiões diferentes
         self.assertIn('culinaria', [t['id'] for t in d['temas_em_comum']])
@@ -125,7 +126,7 @@ class CompatibilidadeDetalheTest(BaseIA):
         d = self._get(self.ub, self.po.id).json()
         self.assertIsNone(d['afinidade_ia'])
         self.assertFalse(d['ia_disponivel'])
-        self.assertIn('desligada', d['motivo_sem_ia'])
+        self.assertIn('O ThoLuk está desligado', d['motivo_sem_ia'])
 
     def test_modelo_fora_do_ar_nao_impede_a_consulta(self):
         with mock.patch.object(servico, '_criar_embedder', side_effect=OSError('sem rede')):
@@ -168,6 +169,35 @@ class IAStatusTest(BaseIA):
         self.assertIsNotNone(d['tempo_medio_geracao_ms'])
         self.assertIsNotNone(d['ultima_atualizacao'])
         self.assertEqual(d['calibracao']['peso'], 0.1)
+
+    def test_tempo_tipico_e_a_mediana_e_o_nome_ia_aparece(self):
+        from ia.models import EmbeddingPerfil
+        for _ in range(5):
+            criar('buscando_vaga', BIO_CULINARIA)
+        # um valor alto isolado (ex.: com a carga do modelo) não altera a mediana
+        tempos = [700.0, 70.0, 72.0, 74.0, 80.0]
+        for emb, t in zip(EmbeddingPerfil.objects.order_by('id'), tempos):
+            EmbeddingPerfil.objects.filter(pk=emb.pk).update(tempo_ms=t)
+        d = self.como(admin()).get('/api/admin/ia/status/').json()
+        self.assertEqual(d['tempo_tipico_geracao_ms'], 74.0)
+        self.assertEqual(d['tempo_medio_geracao_ms'], 199.2)
+        self.assertEqual(d['nome_ia'], 'ThoLuk')
+        self.assertTrue(d['situacao_texto'].startswith('ThoLuk'))
+
+    def test_tempo_gravado_nao_inclui_a_carga_do_modelo(self):
+        import time as _time
+        from unittest import mock as _mock
+        from ia.models import EmbeddingPerfil
+        servico.reiniciar()
+        original = servico._criar_embedder
+
+        def carga_lenta(baixar):
+            _time.sleep(0.4)  # a carga do modelo (aqui 400 ms) não pode entrar no tempo do embedding
+            return original(baixar)
+
+        with _mock.patch.object(servico, '_criar_embedder', side_effect=carga_lenta):
+            _, p = criar('buscando_vaga', BIO_CULINARIA)
+        self.assertLess(EmbeddingPerfil.objects.get(perfil=p).tempo_ms, 300)
 
     def test_conta_perfis_que_ficaram_sem_embedding(self):
         _, p = criar('buscando_vaga', BIO_CULINARIA)
@@ -213,6 +243,11 @@ class IATestarTest(BaseIA):
         self.assertEqual(log.usuario, self.adm)
         self.assertEqual((log.detalhes['caracteres_a'], log.detalhes['caracteres_b']), (24, 20))
         self.assertNotIn('secreto', str(log.detalhes))
+        # o código gravado continua IA_TESTE; a listagem e o CSV exibem o nome do ThoLuk
+        item = self.como(self.adm).get('/api/admin/logs/?acao=IA_TESTE').json()['results'][0]
+        self.assertEqual((item['acao'], item['acao_label']), ('IA_TESTE', 'Teste do ThoLuk (painel)'))
+        csv = self.como(self.adm).get('/api/admin/logs/exportar/?acao=IA_TESTE').content.decode('utf-8-sig')
+        self.assertIn('Teste do ThoLuk (painel)', csv)
 
     def test_validacoes(self):
         c = self.como(self.adm)
@@ -235,14 +270,14 @@ class IATestarTest(BaseIA):
         with mock.patch.object(servico, '_criar_embedder', side_effect=OSError('sem rede')), self.assertLogs('ia.servico'):
             r = self.como(self.adm).post(self.URL, {'texto_a': 'a', 'texto_b': 'b'}, format='json')
         self.assertEqual(r.status_code, 503)
-        self.assertIn('não está disponível', r.json()['detail'])
+        self.assertIn('O ThoLuk não está disponível', r.json()['detail'])
         self.assertFalse(LogOperacao.objects.get(acao='IA_TESTE').detalhes['ia_disponivel'])
 
     @override_settings(IA_HABILITADA=False)
     def test_ia_desligada_responde_503(self):
         r = self.como(self.adm).post(self.URL, {'texto_a': 'a', 'texto_b': 'b'}, format='json')
         self.assertEqual(r.status_code, 503)
-        self.assertIn('desligada', r.json()['detail'])
+        self.assertIn('O ThoLuk está desligado', r.json()['detail'])
 
 
 class SemErro500Test(BaseIA):

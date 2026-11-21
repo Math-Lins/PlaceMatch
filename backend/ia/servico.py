@@ -31,6 +31,10 @@ from .temas import TEMAS
 
 logger = logging.getLogger(__name__)
 
+# Nome exibido da IA. O código (app, rotas, campos JSON, variáveis) mantém o nome técnico "ia".
+NOME_IA = 'ThoLuk'
+APRESENTACAO_IA = 'ThoLuk, a IA de afinidade do PlaceMatch'
+
 MODELO = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
 MODELO_FALSO = 'falso/hash-384'
 DIMENSOES = 384
@@ -109,11 +113,11 @@ _trava_carga = threading.Lock()
 _estado: dict = {}
 
 SITUACOES = {
-    'nao_carregado': 'Não carregado',
-    'carregando': 'Carregando',
-    'disponivel': 'Disponível',
-    'indisponivel': 'Indisponível',
-    'desabilitada': 'Desligada',
+    'nao_carregado': 'ThoLuk não carregado',
+    'carregando': 'ThoLuk carregando',
+    'disponivel': 'ThoLuk disponível',
+    'indisponivel': 'ThoLuk indisponível',
+    'desabilitada': 'ThoLuk desligado',
 }
 
 
@@ -198,7 +202,7 @@ def obter_embedder(forcar: bool = False, baixar: bool = False):
             embedder = _criar_embedder(baixar)
             embedder.embed(['aquecimento do modelo'])
         except Exception as erro:  # noqa: BLE001 — sem internet, arquivo corrompido, falta de memória: nunca vira 500
-            logger.warning('Afinidade por IA indisponível: não foi possível carregar o modelo %s (%s: %s). '
+            logger.warning('ThoLuk (Afinidade por IA) indisponível: não foi possível carregar o modelo %s (%s: %s). '
                            'O score segue com os 6 critérios.', nome_modelo(), type(erro).__name__, erro)
             with _trava:
                 _estado.update(embedder=None, situacao='indisponivel', erro=f'{type(erro).__name__}: {erro}'[:300], temas=None)
@@ -207,8 +211,16 @@ def obter_embedder(forcar: bool = False, baixar: bool = False):
         with _trava:
             _estado.update(embedder=embedder, situacao='disponivel', erro='', tempo_carga_ms=round(ms, 1),
                            carregado_em=time.time(), temas=None)
-        logger.info('Modelo de IA %s carregado em %.0f ms.', embedder.nome, ms)
+        logger.info('ThoLuk pronto: modelo %s carregado em %.0f ms.', embedder.nome, ms)
         return embedder
+
+
+def preparar() -> bool:
+    """
+    Garante o modelo carregado e as frases dos temas calculadas ANTES de medir o tempo de um embedding
+    (senão o primeiro perfil do processo registraria a carga do modelo, alguns segundos, como "tempo de geração").
+    """
+    return obter_embedder() is not None and _matriz_temas()[0] is not None
 
 
 def aquecer() -> None:

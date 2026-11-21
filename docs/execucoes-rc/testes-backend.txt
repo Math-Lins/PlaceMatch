@@ -1,5 +1,5 @@
-# 20/11/2026 23:04:29 -0300 | diretório: backend | v1.0.0 | comando: python manage.py test --settings=placematch.test_settings -v 2
-Found 824 test(s).
+# 21/11/2026 18:54:06 -0300 | diretório: backend | v1.0.0 | comando: C:\dev\projeto\PlaceMatch\.venv\Scripts\python.exe manage.py test --settings=placematch.test_settings -v 2
+Found 833 test(s).
 Operations to perform:
   Synchronize unmigrated apps: corsheaders, drf_spectacular, messages, painel, rest_framework, rest_framework_simplejwt, staticfiles
   Apply all migrations: admin, auth, chat, contenttypes, ia, logs, matches, moderacao, perfis, sessions, token_blacklist, usuarios
@@ -84,7 +84,7 @@ System check identified no issues (0 silenced).
 
 [CT-V88] status=201 body={"id": 1, "match_id": 1, "remetente_id": 1, "conteudo": "ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá
 
-[CT-V134] status=200 body={"count": 1, "page": 1, "results": [{"id": 1, "data_hora": "2026-11-21T02:04:53.082224Z", "usuario": {"id": 1, "nome": "buscando", "email": "buscando@t.com"}, "acao": "LOGIN", "acao_label": "Login", "entidade": "", "entidade_id": null, "detalhes": {}, "ip": null}]}
+[CT-V134] status=200 body={"count": 1, "page": 1, "results": [{"id": 1, "data_hora": "2026-11-21T21:54:44.687945Z", "usuario": {"id": 1, "nome": "buscando", "email": "buscando@t.com"}, "acao": "LOGIN", "acao_label": "Login", "entidade": "", "entidade_id": null, "detalhes": {}, "ip": null}]}
 
 [CT-V108] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
 
@@ -221,7 +221,7 @@ System check identified no issues (0 silenced).
 
 [CT-V96] status=400 body={"detail": "Você não pode denunciar a si mesmo."}
 
-[CT-V97] status=201 body={"id": 1, "denunciado": 2, "motivo": "spam", "status": "pendente", "criada_em": "2026-11-21T02:05:57.597922Z"}
+[CT-V97] status=201 body={"id": 1, "denunciado": 2, "motivo": "spam", "status": "pendente", "criada_em": "2026-11-21T21:55:45.815648Z"}
 
 [CT-V98] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON."}
 
@@ -241,7 +241,7 @@ System check identified no issues (0 silenced).
 
 [CT-V124] status=200 body={"count": 3, "page": 9999, "results": []}
 
-[CT-V125] status=200 body={"count": 3, "page": 1, "results": [{"id": 3, "nome": "adm", "email": "adm@t.com", "tipo": "administrador", "regiao": null, "data_cadastro": "2026-11-21T02:06:03.455673Z", "tem_perfil": false, "ativo": true}, {"id": 2, "nome": "oferece", "email": "oferece@t.com", "tipo": "oferecendo_vaga", "regiao":
+[CT-V125] status=200 body={"count": 3, "page": 1, "results": [{"id": 3, "nome": "adm", "email": "adm@t.com", "tipo": "administrador", "regiao": null, "data_cadastro": "2026-11-21T21:55:56.889358Z", "tem_perfil": false, "ativo": true}, {"id": 2, "nome": "oferece", "email": "oferece@t.com", "tipo": "oferecendo_vaga", "regiao":
 
 [CT-V126] status=400 body={"detail": "Valor inválido para ativo. Use true ou false."}
 
@@ -349,7 +349,7 @@ System check identified no issues (0 silenced).
 
 [CT-V17] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON com e-mail e senha."}
 
-[CT-V18] status=200 body={"refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTgzMTU4NiwiaWF0IjoxNzk1MjI2Nzg2LCJqdGkiOiI5NDk0MDdkMTVkMzg0NWFkYTE5ZjJiNDU4MWQ3N2Y3OSIsInVzZXJfaWQiOiIxIn0.sLJ1u9V-dSxFpmQLWfRJue5P_iy68PZJvNShcJ7ipKM", "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0
+[CT-V18] status=200 body={"refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTkwMjk4MCwiaWF0IjoxNzk1Mjk4MTgwLCJqdGkiOiIyOTY1OGFhMTk4OGU0YWIzOTBhOTI4OWY1ZjlmYmU4NiIsInVzZXJfaWQiOiIxIn0.LQeAb20qO-DYLzbb2naaIho47ftVauNDSCOuVUp3QUs", "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0
 
 [CT-V19] status=400 body={"email": ["Informe o e-mail."]}
 
@@ -458,6 +458,8 @@ test_admin_ve_a_situacao (ia.tests.test_api.IAStatusTest.test_admin_ve_a_situaca
 test_conta_perfis_que_ficaram_sem_embedding (ia.tests.test_api.IAStatusTest.test_conta_perfis_que_ficaram_sem_embedding) ... ok
 test_falha_de_carga_aparece_no_status (ia.tests.test_api.IAStatusTest.test_falha_de_carga_aparece_no_status) ... ok
 test_somente_administrador (ia.tests.test_api.IAStatusTest.test_somente_administrador) ... ok
+test_tempo_gravado_nao_inclui_a_carga_do_modelo (ia.tests.test_api.IAStatusTest.test_tempo_gravado_nao_inclui_a_carga_do_modelo) ... ok
+test_tempo_tipico_e_a_mediana_e_o_nome_ia_aparece (ia.tests.test_api.IAStatusTest.test_tempo_tipico_e_a_mediana_e_o_nome_ia_aparece) ... ok
 test_compara_dois_textos (ia.tests.test_api.IATestarTest.test_compara_dois_textos) ... ok
 test_ia_desligada_responde_503 (ia.tests.test_api.IATestarTest.test_ia_desligada_responde_503) ... ok
 test_modelo_indisponivel_responde_503_em_portugues (ia.tests.test_api.IATestarTest.test_modelo_indisponivel_responde_503_em_portugues) ... ok
@@ -596,6 +598,7 @@ test_banco_descartavel_recusa_banco_com_usuarios_sem_apagar_nada (matches.test_p
 test_benchmark_compatibilidade_tambem_exige_banco_vazio (matches.test_paralelismo.BenchmarkParalelismoTest.test_benchmark_compatibilidade_tambem_exige_banco_vazio) ... ok
 test_gera_json_e_csv_com_resultados_identicos (matches.test_paralelismo.BenchmarkParalelismoTest.test_gera_json_e_csv_com_resultados_identicos) ... ok
 test_opcoes_invalidas (matches.test_paralelismo.BenchmarkParalelismoTest.test_opcoes_invalidas) ... ok
+test_resumo_curto_em_portugues (matches.test_paralelismo.BenchmarkParalelismoTest.test_resumo_curto_em_portugues) ... ok
 test_auto_com_poucos_pares_usa_sequencial_sem_criar_processos (matches.test_paralelismo.ComandoRecalcularTest.test_auto_com_poucos_pares_usa_sequencial_sem_criar_processos) ... ok
 test_carregar_faz_2_consultas (matches.test_paralelismo.ComandoRecalcularTest.test_carregar_faz_2_consultas) ... ok
 test_falha_do_pool_cai_para_sequencial_e_avisa (matches.test_paralelismo.ComandoRecalcularTest.test_falha_do_pool_cai_para_sequencial_e_avisa) ... ok
@@ -1220,7 +1223,7 @@ test_erro_ao_gerar_embedding_devolve_none (ia.tests.test_servico.CargaDoModeloTe
 test_falha_na_carga_marca_indisponivel_registra_no_log_e_nao_levanta (ia.tests.test_servico.CargaDoModeloTest.test_falha_na_carga_marca_indisponivel_registra_no_log_e_nao_levanta) ... ok
 test_gera_vetores_normalizados (ia.tests.test_servico.CargaDoModeloTest.test_gera_vetores_normalizados) ... ok
 test_ia_desligada (ia.tests.test_servico.CargaDoModeloTest.test_ia_desligada) ... ok
-test_nova_tentativa_depois_do_intervalo (ia.tests.test_servico.CargaDoModeloTest.test_nova_tentativa_depois_do_intervalo) ... Afinidade por IA indisponível: não foi possível carregar o modelo falso/hash-384 (OSError: x). O score segue com os 6 critérios.
+test_nova_tentativa_depois_do_intervalo (ia.tests.test_servico.CargaDoModeloTest.test_nova_tentativa_depois_do_intervalo) ... ThoLuk (Afinidade por IA) indisponível: não foi possível carregar o modelo falso/hash-384 (OSError: x). O score segue com os 6 critérios.
 ok
 test_deterministico_e_com_384_dimensoes (ia.tests.test_servico.EmbedderFalsoTest.test_deterministico_e_com_384_dimensoes) ... ok
 test_palavras_em_comum_aproximam_os_textos (ia.tests.test_servico.EmbedderFalsoTest.test_palavras_em_comum_aproximam_os_textos) ... ok
@@ -1240,6 +1243,12 @@ test_no_maximo_max_temas_em_ordem_de_nota (ia.tests.test_temas.ClassificacaoTest
 test_precisa_passar_do_limiar_e_da_margem (ia.tests.test_temas.ClassificacaoTest.test_precisa_passar_do_limiar_e_da_margem) ... ok
 test_sem_modelo_nao_classifica (ia.tests.test_temas.ClassificacaoTest.test_sem_modelo_nao_classifica) ... ok
 test_tema_generico_que_parece_com_tudo_nao_entra (ia.tests.test_temas.ClassificacaoTest.test_tema_generico_que_parece_com_tudo_nao_entra) ... ok
+test_bios_do_seed (ia.tests.test_temas_modelo_real.TemasModeloRealTest.test_bios_do_seed) ... ok
+test_computacao_nao_vira_trabalho_remoto_nem_games (ia.tests.test_temas_modelo_real.TemasModeloRealTest.test_computacao_nao_vira_trabalho_remoto_nem_games) ... ok
+test_exemplo_1_culinaria_nos_dois_sem_trabalho_remoto (ia.tests.test_temas_modelo_real.TemasModeloRealTest.test_exemplo_1_culinaria_nos_dois_sem_trabalho_remoto) ... ok
+test_exemplo_2_festas_x_silencio_e_leitura_sem_nada_em_comum (ia.tests.test_temas_modelo_real.TemasModeloRealTest.test_exemplo_2_festas_x_silencio_e_leitura_sem_nada_em_comum) ... ok
+test_exemplo_3_estudos_em_comum (ia.tests.test_temas_modelo_real.TemasModeloRealTest.test_exemplo_3_estudos_em_comum) ... ok
+test_falsos_positivos_corrigidos_no_seed (ia.tests.test_temas_modelo_real.TemasModeloRealTest.test_falsos_positivos_corrigidos_no_seed) ... ok
 test_igual_ao_round_do_python_inclusive_nos_empates (matches.test_paralelismo.ArredondamentoExatoTest.test_igual_ao_round_do_python_inclusive_nos_empates) ... ok
 test_divisao_em_blocos_nao_depende_dos_workers (matches.test_paralelismo.EquivalenciaModosTest.test_divisao_em_blocos_nao_depende_dos_workers) ... ok
 test_grupos_vazios (matches.test_paralelismo.EquivalenciaModosTest.test_grupos_vazios) ... ok
@@ -1256,19 +1265,19 @@ test_modo_e_workers_invalidos (matches.test_paralelismo.ValidacaoTest.test_modo_
 test_workers_padrao (matches.test_paralelismo.ValidacaoTest.test_workers_padrao) ... ok
 
 ----------------------------------------------------------------------
-Ran 824 tests in 120.642s
+Ran 833 tests in 136.008s
 
 OK
 Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
 # código de saída: 0
 
-# resumo: 824 testes em 120.642 s, OK, nenhum pulado
+# resumo: 833 testes em 136.008 s, OK, nenhum pulado
 
-# 20/11/2026 23:06:45 -0300 | diretório: backend | comando: python manage.py makemigrations --check --dry-run --settings=placematch.test_settings
+# 21/11/2026 18:56:52 -0300 | diretório: backend | comando: C:\dev\projeto\PlaceMatch\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run --settings=placematch.test_settings
 No changes detected
 # código de saída: 0
 
-# 20/11/2026 23:06:54 -0300 | diretório: backend | comando: python -m ruff check .
+# 21/11/2026 18:56:59 -0300 | diretório: backend | comando: C:\dev\projeto\PlaceMatch\.venv\Scripts\python.exe -m ruff check .
 All checks passed!
 # código de saída: 0
 

@@ -217,3 +217,227 @@ N15 PASSO > 9. aba Logs: filtro "Teste da IA (painel)" encontra o teste do labor
   n15: PASSOU (1 passed) em 101s
   TOTAL: 15 roteiros, 31 testes e2e passaram; roteiros com falha: 0
 # Depois: portas 8001 e 5173 livres; memória: 5,7 GB livres.
+
+
+##################################################################################
+# REEXECUÇÃO PRÉ-FREEZE (n01, n02, n03, n04, n05, n06, n07, n08, n09, n10, n11, n12, n13, n14, n15): depois do nome ThoLuk, da revisão dos temas e da remoção dos emojis da interface. A execução completa anterior (15 roteiros) está acima e foi mantida.
+##################################################################################
+# 21/11/2026 19:05:19 -0300 | diretório: frontend | v1.0.0 | comando (um roteiro por vez): npx playwright test -c e2e/playwright.config.ts <roteiro> --workers=1 --trace=off --reporter=list
+# Banco descartável placematch_e2e_db (porta 5433) recriado do zero antes do primeiro roteiro desta reexecução. O Playwright sobe a API Django (127.0.0.1:8001) e o Vite (127.0.0.1:5173) e os encerra ao fim de cada roteiro.
+# API do e2e com o MODELO DE IA REAL (backend/.modelos, aquecido na subida do servidor); E-mails: backend de arquivo; limites de login e de pedido de link desligados.
+# Antes de começar: nenhum processo e2e antigo em execução; portas 8001 e 5173 livres; memória: 5,5 GB livres.
+
+==================================================================================
+# 21/11/2026 19:05:20 -0300 | roteiro n01 | memória antes: 5,5 GB livres | npx playwright test -c e2e/playwright.config.ts n01 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 9 tests using 1 worker
+
+  ✓  1 [desktop] › e2e\n01-visitante.spec.ts:4:3 › N01 Visitante › tela inicial → Entrar → voltar → Criar conta (12.3s)
+  ✓  2 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "discovery" sem login leva ao login (2.8s)
+  ✓  3 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "notifications" sem login leva ao login (3.1s)
+  ✓  4 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "matches" sem login leva ao login (2.7s)
+  ✓  5 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "profile" sem login leva ao login (2.2s)
+  ✓  6 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "profile-create" sem login leva ao login (2.6s)
+  ✓  7 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "profile-detail" sem login leva ao login (2.7s)
+  ✓  8 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "match" sem login leva ao login (2.4s)
+  ✓  9 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "chat" sem login leva ao login (2.4s)
+
+  9 passed (2.0m)
+# resultado: n01: PASSOU (9 passed) em 134s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:07:36 -0300 | roteiro n02 | memória antes: 5,6 GB livres | npx playwright test -c e2e/playwright.config.ts n02 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 1 test using 1 worker
+
+  ✓  1 [desktop] › e2e\n02-cadastro-busca.spec.ts:3:1 › N02 Cadastro "Maria José da Silva" (buscando vaga) → perfil em etapas → Descoberta (27.2s)
+
+  1 passed (1.3m)
+# resultado: n02: PASSOU (1 passed) em 93s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:09:09 -0300 | roteiro n03 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n03 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 2 tests using 1 worker
+
+  ✓  1 [desktop] › e2e\n03-cadastro-oferece.spec.ts:3:1 › N03 Cadastro oferecendo vaga → etapas + anúncio com foto → Descoberta "Interessados na sua vaga" (27.1s)
+  ✓  2 [desktop] › e2e\n03-cadastro-oferece.spec.ts:105:1 › N03b criarPerfilCompleto (helper) cobre as 5 etapas (10.2s)
+
+  2 passed (1.4m)
+# resultado: n03: PASSOU (2 passed) em 96s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:10:47 -0300 | roteiro n04 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n04 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 1 test using 1 worker
+
+  ✓  1 [desktop] › e2e\n04-menu-e-sessao.spec.ts:3:1 › N04 Menu lateral, item ativo, botão voltar do navegador e recarregar mantém sessão e tela (22.0s)
+
+  1 passed (1.4m)
+# resultado: n04: PASSOU (1 passed) em 99s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:12:27 -0300 | roteiro n05 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n05 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 1 test using 1 worker
+
+  ✓  1 [desktop] › e2e\n05-descoberta.spec.ts:3:1 › N05 Descoberta: busca, filtros, chips, limpar, estado vazio e detalhe do anúncio (49.6s)
+
+  1 passed (1.6m)
+# resultado: n05: PASSOU (1 passed) em 108s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:14:17 -0300 | roteiro n06 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n06 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 1 test using 1 worker
+
+  ✓  1 [desktop] › e2e\n06-match-e-chat.spec.ts:3:1 › N06 Match e chat com duas sessões isoladas (48.0s)
+
+  1 passed (1.6m)
+# resultado: n06: PASSOU (1 passed) em 108s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:16:06 -0300 | roteiro n07 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n07 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 1 test using 1 worker
+
+  ✓  1 [desktop] › e2e\n07-perfil.spec.ts:3:1 › N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil (17.0s)
+
+  1 passed (1.0m)
+# resultado: n07: PASSOU (1 passed) em 74s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:17:21 -0300 | roteiro n08 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n08 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 1 test using 1 worker
+
+  ✓  1 [desktop] › e2e\n08-sair-da-conta.spec.ts:3:1 › N08 Sair da conta: volta ao início, voltar do navegador não reabre tela interna, segunda aba mantém a sessão (20.7s)
+
+  1 passed (57.1s)
+# resultado: n08: PASSOU (1 passed) em 68s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:18:30 -0300 | roteiro n09 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n09 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 2 tests using 1 worker
+
+  ✓  1 [desktop] › e2e\n09-permissoes.spec.ts:4:3 › N09 Permissões na navegação › usuário comum não vê nem alcança o painel admin (12.2s)
+  ✓  2 [desktop] › e2e\n09-permissoes.spec.ts:34:3 › N09 Permissões na navegação › administrador entra direto no painel e não vê a Descoberta (11.3s)
+
+  2 passed (59.0s)
+# resultado: n09: PASSOU (2 passed) em 69s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:19:40 -0300 | roteiro n10 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n10 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 1 test using 1 worker
+
+N10 PASSO > 1. aba Painel mostra os indicadores
+N10 PASSO > 2. Painel: período invertido mostra erro e não chama a API
+N10 PASSO > 3. aba Relatórios: período invertido mostra erro; gerar relatório e exportar CSV
+N10 PASSO > 4. aba Logs: período invertido, paginação e expandir linha
+N10 PASSO > 5. aba Usuários: lista, filtro de período invertido e CSV
+N10 PASSO > 6. aba Moderação: lista de denúncias e período invertido
+  ✓  1 [desktop] › e2e\n10-painel-admin.spec.ts:10:1 › N10 Painel admin: abas, período invertido, relatório, CSV, paginação e linha de log (28.3s)
+
+  1 passed (1.1m)
+# resultado: n10: PASSOU (1 passed) em 82s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:21:03 -0300 | roteiro n11 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n11 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 1 test using 1 worker
+
+  ✓  1 [desktop] › e2e\n11-moderacao.spec.ts:3:1 › N11 Moderação ponta a ponta: denúncia → análise com suspensão → "Conta suspensa" → reativação → entrada (40.3s)
+
+  1 passed (1.3m)
+# resultado: n11: PASSOU (1 passed) em 89s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:22:33 -0300 | roteiro n12 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n12 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [desktop] › e2e\n12-sessao.spec.ts:4:3 › N12 Sessão › access inválido/expirado: a próxima ação renova a sessão sem deslogar (11.3s)
+  ✓  2 [desktop] › e2e\n12-sessao.spec.ts:39:3 › N12 Sessão › refresh inválido: vai ao login com "Sua sessão expirou. Entre novamente." (13.0s)
+  ✓  3 [desktop] › e2e\n12-sessao.spec.ts:61:3 › N12 Sessão › login com falha ao carregar a conta: avisa, não manda para "Criar perfil" e dá para tentar de novo (AUD-F07) (19.4s)
+  ✓  4 [desktop] › e2e\n12-sessao.spec.ts:80:3 › N12 Sessão › cadastro: conta criada e login automático falhou leva ao login com aviso, sem tentar cadastrar de novo (AUD-F12) (9.3s)
+
+  4 passed (1.5m)
+# resultado: n12: PASSOU (4 passed) em 100s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:24:14 -0300 | roteiro n13 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n13 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [mobile] › e2e\n13-mobile.spec.ts:10:1 › N13 Mobile (375 px): cadastro resumido, Descoberta, menu e chat sem estourar a largura (23.5s)
+  ✓  2 [mobile] › e2e\n13-mobile.spec.ts:67:1 › N13b Mobile: match e chat sem estourar a largura (23.2s)
+  ✓  3 [mobile] › e2e\n13-mobile.spec.ts:88:1 › N13c Mobile (375 px): recuperação de senha sem estourar a largura (3.8s)
+
+  3 passed (1.7m)
+# resultado: n13: PASSOU (3 passed) em 119s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:26:14 -0300 | roteiro n14 | memória antes: 5,9 GB livres | npx playwright test -c e2e/playwright.config.ts n14 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 2 tests using 1 worker
+
+  ✓  1 [desktop] › e2e\n14-recuperar-senha.spec.ts:8:1 › N14 Recuperar senha: pedir link → e-mail → senha fraca → redefinir → entrar → link usado fica inválido (27.3s)
+  ✓  2 [desktop] › e2e\n14-recuperar-senha.spec.ts:165:1 › N14b Recuperar senha: link sem código ou adulterado mostra link inválido (2.3s)
+
+  2 passed (1.2m)
+# resultado: n14: PASSOU (2 passed) em 82s (código de saída 0)
+
+==================================================================================
+# 21/11/2026 19:27:37 -0300 | roteiro n15 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n15 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 1 test using 1 worker
+
+N15 PASSO > 1. card da Descoberta com o selo de interesses em comum
+N15 PASSO > 2. detalhe: "Por que vocês combinam" com as 7 barras e os temas em comum
+N15 PASSO > 3. perfil com bio curta: 6 barras e o aviso, sem o critério do ThoLuk
+N15 PASSO > 4. Meu Perfil mostra os temas da própria bio
+N15 PASSO > 5. aba ThoLuk (IA): situação do ThoLuk
+N15 PASSO > 6. laboratório com o exemplo 1: medidores e temas em comum
+N15 PASSO > 7. laboratório valida texto vazio sem chamar o ThoLuk
+N15 PASSO > 8. processamento paralelo: gráficos do benchmark (ou a instrução, sem benchmark)
+N15 PASSO > 9. aba Logs: filtro "Teste do ThoLuk (painel)" encontra o teste do laboratório
+  ✓  1 [desktop] › e2e\n15-ia.spec.ts:14:1 › N15 ThoLuk: por que vocês combinam, selo, temas do perfil, aba ThoLuk (status, laboratório, paralelismo) e log (41.3s)
+
+  1 passed (1.3m)
+# resultado: n15: PASSOU (1 passed) em 91s (código de saída 0)
+
+# RESUMO DA REEXECUÇÃO PRÉ-FREEZE (21/11/2026 19:29:09 -0300)
+  n01: PASSOU (9 passed) em 134s
+  n02: PASSOU (1 passed) em 93s
+  n03: PASSOU (2 passed) em 96s
+  n04: PASSOU (1 passed) em 99s
+  n05: PASSOU (1 passed) em 108s
+  n06: PASSOU (1 passed) em 108s
+  n07: PASSOU (1 passed) em 74s
+  n08: PASSOU (1 passed) em 68s
+  n09: PASSOU (2 passed) em 69s
+  n10: PASSOU (1 passed) em 82s
+  n11: PASSOU (1 passed) em 89s
+  n12: PASSOU (4 passed) em 100s
+  n13: PASSOU (3 passed) em 119s
+  n14: PASSOU (2 passed) em 82s
+  n15: PASSOU (1 passed) em 91s
+  TOTAL: 15 roteiros, 31 testes e2e passaram nesta reexecução; roteiros com falha: 0
+# Depois: portas 8001 e 5173 livres; memória: 5,8 GB livres.

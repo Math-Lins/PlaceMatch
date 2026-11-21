@@ -775,6 +775,7 @@ export interface CriterioCompatibilidade {
 }
 
 export interface CompatibilidadeDetalhe {
+  nome_ia?: string;
   perfil_id: number;
   nome: string;
   score: number;
@@ -795,6 +796,8 @@ export async function getCompatibilidade(perfilId: number): Promise<Compatibilid
 export type SituacaoIA = 'nao_carregado' | 'carregando' | 'disponivel' | 'indisponivel' | 'desabilitada';
 
 export interface IAStatus {
+  /** Nome exibido da IA. */
+  nome_ia?: string;
   habilitada: boolean;
   disponivel: boolean;
   situacao: SituacaoIA;
@@ -811,6 +814,8 @@ export interface IAStatus {
   temas_cadastrados: number;
   temas: (Tema & { perfis: number })[];
   tempo_medio_geracao_ms: number | null;
+  /** Mediana do tempo de geração (sem a carga do modelo): o tempo típico de uma bio. */
+  tempo_tipico_geracao_ms?: number | null;
   ultima_atualizacao: string | null;
   calibracao: Record<string, number>;
 }

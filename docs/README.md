@@ -52,4 +52,4 @@
 |---|---|
 | [`../frontend/e2e/README.md`](../frontend/e2e/README.md) | Como rodar os testes de navegação (Playwright) com banco descartável. |
 | [`../frontend/e2e/evidencias/`](../frontend/e2e/evidencias/) | Prints dos roteiros de navegação (N01 a N14), com `INDICE.md`. |
-| [`../frontend/e2e/evidencias-rc/`](../frontend/e2e/evidencias-rc/) | Prints da interface final (RC-01 a RC-50; RC-43 a RC-50: Afinidade por IA e processamento paralelo), com `INDICE.md`. |
+| [`../frontend/e2e/evidencias-rc/`](../frontend/e2e/evidencias-rc/) | Prints da interface final (RC-01 a RC-50; RC-43 a RC-50: ThoLuk, a IA de afinidade, e processamento paralelo), com `INDICE.md`. |

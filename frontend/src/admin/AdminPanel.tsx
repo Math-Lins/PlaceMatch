@@ -46,7 +46,7 @@ const TAB_LABELS: Record<AdminTab, string> = {
   logs: 'Logs',
   usuarios: 'Usuários',
   moderacao: 'Moderação',
-  ia: 'IA',
+  ia: 'ThoLuk (IA)',
 };
 
 export default function AdminPanel({ nav, onLogout }: { nav: (s: 'welcome') => void; onLogout?: () => void }) {

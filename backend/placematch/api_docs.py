@@ -152,12 +152,13 @@ CriterioCompatibilidade = _classe('CriterioCompatibilidade', {
     'criterio': s.ChoiceField(choices=['orcamento', 'regiao', 'rotina', 'habitos', 'moradia', 'idade', 'afinidade_ia']),
     'nome': s.CharField(help_text='Nome do critério para exibição.'),
     'peso': s.FloatField(help_text='Peso configurado (os 7 somam 1).'),
-    'peso_efetivo': s.FloatField(help_text='Peso usado neste par. Sem a afinidade por IA, os outros 6 são divididos por 0,90.'),
+    'peso_efetivo': s.FloatField(help_text='Peso usado neste par. Sem a afinidade do ThoLuk, os outros 6 são divididos por 0,90.'),
     'valor': s.FloatField(allow_null=True, help_text='Semelhança no critério, de 0 a 1 (`null` quando o critério não entrou).'),
     'contribuicao': s.FloatField(help_text='peso_efetivo × valor; a soma das contribuições é o score (± arredondamento).'),
-    'considerado': s.BooleanField(help_text='false só para `afinidade_ia` sem embedding de um dos perfis ou com a IA desligada.'),
+    'considerado': s.BooleanField(help_text='false só para `afinidade_ia` sem embedding de um dos perfis ou com o ThoLuk desligado.'),
 })
 CompatibilidadeResposta = _classe('CompatibilidadeDetalhe', {
+    'nome_ia': s.CharField(help_text='Nome exibido da IA do PlaceMatch ("ThoLuk"), só informativo.'),
     'perfil_id': s.IntegerField(), 'nome': s.CharField(),
     'score': s.FloatField(help_text='Score total, de 0 a 1 (o mesmo gravado e mostrado na Descoberta).'),
     'criterios': CriterioCompatibilidade(many=True),
@@ -165,24 +166,29 @@ CompatibilidadeResposta = _classe('CompatibilidadeDetalhe', {
     'similaridade_ia': s.FloatField(allow_null=True, help_text='Cosseno bruto entre os dois embeddings (-1 a 1).'),
     'temas_em_comum': TemaSerializer(many=True), 'temas_meu_perfil': TemaSerializer(many=True),
     'temas_outro_perfil': TemaSerializer(many=True),
-    'ia_disponivel': s.BooleanField(help_text='IA ligada e modelo carregado (ou baixado e pronto para carregar).'),
+    'ia_disponivel': s.BooleanField(help_text='ThoLuk ligado e com o modelo carregado (ou baixado e pronto para carregar).'),
     'motivo_sem_ia': s.CharField(allow_null=True, help_text='Quando `afinidade_ia` é null, explica o porquê.'),
 })
 _TemaContagem = _classe('TemaContagem', {'id': s.CharField(), 'nome': s.CharField(), 'perfis': s.IntegerField(help_text='Perfis com o tema.')})
 IAStatusResposta = _classe('IAStatus', {
+    'nome_ia': s.CharField(help_text='Nome exibido da IA do PlaceMatch ("ThoLuk"), só informativo.'),
     'habilitada': s.BooleanField(help_text='IA_HABILITADA.'), 'disponivel': s.BooleanField(),
     'situacao': s.ChoiceField(choices=['nao_carregado', 'carregando', 'disponivel', 'indisponivel', 'desabilitada'],
                               help_text='Estado do modelo neste processo do servidor. Com o aquecimento ligado (IA_AQUECIMENTO), '
                                         'o servidor começa a carregar o modelo ao subir: `carregando` → `disponivel` (ou `indisponivel`).'),
-    'situacao_texto': s.CharField(help_text='O mesmo estado para exibição: "Não carregado", "Carregando", "Disponível", '
-                                            '"Indisponível" ou "Desligada".'),
+    'situacao_texto': s.CharField(help_text='O mesmo estado para exibição: "ThoLuk não carregado", "ThoLuk carregando", '
+                                            '"ThoLuk disponível", "ThoLuk indisponível" ou "ThoLuk desligado".'),
     'erro': s.CharField(allow_null=True, help_text='Última falha ao carregar o modelo.'),
     'modelo': s.CharField(), 'dimensoes': s.IntegerField(), 'modelo_baixado': s.BooleanField(),
-    'tempo_carregamento_ms': s.FloatField(allow_null=True),
+    'tempo_carregamento_ms': s.FloatField(allow_null=True, help_text='Tempo de carga do modelo neste processo do servidor (uma vez).'),
     'perfis_total': s.IntegerField(), 'perfis_com_texto_suficiente': s.IntegerField(help_text='Bio (+ anúncio) com 20+ letras.'),
     'perfis_com_embedding': s.IntegerField(), 'perfis_sem_embedding_com_texto': s.IntegerField(help_text='Corrija com `gerar_embeddings`.'),
     'temas_cadastrados': s.IntegerField(), 'temas': _TemaContagem(many=True),
-    'tempo_medio_geracao_ms': s.FloatField(allow_null=True), 'ultima_atualizacao': s.DateTimeField(allow_null=True),
+    'tempo_medio_geracao_ms': s.FloatField(allow_null=True, help_text='Média do tempo de geração gravado nos embeddings '
+                                           '(registros antigos podiam incluir a carga do modelo; prefira o tempo típico).'),
+    'tempo_tipico_geracao_ms': s.FloatField(allow_null=True, help_text='Tempo típico para gerar o embedding e os temas de uma '
+                                            'bio: MEDIANA dos embeddings gravados, sem a carga do modelo.'),
+    'ultima_atualizacao': s.DateTimeField(allow_null=True),
     'calibracao': s.DictField(child=s.FloatField(), help_text='Peso, piso e teto do cosseno e limiares dos temas (matches/algoritmo/config.py).'),
 })
 IATestarResposta = _classe('IATestarResposta', {
@@ -356,8 +362,8 @@ OPERACOES = {
         resumo='Criar o perfil',
         descricao=('Cria o perfil do usuário logado (um por usuário). Quem oferece vaga pode enviar também os campos do anúncio '
                    '(`titulo_anuncio`, `descricao_imovel`, `fotos_imovel`, `foto_perfil_url`). Ao salvar, as compatibilidades com os perfis '
-                   'do tipo oposto são recalculadas. Com a bio (+ anúncio) de 20 letras ou mais, o modelo de IA local gera o embedding '
-                   'usado no critério "Afinidade de interesses (IA)"; o texto não sai do servidor.'),
+                   'do tipo oposto são recalculadas. Com a bio (+ anúncio) de 20 letras ou mais, o ThoLuk (a IA do PlaceMatch, um modelo local) gera o embedding '
+                   'usado no critério "Afinidade de interesses (ThoLuk)"; o texto não sai do servidor.'),
         request=PerfilSerializer, req_ex=[('perfil_criar', 'Perfil de quem procura vaga'), ('perfil_criar_anuncio', 'Perfil com anúncio (oferecendo vaga)')],
         ok=(201, PerfilSerializer, 'perfil_criar', 'Perfil criado.', [('perfil_criar_anuncio', 'Perfil com anúncio')]),
         erros=[(400, 'perfil_criar_invalido', 'Campos inválidos'), (400, 'perfil_criar_duplicado', 'Usuário já tem perfil'),
@@ -404,8 +410,8 @@ OPERACOES = {
         resumo='Descobrir perfis compatíveis',
         descricao=('Lista os perfis do **tipo oposto** com o score de compatibilidade (0 a 1), por score decrescente. Exige perfil criado. '
                    'Não aparecem: o próprio perfil, perfis já avaliados, perfis já em match e contas suspensas. '
-                   'Cada item traz também `afinidade_ia` (afinidade entre as bios calculada pelo modelo de IA local, 0 a 1, ou null quando '
-                   'uma das bios é curta ou a IA está desligada) e `temas_em_comum`. O detalhamento do score está em `GET /api/compatibilidade/{perfil_id}/`.'),
+                   'Cada item traz também `afinidade_ia` (afinidade entre as bios calculada pelo ThoLuk, a IA do PlaceMatch, 0 a 1, ou null quando '
+                   'uma das bios é curta ou o ThoLuk está desligado) e `temas_em_comum`. O detalhamento do score está em `GET /api/compatibilidade/{perfil_id}/`.'),
         params=[
             P('q', OpenApiTypes.STR, 'Texto: nome, região ou título do anúncio.', exemplo='praia'),
             P('regiao', OpenApiTypes.STR, 'Região exata. Repetível: `?regiao=A&regiao=B`.', exemplo='Boa Viagem'),
@@ -442,12 +448,12 @@ OPERACOES = {
         metodo='GET', rota='/api/compatibilidade/{perfil_id}/', tag='Descoberta e Matches', quem=COMUM,
         resumo='Detalhar a compatibilidade com um perfil',
         descricao=('Score total e o detalhamento dos 7 critérios entre você e um perfil do **tipo oposto** (conta ativa): peso configurado, '
-                   'peso efetivo, valor de 0 a 1 e contribuição de cada um. Inclui a **Afinidade por IA** (cosseno entre os embeddings das bios, '
+                   'peso efetivo, valor de 0 a 1 e contribuição de cada um. Inclui a **Afinidade de interesses (ThoLuk)** (cosseno entre os embeddings das bios, '
                    'calibrado para 0 a 1), os temas de cada bio e os temas em comum. Se um dos perfis não tem embedding (bio com menos de 20 letras) '
-                   'ou a IA está desligada, o critério de IA fica de fora e os outros 6 pesos são renormalizados (`motivo_sem_ia` explica). '
+                   'ou o ThoLuk está desligado, o critério do ThoLuk fica de fora e os outros 6 pesos são renormalizados (`motivo_sem_ia` explica). '
                    'Nada aqui chama o modelo: os embeddings já estão gravados.'),
         params=[OpenApiParameter('perfil_id', OpenApiTypes.INT, OpenApiParameter.PATH, description='Id do PERFIL (não do usuário).')],
-        ok=(200, CompatibilidadeResposta, 'compatibilidade_ok', 'Detalhamento do score.', [('compatibilidade_sem_ia', 'Bio curta: critério de IA ignorado')]),
+        ok=(200, CompatibilidadeResposta, 'compatibilidade_ok', 'Detalhamento do score.', [('compatibilidade_sem_ia', 'Bio curta: critério do ThoLuk ignorado')]),
         erros=[(400, 'compatibilidade_sem_perfil', 'Usuário ainda sem perfil'), (403, 'compatibilidade_mesmo_tipo', 'Perfil do mesmo tipo'),
                (403, 'compatibilidade_admin', 'Administrador'), (404, 'compatibilidade_inexistente', 'Perfil inexistente ou de conta suspensa')],
     ),
@@ -605,26 +611,26 @@ OPERACOES = {
         ],
         csv_ok=('usuarios_exportar', 'Arquivo CSV de usuários.'), erros=[],
     ),
-    # ───────── Afinidade por IA ─────────
+    # ───────── Afinidade por IA (ThoLuk) ─────────
     'ia_status': dict(
-        metodo='GET', rota='/api/admin/ia/status/', tag='Afinidade por IA', quem=ADMIN,
-        resumo='Situação da IA',
-        descricao=('Modelo, dimensões, se a IA está ligada e disponível, perfis com embedding × total, temas cadastrados (com quantos perfis '
+        metodo='GET', rota='/api/admin/ia/status/', tag='Afinidade por IA (ThoLuk)', quem=ADMIN,
+        resumo='Situação do ThoLuk',
+        descricao=('Situação do ThoLuk, a IA de afinidade do PlaceMatch: modelo, dimensões, se ele está ligado e disponível, perfis com embedding × total, temas cadastrados (com quantos perfis '
                    'têm cada um), tempo médio de geração de um embedding e data da última atualização. Não carrega o modelo: `disponivel` '
                    'reflete o estado atual (carregado, falhou ou baixado e pronto para carregar).'),
-        ok=(200, IAStatusResposta, 'ia_status', 'Situação da IA.', []),
+        ok=(200, IAStatusResposta, 'ia_status', 'Situação do ThoLuk.', []),
         erros=[(403, 'ia_status_comum', 'Usuário comum')],
     ),
     'ia_testar': dict(
-        metodo='POST', rota='/api/admin/ia/testar/', tag='Afinidade por IA', quem=ADMIN,
-        resumo='Testar a IA com dois textos',
+        metodo='POST', rota='/api/admin/ia/testar/', tag='Afinidade por IA (ThoLuk)', quem=ADMIN,
+        resumo='Testar o ThoLuk com dois textos',
         descricao=('Compara dois textos (até 1000 caracteres cada) com o modelo local: similaridade bruta (cosseno), afinidade calibrada (0 a 1), '
                    'temas detectados em cada texto, temas em comum e o tempo de processamento. Registra o log `IA_TESTE` só com o tamanho dos '
-                   'textos e o resultado (**os textos não são gravados**). Com a IA desligada ou o modelo indisponível → 503.'),
+                   'textos e o resultado (**os textos não são gravados**). Com o ThoLuk desligado ou indisponível → 503.'),
         request=IATestarSerializer, req_ex=[('ia_testar_ok', 'Mesmo interesse com palavras diferentes'), ('ia_testar_opostos', 'Festas × silêncio')],
         ok=(200, IATestarResposta, 'ia_testar_ok', 'Resultado da comparação.', [('ia_testar_opostos', 'Festas × silêncio')]),
         erros=[(400, 'ia_testar_invalido', 'Texto vazio ou com mais de 1000 caracteres'), (403, 'ia_testar_comum', 'Usuário comum'),
-               (503, 'ia_testar_indisponivel', 'IA desligada ou modelo indisponível')],
+               (503, 'ia_testar_indisponivel', 'ThoLuk desligado ou indisponível')],
     ),
     # ───────── Processamento em lote ─────────
     'processamento_benchmark': dict(
@@ -679,7 +685,7 @@ DESCRICAO_STATUS = {
     403: 'Sem permissão para este recurso.',
     404: 'Recurso não encontrado.',
     429: 'Tentativas de login demais: aguarde o tempo do cabeçalho `Retry-After` (em segundos).',
-    503: 'Serviço indisponível no momento (ex.: modelo de IA não carregado).',
+    503: 'Serviço indisponível no momento (ex.: o ThoLuk, a IA do PlaceMatch, não está carregado).',
 }
 # Exemplos de 401 reaproveitados em todas as rotas autenticadas
 ERROS_401 = [('me_sem_token', 'Sem token'), ('me_token_invalido', 'Token inválido ou expirado')]

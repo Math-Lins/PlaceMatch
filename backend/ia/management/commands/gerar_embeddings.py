@@ -43,7 +43,7 @@ def workers_possiveis(pedidos: int, livre_mb: float | None) -> int:
 
 
 class Command(BaseCommand):
-    help = 'Gera os embeddings das bios de todos os perfis (Afinidade por IA) e recalcula as compatibilidades.'
+    help = 'Gera os embeddings das bios de todos os perfis (ThoLuk, a IA de afinidade) e recalcula as compatibilidades.'
 
     def add_arguments(self, parser):
         parser.add_argument('--forcar', action='store_true', help='regera todos, mesmo sem mudança no texto')
@@ -61,14 +61,14 @@ class Command(BaseCommand):
         if opts['lote'] < 1:
             raise CommandError('--lote deve ser um número maior que zero.')
         if not servico.habilitada():
-            raise CommandError('A IA está desligada (IA_HABILITADA=False).')
+            raise CommandError('O ThoLuk está desligado (IA_HABILITADA=False).')
         if not servico.disponivel(carregar=True):
-            raise CommandError(f"Modelo de IA indisponível: {servico.estado()['erro']}. Rode antes: python manage.py baixar_modelo_ia")
+            raise CommandError(f"O ThoLuk está indisponível: {servico.estado()['erro']}. Rode antes: python manage.py baixar_modelo_ia")
 
         perfis = list(Perfil.objects.select_related('usuario').order_by('id'))
         total = len(perfis)
         lote = opts['lote']
-        self.stdout.write(f'Modelo: {servico.nome_modelo()} | perfis: {total} | '
+        self.stdout.write(f'ThoLuk | modelo: {servico.nome_modelo()} | perfis: {total} | '
                           f"{'regerando todos' if opts['forcar'] else 'só os que mudaram'}")
 
         usar = self._workers_efetivos(workers, embeddings.contar_pendentes(perfis, opts['forcar']))
@@ -100,7 +100,7 @@ class Command(BaseCommand):
             call_command('recalcular_compatibilidades', stdout=self.stdout, stderr=self.stderr)
         if falhas:
             raise CommandError('Alguns embeddings falharam; veja o log do servidor.')
-        self.stdout.write(self.style.SUCCESS('Embeddings prontos.'))
+        self.stdout.write(self.style.SUCCESS('ThoLuk pronto: embeddings e temas atualizados.'))
 
     def _workers_efetivos(self, pedidos: int, pendentes: int) -> int:
         if pedidos <= 1 or not paralelo_disponivel():

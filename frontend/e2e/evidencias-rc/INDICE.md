@@ -1,6 +1,6 @@
 # Evidências da Release Candidate — interface final
 
-Gerado por `e2e/tour-rc.spec.ts` (`npm run e2e:tour`) em 20/11/2026, 23:23:07, com os dados de demonstração de `manage.py seed_demo` (banco descartável do e2e).
+Gerado por `e2e/tour-rc.spec.ts` (`npm run e2e:tour`) em 21/11/2026, 19:04:23, com os dados de demonstração de `manage.py seed_demo` (banco descartável do e2e).
 
 | Arquivo | Tela | Perfil de acesso | Viewport |
 |---|---|---|---|
@@ -46,11 +46,11 @@ Gerado por `e2e/tour-rc.spec.ts` (`npm run e2e:tour`) em 20/11/2026, 23:23:07, c
 | RC-40-nova-senha-com-erro.png | Nova senha com erro (senha fraca recusada) | Visitante | 1366×768 (desktop) |
 | RC-41-senha-redefinida.png | Senha redefinida com sucesso | Visitante | 1366×768 (desktop) |
 | RC-42-link-invalido.png | Link de redefinição inválido (já usado) | Visitante | 1366×768 (desktop) |
-| RC-43-por-que-voces-combinam.png | Detalhe do anúncio — painel "Por que vocês combinam" (7 critérios, IA em destaque, temas em comum) | Procura vaga | 1366×768 (desktop) |
-| RC-44-descoberta-selo-interesses-em-comum.png | Descoberta com o selo "✨ Interesses em comum" (afinidade por IA ≥ 70%) | Procura vaga | 1366×768 (desktop) |
-| RC-45-meu-perfil-temas-da-ia.png | Meu Perfil — temas que a IA identificou na bio | Procura vaga | 1366×768 (desktop) |
-| RC-46-admin-ia-status.png | Painel admin — aba IA: situação do modelo e temas | Administrador | 1366×768 (desktop) |
-| RC-47-admin-ia-laboratorio-exemplo-1.png | Laboratório da IA — exemplo 1: interesses parecidos, palavras diferentes — página inteira | Administrador | 1366×768 (desktop) |
-| RC-48-admin-ia-laboratorio-exemplo-2.png | Laboratório da IA — exemplo 2: estilos diferentes (festas × silêncio) — página inteira | Administrador | 1366×768 (desktop) |
+| RC-43-por-que-voces-combinam.png | Detalhe do anúncio — painel "Por que vocês combinam" (7 critérios, ThoLuk em destaque, temas em comum) | Procura vaga | 1366×768 (desktop) |
+| RC-44-descoberta-selo-interesses-em-comum.png | Descoberta com o selo "ThoLuk: interesses em comum" (afinidade ≥ 70%) | Procura vaga | 1366×768 (desktop) |
+| RC-45-meu-perfil-temas-da-ia.png | Meu Perfil — temas que o ThoLuk identificou na bio | Procura vaga | 1366×768 (desktop) |
+| RC-46-admin-ia-status.png | Painel admin — aba ThoLuk (IA): situação do ThoLuk e temas | Administrador | 1366×768 (desktop) |
+| RC-47-admin-ia-laboratorio-exemplo-1.png | Laboratório do ThoLuk — exemplo 1: interesses parecidos, palavras diferentes — página inteira | Administrador | 1366×768 (desktop) |
+| RC-48-admin-ia-laboratorio-exemplo-2.png | Laboratório do ThoLuk — exemplo 2: estilos diferentes (festas × silêncio) — página inteira | Administrador | 1366×768 (desktop) |
 | RC-49-admin-processamento-paralelo.png | Painel admin — processamento paralelo (tempo e speedup × workers, Amdahl, tabela) — página inteira | Administrador | 1366×768 (desktop) |
 | RC-50-mobile-por-que-voces-combinam.png | Painel "Por que vocês combinam" no celular | Procura vaga | 375×812 (celular, escala 2x) |

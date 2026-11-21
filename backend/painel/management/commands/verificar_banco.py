@@ -73,7 +73,7 @@ class Command(BaseCommand):
             ('Denúncia → denunciante', _orfaos(Denuncia, 'denunciante_id', Usuario)),
             ('Denúncia → resolvida_por', _orfaos(Denuncia, 'resolvida_por_id', Usuario)),
             ('Log → usuário', _orfaos(LogOperacao, 'usuario_id', Usuario)),
-            ('Embedding IA → perfil', _orfaos(EmbeddingPerfil, 'perfil_id', Perfil)),
+            ('Embedding do ThoLuk → perfil', _orfaos(EmbeddingPerfil, 'perfil_id', Perfil)),
         ]
         total = sum(qs.count() for _, qs in orfaos)
         detalhe = [f'{nome}={qs.count()}' for nome, qs in orfaos if qs.count()]
@@ -153,7 +153,7 @@ class Command(BaseCommand):
                 p.id for p in Perfil.objects.select_related('usuario').only('id', 'bio', 'titulo_anuncio', 'descricao_imovel', 'usuario__tipo')
                 if p.id not in com_embedding and servico.texto_suficiente(servico.texto_do_perfil(p))
             )
-            r.append(Resultado('Perfis com bio suficiente sem embedding (Afinidade por IA)', 'AVISO', len(sem_embedding),
+            r.append(Resultado('Perfis com bio suficiente sem embedding (ThoLuk)', 'AVISO', len(sem_embedding),
                                sem_embedding[:limite],
                                'Ficam sem o 7º critério (pesos renormalizados). Corrija com: python manage.py gerar_embeddings'))
         return r

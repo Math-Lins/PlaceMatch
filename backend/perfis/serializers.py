@@ -10,12 +10,12 @@ class AnaliseIASerializer(serializers.Serializer):
 
     situacao = serializers.ChoiceField(
         choices=['analisada', 'bio_curta', 'pendente', 'ia_desligada'],
-        help_text='`analisada`: a bio tem embedding e temas; `bio_curta`: menos de 20 letras e dígitos (o score usa os '
-                  'outros 6 critérios); `pendente`: texto suficiente, mas a IA estava indisponível quando a bio foi salva '
-                  '(gerado depois com `gerar_embeddings`); `ia_desligada`: IA_HABILITADA=False.')
-    temas = TemaSerializer(many=True, help_text='Temas de convivência detectados na bio (vazio se não `analisada`).')
+        help_text='`analisada`: o ThoLuk analisou a bio (embedding e temas); `bio_curta`: menos de 20 letras e dígitos (o score usa os '
+                  'outros 6 critérios); `pendente`: texto suficiente, mas o ThoLuk estava indisponível quando a bio foi salva '
+                  '(gerado depois com `gerar_embeddings`); `ia_desligada`: ThoLuk desligado (IA_HABILITADA=False).')
+    temas = TemaSerializer(many=True, help_text='Temas de convivência que o ThoLuk identificou na bio (vazio se não `analisada`).')
     caracteres_uteis = serializers.IntegerField(help_text='Letras e dígitos do texto analisado (bio + anúncio).')
-    minimo_caracteres = serializers.IntegerField(help_text='Mínimo para a IA analisar (20).')
+    minimo_caracteres = serializers.IntegerField(help_text='Mínimo para o ThoLuk analisar (20).')
 
 
 class PerfilSerializer(serializers.ModelSerializer):
@@ -35,7 +35,7 @@ class PerfilSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(AnaliseIASerializer(
         allow_null=True,
-        help_text='O que a IA entendeu da bio. Só vem preenchido no PRÓPRIO perfil (`null` para os perfis de outras pessoas).'))
+        help_text='O que o ThoLuk (a IA do PlaceMatch) entendeu da bio. Só vem preenchido no PRÓPRIO perfil (`null` para os perfis de outras pessoas).'))
     def get_analise_ia(self, obj):
         request = self.context.get('request')
         usuario = getattr(request, 'user', None)

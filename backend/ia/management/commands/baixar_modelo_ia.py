@@ -25,16 +25,17 @@ def _tamanho_pasta(caminho: str) -> int:
 
 
 class Command(BaseCommand):
-    help = 'Baixa e aquece o modelo de IA (multilíngue, 384 dimensões) para uso offline.'
+    help = 'Baixa e aquece o modelo do ThoLuk, a IA de afinidade do PlaceMatch (multilíngue, 384 dimensões), para uso offline.'
 
     def handle(self, *args, **options):
         if not servico.habilitada():
-            raise CommandError('A IA está desligada (IA_HABILITADA=False). Ligue-a no .env para baixar o modelo.')
+            raise CommandError('O ThoLuk está desligado (IA_HABILITADA=False). Ligue-o no .env para baixar o modelo.')
         if servico.usando_falso():
             self.stdout.write(self.style.WARNING('IA_EMBEDDER=falso: embedder de testes, nada a baixar.'))
             return
         pasta = servico.pasta_modelo()
         ja_baixado = servico.modelo_baixado()
+        self.stdout.write(f'{servico.APRESENTACAO_IA}')
         self.stdout.write(f'Modelo: {servico.MODELO}')
         self.stdout.write(f'Pasta:  {pasta}')
         self.stdout.write('Arquivos já baixados: carregando do disco…' if ja_baixado
@@ -60,4 +61,4 @@ class Command(BaseCommand):
         self.stdout.write(f'Tamanho em disco: {_tamanho_pasta(pasta) / 2**20:.0f} MB')
         self.stdout.write(f'Teste: "Adoro cozinhar para os amigos." × "Faço jantares em casa no fim de semana." '
                           f'→ cosseno {cos:.3f}, temas {temas} ({teste_ms:.0f} ms)')
-        self.stdout.write(self.style.SUCCESS('Modelo pronto: o servidor passa a usá-lo sem acessar a internet.'))
+        self.stdout.write(self.style.SUCCESS('ThoLuk pronto: o servidor passa a usá-lo sem acessar a internet.'))

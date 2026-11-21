@@ -40,7 +40,7 @@ NOMES_CRITERIOS: dict[str, str] = {
     'habitos':      'Hábitos de convivência',
     'moradia':      'Estilo de moradia',
     'idade':        'Faixa etária',
-    'afinidade_ia': 'Afinidade de interesses (IA)',
+    'afinidade_ia': 'Afinidade de interesses (ThoLuk)',
 }
 
 # ---------------------------------------------------------------------------
@@ -60,8 +60,9 @@ IA_CASAS_COSSENO = 4
 # Temas de convivência (ia/temas.py): o texto "tem" o tema quando o cosseno com alguma frase do tema
 # é >= LIMIAR_TEMA E fica pelo menos MARGEM_TEMA acima da média do texto em todos os temas
 # (a margem descarta temas genéricos que "parecem" com qualquer bio). No máximo MAX_TEMAS por texto.
+# Calibrados com o modelo real em ia/tests/test_temas_modelo_real.py.
 LIMIAR_TEMA = 0.45
-MARGEM_TEMA = 0.13
+MARGEM_TEMA = 0.135
 MAX_TEMAS = 5
 
 # Texto de origem do embedding: menos que isto (letras e dígitos) não gera embedding.

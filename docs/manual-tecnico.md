@@ -70,7 +70,7 @@ flowchart LR
 | CORS | django-cors-headers | 4.9.0 | Liberar o frontend |
 | Banco | PostgreSQL + psycopg2-binary | 16 / 2.9.13 | Persistência |
 | Processamento | NumPy | 2.x | Cálculo de compatibilidade em lote |
-| Afinidade por IA | fastembed + ONNX Runtime | 0.9.1 / 1.32.0 | Modelo de linguagem local (`paraphrase-multilingual-MiniLM-L12-v2`, 384 dimensões) que compara as bios; sem PyTorch e sem serviço externo |
+| Afinidade por IA (ThoLuk) | fastembed + ONNX Runtime | 0.9.1 / 1.32.0 | Modelo de linguagem local (`paraphrase-multilingual-MiniLM-L12-v2`, 384 dimensões) que compara as bios; sem PyTorch e sem serviço externo |
 | Processamento paralelo | concurrent.futures + threadpoolctl | (biblioteca padrão) / 3.8.0 | Recálculo completo em vários núcleos (processos ou threads); `threadpoolctl` limita o BLAS a 1 thread por worker |
 | Gráfico do benchmark | matplotlib | 3.11.2 | Só desenvolvimento (`requirements-dev.txt`): gera `docs/benchmark/paralelismo.png` |
 | Configuração | python-dotenv | 1.2.3 | Leitura do `.env` |
@@ -99,8 +99,8 @@ Cada app Django segue a mesma organização: `models.py` (tabelas), `serializers
 | `moderacao/` | Denúncias, decisão do administrador, suspensão e reativação | — |
 | `painel/` | Dashboard, relatórios, lista de usuários, exportação CSV, filtros comuns | `verificar_banco` |
 | `logs/` | Registro de operações (18 ações) e consulta/exportação | — |
-| `ia/` | Afinidade por IA: serviço do modelo (`servico.py`, carga única e thread-safe, estados "carregando/disponível/indisponível"), aquecimento na subida do servidor (`aquecimento.py`), embeddings das bios (`embeddings.py`), temas de convivência (`temas.py`), explicação para a API (`explicacao.py`: afinidade, temas em comum e o campo `analise_ia` do próprio perfil), rotas de administrador | `baixar_modelo_ia`, `gerar_embeddings [--workers N]` |
-| `painel/` (processamento) | `GET /api/admin/processamento/benchmark/`: devolve o resultado do `benchmark_paralelismo` para a aba IA do painel | — |
+| `ia/` | Afinidade por IA — **ThoLuk, a IA de afinidade do PlaceMatch** (nome exibido; o código mantém `ia`): serviço do modelo (`servico.py`, carga única e thread-safe, estados "carregando/disponível/indisponível"), aquecimento na subida do servidor (`aquecimento.py`), embeddings das bios (`embeddings.py`), temas de convivência (`temas.py`), explicação para a API (`explicacao.py`: afinidade, temas em comum e o campo `analise_ia` do próprio perfil), rotas de administrador | `baixar_modelo_ia`, `gerar_embeddings [--workers N]` |
+| `painel/` (processamento) | `GET /api/admin/processamento/benchmark/`: devolve o resultado do `benchmark_paralelismo` para a aba ThoLuk (IA) do painel | — |
 | `scripts/` | Geração dos exemplos reais da API e do `docs/api.md` | — |
 
 ### 3.2 Frontend (`frontend/src/`)
@@ -109,7 +109,7 @@ Cada app Django segue a mesma organização: `models.py` (tabelas), `serializers
 |---|---|
 | `main.tsx` | Ponto de entrada; carrega fontes e estilos |
 | `App.tsx` | Telas do usuário (início, login, cadastro, recuperação de senha, criação/edição de perfil, Descoberta, detalhe, matches, chat, notificações, Meu Perfil), navegação por `?screen=`, guarda de rotas e restauração da sessão |
-| `ia.tsx` | Afinidade por IA para o usuário: painel "Por que vocês combinam" (7 critérios, peso efetivo, temas em comum), selo "✨ Interesses em comum" dos cards, temas da própria bio (Meu Perfil) e o "ⓘ Como a IA funciona" |
+| `ia.tsx` | O ThoLuk para o usuário: painel "Por que vocês combinam" (7 critérios, peso efetivo, temas em comum), selo "ThoLuk: interesses em comum" dos cards, temas da própria bio (Meu Perfil) e o "ⓘ Como o ThoLuk funciona" |
 | `api.ts` | Cliente HTTP: tokens em `sessionStorage`, renovação automática, tradução de erros, download de CSV |
 | `ui.tsx` | Componentes visuais comuns (`Botao`, `Campo`, `Selo`, `Modal`, estados de carregando/vazio/erro) e formatação pt-BR (moeda, datas) |
 | `admin/` | Painel administrativo: `AdminPanel.tsx` (abas), `PainelTab`, `RelatoriosTab`, `LogsTab`, `UsuariosTab`, `ModeracaoTab`, `IATab` (status do modelo, laboratório e processamento paralelo), `graficos.tsx` (inclui o gráfico por número de workers) |
@@ -207,7 +207,7 @@ Os valores reais ficam **somente** nos arquivos `.env`, que não são versionado
 | `PROXIES_CONFIAVEIS` | Quantos proxies confiáveis há na frente da API (para o IP real) |
 | `FRONTEND_URL` | Endereço do frontend usado no link de redefinição de senha |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` | Envio de e-mail por SMTP. Sem `EMAIL_HOST`, o e-mail é impresso no console do servidor |
-| `IA_HABILITADA` | Liga o 7º critério (Afinidade por IA). `False` = só os 6 critérios, pesos renormalizados (padrão `True`) |
+| `IA_HABILITADA` | Liga o 7º critério (o ThoLuk). `False` = só os 6 critérios, pesos renormalizados (padrão `True`) |
 | `IA_MODELO_DIR` | Pasta do modelo baixado por `baixar_modelo_ia` (vazio = `backend/.modelos/`, fora do Git) |
 | `IA_AQUECIMENTO` | Carrega o modelo em segundo plano quando o servidor sobe (padrão `True`; nunca em testes ou outros comandos) |
 | `IA_EMBEDDER` | Só nos testes automatizados (`falso`, determinístico); não use em desenvolvimento nem em produção |
@@ -241,12 +241,12 @@ A API segue REST com JSON e está documentada em três formas: Swagger UI intera
 |---|---|
 | Autenticação | `POST /api/auth/registrar/`, `login/`, `login/refresh/`, `logout/`, `senha/solicitar/`, `senha/redefinir/`; `GET /api/auth/me/` |
 | Perfis | `GET/POST /api/perfis/`; `GET/PUT/PATCH/DELETE /api/perfis/{id}/` |
-| Perfis (IA) | `GET /api/perfis/` traz `analise_ia` no próprio perfil (situação e temas que a IA encontrou na bio) |
+| Perfis (IA) | `GET /api/perfis/` traz `analise_ia` no próprio perfil (situação e temas que o ThoLuk encontrou na bio) |
 | Descoberta e Matches | `GET /api/descoberta/` (filtros e ordenação; `afinidade_ia` e `temas_em_comum` em cada card), `POST /api/curtidas/`, `GET /api/matches/`, `GET /api/compatibilidade/{perfil_id}/` (os 7 critérios, peso efetivo e temas) |
 | Chat | `GET /api/conversas/`; `GET/POST /api/matches/{match_id}/mensagens/` |
 | Moderação | `POST /api/moderacao/denuncias/`; rotas `/api/admin/moderacao/...` para listar, decidir, suspender e reativar |
 | Painel | `GET /api/admin/dashboard/`, `relatorios/`, `relatorios/{rel_id}/` (JSON ou CSV), `usuarios/`, `usuarios/exportar/` |
-| Afinidade por IA | `GET /api/admin/ia/status/` (situação do modelo), `POST /api/admin/ia/testar/` (comparar dois textos; 503 sem o modelo) |
+| Afinidade por IA (ThoLuk) | `GET /api/admin/ia/status/` (situação do ThoLuk; `nome_ia`, tempo típico por embedding e carga do modelo), `POST /api/admin/ia/testar/` (comparar dois textos; 503 sem o modelo) |
 | Processamento em lote | `GET /api/admin/processamento/benchmark/` (resultado do benchmark de paralelismo; 404 sem o arquivo) |
 | Logs | `GET /api/admin/logs/`, `logs/exportar/` |
 
@@ -256,7 +256,7 @@ A API segue REST com JSON e está documentada em três formas: Swagger UI intera
 - Datas de filtro em `AAAA-MM-DD`, período máximo de 366 dias, a partir de 2000.
 - Listas do painel paginadas por `page` e `page_size`.
 - CSV com separador `;`, datas `dd/mm/aaaa`, vírgula decimal e células protegidas contra fórmulas.
-- Códigos: `400` (dados inválidos), `401` (sem login ou token inválido), `403` (sem permissão), `404` (não encontrado), `429` (muitas tentativas), `503` (só no teste da IA, quando o modelo está fora do ar). Nenhuma entrada deve gerar `500`.
+- Códigos: `400` (dados inválidos), `401` (sem login ou token inválido), `403` (sem permissão), `404` (não encontrado), `429` (muitas tentativas), `503` (só no teste do ThoLuk, quando o modelo está fora do ar). Nenhuma entrada deve gerar `500`.
 
 Um teste automatizado compara as rotas documentadas com as rotas reais e falha se alguma faltar ou sobrar.
 
@@ -274,7 +274,7 @@ O núcleo de processamento do PlaceMatch é o **algoritmo de compatibilidade**, 
 | Rotina | 14% | Perfil de horário (tabela de similaridade) e tolerância a barulho |
 | Moradia | 9% | Tipo de imóvel (tabela de similaridade) e número de moradores |
 | Idade | 8% | Diferença de idade (zero a partir de 20 anos) |
-| Afinidade de interesses (IA) | 10% | Cosseno entre os embeddings das bios (modelo de linguagem local), calibrado para 0 a 1. Sem bio suficiente (20+ letras) ou com a IA desligada, sai do cálculo e os outros 6 pesos são renormalizados |
+| Afinidade de interesses (ThoLuk) | 10% | Cosseno entre os embeddings das bios (modelo de linguagem local), calibrado para 0 a 1. Sem bio suficiente (20+ letras) ou com a IA desligada, sai do cálculo e os outros 6 pesos são renormalizados |
 
 **Implementação:**
 
@@ -286,7 +286,7 @@ O núcleo de processamento do PlaceMatch é o **algoritmo de compatibilidade**, 
 
 **Desempenho medido:** com banco, o cálculo em lote (1 perfil contra todos) é **26× a 34× mais rápido** que a versão item a item (100 a 5.000 perfis, já com a IA), principalmente por trocar N+1 consultas por 2. No recálculo completo em paralelo (benchmark de 1.000 a 20.000 perfis, i3 de 2 núcleos com outros programas abertos), threads chegaram a **2,4×**. Processos perderam até 5.000 perfis, por causa de ~3 s para subir os workers no Windows. Ponta a ponta, gravar no banco é 99,8% do tempo (Lei de Amdahl). Detalhes na seção 12 de [`algoritmo-compatibilidade.md`](./algoritmo-compatibilidade.md) e na aba IA do painel.
 
-**Limitações conhecidas:** a região é comparada por igualdade de texto normalizado (grafias diferentes não combinam); scores de pares que não envolvem o perfil alterado não são recalculados em cascata; a IA mede o **assunto** das bios, não a posição ("durmo tarde" × "acordo cedo" falam do mesmo assunto), por isso tem só 10% e a posição fica com hábitos e rotina. Detalhes, fórmulas e tabelas: [`docs/algoritmo-compatibilidade.md`](./algoritmo-compatibilidade.md) e [`docs/benchmark/`](./benchmark/).
+**Limitações conhecidas:** a região é comparada por igualdade de texto normalizado (grafias diferentes não combinam); scores de pares que não envolvem o perfil alterado não são recalculados em cascata; o ThoLuk mede o **assunto** das bios, não a posição ("durmo tarde" × "acordo cedo" falam do mesmo assunto), por isso tem só 10% e a posição fica com hábitos e rotina. Detalhes, fórmulas e tabelas: [`docs/algoritmo-compatibilidade.md`](./algoritmo-compatibilidade.md) e [`docs/benchmark/`](./benchmark/).
 
 ## 11. Segurança
 
@@ -313,7 +313,7 @@ O relatório de auditoria está em [`docs/auditoria-rc.md`](./auditoria-rc.md).
 | Análise estática | `ruff check .` (backend) | Sem erros |
 | Tipos e build | `npx tsc --noEmit --noUnusedLocals --noUnusedParameters` e `npm run build` | Sem erros |
 | Navegação (Playwright) | `npm run e2e:db`, `npm run e2e`, `npm run e2e:db:parar` | 15 roteiros, 31 testes (um roteiro por vez, com o modelo de IA real) |
-| Prints da interface | `npm run e2e:tour` | RC-01 a RC-50 (RC-43 a RC-50: IA e processamento paralelo) |
+| Prints da interface | `npm run e2e:tour` | RC-01 a RC-50 (RC-43 a RC-50: ThoLuk e processamento paralelo; `TOUR_PRINTS=43-50` regera só essas) |
 
 As saídas completas da última execução estão em [`docs/execucoes-rc/`](./execucoes-rc/).
 
@@ -331,8 +331,8 @@ As saídas completas da última execução estão em [`docs/execucoes-rc/`](./ex
 | Quero… | Onde mexer |
 |---|---|
 | Mudar pesos ou tabelas do score | `backend/matches/algoritmo/config.py`; depois `python manage.py recalcular_compatibilidades` |
-| Mudar os temas da IA ou a calibração | `backend/ia/temas.py` e `matches/algoritmo/config.py`; depois `python manage.py gerar_embeddings --forcar` |
-| Medir o paralelismo de novo | `python manage.py benchmark_paralelismo` (com a máquina ociosa); a aba IA do painel lê o resultado |
+| Mudar os temas do ThoLuk ou a calibração | `backend/ia/temas.py` e `matches/algoritmo/config.py`; depois `python manage.py gerar_embeddings --forcar` |
+| Medir o paralelismo de novo | `python manage.py benchmark_paralelismo` (com a máquina ociosa); a aba ThoLuk (IA) do painel lê o resultado |
 | Novo campo no perfil | `perfis/models.py` → `makemigrations`/`migrate` → `perfis/serializers.py` → formulário em `App.tsx` → algoritmo, se influenciar o score → `docs/banco-de-dados.md` |
 | Nova rota da API | `views.py` + `urls.py` do app, permissão, testes, anotação `@extend_schema` e regeneração de `docs/api.md` e `docs/openapi.yaml` (scripts em `backend/scripts/`) |
 | Nova ação de log | `logs/models.py` (`ACAO_CHOICES`) + migração + rótulo no filtro da aba Logs |

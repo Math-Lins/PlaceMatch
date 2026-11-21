@@ -88,7 +88,7 @@ class CoberturaDasRotasTest(APITestCase):
     def test_grupos_esperados(self):
         nomes = [t['name'] for t in _schema()['tags']]
         self.assertEqual(nomes, ['Autenticação', 'Perfis', 'Descoberta e Matches', 'Chat', 'Moderação',
-                                 'Painel administrativo', 'Afinidade por IA', 'Processamento em lote', 'Logs'])
+                                 'Painel administrativo', 'Afinidade por IA (ThoLuk)', 'Processamento em lote', 'Logs'])
 
     def test_docs_api_md_tem_secao_para_todos_os_grupos(self):
         # docs/api.md é gerado por grupo: um grupo fora da lista do gerador sumiria do documento.

@@ -93,6 +93,8 @@ def _atualizar_lote(perfis: list, forcar: bool, workers: int = 1) -> list[str]:
     if not pendentes:
         return resultados
 
+    # Carga do modelo e frases dos temas fora da medição: tempo_ms é só o tempo de gerar o embedding e os temas.
+    servico.preparar()
     inicio = time.perf_counter()
     vetores = servico.gerar_vetores([t for _, _, t, _, _ in pendentes], workers=workers)
     temas = servico.temas_de_vetores(vetores) if vetores is not None else None

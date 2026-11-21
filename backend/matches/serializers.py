@@ -20,12 +20,12 @@ class CamposIAMixin(serializers.Serializer):
 
     @extend_schema_field(serializers.FloatField(
         allow_null=True,
-        help_text='Afinidade por IA entre as bios (0 a 1). `null` quando um dos dois perfis não tem bio '
-                  'suficiente (20+ letras) ou a IA está desligada.'))
+        help_text='Afinidade entre as bios calculada pelo ThoLuk, a IA do PlaceMatch (0 a 1). `null` quando um dos '
+                  'dois perfis não tem bio suficiente (20+ letras) ou o ThoLuk está desligado.'))
     def get_afinidade_ia(self, obj):
         return self._ia(obj).get('afinidade_ia')
 
-    @extend_schema_field(TemaSerializer(many=True, help_text='Temas de convivência detectados nas duas bios.'))
+    @extend_schema_field(TemaSerializer(many=True, help_text='Temas de convivência que o ThoLuk identificou nas duas bios.'))
     def get_temas_em_comum(self, obj):
         return self._ia(obj).get('temas_em_comum', [])
 

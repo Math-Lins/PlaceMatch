@@ -24,6 +24,14 @@ from .serializers import IATestarSerializer
 from .temas import TEMAS, nomes
 
 
+def _mediana(valores: list[float]) -> float | None:
+    """Mediana (o tempo típico): um embedding gerado junto com a carga do modelo não puxa o valor, como na média."""
+    if not valores:
+        return None
+    meio = len(valores) // 2
+    return valores[meio] if len(valores) % 2 else (valores[meio - 1] + valores[meio]) / 2
+
+
 class IAStatusView(APIView):
     permission_classes = [AdminPermission]
 
@@ -32,6 +40,8 @@ class IAStatusView(APIView):
         modelo = servico.nome_modelo()
         validos = EmbeddingPerfil.objects.filter(modelo=modelo)
         agregados = validos.aggregate(media=Avg('tempo_ms'), ultima=Max('atualizado_em'))
+        tempos = sorted(t for t in validos.values_list('tempo_ms', flat=True) if t and t > 0)
+        tipico = _mediana(tempos)
         perfis = Perfil.objects.select_related('usuario').only(
             'id', 'bio', 'titulo_anuncio', 'descricao_imovel', 'usuario__tipo')
         com_texto = {p.id for p in perfis if servico.texto_suficiente(servico.texto_do_perfil(p))}
@@ -39,6 +49,7 @@ class IAStatusView(APIView):
         contagem_temas = Counter(t for lista in validos.values_list('temas', flat=True) for t in (lista or []))
         est = servico.estado()
         return Response({
+            'nome_ia': servico.NOME_IA,
             'habilitada': servico.habilitada(),
             'disponivel': servico.disponivel(),
             'situacao': est['situacao'],
@@ -55,6 +66,7 @@ class IAStatusView(APIView):
             'temas_cadastrados': len(TEMAS),
             'temas': [{'id': t['id'], 'nome': t['nome'], 'perfis': contagem_temas.get(t['id'], 0)} for t in TEMAS],
             'tempo_medio_geracao_ms': round(agregados['media'], 2) if agregados['media'] is not None else None,
+            'tempo_tipico_geracao_ms': round(tipico, 2) if tipico is not None else None,
             'ultima_atualizacao': agregados['ultima'],
             'calibracao': {
                 'peso': PESOS['afinidade_ia'], 'cosseno_piso': IA_COSSENO_PISO, 'cosseno_teto': IA_COSSENO_TETO,
@@ -81,9 +93,9 @@ class IATestarView(APIView):
         if vetores is None or temas is None:
             registrar('IA_TESTE', usuario=request.user, entidade='ia', detalhes={**detalhes, 'ia_disponivel': False},
                       request=request)
-            mensagem = ('A Afinidade por IA está desligada neste servidor (IA_HABILITADA=False).'
+            mensagem = ('O ThoLuk está desligado neste servidor (IA_HABILITADA=False).'
                         if not servico.habilitada() else
-                        'O modelo de IA não está disponível no momento. No servidor, rode '
+                        'O ThoLuk não está disponível no momento. No servidor, rode '
                         '"python manage.py baixar_modelo_ia" e tente de novo em alguns minutos.')
             return Response({'detail': mensagem}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 

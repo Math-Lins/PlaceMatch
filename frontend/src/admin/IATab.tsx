@@ -1,4 +1,4 @@
-// Aba "IA" do painel: situação do modelo, laboratório (comparar dois textos) e o benchmark de paralelismo.
+// Aba "ThoLuk (IA)" do painel: situação do ThoLuk, laboratório (comparar dois textos) e o benchmark de paralelismo.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, getBenchmarkParalelismo, getIAStatus, testarIA } from '../api';
 import type { BenchmarkParalelismo, IAStatus, IATesteResultado, ModoParalelo, SituacaoIA, Tema } from '../api';
@@ -21,7 +21,7 @@ export default function IATab() {
   const [secao, setSecao] = useState<Secao>('status');
   return (
     <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div role="group" aria-label="Seções da aba IA" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      <div role="group" aria-label="Seções da aba ThoLuk (IA)" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {SECOES.map(s => <Chip key={s.id} ativo={secao === s.id} onClick={() => setSecao(s.id)}>{s.rotulo}</Chip>)}
       </div>
       {secao === 'status' && <StatusIA />}
@@ -77,7 +77,7 @@ function StatusIA() {
       // Enquanto o modelo carrega, atualiza sozinho a cada 2 s.
       if (s.situacao === 'carregando') temporizador.current = setTimeout(carregar, 2000);
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : 'Não foi possível carregar a situação da IA.');
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível carregar a situação do ThoLuk.');
     } finally {
       setCarregando(false);
     }
@@ -88,14 +88,18 @@ function StatusIA() {
     return () => { if (temporizador.current) clearTimeout(temporizador.current); };
   }, [carregar]);
 
-  if (carregando && !status) return <EstadoCarregando texto="Carregando a situação da IA…" />;
+  if (carregando && !status) return <EstadoCarregando texto="Carregando a situação do ThoLuk…" />;
   if (erro && !status) return <EstadoErro mensagem={erro} onTentarNovamente={() => { setCarregando(true); carregar(); }} />;
   if (!status) return null;
 
   const fracao = status.perfis_total ? status.perfis_com_embedding / status.perfis_total : 0;
+  const tipico = status.tempo_tipico_geracao_ms ?? status.tempo_medio_geracao_ms;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <Cartao titulo="Situação do modelo" acao={<Botao tamanho="compacto" variante="neutro" onClick={carregar}>Atualizar</Botao>}>
+      <Cartao titulo="Situação do ThoLuk" acao={<Botao tamanho="compacto" variante="neutro" onClick={carregar}>Atualizar</Botao>}>
+        <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '0 0 12px' }}>
+          ThoLuk, a IA de afinidade do PlaceMatch: um modelo de linguagem que roda no próprio servidor e compara o significado das bios.
+        </p>
         <div role="status" aria-live="polite" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
           <Selo tom={TOM_SITUACAO[status.situacao]} grande>
             <span aria-hidden="true" className={status.situacao === 'carregando' ? 'animate-spin' : undefined} style={{ display: 'inline-block' }}>
@@ -114,14 +118,17 @@ function StatusIA() {
           <p role="alert" style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.danger, margin: '0 0 16px' }}>Última falha: {status.erro}</p>
         )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '12px' }}>
-          <Indicador rotulo="Modelo" valor={<span style={{ fontSize: '15px' }}>{status.modelo.split('/').pop()}</span>} detalhe="multilíngue, roda no próprio servidor" />
+          <Indicador rotulo="Modelo" valor={<span style={{ fontSize: '15px' }}>{status.modelo.split('/').pop()}</span>} detalhe="modelo de linguagem multilíngue do ThoLuk" />
           <Indicador rotulo="Dimensões do vetor" valor={numeroBR(status.dimensoes)} />
           <Indicador rotulo="Perfis com embedding" valor={`${numeroBR(status.perfis_com_embedding)} de ${numeroBR(status.perfis_total)}`}
             detalhe={status.perfis_sem_embedding_com_texto > 0 ? `${status.perfis_sem_embedding_com_texto} com bio aguardando análise` : `${numeroBR(fracao * 100, 0)}% dos perfis`} />
-          <Indicador rotulo="Tempo médio por embedding" valor={status.tempo_medio_geracao_ms != null ? `${numeroBR(status.tempo_medio_geracao_ms, 1)} ms` : '—'} />
+          <Indicador rotulo="Tempo típico por embedding" valor={tipico != null ? `${numeroBR(tipico, 1)} ms` : '—'}
+            detalhe="mediana por bio (embedding e temas), sem a carga do modelo" />
+          <Indicador rotulo="Carga do modelo" valor={status.tempo_carregamento_ms != null ? `${numeroBR(status.tempo_carregamento_ms / 1000, 1)} s` : '—'}
+            detalhe={status.tempo_carregamento_ms != null ? 'uma vez, quando o servidor sobe' : 'ainda não carregado neste servidor'} />
           <Indicador rotulo="Temas cadastrados" valor={numeroBR(status.temas_cadastrados)} />
           <Indicador rotulo="Última atualização" valor={<span style={{ fontSize: '15px' }}>{dataHoraBR(status.ultima_atualizacao)}</span>}
-            detalhe={status.tempo_carregamento_ms != null ? `modelo carregado em ${numeroBR(status.tempo_carregamento_ms / 1000, 1)} s` : undefined} />
+            detalhe="último embedding gerado" />
         </div>
       </Cartao>
       <Cartao titulo="Temas de convivência (perfis com cada tema)">
@@ -171,7 +178,7 @@ function TemasDoTexto({ rotulo, temas, comuns }: { rotulo: string; temas: Tema[]
         <ul style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', listStyle: 'none', padding: 0, margin: 0 }}>
           {temas.map(t => (
             <li key={t.id}>
-              <Selo tom={comuns.has(t.id) ? 'mint' : 'neutro'}>{comuns.has(t.id) && <span aria-hidden="true">✨</span>}{t.nome}{comuns.has(t.id) && <span className="sr-only"> (em comum)</span>}</Selo>
+              <Selo tom={comuns.has(t.id) ? 'mint' : 'neutro'}>{t.nome}{comuns.has(t.id) && <span className="sr-only"> (em comum)</span>}</Selo>
             </li>
           ))}
         </ul>
@@ -235,7 +242,7 @@ function Laboratorio() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <Cartao titulo="Laboratório: compare dois textos com a IA">
+      <Cartao titulo="Laboratório do ThoLuk">
         <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '0 0 12px' }}>Exemplos prontos:</p>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
           {EXEMPLOS.map(ex => (
@@ -247,11 +254,11 @@ function Laboratorio() {
           {campo(b, setB, 'texto_b', 'Texto B')}
         </div>
         <div style={{ marginTop: '16px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <Botao onClick={() => comparar()} disabled={enviando}><span aria-hidden="true">✨</span> {enviando ? 'Comparando…' : 'Comparar com IA'}</Botao>
+          <Botao onClick={() => comparar()} disabled={enviando}>{enviando ? 'Comparando…' : 'Comparar com o ThoLuk'}</Botao>
           {erroGeral && <span role="alert" style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.danger }}>{erroGeral}</span>}
         </div>
         <p role="note" style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.text, margin: '16px 0 0', padding: '12px 14px', borderRadius: RAIO.campo, background: '#F2EEEA', lineHeight: 1.5 }}>
-          O modelo mede a afinidade de assunto/interesses; preferências opostas sobre o mesmo assunto (ex.: festas × silêncio) são tratadas pelos critérios de hábitos e rotina.
+          O ThoLuk mede a afinidade de assunto/interesses; preferências opostas sobre o mesmo assunto (ex.: festas × silêncio) são tratadas pelos critérios de hábitos e rotina.
         </p>
       </Cartao>
 
@@ -272,7 +279,7 @@ function Laboratorio() {
             </div>
             <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.text, margin: '16px 0 0' }}>
               {resultado.temas_em_comum.length
-                ? <><span aria-hidden="true">✨ </span>Temas em comum: <strong>{resultado.temas_em_comum.map(t => t.nome).join(', ')}</strong></>
+                ? <>Temas em comum: <strong>{resultado.temas_em_comum.map(t => t.nome).join(', ')}</strong></>
                 : 'Nenhum tema em comum.'}
             </p>
           </Cartao>

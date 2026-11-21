@@ -21,13 +21,13 @@ Encontrar um colega de apartamento hoje é um processo manual e pouco confiável
 | **Usuários e autenticação** | Cadastro (nome com espaços e acentos, e-mail único sem diferenciar maiúsculas, senha validada), login por e-mail com **limite de tentativas que falham** (5 por minuto por IP e 10 por hora por e-mail; `429` ao passar), JWT com renovação automática, logout que invalida o refresh e **recuperação de senha por e-mail** (link de 1 hora). O administrador só é criado por linha de comando. |
 | **Perfis** | Um perfil por usuário: dados pessoais, orçamento, tipo de imóvel, fumante, pets, visitas, horário e escalas de hábitos. Quem oferece vaga preenche também o **anúncio** (título, descrição, até 5 fotos por URL). Criação, edição completa e exclusão. |
 | **Descoberta** | Perfis do tipo oposto ordenados por score, com busca por texto e filtros (região, tipo de imóvel, pets, fumante, orçamento, score mínimo, ordenação). Algoritmo de 7 critérios: [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md). Cada card traz a afinidade entre as bios e os temas em comum; `GET /api/compatibilidade/{id}/` detalha o score critério a critério. |
-| **Afinidade por IA** | Um modelo de linguagem **local** (multilíngue, 384 dimensões, sem PyTorch) compara o significado das bios: é o 7º critério do score (10%) e a fonte dos "temas em comum" (16 temas de convivência). Nenhum texto sai do servidor. Sem o modelo, o sistema segue com os 6 critérios. Veja [Afinidade por IA](#afinidade-por-ia). |
+| **Afinidade por IA: ThoLuk** | **ThoLuk, a IA de afinidade do PlaceMatch**: um modelo de linguagem **local** (multilíngue, 384 dimensões, sem PyTorch) que compara o significado das bios. O ThoLuk é o 7º critério do score (10%) e a fonte dos "temas em comum" (16 temas de convivência). Nenhum texto sai do servidor. Sem o modelo, o sistema segue com os 6 critérios. Veja [Afinidade por IA (ThoLuk)](#afinidade-por-ia-tholuk). |
 | **Curtidas e matches** | Curtir ou recusar. Quando as duas pessoas se curtem, o match é criado com o score. |
 | **Chat** | Conversa entre as duas pessoas de um match (até 1000 caracteres), não lidas, busca e atualização automática. |
 | **Moderação** | Denúncias (spam, ofensivo, perfil falso, outro); o administrador resolve ou descarta e pode suspender/reativar contas. Conta suspensa não entra e some da descoberta, dos matches e do chat. |
 | **Painel administrativo** | Dashboard (KPIs e séries), 5 relatórios com filtros, lista de usuários e exportação em CSV. |
 | **Processamento em lote em paralelo** | O recálculo completo das compatibilidades divide a matriz de pares em blocos e usa vários núcleos (processos ou threads); `gerar_embeddings --workers` usa o paralelismo de dados do fastembed. Resultado idêntico ao sequencial, benchmark com speedup, eficiência e Lei de Amdahl. Veja [Processamento em paralelo](#processamento-em-paralelo). |
-| **Logs** | Registro automático de 18 tipos de operação, com listagem filtrada e exportação. Senhas, textos de mensagens e textos testados na IA nunca são gravados. |
+| **Logs** | Registro automático de 18 tipos de operação, com listagem filtrada e exportação. Senhas, textos de mensagens e textos testados no ThoLuk nunca são gravados. |
 
 Perfis de acesso: `buscando_vaga`, `oferecendo_vaga` (cadastro pela tela "Criar conta") e `administrador` (somente pelo comando `criar_admin`; não participa de descoberta, curtidas nem chat).
 
@@ -43,7 +43,7 @@ Perfis de acesso: `buscando_vaga`, `oferecendo_vaga` (cadastro pela tela "Criar 
 | CORS | `django-cors-headers` | 4.9.0 |
 | Banco de dados | PostgreSQL | 16 |
 | Compatibilidade em lote | NumPy | 2.5 |
-| Afinidade por IA | `fastembed` (ONNX Runtime) + modelo `paraphrase-multilingual-MiniLM-L12-v2` | fastembed 0.9.1 · onnxruntime 1.32 |
+| Afinidade por IA (ThoLuk) | `fastembed` (ONNX Runtime) + modelo `paraphrase-multilingual-MiniLM-L12-v2` | fastembed 0.9.1 · onnxruntime 1.32 |
 | Testes | `manage.py test` (SQLite em memória) · Playwright (e2e) | Playwright 1.65 |
 | Contêineres | Docker + Docker Compose | — |
 | Linguagens | Python 3.13 na imagem Docker (testado também com 3.14) · Node 22 na imagem Docker | — |
@@ -89,7 +89,7 @@ cd ..
 | `IA_HABILITADA` | Liga o 7º critério do score (Afinidade por IA). `False` = só os 6 critérios, com os pesos renormalizados. | `True` |
 | `IA_MODELO_DIR` | Pasta do modelo de IA (baixado por `baixar_modelo_ia`). Vazio = `backend/.modelos/` (fora do git). | (vazio) |
 | `IA_AQUECIMENTO` | Carrega o modelo em segundo plano quando o servidor (`runserver`/`gunicorn`) sobe, sem atrasar a subida; o status da IA mostra "Carregando" → "Disponível". Nunca roda em testes, `migrate` ou outros comandos. `False` = carrega no primeiro uso. | `True` |
-| `PROCESSAMENTO_WORKERS` | Workers do `recalcular_compatibilidades` em paralelo (modos processos/threads). Vazio = `min(4, núcleos)`. Os workers não carregam o modelo de IA. | (vazio) |
+| `PROCESSAMENTO_WORKERS` | Workers do `recalcular_compatibilidades` em paralelo (modos processos/threads). Vazio = `min(4, núcleos)`. Os workers não carregam o modelo do ThoLuk. | (vazio) |
 | `PROCESSAMENTO_BENCHMARK_ARQUIVO` | Arquivo lido por `GET /api/admin/processamento/benchmark/`. Vazio = `docs/benchmark/paralelismo.json`. | (vazio) |
 | `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SECURE_PROXY_SSL_HEADER`, `CORS_ALLOWED_ORIGINS` | Só para produção (veja "Implantação em produção"). | desligados |
 
@@ -120,7 +120,7 @@ Depois, com o ambiente Python pronto (veja [Como executar](#como-executar)):
 
 ```powershell
 python manage.py migrate               # cria as tabelas e as restrições de integridade
-python manage.py baixar_modelo_ia      # baixa (~230 MB, só na 1ª vez) e testa o modelo de IA
+python manage.py baixar_modelo_ia      # baixa (~230 MB, só na 1ª vez) e testa o modelo do ThoLuk
 python manage.py gerar_embeddings      # embeddings das bios já existentes + recálculo dos scores
 python manage.py verificar_banco       # confere a consistência dos dados (somente leitura)
 ```
@@ -141,7 +141,7 @@ O `seed_demo` cria, em um único comando:
 3. uma curtida pendente, para demonstrar o interesse mútuo ao curtir de volta;
 4. três denúncias (duas pendentes e uma procedente) e uma conta suspensa;
 5. registros de log coerentes com esses dados;
-6. os embeddings das bios (Afinidade por IA) e o recálculo dos scores. As 21 bios foram escritas para a demonstração: há pares com o mesmo interesse em palavras diferentes (Isabela × Henrique, culinária) e pares opostos (Mariana × Marcos, estudos × festas). Sem o modelo baixado, o seed avisa e segue com os 6 critérios.
+6. os embeddings das bios (ThoLuk) e o recálculo dos scores. As 21 bios foram escritas para a demonstração: há pares com o mesmo interesse em palavras diferentes (Isabela × Henrique, culinária) e pares opostos (Mariana × Marcos, estudos × festas). Sem o modelo baixado, o seed avisa e segue com os 6 critérios.
 
 Rodar de novo não duplica denúncias nem logs. Os comandos separados (`seed_perfis`, `seed_matches`, `seed_mensagens`) continuam disponíveis. Os usuários de demonstração usam e-mails do domínio fictício `@seed.pm`; a senha de demonstração está no código de `backend/perfis/management/commands/seed_perfis.py`. O `--remover-outros` **apaga contas reais**: use-o só no banco do e2e ou num banco local descartável.
 
@@ -169,7 +169,7 @@ python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py baixar_modelo_ia  # modelo de IA (uma vez; depois funciona offline)
+python manage.py baixar_modelo_ia  # modelo do ThoLuk (uma vez; depois funciona offline)
 python manage.py runserver         # http://127.0.0.1:8000
 ```
 
@@ -254,16 +254,16 @@ npm run e2e:db                                 # banco descartável do e2e (recr
 npm run e2e:tour
 ```
 
-O `e2e:tour` roda `seed_demo --remover-outros` **no banco descartável do e2e**, percorre o sistema em desktop (1366×768) e celular (375×812) e grava `frontend/e2e/evidencias-rc/` (`RC-01` a `RC-50` + `INDICE.md`; RC-43 a RC-50 mostram a IA e o processamento paralelo, com o modelo real). Depois gera `frontend/evidencias-rc.zip` com essa pasta e com `docs/execucoes-rc/` (saídas das verificações finais: testes do backend, `verificar_banco`, matriz de permissões, validação do OpenAPI, build e e2e).
+O `e2e:tour` roda `seed_demo --remover-outros` **no banco descartável do e2e**, percorre o sistema em desktop (1366×768) e celular (375×812) e grava `frontend/e2e/evidencias-rc/` (`RC-01` a `RC-50` + `INDICE.md`; RC-43 a RC-50 mostram o ThoLuk e o processamento paralelo, com o modelo real; `TOUR_PRINTS=43-50 npm run e2e:tour` regera só essas). Depois gera `frontend/evidencias-rc.zip` com essa pasta e com `docs/execucoes-rc/` (saídas das verificações finais: testes do backend, `verificar_banco`, matriz de permissões, validação do OpenAPI, build e e2e).
 
-## Afinidade por IA
+## Afinidade por IA (ThoLuk)
 
-Evolução prevista no documento de abertura ("similaridade vetorial usando embeddings de texto da biografia"). Detalhes, calibração e medições: [`docs/algoritmo-compatibilidade.md`, seção 11](./docs/algoritmo-compatibilidade.md#11-afinidade-por-ia-7º-critério).
+**ThoLuk, a IA de afinidade do PlaceMatch.** Ele é a evolução prevista no documento de abertura ("similaridade vetorial usando embeddings de texto da biografia"). Na interface, aparece pelo nome: o critério "Afinidade de interesses (ThoLuk)", o selo "ThoLuk" e a aba "ThoLuk (IA)" do painel. No código, o app, as rotas, os campos JSON e as variáveis mantêm o nome técnico `ia` (`/api/admin/ia/...`, `afinidade_ia`, `IA_HABILITADA`). Detalhes, calibração e medições: [`docs/algoritmo-compatibilidade.md`, seção 11](./docs/algoritmo-compatibilidade.md#11-afinidade-por-ia-tholuk-7º-critério).
 
 - **Modelo**: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (384 dimensões, multilíngue), executado pelo `fastembed` com ONNX Runtime, **sem PyTorch e sem serviço externo**. O texto da bio nunca sai do servidor; a internet só é usada para baixar o modelo.
 - **Embeddings**: ao criar ou editar o perfil, o texto "Sobre você" (+ título e descrição do anúncio, para quem oferece vaga) vira um vetor gravado em `ia_embeddingperfil`. Só é regerado quando o texto muda (hash). Textos com menos de 20 letras não geram embedding.
-- **Score**: o 7º critério é o cosseno entre os dois vetores, calibrado para 0 a 1 (piso 0,20 e teto 0,65), com peso de 10%. Sem embedding em um dos perfis (ou com a IA desligada), o critério sai e os outros 6 pesos são renormalizados: **ninguém perde pontos por ter bio curta**.
-- **Temas em comum**: 16 temas de convivência (culinária, estudos, música, festas, silêncio, pets...) detectados por classificação zero-shot.
+- **Score**: o 7º critério é o cosseno entre os dois vetores, calibrado para 0 a 1 (piso 0,20 e teto 0,65), com peso de 10%. Sem embedding em um dos perfis (ou com o ThoLuk desligado), o critério sai e os outros 6 pesos são renormalizados: **ninguém perde pontos por ter bio curta**.
+- **Temas em comum**: 16 temas de convivência (culinária, estudos, música, festas, silêncio, pets...) que o ThoLuk identifica por classificação zero-shot.
 - **Sem o modelo** (não baixado, sem internet na 1ª vez, arquivo corrompido): o erro vai para o log, o serviço fica "indisponível" e tudo continua funcionando com os 6 critérios. Nenhuma rota devolve 500; só o teste do painel responde 503.
 
 Comandos (na ordem, dentro de `backend/`):
@@ -274,7 +274,7 @@ python manage.py gerar_embeddings      # gera os que faltam e recalcula os score
 python manage.py verificar_banco       # avisa "perfis com bio suficiente sem embedding"
 ```
 
-Rotas: `afinidade_ia` e `temas_em_comum` na Descoberta e no detalhe do perfil; `GET /api/compatibilidade/{perfil_id}/` (detalhamento dos 7 critérios); `GET /api/admin/ia/status/` e `POST /api/admin/ia/testar/` (administrador). Nos testes automatizados, um embedder falso e determinístico substitui o modelo (`IA_EMBEDDER=falso` em `placematch/test_settings.py`); só um teste usa o modelo real e é pulado se ele não estiver baixado.
+Rotas: `afinidade_ia` e `temas_em_comum` na Descoberta e no detalhe do perfil; `analise_ia` (temas do ThoLuk) no próprio perfil; `GET /api/compatibilidade/{perfil_id}/` (detalhamento dos 7 critérios); `GET /api/admin/ia/status/` e `POST /api/admin/ia/testar/` (administrador). Nos testes automatizados, um embedder falso e determinístico substitui o modelo (`IA_EMBEDDER=falso` em `placematch/test_settings.py`); só um teste usa o modelo real e é pulado se ele não estiver baixado.
 
 ## Processamento em paralelo
 
@@ -339,7 +339,7 @@ PlaceMatch/
 │   ├── logs/                # histórico de operações
 │   ├── painel/              # dashboard, relatórios, usuários, exportação CSV, verificar_banco
 │   ├── moderacao/           # denúncias, suspensão e reativação
-│   ├── ia/                  # Afinidade por IA: modelo local, embeddings, temas, baixar_modelo_ia, gerar_embeddings
+│   ├── ia/                  # Afinidade por IA (ThoLuk): modelo local, embeddings, temas, baixar_modelo_ia, gerar_embeddings
 │   ├── scripts/             # geração dos exemplos reais e de docs/api.md
 │   ├── Dockerfile, docker-compose.yml, requirements.txt, requirements-dev.txt, ruff.toml, .env.example
 ├── frontend/                # SPA React (src/App.tsx, src/api.ts, src/admin/), e2e/ (Playwright)
@@ -361,12 +361,12 @@ PlaceMatch/
 | [`docs/testes-sprint9.md`](./docs/testes-sprint9.md) | Campanha de testes e bugs corrigidos |
 | [`docs/execucoes-rc/`](./docs/execucoes-rc/) | Saídas das verificações finais da Release Candidate (testes, banco, permissões, OpenAPI, build, e2e) |
 | [`docs/auditoria-rc.md`](./docs/auditoria-rc.md) · [`docs/revisao-codigo.md`](./docs/revisao-codigo.md) | Auditorias da Release Candidate e revisão final do código (ruff, checklist por módulo, métricas) |
-| [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md) | Fórmulas, pesos e benchmark do score; Afinidade por IA (modelo, calibração, temas, desempenho, privacidade) |
+| [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md) | Fórmulas, pesos e benchmark do score; Afinidade por IA — ThoLuk (modelo, calibração, temas, desempenho, privacidade); paralelismo |
 | [`docs/modulo-chat.md`](./docs/modulo-chat.md) · [`docs/runbook-docker.md`](./docs/runbook-docker.md) | Chat e operação com Docker |
 
 ## Versão
 
-**v1.0.0 (versão final)**: inclui a Afinidade por IA visível na interface (painel "Por que vocês combinam", selo de interesses em comum, temas no Meu Perfil e a aba IA do painel com status, laboratório e processamento paralelo). Versões anteriores: v1.0.0-rc1 e v1.0.0-rc2 (recuperação de senha por e-mail). As evidências estão em [`docs/execucoes-rc/`](./docs/execucoes-rc/) e em `frontend/evidencias-rc.zip`.
+**v1.0.0 (versão final)**: inclui o ThoLuk, a IA de afinidade do PlaceMatch, visível na interface (painel "Por que vocês combinam", selo "ThoLuk" nos cards, temas no Meu Perfil e a aba "ThoLuk (IA)" do painel com status, laboratório e processamento paralelo). Versões anteriores: v1.0.0-rc1 e v1.0.0-rc2 (recuperação de senha por e-mail). As evidências estão em [`docs/execucoes-rc/`](./docs/execucoes-rc/) e em `frontend/evidencias-rc.zip`.
 
 ## EQUIPE
 

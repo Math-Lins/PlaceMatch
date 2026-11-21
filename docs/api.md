@@ -4,7 +4,7 @@
 
 ## Visão geral
 
-API REST em JSON (Django REST Framework), versão **1.0.0**, com 35 operações em 30 rotas, organizadas em 9 grupos: Autenticação, Perfis, Descoberta e Matches, Chat, Moderação, Painel administrativo, Afinidade por IA, Processamento em lote e Logs.
+API REST em JSON (Django REST Framework), versão **1.0.0**, com 35 operações em 30 rotas, organizadas em 9 grupos: Autenticação, Perfis, Descoberta e Matches, Chat, Moderação, Painel administrativo, Afinidade por IA (ThoLuk), Processamento em lote e Logs.
 
 | Recurso | Onde |
 |---|---|
@@ -87,8 +87,8 @@ Somente `registrar`, `login` e `login/refresh` são públicos. O frontend guarda
 | Painel administrativo | `GET` | `/api/admin/relatorios/{rel_id}/` | Somente administrador | Gerar um relatório (JSON ou CSV) |
 | Painel administrativo | `GET` | `/api/admin/usuarios/` | Somente administrador | Listar usuários |
 | Painel administrativo | `GET` | `/api/admin/usuarios/exportar/` | Somente administrador | Exportar usuários (CSV) |
-| Afinidade por IA | `GET` | `/api/admin/ia/status/` | Somente administrador | Situação da IA |
-| Afinidade por IA | `POST` | `/api/admin/ia/testar/` | Somente administrador | Testar a IA com dois textos |
+| Afinidade por IA (ThoLuk) | `GET` | `/api/admin/ia/status/` | Somente administrador | Situação do ThoLuk |
+| Afinidade por IA (ThoLuk) | `POST` | `/api/admin/ia/testar/` | Somente administrador | Testar o ThoLuk com dois textos |
 | Processamento em lote | `GET` | `/api/admin/processamento/benchmark/` | Somente administrador | Resultado do benchmark de paralelismo |
 | Logs | `GET` | `/api/admin/logs/` | Somente administrador | Listar logs de operações |
 | Logs | `GET` | `/api/admin/logs/exportar/` | Somente administrador | Exportar logs (CSV) |
@@ -459,7 +459,7 @@ HTTP 200
 **Quem pode:** Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador recebe 403.  
 **Operação (OpenAPI):** `perfis_criar`
 
-Cria o perfil do usuário logado (um por usuário). Quem oferece vaga pode enviar também os campos do anúncio (`titulo_anuncio`, `descricao_imovel`, `fotos_imovel`, `foto_perfil_url`). Ao salvar, as compatibilidades com os perfis do tipo oposto são recalculadas. Com a bio (+ anúncio) de 20 letras ou mais, o modelo de IA local gera o embedding usado no critério "Afinidade de interesses (IA)"; o texto não sai do servidor.
+Cria o perfil do usuário logado (um por usuário). Quem oferece vaga pode enviar também os campos do anúncio (`titulo_anuncio`, `descricao_imovel`, `fotos_imovel`, `foto_perfil_url`). Ao salvar, as compatibilidades com os perfis do tipo oposto são recalculadas. Com a bio (+ anúncio) de 20 letras ou mais, o ThoLuk (a IA do PlaceMatch, um modelo local) gera o embedding usado no critério "Afinidade de interesses (ThoLuk)"; o texto não sai do servidor.
 
 **Corpo de entrada** (JSON)
 
@@ -914,7 +914,7 @@ HTTP 204
 **Quem pode:** Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador recebe 403.  
 **Operação (OpenAPI):** `descoberta_listar`
 
-Lista os perfis do **tipo oposto** com o score de compatibilidade (0 a 1), por score decrescente. Exige perfil criado. Não aparecem: o próprio perfil, perfis já avaliados, perfis já em match e contas suspensas. Cada item traz também `afinidade_ia` (afinidade entre as bios calculada pelo modelo de IA local, 0 a 1, ou null quando uma das bios é curta ou a IA está desligada) e `temas_em_comum`. O detalhamento do score está em `GET /api/compatibilidade/{perfil_id}/`.
+Lista os perfis do **tipo oposto** com o score de compatibilidade (0 a 1), por score decrescente. Exige perfil criado. Não aparecem: o próprio perfil, perfis já avaliados, perfis já em match e contas suspensas. Cada item traz também `afinidade_ia` (afinidade entre as bios calculada pelo ThoLuk, a IA do PlaceMatch, 0 a 1, ou null quando uma das bios é curta ou o ThoLuk está desligado) e `temas_em_comum`. O detalhamento do score está em `GET /api/compatibilidade/{perfil_id}/`.
 
 **Parâmetros de consulta** (todos opcionais)
 
@@ -1303,7 +1303,7 @@ HTTP 200
 **Quem pode:** Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador recebe 403.  
 **Operação (OpenAPI):** `compatibilidade_detalhe`
 
-Score total e o detalhamento dos 7 critérios entre você e um perfil do **tipo oposto** (conta ativa): peso configurado, peso efetivo, valor de 0 a 1 e contribuição de cada um. Inclui a **Afinidade por IA** (cosseno entre os embeddings das bios, calibrado para 0 a 1), os temas de cada bio e os temas em comum. Se um dos perfis não tem embedding (bio com menos de 20 letras) ou a IA está desligada, o critério de IA fica de fora e os outros 6 pesos são renormalizados (`motivo_sem_ia` explica). Nada aqui chama o modelo: os embeddings já estão gravados.
+Score total e o detalhamento dos 7 critérios entre você e um perfil do **tipo oposto** (conta ativa): peso configurado, peso efetivo, valor de 0 a 1 e contribuição de cada um. Inclui a **Afinidade de interesses (ThoLuk)** (cosseno entre os embeddings das bios, calibrado para 0 a 1), os temas de cada bio e os temas em comum. Se um dos perfis não tem embedding (bio com menos de 20 letras) ou o ThoLuk está desligado, o critério do ThoLuk fica de fora e os outros 6 pesos são renormalizados (`motivo_sem_ia` explica). Nada aqui chama o modelo: os embeddings já estão gravados.
 
 **Parâmetros de rota**
 
@@ -1329,6 +1329,7 @@ curl -X GET "<BASE>/api/compatibilidade/2/" \
 ```json
 HTTP 200
 {
+  "nome_ia": "ThoLuk",
   "perfil_id": 2,
   "nome": "Bruno Lima",
   "score": 0.8436,
@@ -1389,7 +1390,7 @@ HTTP 200
 }
 ```
 
-**Bio curta: critério de IA ignorado** — A bio de Fábio tem menos de 20 letras: o critério de IA fica de fora e os 6 pesos são renormalizados.
+**Bio curta: critério do ThoLuk ignorado** — A bio de Fábio tem menos de 20 letras: o critério de IA fica de fora e os 6 pesos são renormalizados.
 
 ```bash
 curl -X GET "<BASE>/api/compatibilidade/4/" \
@@ -1399,6 +1400,7 @@ curl -X GET "<BASE>/api/compatibilidade/4/" \
 ```json
 HTTP 200
 {
+  "nome_ia": "ThoLuk",
   "perfil_id": 4,
   "nome": "Fábio Rocha",
   "score": 0.9313,
@@ -1442,7 +1444,7 @@ HTTP 200
   ],
   "temas_outro_perfil": [],
   "ia_disponivel": true,
-  "motivo_sem_ia": "Este perfil ainda não tem análise de IA (bio muito curta); o score usa os outros 6 critérios."
+  "motivo_sem_ia": "Este perfil ainda não foi analisado pelo ThoLuk (bio muito curta); o score usa os outros 6 critérios."
 }
 ```
 
@@ -2493,16 +2495,16 @@ HTTP 200  (text/csv)
 
 ---
 
-## Afinidade por IA
+## Afinidade por IA (ThoLuk)
 
-### `GET /api/admin/ia/status/` — Situação da IA
+### `GET /api/admin/ia/status/` — Situação do ThoLuk
 
 **Quem pode:** Somente administrador.  
 **Operação (OpenAPI):** `ia_status`
 
-Modelo, dimensões, se a IA está ligada e disponível, perfis com embedding × total, temas cadastrados (com quantos perfis têm cada um), tempo médio de geração de um embedding e data da última atualização. Não carrega o modelo: `disponivel` reflete o estado atual (carregado, falhou ou baixado e pronto para carregar).
+Situação do ThoLuk, a IA de afinidade do PlaceMatch: modelo, dimensões, se ele está ligado e disponível, perfis com embedding × total, temas cadastrados (com quantos perfis têm cada um), tempo médio de geração de um embedding e data da última atualização. Não carrega o modelo: `disponivel` reflete o estado atual (carregado, falhou ou baixado e pronto para carregar).
 
-**Resposta de sucesso:** `200` — Situação da IA.
+**Resposta de sucesso:** `200` — Situação do ThoLuk.
 
 **Exemplo**
 
@@ -2514,15 +2516,16 @@ curl -X GET "<BASE>/api/admin/ia/status/" \
 ```json
 HTTP 200
 {
+  "nome_ia": "ThoLuk",
   "habilitada": true,
   "disponivel": true,
   "situacao": "disponivel",
-  "situacao_texto": "Disponível",
+  "situacao_texto": "ThoLuk disponível",
   "erro": null,
   "modelo": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
   "dimensoes": 384,
   "modelo_baixado": true,
-  "tempo_carregamento_ms": 5221.6,
+  "tempo_carregamento_ms": 4866.6,
   "perfis_total": 4,
   "perfis_com_texto_suficiente": 3,
   "perfis_com_embedding": 3,
@@ -2545,14 +2548,15 @@ HTTP 200
       "perfis": 2
     }
   ],
-  "tempo_medio_geracao_ms": 37.08,
-  "ultima_atualizacao": "2026-11-20T15:00:48.977342Z",
+  "tempo_medio_geracao_ms": 34.99,
+  "tempo_tipico_geracao_ms": 32.17,
+  "ultima_atualizacao": "2026-11-21T03:14:00.547813Z",
   "calibracao": {
     "peso": 0.1,
     "cosseno_piso": 0.2,
     "cosseno_teto": 0.65,
     "limiar_tema": 0.45,
-    "margem_tema": 0.13,
+    "margem_tema": 0.135,
     "max_temas": 5,
     "min_caracteres_texto": 20
   }
@@ -2569,12 +2573,12 @@ HTTP 200
 
 ---
 
-### `POST /api/admin/ia/testar/` — Testar a IA com dois textos
+### `POST /api/admin/ia/testar/` — Testar o ThoLuk com dois textos
 
 **Quem pode:** Somente administrador.  
 **Operação (OpenAPI):** `ia_testar`
 
-Compara dois textos (até 1000 caracteres cada) com o modelo local: similaridade bruta (cosseno), afinidade calibrada (0 a 1), temas detectados em cada texto, temas em comum e o tempo de processamento. Registra o log `IA_TESTE` só com o tamanho dos textos e o resultado (**os textos não são gravados**). Com a IA desligada ou o modelo indisponível → 503.
+Compara dois textos (até 1000 caracteres cada) com o modelo local: similaridade bruta (cosseno), afinidade calibrada (0 a 1), temas detectados em cada texto, temas em comum e o tempo de processamento. Registra o log `IA_TESTE` só com o tamanho dos textos e o resultado (**os textos não são gravados**). Com o ThoLuk desligado ou indisponível → 503.
 
 **Corpo de entrada** (JSON)
 
@@ -2611,10 +2615,6 @@ HTTP 200
       "nome": "Culinária"
     },
     {
-      "id": "trabalho_remoto",
-      "nome": "Trabalho remoto"
-    },
-    {
       "id": "organizacao",
       "nome": "Organização e limpeza"
     }
@@ -2625,7 +2625,7 @@ HTTP 200
       "nome": "Culinária"
     }
   ],
-  "tempo_ms": 52.6,
+  "tempo_ms": 47.3,
   "modelo": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 }
 ```
@@ -2661,7 +2661,7 @@ HTTP 200
     }
   ],
   "temas_em_comum": [],
-  "tempo_ms": 65.9,
+  "tempo_ms": 39.2,
   "modelo": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 }
 ```
@@ -2674,7 +2674,7 @@ HTTP 200
 | `401` | Sem token | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
 | `401` | Token inválido ou expirado | `{"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}` |
 | `403` | Usuário comum | `{"detail": "Você não tem permissão para executar essa ação."}` |
-| `503` | IA desligada ou modelo indisponível | `{"detail": "A Afinidade por IA está desligada neste servidor (IA_HABILITADA=False)."}` |
+| `503` | ThoLuk desligado ou indisponível | `{"detail": "O ThoLuk está desligado neste servidor (IA_HABILITADA=False)."}` |
 
 ---
 

@@ -326,6 +326,6 @@ class RegistroAcoesTest(BaseSprint9):
         from logs.models import LogOperacao as L
         rotulos = dict(L.ACAO_CHOICES)
         self.assertEqual(len(rotulos), 18)  # 17 + IA_TESTE (Afinidade por IA)
-        self.assertEqual(rotulos['IA_TESTE'], 'Teste da IA (painel)')
+        self.assertEqual(rotulos['IA_TESTE'], 'Teste da IA (painel)')  # rótulo exibido: LogOperacao.ROTULO_EXIBIDO
         self.assertEqual(rotulos['SENHA_SOLICITADA'], 'Redefinição de senha solicitada')
         self.assertEqual(rotulos['SENHA_REDEFINIDA'], 'Senha redefinida')

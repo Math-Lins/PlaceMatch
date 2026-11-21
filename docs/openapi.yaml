@@ -241,14 +241,14 @@ paths:
   /api/admin/ia/status/:
     get:
       operationId: ia_status
-      description: 'Modelo, dimensões, se a IA está ligada e disponível, perfis com
-        embedding × total, temas cadastrados (com quantos perfis têm cada um), tempo
-        médio de geração de um embedding e data da última atualização. Não carrega
-        o modelo: `disponivel` reflete o estado atual (carregado, falhou ou baixado
-        e pronto para carregar).'
-      summary: Situação da IA
+      description: 'Situação do ThoLuk, a IA de afinidade do PlaceMatch: modelo, dimensões,
+        se ele está ligado e disponível, perfis com embedding × total, temas cadastrados
+        (com quantos perfis têm cada um), tempo médio de geração de um embedding e
+        data da última atualização. Não carrega o modelo: `disponivel` reflete o estado
+        atual (carregado, falhou ou baixado e pronto para carregar).'
+      summary: Situação do ThoLuk
       tags:
-      - Afinidade por IA
+      - Afinidade por IA (ThoLuk)
       security:
       - jwtAuth: []
       responses:
@@ -260,15 +260,16 @@ paths:
               examples:
                 ExemploReal:
                   value:
+                    nome_ia: ThoLuk
                     habilitada: true
                     disponivel: true
                     situacao: disponivel
-                    situacao_texto: Disponível
+                    situacao_texto: ThoLuk disponível
                     erro: null
                     modelo: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
                     dimensoes: 384
                     modelo_baixado: true
-                    tempo_carregamento_ms: 5221.6
+                    tempo_carregamento_ms: 4866.6
                     perfis_total: 4
                     perfis_com_texto_suficiente: 3
                     perfis_com_embedding: 3
@@ -284,18 +285,19 @@ paths:
                     - id: trabalho_remoto
                       nome: Trabalho remoto
                       perfis: 2
-                    tempo_medio_geracao_ms: 37.08
-                    ultima_atualizacao: '2026-11-20T15:00:48.977342Z'
+                    tempo_medio_geracao_ms: 34.99
+                    tempo_tipico_geracao_ms: 32.17
+                    ultima_atualizacao: '2026-11-21T03:14:00.547813Z'
                     calibracao:
                       peso: 0.1
                       cosseno_piso: 0.2
                       cosseno_teto: 0.65
                       limiar_tema: 0.45
-                      margem_tema: 0.13
+                      margem_tema: 0.135
                       max_temas: 5
                       min_caracteres_texto: 20
                   summary: Exemplo real
-          description: Situação da IA.
+          description: Situação do ThoLuk.
         '401':
           content:
             application/json:
@@ -336,10 +338,10 @@ paths:
         similaridade bruta (cosseno), afinidade calibrada (0 a 1), temas detectados
         em cada texto, temas em comum e o tempo de processamento. Registra o log `IA_TESTE`
         só com o tamanho dos textos e o resultado (**os textos não são gravados**).
-        Com a IA desligada ou o modelo indisponível → 503.'
-      summary: Testar a IA com dois textos
+        Com o ThoLuk desligado ou indisponível → 503.'
+      summary: Testar o ThoLuk com dois textos
       tags:
-      - Afinidade por IA
+      - Afinidade por IA (ThoLuk)
       requestBody:
         content:
           application/json:
@@ -384,14 +386,12 @@ paths:
                     temas_b:
                     - id: culinaria
                       nome: Culinária
-                    - id: trabalho_remoto
-                      nome: Trabalho remoto
                     - id: organizacao
                       nome: Organização e limpeza
                     temas_em_comum:
                     - id: culinaria
                       nome: Culinária
-                    tempo_ms: 52.6
+                    tempo_ms: 47.3
                     modelo: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
                   summary: Exemplo real
                 Festas×Silêncio:
@@ -407,7 +407,7 @@ paths:
                     - id: silencio
                       nome: Silêncio e tranquilidade
                     temas_em_comum: []
-                    tempo_ms: 65.9
+                    tempo_ms: 39.2
                     modelo: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
                   summary: Festas × silêncio
           description: Resultado da comparação.
@@ -464,11 +464,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErroDetalhe'
               examples:
-                IADesligadaOuModeloIndisponível:
+                ThoLukDesligadoOuIndisponível:
                   value:
-                    detail: A Afinidade por IA está desligada neste servidor (IA_HABILITADA=False).
-                  summary: IA desligada ou modelo indisponível
-          description: 'Serviço indisponível no momento (ex.: modelo de IA não carregado).'
+                    detail: O ThoLuk está desligado neste servidor (IA_HABILITADA=False).
+                  summary: ThoLuk desligado ou indisponível
+          description: 'Serviço indisponível no momento (ex.: o ThoLuk, a IA do PlaceMatch,
+            não está carregado).'
       x-quem-pode: Somente administrador
   /api/admin/logs/:
     get:
@@ -2473,12 +2474,12 @@ paths:
       operationId: compatibilidade_detalhe
       description: 'Score total e o detalhamento dos 7 critérios entre você e um perfil
         do **tipo oposto** (conta ativa): peso configurado, peso efetivo, valor de
-        0 a 1 e contribuição de cada um. Inclui a **Afinidade por IA** (cosseno entre
-        os embeddings das bios, calibrado para 0 a 1), os temas de cada bio e os temas
-        em comum. Se um dos perfis não tem embedding (bio com menos de 20 letras)
-        ou a IA está desligada, o critério de IA fica de fora e os outros 6 pesos
-        são renormalizados (`motivo_sem_ia` explica). Nada aqui chama o modelo: os
-        embeddings já estão gravados.'
+        0 a 1 e contribuição de cada um. Inclui a **Afinidade de interesses (ThoLuk)**
+        (cosseno entre os embeddings das bios, calibrado para 0 a 1), os temas de
+        cada bio e os temas em comum. Se um dos perfis não tem embedding (bio com
+        menos de 20 letras) ou o ThoLuk está desligado, o critério do ThoLuk fica
+        de fora e os outros 6 pesos são renormalizados (`motivo_sem_ia` explica).
+        Nada aqui chama o modelo: os embeddings já estão gravados.'
       summary: Detalhar a compatibilidade com um perfil
       parameters:
       - in: path
@@ -2500,6 +2501,7 @@ paths:
               examples:
                 ExemploReal:
                   value:
+                    nome_ia: ThoLuk
                     perfil_id: 2
                     nome: Bruno Lima
                     score: 0.8436
@@ -2541,8 +2543,9 @@ paths:
                     ia_disponivel: true
                     motivo_sem_ia: null
                   summary: Exemplo real
-                BioCurta:CritérioDeIAIgnorado:
+                BioCurta:CritérioDoThoLukIgnorado:
                   value:
+                    nome_ia: ThoLuk
                     perfil_id: 4
                     nome: Fábio Rocha
                     score: 0.9313
@@ -2576,9 +2579,9 @@ paths:
                       nome: Culinária
                     temas_outro_perfil: []
                     ia_disponivel: true
-                    motivo_sem_ia: Este perfil ainda não tem análise de IA (bio muito
-                      curta); o score usa os outros 6 critérios.
-                  summary: 'Bio curta: critério de IA ignorado'
+                    motivo_sem_ia: Este perfil ainda não foi analisado pelo ThoLuk
+                      (bio muito curta); o score usa os outros 6 critérios.
+                  summary: 'Bio curta: critério do ThoLuk ignorado'
           description: Detalhamento do score.
         '400':
           content:
@@ -2953,9 +2956,9 @@ paths:
       description: 'Lista os perfis do **tipo oposto** com o score de compatibilidade
         (0 a 1), por score decrescente. Exige perfil criado. Não aparecem: o próprio
         perfil, perfis já avaliados, perfis já em match e contas suspensas. Cada item
-        traz também `afinidade_ia` (afinidade entre as bios calculada pelo modelo
-        de IA local, 0 a 1, ou null quando uma das bios é curta ou a IA está desligada)
-        e `temas_em_comum`. O detalhamento do score está em `GET /api/compatibilidade/{perfil_id}/`.'
+        traz também `afinidade_ia` (afinidade entre as bios calculada pelo ThoLuk,
+        a IA do PlaceMatch, 0 a 1, ou null quando uma das bios é curta ou o ThoLuk
+        está desligado) e `temas_em_comum`. O detalhamento do score está em `GET /api/compatibilidade/{perfil_id}/`.'
       summary: Descobrir perfis compatíveis
       parameters:
       - in: query
@@ -3718,8 +3721,8 @@ paths:
         vaga pode enviar também os campos do anúncio (`titulo_anuncio`, `descricao_imovel`,
         `fotos_imovel`, `foto_perfil_url`). Ao salvar, as compatibilidades com os
         perfis do tipo oposto são recalculadas. Com a bio (+ anúncio) de 20 letras
-        ou mais, o modelo de IA local gera o embedding usado no critério "Afinidade
-        de interesses (IA)"; o texto não sai do servidor.
+        ou mais, o ThoLuk (a IA do PlaceMatch, um modelo local) gera o embedding usado
+        no critério "Afinidade de interesses (ThoLuk)"; o texto não sai do servidor.
       summary: Criar o perfil
       tags:
       - Perfis
@@ -4379,7 +4382,7 @@ components:
           allOf:
           - $ref: '#/components/schemas/AnaliseIASituacaoEnum'
           description: |-
-            `analisada`: a bio tem embedding e temas; `bio_curta`: menos de 20 letras e dígitos (o score usa os outros 6 critérios); `pendente`: texto suficiente, mas a IA estava indisponível quando a bio foi salva (gerado depois com `gerar_embeddings`); `ia_desligada`: IA_HABILITADA=False.
+            `analisada`: o ThoLuk analisou a bio (embedding e temas); `bio_curta`: menos de 20 letras e dígitos (o score usa os outros 6 critérios); `pendente`: texto suficiente, mas o ThoLuk estava indisponível quando a bio foi salva (gerado depois com `gerar_embeddings`); `ia_desligada`: ThoLuk desligado (IA_HABILITADA=False).
 
             * `analisada` - analisada
             * `bio_curta` - bio_curta
@@ -4389,13 +4392,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Tema'
-          description: Temas de convivência detectados na bio (vazio se não `analisada`).
+          description: Temas de convivência que o ThoLuk identificou na bio (vazio
+            se não `analisada`).
         caracteres_uteis:
           type: integer
           description: Letras e dígitos do texto analisado (bio + anúncio).
         minimo_caracteres:
           type: integer
-          description: Mínimo para a IA analisar (20).
+          description: Mínimo para o ThoLuk analisar (20).
       required:
       - caracteres_uteis
       - minimo_caracteres
@@ -4661,6 +4665,9 @@ components:
     CompatibilidadeDetalhe:
       type: object
       properties:
+        nome_ia:
+          type: string
+          description: Nome exibido da IA do PlaceMatch ("ThoLuk"), só informativo.
         perfil_id:
           type: integer
         nome:
@@ -4697,7 +4704,8 @@ components:
             $ref: '#/components/schemas/Tema'
         ia_disponivel:
           type: boolean
-          description: IA ligada e modelo carregado (ou baixado e pronto para carregar).
+          description: ThoLuk ligado e com o modelo carregado (ou baixado e pronto
+            para carregar).
         motivo_sem_ia:
           type: string
           nullable: true
@@ -4708,6 +4716,7 @@ components:
       - ia_disponivel
       - motivo_sem_ia
       - nome
+      - nome_ia
       - perfil_id
       - score
       - similaridade_ia
@@ -4839,8 +4848,8 @@ components:
         peso_efetivo:
           type: number
           format: double
-          description: Peso usado neste par. Sem a afinidade por IA, os outros 6 são
-            divididos por 0,90.
+          description: Peso usado neste par. Sem a afinidade do ThoLuk, os outros
+            6 são divididos por 0,90.
         valor:
           type: number
           format: double
@@ -4855,7 +4864,7 @@ components:
         considerado:
           type: boolean
           description: false só para `afinidade_ia` sem embedding de um dos perfis
-            ou com a IA desligada.
+            ou com o ThoLuk desligado.
       required:
       - considerado
       - contribuicao
@@ -5124,6 +5133,9 @@ components:
     IAStatus:
       type: object
       properties:
+        nome_ia:
+          type: string
+          description: Nome exibido da IA do PlaceMatch ("ThoLuk"), só informativo.
         habilitada:
           type: boolean
           description: IA_HABILITADA.
@@ -5142,8 +5154,8 @@ components:
             * `desabilitada` - desabilitada
         situacao_texto:
           type: string
-          description: 'O mesmo estado para exibição: "Não carregado", "Carregando",
-            "Disponível", "Indisponível" ou "Desligada".'
+          description: 'O mesmo estado para exibição: "ThoLuk não carregado", "ThoLuk
+            carregando", "ThoLuk disponível", "ThoLuk indisponível" ou "ThoLuk desligado".'
         erro:
           type: string
           nullable: true
@@ -5158,6 +5170,7 @@ components:
           type: number
           format: double
           nullable: true
+          description: Tempo de carga do modelo neste processo do servidor (uma vez).
         perfis_total:
           type: integer
         perfis_com_texto_suficiente:
@@ -5178,6 +5191,14 @@ components:
           type: number
           format: double
           nullable: true
+          description: Média do tempo de geração gravado nos embeddings (registros
+            antigos podiam incluir a carga do modelo; prefira o tempo típico).
+        tempo_tipico_geracao_ms:
+          type: number
+          format: double
+          nullable: true
+          description: 'Tempo típico para gerar o embedding e os temas de uma bio:
+            MEDIANA dos embeddings gravados, sem a carga do modelo.'
         ultima_atualizacao:
           type: string
           format: date-time
@@ -5196,6 +5217,7 @@ components:
       - habilitada
       - modelo
       - modelo_baixado
+      - nome_ia
       - perfis_com_embedding
       - perfis_com_texto_suficiente
       - perfis_sem_embedding_com_texto
@@ -5206,6 +5228,7 @@ components:
       - temas_cadastrados
       - tempo_carregamento_ms
       - tempo_medio_geracao_ms
+      - tempo_tipico_geracao_ms
       - ultima_atualizacao
     IAStatusSituacaoEnum:
       enum:
@@ -5596,8 +5619,8 @@ components:
           allOf:
           - $ref: '#/components/schemas/AnaliseIA'
           nullable: true
-          description: O que a IA entendeu da bio. Só vem preenchido no PRÓPRIO perfil
-            (`null` para os perfis de outras pessoas).
+          description: O que o ThoLuk (a IA do PlaceMatch) entendeu da bio. Só vem
+            preenchido no PRÓPRIO perfil (`null` para os perfis de outras pessoas).
           readOnly: true
       required:
       - analise_ia
@@ -5779,14 +5802,15 @@ components:
           type: number
           format: double
           nullable: true
-          description: Afinidade por IA entre as bios (0 a 1). `null` quando um dos
-            dois perfis não tem bio suficiente (20+ letras) ou a IA está desligada.
+          description: Afinidade entre as bios calculada pelo ThoLuk, a IA do PlaceMatch
+            (0 a 1). `null` quando um dos dois perfis não tem bio suficiente (20+
+            letras) ou o ThoLuk está desligado.
           readOnly: true
         temas_em_comum:
           type: array
           items:
             $ref: '#/components/schemas/Tema'
-          description: Temas de convivência detectados nas duas bios.
+          description: Temas de convivência que o ThoLuk identificou nas duas bios.
           readOnly: true
       required:
       - afinidade_ia
@@ -5879,21 +5903,22 @@ components:
           allOf:
           - $ref: '#/components/schemas/AnaliseIA'
           nullable: true
-          description: O que a IA entendeu da bio. Só vem preenchido no PRÓPRIO perfil
-            (`null` para os perfis de outras pessoas).
+          description: O que o ThoLuk (a IA do PlaceMatch) entendeu da bio. Só vem
+            preenchido no PRÓPRIO perfil (`null` para os perfis de outras pessoas).
           readOnly: true
         afinidade_ia:
           type: number
           format: double
           nullable: true
-          description: Afinidade por IA entre as bios (0 a 1). `null` quando um dos
-            dois perfis não tem bio suficiente (20+ letras) ou a IA está desligada.
+          description: Afinidade entre as bios calculada pelo ThoLuk, a IA do PlaceMatch
+            (0 a 1). `null` quando um dos dois perfis não tem bio suficiente (20+
+            letras) ou o ThoLuk está desligado.
           readOnly: true
         temas_em_comum:
           type: array
           items:
             $ref: '#/components/schemas/Tema'
-          description: Temas de convivência detectados nas duas bios.
+          description: Temas de convivência que o ThoLuk identificou nas duas bios.
           readOnly: true
       required:
       - afinidade_ia
@@ -6348,9 +6373,10 @@ tags:
 - name: Painel administrativo
   description: Dashboard, relatórios, lista de usuários e exportações CSV (somente
     administrador).
-- name: Afinidade por IA
-  description: 'Modelo de linguagem local que compara as bios (7º critério do score):
-    situação e teste (somente administrador).'
+- name: Afinidade por IA (ThoLuk)
+  description: 'ThoLuk, a IA de afinidade do PlaceMatch: um modelo de linguagem que
+    roda no próprio servidor e compara o significado das bios (7º critério do score).
+    Situação e teste (somente administrador).'
 - name: Processamento em lote
   description: Resultados do benchmark de paralelismo do recálculo e dos embeddings
     (somente administrador).

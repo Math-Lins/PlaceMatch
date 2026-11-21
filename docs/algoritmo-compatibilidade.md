@@ -17,7 +17,7 @@ Toda alteração de peso ou regra deve ser feita em `config.py` — os demais m�
 8. [Implementação vetorial (NumPy)](#8-implementação-vetorial-numpy)
 9. [Resultados do benchmark](#9-resultados-do-benchmark)
 10. [Limitações conhecidas](#10-limitações-conhecidas)
-11. [Afinidade por IA (7º critério)](#11-afinidade-por-ia-7º-critério)
+11. [Afinidade por IA: ThoLuk (7º critério)](#11-afinidade-por-ia-tholuk-7º-critério)
 12. [Paralelismo](#12-paralelismo)
 
 ---
@@ -67,7 +67,7 @@ Definidos em `algoritmo/config.py` (devem somar 1,0). Até a versão 1.0.0-rc2 e
 | `rotina` | **0,14** | 0,1556 | `perfil_horario`, `nivel_ruido` |
 | `moradia` | **0,09** | 0,1000 | `tipo_imovel`, `qtd_moradores` |
 | `idade` | **0,08** | 0,0889 | `idade` |
-| `afinidade_ia` | **0,10** | — | `bio` (+ `titulo_anuncio` e `descricao_imovel` de quem oferece vaga), via embedding (seção 11). Nome exibido na API: **"Afinidade de interesses (IA)"** |
+| `afinidade_ia` | **0,10** | — | `bio` (+ `titulo_anuncio` e `descricao_imovel` de quem oferece vaga), via embedding (seção 11). Nome exibido na API: **"Afinidade de interesses (ThoLuk)"** |
 
 ```python
 PESOS = {
@@ -365,13 +365,15 @@ Mudar a afinidade por IA em 5 pontos troca em média 1 dos 10 primeiros da lista
 - **Benchmark rodado em máquina de desenvolvimento (Windows 10, 2 núcleos físicos, com outros programas abertos):** os números absolutos não refletem o ambiente de produção e variam entre execuções; os speedups relativos entre loop e lote são comparáveis. O paralelismo (seção 12) é o mais afetado.
 - **N=5.000 no benchmark com banco** teve as repetições reduzidas de 3 para 2 (aquecimento do loop > 30 s).
 - **Gravar no banco domina o recálculo completo** (99,8% do tempo com 250.000 pares, seção 12.4 C): mais núcleos não aceleram o comando; a próxima otimização seria a gravação (`COPY`).
-- **Afinidade por IA mede assunto, não posição** ("durmo de madrugada" × "acordo às cinco" dá cosseno 0,78): por isso tem só 10% e a posição fica com os critérios estruturados (seção 11.4).
+- **O ThoLuk mede assunto, não posição** ("durmo de madrugada" × "acordo às cinco" dá cosseno 0,78): por isso tem só 10% e a posição fica com os critérios estruturados (seção 11.4).
 - **Temas de frases muito curtas** são pouco confiáveis; a margem foi calibrada com bios completas (seção 11.5).
 - **Modelo ocupa ~560 MB de RAM** por processo do servidor (cada worker do gunicorn carrega o seu). Com `IA_HABILITADA=False` nada é carregado.
 
 ---
 
-## 11. Afinidade por IA (7º critério)
+## 11. Afinidade por IA: ThoLuk (7º critério)
+
+**ThoLuk, a IA de afinidade do PlaceMatch.** Na interface, na API e nesta documentação o 7º critério aparece pelo nome (no masculino: "o ThoLuk"): "Afinidade de interesses (ThoLuk)", selo "ThoLuk", aba "ThoLuk (IA)" do painel, `nome_ia: "ThoLuk"` nas respostas. O código mantém o nome técnico `ia` (app, rotas `/api/admin/ia/...`, campos `afinidade_ia`/`temas_em_comum`/`analise_ia`, variáveis `IA_*`, ação de log `IA_TESTE`).
 
 Evolução prevista no documento de abertura: "similaridade vetorial usando embeddings de texto da biografia". Um modelo de linguagem **local** transforma o texto de cada perfil num vetor (embedding) e o cosseno entre dois vetores mede o quanto as bios **falam das mesmas coisas**, mesmo com palavras diferentes ("adoro cozinhar para os amigos" × "faço jantares em casa no fim de semana").
 
@@ -410,7 +412,7 @@ afinidade  = clamp((cos - 0,20) / (0,65 - 0,20), 0, 1) # IA_COSSENO_PISO, IA_COS
 
 **Pesos** (somam 100%): orçamento 23% · hábitos 22% · região 14% · rotina 14% · moradia 9% · idade 8% · **afinidade IA 10%**.
 
-**Renormalização:** se um dos dois perfis não tem embedding (bio curta) ou a IA está desligada, a afinidade fica de fora e o score é a soma dos outros 6 divididos pela soma dos pesos deles (0,90):
+**Renormalização:** se um dos dois perfis não tem embedding (bio curta) ou o ThoLuk está desligado, a afinidade fica de fora e o score é a soma dos outros 6 divididos pela soma dos pesos deles (0,90):
 
 ```
 score = Σ peso_i · sim_i / Σ peso_i      (i = critérios presentes)
@@ -463,14 +465,32 @@ Os temas de frases soltas (uma linha) são menos confiáveis que os de bios comp
 
 ### 11.5 Temas em comum (explicação visível)
 
-`ia/temas.py` tem 16 temas de convivência (culinária, estudos, trabalho remoto, música, festas e vida social, silêncio e tranquilidade, esportes e academia, games, leitura, pets, natureza e trilhas, arte, religião e espiritualidade, cinema e séries, sustentabilidade, organização e limpeza), cada um com 2 ou 3 frases. Classificação **zero-shot** (nada é treinado):
+`ia/temas.py` tem 16 temas de convivência (culinária, estudos, trabalho remoto, música, festas e vida social, silêncio e tranquilidade, esportes e academia, games, leitura, pets, natureza e trilhas, arte, religião e espiritualidade, cinema e séries, sustentabilidade, organização e limpeza), cada um com 2 a 3 frases (44 no total). Classificação **zero-shot** (nada é treinado):
 
-1. As 43 frases dos temas viram embeddings uma vez por processo (memória).
+1. As 44 frases dos temas viram embeddings uma vez por processo (memória).
 2. Nota do tema = maior cosseno entre o texto e as frases do tema.
-3. O texto tem o tema quando **nota ≥ 0,45** (`LIMIAR_TEMA`) **e nota ≥ média das 16 notas do texto + 0,13** (`MARGEM_TEMA`), no máximo 5 temas (`MAX_TEMAS`).
+3. O texto tem o tema quando **nota ≥ 0,45** (`LIMIAR_TEMA`) **e nota ≥ média das 16 notas do texto + 0,135** (`MARGEM_TEMA`), no máximo 5 temas (`MAX_TEMAS`).
 4. Os ids ficam em `ia_embeddingperfil.temas`; temas em comum = interseção dos dois perfis.
 
-A margem relativa foi necessária: bios longas "parecem" um pouco com tudo (média 0,30 a 0,46), e só o limiar absoluto marcava "festas" em bios que só citam amigos. Com as notas reais do seed, a margem 0,13 recuperou 4 temas corretos que 0,14 perdia (Ana/pets 0,137; Lucas/natureza 0,135; Vitória/esportes 0,136 e natureza 0,130) ao custo de 1 falso positivo (Elizabete/sustentabilidade, 0,131). Mudou a lista de temas? Rode `gerar_embeddings --forcar`.
+A margem relativa foi necessária: bios longas "parecem" um pouco com tudo (média 0,30 a 0,46), e só o limiar absoluto marcava "festas" em bios que só citam amigos. Mudou a lista de temas? Rode `gerar_embeddings --forcar`.
+
+**Revisão das frases (pré-freeze).** O laboratório do painel mostrou falsos positivos: "Faço jantares em casa no fim de semana e curto gastronomia." recebia **Trabalho remoto** e **Organização**, e "Amo festas, receber gente em casa e sair toda sexta." recebia **Organização** e **Culinária**. A causa é que o modelo também compara a **forma** da frase: as frases-modelo repetiam expressões que aparecem em bios de qualquer tema ("**em casa**", "passo as noites", "Faço…", "para os amigos"). As frases foram reescritas centradas no assunto (ex.: Trabalho remoto = home office, reuniões online, trabalho remoto pela internet; Organização = tudo arrumado, limpo, cada coisa no lugar, faxina), sem "computador" (que puxava bios de estudantes de Computação), e a margem passou de 0,13 para 0,135.
+
+| Texto | Antes | Depois |
+|---|---|---|
+| Lab. 1A "Adoro cozinhar para os amigos e testar receitas novas." | Culinária | Culinária |
+| Lab. 1B "Faço jantares em casa no fim de semana e curto gastronomia." | Culinária, **Trabalho remoto**, **Organização** | Culinária |
+| Lab. 2A "Amo festas, receber gente em casa e sair toda sexta." | Festas, **Culinária**, **Organização** | Festas |
+| Lab. 2B "Gosto de silêncio, leio muito e durmo cedo." | Leitura, Silêncio | Leitura, Silêncio |
+| Lab. 3A "Estou no último ano de engenharia e passo as noites estudando." | Estudos, **Games** | Estudos |
+| Lab. 3B "Faço mestrado e preciso de um ambiente tranquilo para estudar." | Estudos, Silêncio | Estudos, Silêncio |
+| Seed: Elizabete (artista plástica) | Arte, **Sustentabilidade** | Arte |
+| Seed: Henrique (gastronomia) | Culinária, **Sustentabilidade** | Culinária |
+| Seed: Patrícia (analista; silêncio e organização) | Organização, Silêncio, **Trabalho remoto** | Silêncio, Organização |
+| Seed: Pedro (desenvolvedor, guitarra, videogame) | Games, Música | Música (Games ficou a 0,13 acima da média, logo abaixo da margem) |
+| Seed: Thiago (músico, casa cheia de amigos) | Festas, Música | Música |
+
+Exemplos 1, 2 e 3 do laboratório: temas em comum Culinária, nenhum e Estudos. Os temas esperados estão fixados em `ia/tests/test_temas_modelo_real.py` (modelo real; pulado sem o modelo): os 3 exemplos do laboratório, 16 bios do seed, as bios dos exemplos do Swagger e os falsos positivos corrigidos. **Limitação que continua:** frases com "em casa" ainda podem puxar Organização ("Faço jantares em casa no fim de semana e sempre sobra comida." recebe Culinária e Organização, no exemplo do Swagger); cada frase nova mexe na média de todos os textos, então novos ajustes devem passar pelo teste com o modelo real.
 
 ### 11.6 Pares do `seed_demo` (banco descartável, modelo real)
 
@@ -489,21 +509,21 @@ A margem relativa foi necessária: bios longas "parecem" um pouco com tudo (méd
 
 Nas 104 combinações buscando × oferecendo: cosseno mínimo 0,128, mediana 0,396, máximo 0,679; afinidade mínima 0,00, mediana 0,44, máxima 1,00.
 
-Temas detectados por perfil:
+Temas que o ThoLuk detecta em cada perfil (frases revisadas, margem 0,135):
 
 | Perfil | Temas | Perfil | Temas |
 |---|---|---|---|
-| Ana Luísa | Pets, Arte | Beatriz Almeida | Pets |
+| Ana Luísa | Arte, Pets | Beatriz Almeida | Pets |
 | Camila Souza | Pets | Clara Freitas | Silêncio e tranquilidade |
-| Diego Ferreira | Cinema e séries | Henrique Moura | Culinária, Sustentabilidade |
-| Elizabete Ramos | Arte, Sustentabilidade (falso positivo) | João Vitor | Estudos, Silêncio e tranquilidade, Leitura |
+| Diego Ferreira | Cinema e séries | Henrique Moura | Culinária |
+| Elizabete Ramos | Arte | João Vitor | Estudos, Silêncio e tranquilidade, Leitura |
 | Fernanda Lima | Silêncio e tranquilidade, Leitura | Júlia Prado | Pets, Natureza e trilhas |
 | Guilherme Alves | Festas e vida social | Marcos Vinícius | Festas e vida social |
 | Isabela Nunes | Culinária | Renato Barbosa | Trabalho remoto |
-| Lucas Mendes | Trabalho remoto, Natureza e trilhas, Arte | Thiago Santos | Música, Festas e vida social |
+| Lucas Mendes | Trabalho remoto, Natureza e trilhas, Arte | Thiago Santos | Música |
 | Mariana Oliveira | Estudos | | |
-| Patrícia Gomes | Trabalho remoto, Silêncio e tranquilidade, Organização e limpeza | | |
-| Pedro Henrique | Música, Games | | |
+| Patrícia Gomes | Silêncio e tranquilidade, Organização e limpeza | | |
+| Pedro Henrique | Música | | |
 | Rafael Costa | Silêncio e tranquilidade | | |
 | Vitória Cardoso | Esportes e academia, Natureza e trilhas | | |
 
@@ -713,6 +733,16 @@ N = 10.000 e 20.000 medidos de novo logo depois (mesma máquina e mesmos program
 "Threads com 1 worker" faz exatamente o mesmo trabalho que o sequencial, num só núcleo, e mesmo assim saiu 2× mais rápido na repetição de N = 10.000. Isso é a carga dos outros programas mudando durante a medição, não paralelismo. Só os padrões que se repetem nas duas medições valem como conclusão (12.6).
 
 ### 12.6 Conclusão
+
+**Resumo exibido no painel** (aba Processamento; campo `observacoes` de `docs/benchmark/paralelismo.json`, gerado a partir da 1ª medição, sem benchmark novo; o detalhe completo fica em `observacoes_detalhadas`):
+
+1. Melhor resultado: threads com 4 workers e 10.000 perfis, 2,44× mais rápido que o sequencial (eficiência 0,61).
+2. Threads compensaram com 1.000, 2.000, 5.000 e 10.000 perfis, mas não com 20.000.
+3. Processos compensaram com 10.000 perfis, mas não com 1.000, 2.000, 5.000 e 20.000 (cada worker é um processo novo, que leva alguns segundos para subir).
+4. Lei de Amdahl: no melhor caso (threads, 10.000 perfis), cerca de 81% do trabalho se divide entre os workers, então o ganho máximo teórico é 5,4×.
+5. Gargalo: no comando completo, gravar 250.000 pares no banco leva 99,6% do tempo (39,9 s de 40,1 s); mais núcleos não reduzem essa parte.
+
+Análise considerando as duas medições:
 
 - **Resultado sempre idêntico.** Em todos os tamanhos, modos e números de workers a matriz de scores foi exatamente a do sequencial (e a do cálculo do dia a dia). Isso não depende do ruído da máquina.
 - **Threads** não têm custo fixo e ganharam em todos os tamanhos até 10.000 perfis nas duas medições (melhor: 2,44× com 4 workers na 1ª medição e 3,25× com 2 workers na repetição, valor inflado pelo ruído). Com 20.000 perfis não ganharam em nenhuma das duas (1,02× e 1,16×). O NumPy solta o GIL durante as operações em array, mas o código Python entre elas volta a disputá-lo.

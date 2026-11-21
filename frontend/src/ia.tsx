@@ -1,9 +1,12 @@
-// Afinidade por IA vista pelo usuário: painel "Por que vocês combinam", selo dos cards da Descoberta,
-// temas da própria bio (Meu Perfil) e a explicação "Como a IA funciona". Usa só rotas já existentes.
+// ThoLuk (afinidade por IA) na interface do usuário: painel "Por que vocês combinam", selo dos cards da
+// Descoberta, temas da própria bio (Meu Perfil) e "Como o ThoLuk funciona".
 import React, { useCallback, useEffect, useState } from 'react';
 import { ApiError, getCompatibilidade } from './api';
 import type { AnaliseIA, CompatibilidadeDetalhe, CriterioCompatibilidade, CriterioId, Tema } from './api';
 import { C, FONTE_TEXTO, FONTE_TITULO, RAIO, EstadoErro, Modal, Selo, numeroBR } from './ui';
+
+/** Nome exibido da IA do PlaceMatch. */
+export const NOME_IA = 'ThoLuk';
 
 /** Afinidade mínima (0 a 1) para o selo de interesses em comum aparecer no card da Descoberta. */
 export const AFINIDADE_SELO = 0.7;
@@ -12,14 +15,14 @@ export const AFINIDADE_SELO = 0.7;
 const ORDEM: CriterioId[] = ['orcamento', 'habitos', 'regiao', 'rotina', 'moradia', 'idade', 'afinidade_ia'];
 const NOME_CURTO: Record<CriterioId, string> = {
   orcamento: 'Orçamento', habitos: 'Hábitos', regiao: 'Região', rotina: 'Rotina',
-  moradia: 'Moradia', idade: 'Idade', afinidade_ia: 'Afinidade de interesses (IA)',
+  moradia: 'Moradia', idade: 'Idade', afinidade_ia: 'Afinidade de interesses (ThoLuk)',
 };
 
 const pct = (v: number) => `${numeroBR(Math.round(v * 100))}%`;
 
-/** Selo "✨ IA" (marca o que vem do modelo de linguagem). */
+/** Selo "ThoLuk": marca o que vem da IA do PlaceMatch. */
 export function SeloIA({ style }: { style?: React.CSSProperties }) {
-  return <Selo tom="mint" style={style}><span aria-hidden="true">✨</span> IA</Selo>;
+  return <Selo tom="mint" style={style}>{NOME_IA}</Selo>;
 }
 
 /** Chips de temas (ex.: "Culinária", "Música"). */
@@ -27,7 +30,7 @@ export function ChipsTemas({ temas, rotulo }: { temas: Tema[]; rotulo: string })
   return (
     <ul aria-label={rotulo} style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', listStyle: 'none', padding: 0, margin: 0 }}>
       {temas.map(t => (
-        <li key={t.id}><Selo tom="mint" grande><span aria-hidden="true">✨</span> {t.nome}</Selo></li>
+        <li key={t.id}><Selo tom="mint" grande>{t.nome}</Selo></li>
       ))}
     </ul>
   );
@@ -43,24 +46,25 @@ export function BotaoComoIAFunciona() {
         type="button" onClick={() => setAberto(true)} aria-haspopup="dialog"
         style={{ background: 'none', border: 'none', padding: '10px 4px', minHeight: '44px', cursor: 'pointer', color: C.mintText, fontFamily: FONTE_TEXTO, fontSize: '14px', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '3px' }}
       >
-        <span aria-hidden="true">ⓘ </span>Como a IA funciona
+        <span aria-hidden="true">ⓘ </span>Como o ThoLuk funciona
       </button>
       {aberto && (
-        <Modal titulo="Como a IA funciona" onFechar={() => setAberto(false)} larguraMax="480px">
+        <Modal titulo="Como o ThoLuk funciona" onFechar={() => setAberto(false)} larguraMax="480px">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.text, lineHeight: 1.6 }}>
             <p style={{ margin: 0 }}>
-              Um <strong>modelo de linguagem</strong> lê as biografias e compara o <strong>significado</strong> dos textos, não só as
-              palavras: "adoro cozinhar para os amigos" e "faço jantares em casa" falam do mesmo interesse.
+              O <strong>ThoLuk</strong> é a IA do PlaceMatch: um <strong>modelo de linguagem</strong> que roda no próprio servidor,
+              lê as biografias e compara o <strong>significado</strong> dos textos, não só as palavras: "adoro cozinhar para os
+              amigos" e "faço jantares em casa" falam do mesmo interesse.
             </p>
             <p style={{ margin: 0 }}>
-              O modelo roda <strong>no próprio servidor do PlaceMatch</strong>: nenhum texto sai do sistema nem vai para serviços externos.
+              Como ele roda <strong>no servidor do PlaceMatch</strong>, nenhum texto sai do sistema nem vai para serviços externos.
             </p>
             <p style={{ margin: 0 }}>
-              A IA mede <strong>interesses em comum</strong> (o assunto das bios) e vale 10% do score. As preferências do dia a dia,
+              O ThoLuk mede <strong>interesses em comum</strong> (o assunto das bios) e vale 10% do score. As preferências do dia a dia,
               como festas ou silêncio, horários e organização, ficam com os critérios de <strong>hábitos e rotina</strong>.
             </p>
             <p style={{ margin: 0, color: C.muted, fontSize: '14px' }}>
-              Bios com menos de 20 letras não são analisadas: nesse caso o score usa os outros 6 critérios, sem perder pontos.
+              Bios com menos de 20 letras não são analisadas pelo ThoLuk: nesse caso o score usa os outros 6 critérios, sem perder pontos.
             </p>
           </div>
         </Modal>
@@ -162,13 +166,13 @@ export function PainelPorQueCombinam({ perfilId }: { perfilId: number }) {
             ) : dados.temas_em_comum.length > 0 ? (
               <>
                 <p style={{ margin: '0 0 10px', fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.text }}>
-                  <span aria-hidden="true">✨ </span>A IA identificou interesses em comum: <strong>{dados.temas_em_comum.map(t => t.nome).join(', ')}</strong>.
+                  O ThoLuk identificou interesses em comum: <strong>{dados.temas_em_comum.map(t => t.nome).join(', ')}</strong>.
                 </p>
                 <ChipsTemas temas={dados.temas_em_comum} rotulo="Interesses em comum" />
               </>
             ) : (
               <p style={{ margin: 0, fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted }}>
-                A IA não encontrou interesses em comum nas biografias.
+                O ThoLuk não encontrou interesses em comum nas biografias.
               </p>
             )}
           </div>
@@ -181,26 +185,32 @@ export function PainelPorQueCombinam({ perfilId }: { perfilId: number }) {
 function mensagemSemIA(d: CompatibilidadeDetalhe): string {
   const motivo = (d.motivo_sem_ia ?? '').toLowerCase();
   if (motivo.includes('desligada') || (!d.ia_disponivel && !motivo.includes('curta'))) {
-    return 'A análise por IA está indisponível no momento: o score usa os outros 6 critérios.';
+    return 'O ThoLuk está indisponível no momento: o score usa os outros 6 critérios.';
   }
   if (motivo.startsWith('seu perfil')) {
-    return 'Sua biografia ainda não foi analisada pela IA (curta demais ou salva com a IA fora do ar): o score usa os outros 6 critérios. Escreva sobre seus interesses em Meu Perfil.';
+    return 'Sua biografia ainda não foi analisada pelo ThoLuk (curta demais ou salva com o ThoLuk fora do ar): o score usa os outros 6 critérios. Escreva sobre seus interesses em Meu Perfil.';
   }
-  return 'Biografia curta demais para a IA analisar: o score usa os outros 6 critérios.';
+  return 'Biografia curta demais para o ThoLuk analisar: o score usa os outros 6 critérios.';
 }
 
 // ─── Selo dos cards da Descoberta ───────────────────────────────────────────────
 
-/** "✨ Interesses em comum: Culinária" quando a afinidade é alta e há tema em comum (só o 1º tema). */
-export function SeloInteresses({ afinidade, temas, sobreFoto = false }: { afinidade?: number | null; temas?: Tema[]; sobreFoto?: boolean }) {
+/**
+ * "ThoLuk: interesses em comum — Culinária" quando a afinidade é alta e há tema em comum (só o 1º tema).
+ * `curto` (cards do celular): "ThoLuk: Culinária".
+ */
+export function SeloInteresses({ afinidade, temas, sobreFoto = false, curto = false }: {
+  afinidade?: number | null; temas?: Tema[]; sobreFoto?: boolean; curto?: boolean;
+}) {
   if (afinidade == null || afinidade < AFINIDADE_SELO || !temas?.length) return null;
   return (
     <Selo tom="mint" style={{
       maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis',
       ...(sobreFoto ? { background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' } : {}),
     }}>
-      <span aria-hidden="true">✨</span>
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>Interesses em comum: {temas[0].nome}</span>
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {curto ? `${NOME_IA}: ${temas[0].nome}` : `${NOME_IA}: interesses em comum — ${temas[0].nome}`}
+      </span>
     </Selo>
   );
 }
@@ -208,23 +218,23 @@ export function SeloInteresses({ afinidade, temas, sobreFoto = false }: { afinid
 // ─── Meu Perfil: temas da própria bio ───────────────────────────────────────────
 
 export function TemasDaMinhaBio({ analise }: { analise?: AnaliseIA | null }) {
-  const dica = 'Escreva sobre seus interesses para a IA encontrar pessoas com afinidade.';
+  const dica = 'Escreva sobre seus interesses para o ThoLuk encontrar pessoas com afinidade.';
   let conteudo: React.ReactNode;
   if (!analise) {
     conteudo = <p style={estiloTexto(C.muted)}>{dica}</p>;
   } else if (analise.situacao === 'bio_curta') {
     conteudo = (
       <p role="note" style={estiloTexto(C.text)}>
-        Sua bio está curta demais para a IA analisar ({analise.caracteres_uteis} de no mínimo {analise.minimo_caracteres} letras).
+        Sua bio está curta demais para o ThoLuk analisar ({analise.caracteres_uteis} de no mínimo {analise.minimo_caracteres} letras).
         Enquanto isso, o score usa os outros 6 critérios. {dica}
       </p>
     );
   } else if (analise.situacao === 'pendente') {
-    conteudo = <p role="note" style={estiloTexto(C.text)}>A análise da sua bio ainda está pendente: a IA estava indisponível quando ela foi salva. Ela será analisada em breve.</p>;
+    conteudo = <p role="note" style={estiloTexto(C.text)}>A análise da sua bio ainda está pendente: o ThoLuk estava indisponível quando ela foi salva. Ela será analisada em breve.</p>;
   } else if (analise.situacao === 'ia_desligada') {
-    conteudo = <p role="note" style={estiloTexto(C.muted)}>A análise por IA está desligada no momento.</p>;
+    conteudo = <p role="note" style={estiloTexto(C.muted)}>O ThoLuk está desligado no momento.</p>;
   } else if (analise.temas.length === 0) {
-    conteudo = <p style={estiloTexto(C.muted)}>A IA analisou sua bio, mas não reconheceu nenhum dos temas de convivência. {dica}</p>;
+    conteudo = <p style={estiloTexto(C.muted)}>O ThoLuk analisou sua bio, mas não reconheceu nenhum dos temas de convivência. {dica}</p>;
   } else {
     conteudo = (
       <>
@@ -238,7 +248,7 @@ export function TemasDaMinhaBio({ analise }: { analise?: AnaliseIA | null }) {
       style={{ background: C.card, borderRadius: RAIO.card, padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
         <h3 id="titulo-temas-bio" style={{ fontFamily: FONTE_TITULO, fontSize: '16px', fontWeight: 700, color: C.text, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          Temas que a IA identificou na sua bio <SeloIA />
+          Temas que o ThoLuk identificou na sua bio <SeloIA />
         </h3>
         <BotaoComoIAFunciona />
       </div>

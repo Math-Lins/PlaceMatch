@@ -1,10 +1,9 @@
-# v1.0.0-rc2 — duas verificações, SOMENTE LEITURA (verificar_banco não grava nada)
+# v1.0.0 — 21/11/2026 18:20:07 -0300 — verificações do banco (verificar_banco é SOMENTE LEITURA: não grava nada)
 
-# 18/11/2026 10:43:23 -0300 | diretório: backend | banco de DESENVOLVIMENTO (configurado no .env): python manage.py verificar_banco --detalhes
-
+# 21/11/2026 18:20:07 -0300 | diretório: backend | v1.0.0 | banco de DESENVOLVIMENTO (configurado no .env; só leitura): python manage.py verificar_banco --detalhes
 VERIFICAÇÃO DO BANCO — PlaceMatch
 Banco: placematch (postgresql) em localhost:5432
-Registros: usuarios=24 | perfis=22 | compatibilidades=121 | curtidas=162 | matches=57 | mensagens=237 | denuncias=12 | logs=40
+Registros: usuarios=47 | perfis=45 | compatibilidades=500 | curtidas=210 | matches=73 | mensagens=254 | denuncias=15 | logs=132 | embeddings_ia=43
 
 [OK   ]  1. Registros órfãos (FK para registro inexistente): 0
 [OK   ]  2. Matches sem curtida mútua: 0
@@ -21,19 +20,54 @@ Registros: usuarios=24 | perfis=22 | compatibilidades=121 | curtidas=162 | match
 [OK   ] 11. Administradores com perfil: 0
 [OK   ] 12. Curtidas entre perfis do mesmo tipo: 0
 [OK   ] 13. Matches entre perfis do mesmo tipo: 0
-[AVISO] 14. Matches com conta suspensa (ocultos na API): 7
+[AVISO] 14. Matches com conta suspensa (ocultos na API): 9
           dica: Esperado enquanto a conta estiver suspensa.
-          ids/itens: 6, 22, 29, 32, 40, 45, 46
+          ids/itens: 6, 22, 29, 32, 40, 45, 46, 85, 87
+[OK   ] 15. Perfis com bio suficiente sem embedding (ThoLuk): 0
 
-Resumo: 14 verificações — 12 OK, 2 aviso(s), 0 erro(s).
-
+Resumo: 15 verificações — 13 OK, 2 aviso(s), 0 erro(s).
 # código de saída: 0
 
-# 18/11/2026 10:43:32 -0300 | diretório: backend | banco de DEMONSTRAÇÃO (banco descartável do e2e, depois de `seed_demo --remover-outros` e do tour): python manage.py verificar_banco --detalhes
+# Banco de DEMONSTRAÇÃO: banco descartável do e2e (placematch_e2e_db, porta 5433), preparado com os comandos abaixo.
+# 21/11/2026 18:20:16 -0300 | diretório: backend | v1.0.0 | banco de DEMONSTRAÇÃO: python manage.py seed_demo --remover-outros
+Removidos 0 usuários que não são de demonstração.
 
+Concluído: 0 criados, 21 atualizados.
+
+Concluído: 0 matches criados, 15 já existiam ou pulados.
+
+Concluído: 0 mensagens criadas, 5 pares pulados.
+ThoLuk | modelo: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 | perfis: 21 | só os que mudaram
+  0 texto(s) para gerar: abaixo de 400, o modo sequencial é mais rápido (criar 2 processos e carregar o modelo em cada um custa ~15 s).
+  21/21 perfis (0.0 s)
+Embeddings: 0 criados, 0 atualizados, 21 sem mudança, 0 sem bio suficiente, 0 removidos (bio ficou curta).
+Tempo: 0.01 s
+Recalculando compatibilidades (todos os pares buscando × oferecendo)…
+  13 buscando × 8 oferecendo = 104 pares | modo sequencial (1 worker), pedido: auto
+  carregar 0.01 s · calcular 0.07 s · gravar 0.01 s
+Concluído em 0.09s.
+ThoLuk pronto: embeddings e temas atualizados.
+
+Demonstração pronta: 21 usuários, 15 matches, 16 mensagens, 3 denúncias, 1 conta suspensa (guilherme@seed.pm).
+# código de saída: 0
+
+# 21/11/2026 18:20:30 -0300 | diretório: backend | v1.0.0 | banco de DEMONSTRAÇÃO: python manage.py gerar_embeddings --forcar
+ThoLuk | modelo: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 | perfis: 21 | regerando todos
+  21 texto(s) para gerar: abaixo de 400, o modo sequencial é mais rápido (criar 2 processos e carregar o modelo em cada um custa ~15 s).
+  21/21 perfis (3.2 s)
+Embeddings: 0 criados, 21 atualizados, 0 sem mudança, 0 sem bio suficiente, 0 removidos (bio ficou curta).
+Tempo: 3.16 s (150.5 ms por perfil gerado, 1 worker)
+Recalculando compatibilidades (todos os pares buscando × oferecendo)…
+  13 buscando × 8 oferecendo = 104 pares | modo sequencial (1 worker), pedido: auto
+  carregar 0.01 s · calcular 0.09 s · gravar 0.02 s
+Concluído em 0.12s.
+ThoLuk pronto: embeddings e temas atualizados.
+# código de saída: 0
+
+# 21/11/2026 18:20:46 -0300 | diretório: backend | v1.0.0 | banco de DEMONSTRAÇÃO: python manage.py verificar_banco --detalhes
 VERIFICAÇÃO DO BANCO — PlaceMatch
-Banco: pm_e2e (postgresql) em 127.0.0.1:5433
-Registros: usuarios=23 | perfis=22 | compatibilidades=117 | curtidas=32 | matches=16 | mensagens=16 | denuncias=3 | logs=81
+Banco: pm_e2e (postgresql) em localhost:5433
+Registros: usuarios=22 | perfis=21 | compatibilidades=104 | curtidas=31 | matches=15 | mensagens=16 | denuncias=3 | logs=65 | embeddings_ia=21
 
 [OK   ]  1. Registros órfãos (FK para registro inexistente): 0
 [OK   ]  2. Matches sem curtida mútua: 0
@@ -50,8 +84,8 @@ Registros: usuarios=23 | perfis=22 | compatibilidades=117 | curtidas=32 | matche
 [OK   ] 13. Matches entre perfis do mesmo tipo: 0
 [AVISO] 14. Matches com conta suspensa (ocultos na API): 2
           dica: Esperado enquanto a conta estiver suspensa.
-          ids/itens: 16, 14
+          ids/itens: 13, 11
+[OK   ] 15. Perfis com bio suficiente sem embedding (ThoLuk): 0
 
-Resumo: 14 verificações — 13 OK, 1 aviso(s), 0 erro(s).
-
+Resumo: 15 verificações — 14 OK, 1 aviso(s), 0 erro(s).
 # código de saída: 0

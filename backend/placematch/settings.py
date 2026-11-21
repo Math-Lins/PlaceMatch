@@ -164,7 +164,7 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Chat', 'description': 'Conversas e mensagens entre as duas pessoas de um match.'},
         {'name': 'Moderação', 'description': 'Denúncias de usuários, análise pelo administrador e suspensão de contas.'},
         {'name': 'Painel administrativo', 'description': 'Dashboard, relatórios, lista de usuários e exportações CSV (somente administrador).'},
-        {'name': 'Afinidade por IA', 'description': 'Modelo de linguagem local que compara as bios (7º critério do score): situação e teste (somente administrador).'},
+        {'name': 'Afinidade por IA (ThoLuk)', 'description': 'ThoLuk, a IA de afinidade do PlaceMatch: um modelo de linguagem que roda no próprio servidor e compara o significado das bios (7º critério do score). Situação e teste (somente administrador).'},
         {'name': 'Processamento em lote', 'description': 'Resultados do benchmark de paralelismo do recálculo e dos embeddings (somente administrador).'},
         {'name': 'Logs', 'description': 'Histórico de operações do sistema (somente administrador).'},
     ],

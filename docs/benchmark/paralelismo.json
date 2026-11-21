@@ -1226,6 +1226,14 @@
     }
   ],
   "observacoes": [
+    "Melhor resultado: threads com 4 workers e 10.000 perfis, 2,44× mais rápido que o sequencial (eficiência 0,61).",
+    "Threads compensaram com 1.000, 2.000, 5.000 e 10.000 perfis, mas não com 20.000.",
+    "Processos compensaram com 10.000 perfis, mas não com 1.000, 2.000, 5.000 e 20.000 (cada worker é um processo novo, que leva alguns segundos para subir).",
+    "Lei de Amdahl: no melhor caso (threads, 10.000 perfis), cerca de 81% do trabalho se divide entre os workers, então o ganho máximo teórico é 5,4×.",
+    "Gargalo: no comando completo, gravar 250.000 pares no banco leva 99,6% do tempo (39,9 s de 40,1 s); mais núcleos não reduzem essa parte."
+  ],
+  "duracao_total_s": 1393.2,
+  "observacoes_detalhadas": [
     "A CPU já tinha 100% de uso de outros programas no início: o ganho medido é menor que o de uma máquina ociosa e os tempos variam entre repetições.",
     "Threads: ganhou em N = 1.000, 2.000, 5.000, 10.000 e não em N = 20.000. Melhor speedup por tamanho: N = 1.000: 2.20 (2 workers), N = 2.000: 1.50 (4 workers), N = 5.000: 2.22 (4 workers), N = 10.000: 2.44 (4 workers), N = 20.000: 1.02 (4 workers).",
     "Processos: ganhou em N = 10.000 e não em N = 1.000, 2.000, 5.000, 20.000. Melhor speedup por tamanho: N = 1.000: 0.12 (4 workers), N = 2.000: 0.14 (2 workers), N = 5.000: 0.62 (2 workers), N = 10.000: 1.37 (2 workers), N = 20.000: 0.79 (4 workers).",
@@ -1234,6 +1242,5 @@
     "Amdahl (processos): maior fração paralelizável estimada p = 0.34 em N = 10.000 (speedup máximo teórico ~ 1.5).",
     "Embeddings, 50 bios: 2 workers mais lento que 1 (speedup 0.26; cada worker carrega o modelo).",
     "Embeddings, 400 bios: 2 workers mais lento que 1 (speedup 0.77; cada worker carrega o modelo)."
-  ],
-  "duracao_total_s": 1393.2
+  ]
 }

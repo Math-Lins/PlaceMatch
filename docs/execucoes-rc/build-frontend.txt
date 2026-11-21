@@ -1,12 +1,12 @@
-# 20/11/2026 23:07:10 -0300 | diretório: frontend | v1.0.0 | comando: npx tsc --noEmit
+# 21/11/2026 18:57:10 -0300 | diretório: frontend | v1.0.0 | comando: npx tsc --noEmit
 
 # código de saída: 0
 
-# 20/11/2026 23:07:36 -0300 | diretório: frontend | comando: npx tsc --noEmit --noUnusedLocals --noUnusedParameters
+# 21/11/2026 18:57:30 -0300 | diretório: frontend | comando: npx tsc --noEmit --noUnusedLocals --noUnusedParameters
 
 # código de saída: 0
 
-# 20/11/2026 23:08:07 -0300 | diretório: frontend | comando: npm run build
+# 21/11/2026 18:57:49 -0300 | diretório: frontend | comando: npm run build
 
 > placematch-frontend@1.0.0 build
 > vite build
@@ -89,12 +89,12 @@ dist/assets/nunito-latin-ext-600-normal-BKUpuB78.woff       21.30 kB
 dist/assets/nunito-latin-ext-800-normal-CDcxIxx8.woff       21.42 kB
 dist/assets/capa-inicio-Bz8Igd4J.jpg                        94.70 kB
 dist/assets/index-DF5osh4g.css                              23.34 kB │ gzip:   4.64 kB
-dist/assets/index-_2ouaif7.js                              426.05 kB │ gzip: 117.16 kB
+dist/assets/index-B3WcyhlE.js                              426.19 kB │ gzip: 117.25 kB
 
-[32m✓ built in 7.31s[39m
-[33m[33m[PLUGIN_TIMINGS] [0mPlugin hooks ran for 3.7s of this 7.2s build (51%).
+[32m✓ built in 6.12s[39m
+[33m[33m[PLUGIN_TIMINGS] [0mPlugin hooks ran for 3.1s of this 6.1s build (51%).
 The slowest hooks, timed inside each callback (the wait before a callback starts is excluded, the time it awaits is included):
-  - @tailwindcss/vite:generate:build transform (18%, 1.3s, 11 calls)
+  - @tailwindcss/vite:generate:build transform (29%, 1.8s, 11 calls)
 Additional hook time came from the hooks below and from hooks under 1s.
 1 hook is listed without a time. Its calls overlapped, so the time inside one call includes work from other calls. To find its cost, profile the build with `node --cpu-prof`:
   - vite:css transform (11 calls)

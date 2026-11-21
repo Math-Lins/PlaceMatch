@@ -227,7 +227,8 @@ class Command(BaseCommand):
         resultado['ponto_de_equilibrio'] = self._equilibrio(recalculo)
         resultado['embeddings'] = [] if o['sem_embeddings'] else self._embeddings(_lista(o['bios']), reps)
         resultado['ponta_a_ponta'] = self._ponta_a_ponta(_lista(o['tamanhos_banco']), max(1, o['repeticoes_banco'])) if o['banco_descartavel'] else []
-        resultado['observacoes'] = self._observacoes(resultado)
+        resultado['observacoes'] = self._resumo(resultado)
+        resultado['observacoes_detalhadas'] = self._observacoes_detalhadas(resultado)
         resultado['duracao_total_s'] = round(time.perf_counter() - inicio, 1)
 
         caminho_json = os.path.join(saida, 'paralelismo.json')
@@ -358,7 +359,7 @@ class Command(BaseCommand):
 
         self.stdout.write('\nB) gerar_embeddings (modelo real; nada é gravado)')
         if servico.usando_falso() or not servico.habilitada() or not servico.modelo_baixado():
-            self.stdout.write(self.style.WARNING('  pulado — IA desligada ou modelo não baixado (python manage.py baixar_modelo_ia).'))
+            self.stdout.write(self.style.WARNING('  pulado — ThoLuk desligado ou modelo não baixado (python manage.py baixar_modelo_ia).'))
             return []
         if servico.obter_embedder() is None:
             self.stdout.write(self.style.WARNING('  pulado — o modelo não carregou.'))
@@ -449,7 +450,7 @@ class Command(BaseCommand):
     # ── conclusões automáticas ───────────────────────────────────────────────
 
     @staticmethod
-    def _observacoes(r):
+    def _observacoes_detalhadas(r):
         obs = []
         carga = r['ambiente'].get('carga_cpu_fundo_pct')
         carga = carga if carga is not None else r['ambiente'].get('carga_cpu_inicio_pct')
@@ -490,6 +491,48 @@ class Command(BaseCommand):
         if r['tamanhos_pulados']:
             obs.append('Pulados por memória: ' + ' '.join(r['tamanhos_pulados']))
         return obs
+
+    @staticmethod
+    def _resumo(r) -> list[str]:
+        """Conclusão curta (no máximo 5 itens, vírgula decimal) para o painel; o detalhe fica em observacoes_detalhadas."""
+        def num(v, casas=2):
+            return f'{v:.{casas}f}'.replace('.', ',')
+
+        def lista(ns):
+            ns = [_br(n) for n in ns]
+            return ns[0] if len(ns) == 1 else f"{', '.join(ns[:-1])} e {ns[-1]}"
+
+        itens = []
+        paralelos = [x for x in r['recalculo'] if x['modo'] != 'sequencial' and x['speedup']]
+        if paralelos:
+            m = max(paralelos, key=lambda x: x['speedup'])
+            itens.append(f"Melhor resultado: {m['modo']} com {m['workers']} workers e {_br(m['N'])} perfis, "
+                         f"{num(m['speedup'])}× mais rápido que o sequencial (eficiência {num(m['eficiencia'])}).")
+        for modo, motivo in (('threads', ''), ('processos', ' (cada worker é um processo novo, que leva alguns segundos para subir)')):
+            eq = r['ponto_de_equilibrio'].get(modo) or {}
+            if not eq.get('melhor_por_N'):
+                continue
+            nome = modo.capitalize()
+            if eq.get('N_minimo'):
+                itens.append(f"{nome} compensam a partir de {_br(eq['N_minimo'])} perfis ({_br(eq['pares_minimo'])} pares){motivo}.")
+            elif eq.get('ganhou_em_N'):
+                itens.append(f"{nome} compensaram com {lista(eq['ganhou_em_N'])} perfis, mas não com "
+                             f"{lista(eq['perdeu_ou_empatou_em_N'])}{motivo}.")
+            else:
+                itens.append(f'{nome} não compensaram em nenhum tamanho medido{motivo}.')
+        if r['amdahl']:
+            a = max(r['amdahl'], key=lambda x: x['fracao_paralelizavel'])
+            texto = (f"Lei de Amdahl: no melhor caso ({a['modo']}, {_br(a['N'])} perfis), cerca de "
+                     f"{round(a['fracao_paralelizavel'] * 100)}% do trabalho se divide entre os workers")
+            itens.append(texto + (f", então o ganho máximo teórico é {num(a['speedup_maximo_teorico'], 1)}×." if a['speedup_maximo_teorico'] else '.'))
+        if r.get('ponta_a_ponta'):
+            seq = next((x for x in r['ponta_a_ponta'] if x['modo'] == 'sequencial'), r['ponta_a_ponta'][0])
+            pct = seq['tempo_gravar_s'] / seq['tempo_total_s'] * 100 if seq['tempo_total_s'] else 0
+            itens.append(f"Gargalo: no comando completo, gravar {_br(seq['pares'])} pares no banco leva {num(pct, 1)}% do tempo "
+                         f"({num(seq['tempo_gravar_s'], 1)} s de {num(seq['tempo_total_s'], 1)} s); mais núcleos não reduzem essa parte.")
+        else:
+            itens.append('Gargalo: no comando completo, gravar no banco é a parte sequencial (meça com --banco-descartavel).')
+        return itens[:5]
 
     # ── arquivos ─────────────────────────────────────────────────────────────
 

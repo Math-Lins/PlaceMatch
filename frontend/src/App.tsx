@@ -269,7 +269,7 @@ function CompatBadge({ value, large = false, sobreFoto = false }: { value: numbe
   // Sobre foto o selo ganha fundo branco sólido para manter o contraste.
   return (
     <Selo tom={level.tom} grande={large} style={{ fontFamily: FONTE_TITULO, ...(sobreFoto ? { background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' } : {}) }}>
-      ❤️ {value}% compatível
+      {value}% compatível
     </Selo>
   );
 }
@@ -1063,7 +1063,7 @@ function RegisterScreen({ nav, onLoginSuccess, onContaCriadaSemLogin }: {
                 color: role === r ? C.primaryText : C.muted,
                 fontFamily: FONTE_TEXTO, fontSize: '14px', fontWeight: 700, lineHeight: 1.3,
               }}>
-                {r === 'looking' ? '🔍 Procuro um lugar' : '🏠 Tenho um lugar disponível'}
+                {r === 'looking' ? 'Procuro um lugar' : 'Tenho um lugar disponível'}
               </button>
             ))}
           </div>
@@ -1473,9 +1473,9 @@ function EtapaConvivencia({ form, setForm, errors }: PropsEtapa) {
         onChange={v => setForm({ horario: v })}
         error={errors.perfil_horario}
         options={[
-          { value: 'madrugador', label: '🌅 Madrugador(a)' },
-          { value: 'noturno', label: '🌙 Noturno(a)' },
-          { value: 'flexivel', label: '☀️ Flexível' },
+          { value: 'madrugador', label: 'Madrugador(a)' },
+          { value: 'noturno', label: 'Noturno(a)' },
+          { value: 'flexivel', label: 'Flexível' },
         ]}
       />
     </div>
@@ -1838,7 +1838,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <div>
             <h1 style={ESTILO_TITULO_TELA}>{tituloTela}</h1>
-            {regiao && <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted, margin: '2px 0 0' }}>📍 {regiao}</p>}
+            {regiao && <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted, margin: '2px 0 0' }}>{regiao}</p>}
           </div>
           <button onClick={() => setShowFilters(true)} aria-label="Abrir filtros de busca" style={{
             position: 'relative', width: '44px', height: '44px', borderRadius: RAIO.botao,
@@ -1932,7 +1932,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                       {p.tituloAnuncio ?? `Vaga em ${p.region}`}
                     </h2>
                     <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted, margin: '0 0 8px' }}>
-                      📍 {p.region} · {IMOVEL_LABEL[p.tipoImovel] ?? p.tipoImovel} · {rotuloMoradores(p.qtdMoradores)}
+                      {p.region} · {IMOVEL_LABEL[p.tipoImovel] ?? p.tipoImovel} · {rotuloMoradores(p.qtdMoradores)}
                     </p>
                     <p style={{ fontFamily: FONTE_TITULO, fontSize: '22px', fontWeight: 800, color: C.text, margin: '0 0 10px' }}>
                       {p.budget} <span style={{ fontSize: '14px', fontWeight: 400, color: C.muted }}>/ mês</span>
@@ -1940,7 +1940,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
                       {p.pets && <Tag label="Aceita pets" />}
                       {!p.smoker && <Tag label="Não fumante" />}
-                      <SeloInteresses afinidade={p.afinidadeIa} temas={p.temasEmComum} />
+                      <SeloInteresses afinidade={p.afinidadeIa} temas={p.temasEmComum} curto />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '12px', borderTop: `1px solid ${C.border}` }}>
                       <ImagemComFallback src={p.fotoPerfilUrl} alt={p.name}
@@ -1963,10 +1963,10 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
                       <div>
                         <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '26px', fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>{p.name}, {p.age}</h2>
-                        <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: 'rgba(255,255,255,0.9)', margin: 0 }}>📍 {p.region}</p>
+                        <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: 'rgba(255,255,255,0.9)', margin: 0 }}>{p.region}</p>
                       </div>
                       <CompatBadge value={p.compat} sobreFoto />
-                      <SeloInteresses afinidade={p.afinidadeIa} temas={p.temasEmComum} sobreFoto />
+                      <SeloInteresses afinidade={p.afinidadeIa} temas={p.temasEmComum} sobreFoto curto />
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
                       {p.tags.map(t => (
@@ -2015,7 +2015,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                           {p.tituloAnuncio ?? `Vaga em ${p.region}`}
                         </h2>
                         <p style={{ fontFamily: FONTE_TEXTO, fontSize: '12px', color: C.muted, margin: '0 0 6px' }}>
-                          📍 {p.region} · {IMOVEL_LABEL[p.tipoImovel] ?? p.tipoImovel} · {rotuloMoradores(p.qtdMoradores)}
+                          {p.region} · {IMOVEL_LABEL[p.tipoImovel] ?? p.tipoImovel} · {rotuloMoradores(p.qtdMoradores)}
                         </p>
                         <p style={{ fontFamily: FONTE_TITULO, fontSize: '17px', fontWeight: 800, color: C.text, margin: '0 0 8px' }}>
                           {p.budget} <span style={{ fontSize: '12px', fontWeight: 400, color: C.muted }}>/ mês</span>
@@ -2046,7 +2046,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px', marginBottom: '6px' }}>
                           <div>
                             <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '22px', fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>{p.name}, {p.age}</h2>
-                            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: 'rgba(255,255,255,0.9)', margin: 0 }}>📍 {p.region}</p>
+                            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: 'rgba(255,255,255,0.9)', margin: 0 }}>{p.region}</p>
                           </div>
                           <CompatBadge value={p.compat} sobreFoto />
                           <SeloInteresses afinidade={p.afinidadeIa} temas={p.temasEmComum} sobreFoto />
@@ -2155,7 +2155,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
             <h1 style={{ fontFamily: FONTE_TITULO, fontSize: '26px', fontWeight: 800, color: C.text, margin: '0 0 6px' }}>
               {profile.tituloAnuncio || `Vaga em ${profile.region}`}
             </h1>
-            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '0 0 12px' }}>📍 {profile.region}</p>
+            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: '0 0 12px' }}>{profile.region}</p>
             <p style={{ fontFamily: FONTE_TITULO, fontSize: '26px', fontWeight: 800, color: C.text, margin: 0 }}>
               {profile.budget} <span style={{ fontSize: '16px', fontWeight: 400, color: C.muted }}>/ mês</span>
             </p>
@@ -2200,7 +2200,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
           {!somenteLeitura && (
             <div style={{ display: 'flex', gap: '12px' }}>
               <Btn label="✕ Recusar" outline onClick={handleRecusar} disabled={liking} />
-              <Btn label={liking ? 'Enviando…' : '💛 Tenho interesse'} onClick={onLike ? handleLike : () => nav('match')} disabled={liking} />
+              <Btn label={liking ? 'Enviando…' : 'Tenho interesse'} onClick={onLike ? handleLike : () => nav('match')} disabled={liking} />
             </div>
           )}
           <div style={{ textAlign: 'center', marginTop: '12px' }}>
@@ -2228,7 +2228,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
         {/* Desktop: name overlay on photo */}
         <div className="hidden lg:block" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px' }}>
           <h1 style={{ fontFamily: FONTE_TITULO, fontSize: '32px', fontWeight: 800, color: '#fff', margin: '0 0 4px', textShadow: '0 1px 6px rgba(0,0,0,0.3)' }}>{profile.name}, {profile.age}</h1>
-          <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: 'rgba(255,255,255,0.92)', margin: 0 }}>📍 {profile.region}</p>
+          <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: 'rgba(255,255,255,0.92)', margin: 0 }}>{profile.region}</p>
         </div>
       </div>
 
@@ -2238,7 +2238,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
         <div className="lg:hidden" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
           <div>
             <h2 style={{ fontFamily: FONTE_TITULO, fontSize: '28px', fontWeight: 800, color: C.text, margin: '0 0 4px' }}>{profile.name}, {profile.age}</h2>
-            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: 0 }}>📍 {profile.region}</p>
+            <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: C.muted, margin: 0 }}>{profile.region}</p>
           </div>
           <CompatBadge value={profile.compat} large />
         </div>
@@ -2277,7 +2277,7 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
         </CartaoSecao>
 
         {erroAcao && <div style={{ marginBottom: '12px' }}><MensagemErro>{erroAcao}</MensagemErro></div>}
-        {!somenteLeitura && <Btn label={liking ? 'Enviando…' : '💛 Curtir perfil'} onClick={onLike ? handleLike : () => nav('match')} />}
+        {!somenteLeitura && <Btn label={liking ? 'Enviando…' : 'Curtir perfil'} onClick={onLike ? handleLike : () => nav('match')} />}
         <div style={{ textAlign: 'center', marginTop: '12px' }}>
           <button onClick={() => setShowDenuncia(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontFamily: FONTE_TEXTO, fontSize: '14px', fontWeight: 700, padding: '12px 8px', minHeight: '44px', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
             Denunciar este perfil
@@ -2580,7 +2580,7 @@ function MatchScreen({ nav, profile, setCurrentChat }: {
                 {profile.tituloAnuncio ?? profile.name}
               </h2>
               <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: C.muted, margin: '0 0 8px' }}>
-                📍 {profile.region} · {IMOVEL_LABEL[profile.tipoImovel] ?? profile.tipoImovel} · {rotuloMoradores(profile.qtdMoradores)}
+                {profile.region} · {IMOVEL_LABEL[profile.tipoImovel] ?? profile.tipoImovel} · {rotuloMoradores(profile.qtdMoradores)}
               </p>
               <p style={{ fontFamily: FONTE_TITULO, fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 12px' }}>
                 {profile.budget}
@@ -2749,7 +2749,7 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId }: {
             {conversas.map(c => {
               const profile = conversaParaProfile(c);
               const level = getCompatLevel(profile.compat);
-              const preview = c.ultima_mensagem?.conteudo ?? 'Diga olá! 👋';
+              const preview = c.ultima_mensagem?.conteudo ?? 'Diga olá!';
               return (
                 <button key={c.match_id} onClick={() => abrirChat(c)} style={{
                   width: '100%', display: 'flex', alignItems: 'center', gap: '14px',
@@ -2795,7 +2795,7 @@ function MatchesScreen({ nav, setCurrentChat, setActiveChatMatchId }: {
             {conversas.map(c => {
               const profile = conversaParaProfile(c);
               const level = getCompatLevel(profile.compat);
-              const preview = c.ultima_mensagem?.conteudo ?? 'Diga olá! 👋';
+              const preview = c.ultima_mensagem?.conteudo ?? 'Diga olá!';
               return (
                 <button key={c.match_id} onClick={() => abrirChat(c)} style={{
                   display: 'flex', flexDirection: 'column', background: C.card,

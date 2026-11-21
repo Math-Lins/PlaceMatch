@@ -161,7 +161,7 @@ class Command(BaseCommand):
             call_command('gerar_embeddings', stdout=self.stdout)
         else:
             self.stdout.write(self.style.WARNING(
-                'Modelo de IA indisponível: os scores usam só os 6 critérios. '
+                'ThoLuk indisponível: os scores usam só os 6 critérios. '
                 'Rode "python manage.py baixar_modelo_ia" e depois "python manage.py gerar_embeddings".'))
 
         self.stdout.write(self.style.SUCCESS(

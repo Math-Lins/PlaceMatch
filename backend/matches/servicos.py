@@ -120,13 +120,14 @@ def detalhar_compatibilidade(meu_perfil: Perfil, outro: Perfil) -> dict:
     motivo = None
     if not com_ia:
         if not servico.habilitada():
-            motivo = 'A Afinidade por IA está desligada neste servidor; o score usa os outros 6 critérios.'
+            motivo = 'O ThoLuk está desligado neste servidor; o score usa os outros 6 critérios.'
         elif not par['tem_vetor_a']:
-            motivo = ('Seu perfil ainda não tem análise de IA (bio com menos de 20 letras ou IA indisponível '
+            motivo = ('Seu perfil ainda não foi analisado pelo ThoLuk (bio com menos de 20 letras ou ThoLuk indisponível '
                       'quando a bio foi salva); o score usa os outros 6 critérios.')
         else:
-            motivo = 'Este perfil ainda não tem análise de IA (bio muito curta); o score usa os outros 6 critérios.'
+            motivo = 'Este perfil ainda não foi analisado pelo ThoLuk (bio muito curta); o score usa os outros 6 critérios.'
     return {
+        'nome_ia': servico.NOME_IA,
         'perfil_id': outro.id,
         'nome': outro.nome,
         'score': det['score'],

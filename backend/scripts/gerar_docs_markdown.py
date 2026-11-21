@@ -23,7 +23,7 @@ from placematch.api_docs import OPERACOES, erros_da_operacao  # noqa: E402
 from placematch.exemplos_api import EXEMPLOS  # noqa: E402
 
 SAIDA = os.path.join(os.path.dirname(RAIZ), 'docs', 'api.md')
-GRUPOS = ['Autenticação', 'Perfis', 'Descoberta e Matches', 'Chat', 'Moderação', 'Painel administrativo', 'Afinidade por IA',
+GRUPOS = ['Autenticação', 'Perfis', 'Descoberta e Matches', 'Chat', 'Moderação', 'Painel administrativo', 'Afinidade por IA (ThoLuk)',
           'Processamento em lote', 'Logs']
 
 TIPOS = {

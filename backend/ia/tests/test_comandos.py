@@ -43,7 +43,7 @@ class GerarEmbeddingsTest(BaseIA):
 
     @override_settings(IA_HABILITADA=False)
     def test_ia_desligada(self):
-        with self.assertRaisesMessage(CommandError, 'desligada'):
+        with self.assertRaisesMessage(CommandError, 'O ThoLuk está desligado'):
             _rodar('gerar_embeddings')
 
     def test_modelo_indisponivel(self):
@@ -69,11 +69,11 @@ class BaixarModeloTest(BaseIA):
             saida = _rodar('baixar_modelo_ia')
         self.assertIn('Tamanho em disco', saida)
         self.assertIn('cosseno', saida)
-        self.assertIn('Modelo pronto', saida)
+        self.assertIn('ThoLuk pronto', saida)
 
     @override_settings(IA_HABILITADA=False)
     def test_ia_desligada(self):
-        with self.assertRaisesMessage(CommandError, 'desligada'):
+        with self.assertRaisesMessage(CommandError, 'O ThoLuk está desligado'):
             _rodar('baixar_modelo_ia')
 
 
@@ -81,11 +81,11 @@ class VerificarBancoTest(BaseIA):
     def test_aviso_de_perfis_com_bio_sem_embedding(self):
         _, p = criar('buscando_vaga', BIO_CULINARIA)
         criar('oferecendo_vaga', BIO_CURTA)
-        self.assertIn('Perfis com bio suficiente sem embedding (Afinidade por IA): 0', _rodar('verificar_banco'))
+        self.assertIn('Perfis com bio suficiente sem embedding (ThoLuk): 0', _rodar('verificar_banco'))
         EmbeddingPerfil.objects.filter(perfil=p).delete()
         saida = _rodar('verificar_banco', '--detalhes')
         self.assertIn('[AVISO]', saida)
-        self.assertIn('Perfis com bio suficiente sem embedding (Afinidade por IA): 1', saida)
+        self.assertIn('Perfis com bio suficiente sem embedding (ThoLuk): 1', saida)
         self.assertIn(f'ids/itens: {p.id}', saida)
         self.assertIn('gerar_embeddings', saida)
         self.assertIn('embeddings_ia=0', saida)

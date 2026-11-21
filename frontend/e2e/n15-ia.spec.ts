@@ -11,7 +11,7 @@ const passo = (nome: string, fn: () => Promise<void>) =>
     await fn();
   });
 
-test('N15 IA: por que vocês combinam, selo, temas do perfil, aba IA (status, laboratório, paralelismo) e log', async ({ browser }) => {
+test('N15 ThoLuk: por que vocês combinam, selo, temas do perfil, aba ThoLuk (status, laboratório, paralelismo) e log', async ({ browser }) => {
   const oCozinha = novoPerfil('n15', 'oferece', { bio: BIO_COZINHA_B, titulo: `Quarto da cozinha N15 ${Date.now() % 100000}` });
   // Quem oferece vaga tem o anúncio somado à bio: título curto também, para ficar abaixo de 20 letras e dígitos.
   const oCurta = novoPerfil('n15c', 'oferece', { bio: 'Oi!', titulo: `Vaga ${Date.now() % 100000}` });
@@ -30,7 +30,7 @@ test('N15 IA: por que vocês combinam, selo, temas do perfil, aba IA (status, la
       await page.getByPlaceholder('Buscar por nome, região...').fill(oCozinha.titulo!);
       const card = visiveis(page.getByText(oCozinha.titulo!)).first();
       await expect(card).toBeVisible({ timeout: 20_000 });
-      await expect(visiveis(page.getByText('Interesses em comum: Culinária')).first()).toBeVisible();
+      await expect(visiveis(page.getByText('ThoLuk: interesses em comum — Culinária')).first()).toBeVisible();
       await print(page, 'N15', 1, 'card-com-selo-ia');
     });
 
@@ -40,16 +40,17 @@ test('N15 IA: por que vocês combinam, selo, temas do perfil, aba IA (status, la
       await expect(painel.getByRole('heading', { name: 'Por que vocês combinam' })).toBeVisible();
       const barras = painel.getByRole('list', { name: 'Compatibilidade por critério' }).getByRole('listitem');
       await expect(barras).toHaveCount(7, { timeout: 20_000 });
-      for (const nome of ['Orçamento', 'Hábitos', 'Região', 'Rotina', 'Moradia', 'Idade', 'Afinidade de interesses (IA)']) {
+      for (const nome of ['Orçamento', 'Hábitos', 'Região', 'Rotina', 'Moradia', 'Idade', 'Afinidade de interesses (ThoLuk)']) {
         await expect(painel.getByText(nome, { exact: true })).toBeVisible();
       }
-      await expect(painel.getByText(/A IA identificou interesses em comum/)).toBeVisible();
+      await expect(painel.getByText(/O ThoLuk identificou interesses em comum/)).toBeVisible();
       await expect(painel.getByRole('list', { name: 'Interesses em comum' }).getByText('Culinária')).toBeVisible();
       await painel.scrollIntoViewIfNeeded();
       await print(page, 'N15', 2, 'por-que-voces-combinam');
 
-      await painel.getByRole('button', { name: /Como a IA funciona/ }).click();
-      const dialogo = page.getByRole('dialog', { name: 'Como a IA funciona' });
+      await painel.getByRole('button', { name: /Como o ThoLuk funciona/ }).click();
+      const dialogo = page.getByRole('dialog', { name: 'Como o ThoLuk funciona' });
+      await expect(dialogo.getByText(/O ThoLuk é a IA do PlaceMatch/)).toBeVisible();
       await expect(dialogo.getByText(/nenhum texto sai do sistema/)).toBeVisible();
       await print(page, 'N15', 3, 'como-a-ia-funciona');
       await page.keyboard.press('Escape');
@@ -57,13 +58,13 @@ test('N15 IA: por que vocês combinam, selo, temas do perfil, aba IA (status, la
       await page.getByRole('button', { name: 'Voltar' }).click();
     });
 
-    await passo('3. perfil com bio curta: 6 barras e o aviso, sem o critério da IA', async () => {
+    await passo('3. perfil com bio curta: 6 barras e o aviso, sem o critério do ThoLuk', async () => {
       await page.getByPlaceholder('Buscar por nome, região...').fill(oCurta.titulo!);
       await visiveis(page.getByText(oCurta.titulo!)).first().click();
       const painel = page.getByTestId('painel-por-que-combinam');
       await expect(painel.getByRole('list', { name: 'Compatibilidade por critério' }).getByRole('listitem')).toHaveCount(6, { timeout: 20_000 });
-      await expect(painel.getByText(/Biografia curta demais para a IA analisar/)).toBeVisible();
-      await expect(painel.getByText('Afinidade de interesses (IA)', { exact: true })).toHaveCount(0);
+      await expect(painel.getByText(/Biografia curta demais para o ThoLuk analisar/)).toBeVisible();
+      await expect(painel.getByText('Afinidade de interesses (ThoLuk)', { exact: true })).toHaveCount(0);
       await print(page, 'N15', 4, 'bio-curta-sem-ia');
       await page.getByRole('button', { name: 'Voltar' }).click();
     });
@@ -71,9 +72,9 @@ test('N15 IA: por que vocês combinam, selo, temas do perfil, aba IA (status, la
     await passo('4. Meu Perfil mostra os temas da própria bio', async () => {
       await menu(page, 'Perfil').click();
       const temas = page.getByTestId('temas-minha-bio');
-      await expect(temas.getByRole('heading', { name: /Temas que a IA identificou na sua bio/ })).toBeVisible();
+      await expect(temas.getByRole('heading', { name: /Temas que o ThoLuk identificou na sua bio/ })).toBeVisible();
       await expect(temas.getByRole('list', { name: 'Temas identificados na sua bio' }).getByText('Culinária')).toBeVisible();
-      await expect(temas.getByText(/Escreva sobre seus interesses/)).toBeVisible();
+      await expect(temas.getByText(/Escreva sobre seus interesses para o ThoLuk/)).toBeVisible();
       await temas.scrollIntoViewIfNeeded();
       await print(page, 'N15', 5, 'meu-perfil-temas');
     });
@@ -86,12 +87,12 @@ test('N15 IA: por que vocês combinam, selo, temas do perfil, aba IA (status, la
     const p = adm.page;
     await entrar(p, ADMIN.email, ADMIN.senha);
     await expect(p.getByRole('heading', { name: 'Painel Admin' })).toBeVisible({ timeout: 60_000 });
-    await p.getByRole('button', { name: /^IA$/ }).click();
+    await p.getByRole('button', { name: 'ThoLuk (IA)' }).click();
 
-    await passo('5. aba IA: status do modelo', async () => {
-      await expect(p.getByRole('heading', { name: 'Situação do modelo' })).toBeVisible();
-      // o servidor aquece o modelo ao subir: "Carregando" vira "Disponível" sozinho (atualização automática)
-      await expect(p.getByRole('status').filter({ hasText: /Disponível|Não carregado/ })).toBeVisible({ timeout: 60_000 });
+    await passo('5. aba ThoLuk (IA): situação do ThoLuk', async () => {
+      await expect(p.getByRole('heading', { name: 'Situação do ThoLuk' })).toBeVisible();
+      // o servidor aquece o modelo ao subir: "ThoLuk carregando" vira "ThoLuk disponível" sozinho (atualização automática)
+      await expect(p.getByRole('status').filter({ hasText: /ThoLuk disponível|ThoLuk não carregado/ })).toBeVisible({ timeout: 60_000 });
       await expect(p.getByText('paraphrase-multilingual-MiniLM-L12-v2')).toBeVisible();
       await expect(p.getByText('Perfis com embedding')).toBeVisible();
       await print(p, 'N15', 6, 'admin-ia-status');
@@ -111,9 +112,9 @@ test('N15 IA: por que vocês combinam, selo, temas do perfil, aba IA (status, la
       await print(p, 'N15', 7, 'admin-ia-laboratorio');
     });
 
-    await passo('7. laboratório valida texto vazio sem chamar a IA', async () => {
+    await passo('7. laboratório valida texto vazio sem chamar o ThoLuk', async () => {
       await p.getByLabel('Texto A').fill('');
-      await p.getByRole('button', { name: /Comparar com IA/ }).click();
+      await p.getByRole('button', { name: /Comparar com o ThoLuk/ }).click();
       await expect(p.getByText('Escreva o primeiro texto.')).toBeVisible();
     });
 
@@ -132,12 +133,12 @@ test('N15 IA: por que vocês combinam, selo, temas do perfil, aba IA (status, la
       await print(p, 'N15', 8, 'admin-ia-paralelismo');
     });
 
-    await passo('9. aba Logs: filtro "Teste da IA (painel)" encontra o teste do laboratório', async () => {
+    await passo('9. aba Logs: filtro "Teste do ThoLuk (painel)" encontra o teste do laboratório', async () => {
       await p.getByRole('button', { name: /^Logs$/ }).click();
-      await p.getByLabel('Ação').selectOption({ label: 'Teste da IA (painel)' });
+      await p.getByLabel('Ação').selectOption({ label: 'Teste do ThoLuk (painel)' });
       await p.getByRole('button', { name: 'Buscar' }).click();
-      await expect(p.getByText('Teste da IA (painel)').nth(1)).toBeVisible({ timeout: 20_000 });
-      await expect(p.getByRole('cell', { name: /^IA$/ }).first()).toBeVisible();
+      await expect(p.getByText('Teste do ThoLuk (painel)').nth(1)).toBeVisible({ timeout: 20_000 });
+      await expect(p.getByRole('cell', { name: /^ThoLuk \(IA\)$/ }).first()).toBeVisible();
       await print(p, 'N15', 9, 'admin-logs-ia-teste');
     });
   } finally {

@@ -86,13 +86,14 @@ class EstadoCarregandoTest(BaseIA):
                     break
                 threading.Event().wait(0.01)
             est = servico.estado()  # não pode bloquear durante a carga
-            self.assertEqual((est['situacao'], est['situacao_texto']), ('carregando', 'Carregando'))
+            self.assertEqual((est['situacao'], est['situacao_texto']), ('carregando', 'ThoLuk carregando'))
             self.assertTrue(servico.disponivel())  # o modelo existe; fica pronto ao terminar
             r = self.como(admin()).get('/api/admin/ia/status/')
-            self.assertEqual((r.data['situacao'], r.data['situacao_texto']), ('carregando', 'Carregando'))
+            self.assertEqual((r.data['situacao'], r.data['situacao_texto']), ('carregando', 'ThoLuk carregando'))
+            self.assertEqual(r.data['nome_ia'], 'ThoLuk')
             liberar.set()
             t.join(5)
-        self.assertEqual(servico.estado()['situacao_texto'], 'Disponível')
+        self.assertEqual(servico.estado()['situacao_texto'], 'ThoLuk disponível')
         self.assertIsNotNone(servico.estado()['tempo_carregamento_ms'])
 
     def test_quem_chega_durante_a_carga_espera_e_reaproveita(self):
@@ -117,12 +118,12 @@ class EstadoCarregandoTest(BaseIA):
     def test_falha_no_aquecimento_vira_indisponivel_sem_excecao(self):
         with mock.patch.object(servico, '_criar_embedder', side_effect=MemoryError('sem memória')), self.assertLogs('ia.servico'):
             servico.aquecer()
-        self.assertEqual(servico.estado()['situacao_texto'], 'Indisponível')
+        self.assertEqual(servico.estado()['situacao_texto'], 'ThoLuk indisponível')
 
     def test_textos_de_todas_as_situacoes(self):
-        self.assertEqual(servico.estado()['situacao_texto'], 'Não carregado')
+        self.assertEqual(servico.estado()['situacao_texto'], 'ThoLuk não carregado')
         with override_settings(IA_HABILITADA=False):
-            self.assertEqual(servico.estado()['situacao_texto'], 'Desligada')
+            self.assertEqual(servico.estado()['situacao_texto'], 'ThoLuk desligado')
 
 
 class EmbedderWorkersTest(SimpleTestCase):

@@ -48,7 +48,7 @@ class Command(BaseCommand):
             f"  {r['buscando']} buscando × {r['oferecendo']} oferecendo = {r['pares']} pares | "
             f"modo {r['modo']} ({r['workers']} worker{'s' if r['workers'] > 1 else ''})"
             + (f", pedido: {r['modo_pedido']}" if r['modo_pedido'] != r['modo'] else '')
-            + ('' if r['com_ia'] else ' | sem a afinidade por IA'))
+            + ('' if r['com_ia'] else ' | sem o ThoLuk (afinidade por IA)'))
         self.stdout.write(
             f"  carregar {r['tempo_carregar_s']:.2f} s · calcular {r['tempo_calcular_s']:.2f} s · "
             f"gravar {r['tempo_gravar_s']:.2f} s")

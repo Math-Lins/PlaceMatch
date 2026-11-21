@@ -292,7 +292,7 @@ class ComandoRecalcularTest(_BlocosPequenos, TestCase):
     @override_settings(IA_HABILITADA=False)
     def test_ia_desligada_usa_os_6_criterios(self):
         saida, _, atual = self._rodar('--modo', 'threads', '--workers', '2')
-        self.assertIn('sem a afinidade por IA', saida)
+        self.assertIn('sem o ThoLuk', saida)
         _, _, seq = self._rodar('--metodo', 'loop')
         self.assertEqual(atual, seq)
 
@@ -323,6 +323,26 @@ class BenchmarkParalelismoTest(TestCase):
         self.assertIn('nucleos_logicos', dados['ambiente'])
         seq = next(x for x in dados['recalculo'] if x['modo'] == 'sequencial')
         self.assertEqual((seq['speedup'], seq['eficiencia'], seq['pares']), (1.0, 1.0, 30 * 30))
+
+    def test_resumo_curto_em_portugues(self):
+        import re
+        from matches.management.commands.benchmark_paralelismo import Command as Bench
+        linhas = [
+            {'N': n, 'pares': n * n // 4, 'modo': m, 'workers': w, 'speedup': sp, 'eficiencia': sp / w}
+            for n, m, w, sp in [(1000, 'sequencial', 1, 1.0), (1000, 'threads', 2, 1.8), (1000, 'processos', 2, 0.1),
+                                (5000, 'sequencial', 1, 1.0), (5000, 'threads', 2, 2.4), (5000, 'processos', 2, 1.3)]
+        ]
+        r = {'recalculo': linhas, 'amdahl': Bench._amdahl(linhas), 'ponto_de_equilibrio': Bench._equilibrio(linhas),
+             'ponta_a_ponta': [{'modo': 'sequencial', 'pares': 250000, 'tempo_gravar_s': 39.95, 'tempo_total_s': 40.1}]}
+        itens = Bench._resumo(r)
+        self.assertLessEqual(len(itens), 5)
+        texto = ' '.join(itens)
+        self.assertIn('2,40× mais rápido', texto)
+        self.assertIn('Threads compensam a partir de 1.000 perfis', texto)
+        self.assertIn('Processos compensam a partir de 5.000 perfis', texto)
+        self.assertIn('Lei de Amdahl', texto)
+        self.assertIn('99,6% do tempo', texto)
+        self.assertIsNone(re.search(r'\d\.\d{1,2}(?!\d)', texto), 'número com ponto decimal no resumo')
 
     def test_opcoes_invalidas(self):
         for args in (['--tamanhos', 'mil'], ['--tamanhos', '0'], ['--workers', '1,99'], ['--repeticoes', '0']):
