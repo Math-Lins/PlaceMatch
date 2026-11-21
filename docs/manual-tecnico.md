@@ -90,7 +90,7 @@ Cada app Django segue a mesma organização: `models.py` (tabelas), `serializers
 | `placematch/` | Configurações (`settings.py`, `test_settings.py`), rotas principais, validação comum, mensagens, tratamento de exceções, limites de tentativas (`limites.py`), documentação da API (`api_docs.py`, exemplos reais) | — |
 | `usuarios/` | Modelo de usuário (login por e-mail, tipo de conta), cadastro, login, logout, `/me`, recuperação de senha (`senha.py`) | `criar_admin`, `matriz_permissoes` |
 | `perfis/` | Perfil de compatibilidade e anúncio do imóvel; um por usuário | `seed_perfis`, `seed_demo` |
-| `matches/` | Algoritmo (`algoritmo/`), compatibilidades, curtidas, matches, Descoberta; recálculo automático (`signals.py`) | `recalcular_compatibilidades`, `benchmark_compatibilidade`, `seed_matches` |
+| `matches/` | Algoritmo (`algoritmo/`), compatibilidades, curtidas, matches, Descoberta; recálculo automático (`signals.py`); recálculo completo em paralelo (`processamento.py`) | `recalcular_compatibilidades`, `benchmark_compatibilidade`, `benchmark_paralelismo`, `seed_matches` |
 | `chat/` | Conversas e mensagens dentro de um match | `seed_mensagens` |
 | `moderacao/` | Denúncias, decisão do administrador, suspensão e reativação | — |
 | `painel/` | Dashboard, relatórios, lista de usuários, exportação CSV, filtros comuns | `verificar_banco` |
@@ -265,7 +265,8 @@ O núcleo de processamento do PlaceMatch é o **algoritmo de compatibilidade**, 
 - `algoritmo/escalar.py`: cálculo de um par, usado como referência.
 - `algoritmo/vetorial.py`: cálculo em lote com **NumPy** (um perfil contra todos os do tipo oposto), usado em produção; um teste garante resultado idêntico ao escalar.
 - `signals.py`: ao criar ou editar um perfil, os scores dele são recalculados automaticamente e gravados em `matches_compatibilidade` com **2 consultas ao banco**, independentemente do número de perfis.
-- Comandos: `recalcular_compatibilidades` (recalcula tudo) e `benchmark_compatibilidade` (mede desempenho).
+- `algoritmo/matriz.py` + `algoritmo/paralelo.py` + `processamento.py`: recálculo **completo** (todos os pares) em blocos de 256 × 256 pares, nos modos sequencial, threads ou processos; resultado idêntico ao escalar com qualquer número de workers.
+- Comandos: `recalcular_compatibilidades [--modo auto|processos|threads|sequencial] [--workers N]` (recalcula tudo), `benchmark_compatibilidade` (loop × NumPy) e `benchmark_paralelismo` (speedup, eficiência e Lei de Amdahl; grava `docs/benchmark/paralelismo.*`). Os dois benchmarks só usam banco com `--banco-descartavel` (banco vazio).
 
 **Desempenho medido (Sprint 6):** com banco, o cálculo em lote foi **34× a 61× mais rápido** que a versão item a item (100 a 5.000 perfis), principalmente por trocar N+1 consultas por 2.
 

@@ -799,3 +799,30 @@ class AdminUsuariosExportarView(APIView):
         )
 
         return gerar_csv_response(cabecalho, linhas, 'usuarios')
+
+
+class ProcessamentoBenchmarkView(APIView):
+    """Resultado do benchmark de paralelismo (docs/benchmark/paralelismo.json) para o painel."""
+
+    permission_classes = [AdminPermission]
+
+    @extend_schema(**doc('processamento_benchmark'))
+    def get(self, request):
+        import json
+
+        from django.conf import settings
+
+        caminho = str(getattr(settings, 'PROCESSAMENTO_BENCHMARK_ARQUIVO', ''))
+        try:
+            with open(caminho, encoding='utf-8') as f:
+                dados = json.load(f)
+        except FileNotFoundError:
+            return Response({'detail': 'O benchmark de paralelismo ainda não foi executado. No servidor, rode '
+                                       '"python manage.py benchmark_paralelismo".'}, status=status.HTTP_404_NOT_FOUND)
+        except (OSError, ValueError):
+            return Response({'detail': 'O arquivo de resultados do benchmark não pôde ser lido. Rode de novo '
+                                       '"python manage.py benchmark_paralelismo".'}, status=status.HTTP_404_NOT_FOUND)
+        if not isinstance(dados, dict):
+            return Response({'detail': 'O arquivo de resultados do benchmark não pôde ser lido. Rode de novo '
+                                       '"python manage.py benchmark_paralelismo".'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(dados)

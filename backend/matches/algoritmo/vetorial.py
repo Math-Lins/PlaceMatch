@@ -129,7 +129,7 @@ def calcular_scores_lote(base, outros, pesos=None) -> tuple[np.ndarray, np.ndarr
     id_b    = np.array([float(p.idade) for p in outros_list], dtype=np.float64)
     sim_ida = np.maximum(0.0, 1.0 - np.abs(id_a - id_b) / DIV_IDADE)
 
-    # ── Afinidade de perfil (IA) ───────────────────────────────────────────
+    # ── Afinidade de interesses (IA) ───────────────────────────────────────────
     sim_ia: list = [None] * n
     va = vetor_do_perfil(base)
     if va is not None:

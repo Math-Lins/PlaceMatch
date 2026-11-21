@@ -5,6 +5,7 @@ from .views import (
     RelatorioDetalheView,
     AdminUsuariosView,
     AdminUsuariosExportarView,
+    ProcessamentoBenchmarkView,
 )
 
 urlpatterns = [
@@ -13,4 +14,5 @@ urlpatterns = [
     path('admin/relatorios/<str:rel_id>/', RelatorioDetalheView.as_view(), name='relatorio-detalhe'),
     path('admin/usuarios/', AdminUsuariosView.as_view(), name='admin-usuarios'),
     path('admin/usuarios/exportar/', AdminUsuariosExportarView.as_view(), name='admin-usuarios-exportar'),
+    path('admin/processamento/benchmark/', ProcessamentoBenchmarkView.as_view(), name='processamento-benchmark'),
 ]

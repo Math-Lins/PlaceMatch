@@ -18,6 +18,7 @@ Toda alteração de peso ou regra deve ser feita em `config.py` — os demais m�
 9. [Resultados do benchmark](#9-resultados-do-benchmark)
 10. [Limitações conhecidas](#10-limitações-conhecidas)
 11. [Afinidade por IA (7º critério)](#11-afinidade-por-ia-7º-critério)
+12. [Paralelismo](#12-paralelismo)
 
 ---
 
@@ -66,7 +67,7 @@ Definidos em `algoritmo/config.py` (devem somar 1,0). Até a versão 1.0.0-rc2 e
 | `rotina` | **0,14** | 0,1556 | `perfil_horario`, `nivel_ruido` |
 | `moradia` | **0,09** | 0,1000 | `tipo_imovel`, `qtd_moradores` |
 | `idade` | **0,08** | 0,0889 | `idade` |
-| `afinidade_ia` | **0,10** | — | `bio` (+ `titulo_anuncio` e `descricao_imovel` de quem oferece vaga), via embedding (seção 11) |
+| `afinidade_ia` | **0,10** | — | `bio` (+ `titulo_anuncio` e `descricao_imovel` de quem oferece vaga), via embedding (seção 11). Nome exibido na API: **"Afinidade de interesses (IA)"** |
 
 ```python
 PESOS = {
@@ -267,7 +268,7 @@ _NP_VISITAS = np.array(VISITAS_MATRIX, dtype=np.float64)
 _NP_IMOVEL  = np.array(IMOVEL_MATRIX,  dtype=np.float64)
 ```
 
-Para cada dimensão, os atributos de todos os perfis em `outros` são extraídos em arrays e as operações são feitas em paralelo:
+Para cada dimensão, os atributos de todos os perfis em `outros` são extraídos em arrays e as operações são feitas de forma vetorizada (uma operação do NumPy sobre o array inteiro, num único núcleo; o paralelismo em vários núcleos está na seção 12):
 
 ```python
 # Exemplo: horário
@@ -310,33 +311,35 @@ Desde a Afinidade por IA, os perfis do teste também têm vetores de 384 dimens�
 
 ## 9. Resultados do benchmark
 
-Medido em `2026-11-20` com `python manage.py benchmark_compatibilidade --repeticoes 3`, **já com o 7º critério** (perfis sintéticos com vetores de 384 dimensões; 1 em cada 5 sem vetor), em PostgreSQL 16 descartável. CSVs em `docs/benchmark/`.
+Medido em `2026-11-20` com `python manage.py benchmark_compatibilidade --banco-descartavel --repeticoes 3`, **já com o 7º critério** (perfis sintéticos com vetores de 384 dimensões; 1 em cada 5 sem vetor), em PostgreSQL 16 descartável (Docker, banco vazio). CSVs e a saída do terminal em `docs/benchmark/`.
 
-**Ambiente:** Python 3.12.4 · NumPy 2.5.4 · Django 6.1.1 · Windows 10 · Intel64 Family 6 Model 78.
+**Ambiente:** Python 3.14.7 · NumPy 2.5.4 · Django 6.1.1 · Windows 10 · Intel Core i3-6006U (2 núcleos físicos, 4 lógicos), com outros programas abertos (veja a observação da seção 12.4: os tempos variam entre execuções).
 
 ### Seção A — Cálculo em memória (sem banco), rep=3
 
 | N | Loop mediana (s) | NumPy mediana (s) | Speedup | MaxDiff |
 |---|---|---|---|---|
-| 100 | 0,004038 | 0,004936 | 0,82x | 0,00e+00 |
-| 1.000 | 0,042899 | 0,023889 | 1,80x | 0,00e+00 |
-| 10.000 | 0,437900 | 0,395129 | 1,11x | 0,00e+00 |
-| 50.000 | 2,650556 | 1,244552 | 2,13x | 0,00e+00 |
-| 100.000 | 5,472426 | 2,838790 | 1,93x | 0,00e+00 |
+| 100 | 0,003592 | 0,002548 | 1,41x | 0,00e+00 |
+| 1.000 | 0,038859 | 0,023621 | 1,65x | 0,00e+00 |
+| 10.000 | 0,458948 | 0,240550 | 1,91x | 0,00e+00 |
+| 50.000 | 1,178413 | 0,743974 | 1,58x | 0,00e+00 |
+| 100.000 | 1,923110 | 1,102609 | 1,74x | 0,00e+00 |
 
-Com o 7º critério o lote ficou cerca de 3x mais caro em memória que na versão de 6 critérios (100.000 pares: 2,8 s × 0,96 s), por causa da leitura dos vetores e da calibração por par; continua 2x mais rápido que o loop e com resultado idêntico.
+O lote continua com resultado idêntico ao loop (MaxDiff 0) e mais rápido em todos os tamanhos.
 
 ### Seção B — Ponta a ponta com banco, rep=3
 
-| N | Loop mediana (s) | NumPy mediana (s) | Speedup | Queries Loop | Queries NumPy |
+| N | Loop mediana (s) | NumPy mediana (s) | Speedup | Consultas Loop | Consultas NumPy |
 |---|---|---|---|---|---|
-| 100 | 1,4505 | 0,0649 | **22x** | 601 | 2 |
-| 1.000 | 16,9797 | 3,3485 (mín. 0,97) | 5x | >9.000 | 2 |
-| 5.000 | 116,0015 | 45,9531 | 2,5x | — | 2 (+ upsert em lotes) |
+| 100 | 1,2579 | 0,0437 | **29x** | 201 | 2 |
+| 1.000 | 10,8877 | 0,3158 | **34x** | 2.001 | 2 |
+| 5.000 | 62,8416 | 2,4153 | **26x** | 10.001 | 6 (1 consulta + upsert em 5 lotes de 1.000) |
 
-**Atenção ao ler a seção B:** o benchmark faz todas as repetições dentro de UMA transação que é desfeita no final (para não deixar rastro). Cada repetição apaga e regrava milhares de linhas de `matches_compatibilidade`; dentro da transação o PostgreSQL não pode limpar as versões mortas, e as repetições seguintes ficam cada vez mais lentas (o mínimo de N=1.000 é 0,97 s, a mediana 3,3 s). Sob o profiler, a primeira chamada com 2.000 perfis levou 1,5 s com só 2 consultas (nenhum N+1). A medição do recálculo em dados gravados, sem essa distorção, está na seção 11.8: **1.000 perfis em 0,40 s e 5.000 em 2,4 s**.
+N = 5.000 com 2 repetições (o aquecimento do loop passou de 30 s). As consultas são contadas com `connection.execute_wrapper` (exato, sem o limite de 9.000 do log do Django e sem BEGIN/COMMIT/SAVEPOINT).
 
-O ganho real em produção continua vindo do **padrão de acesso ao banco**: a versão loop faz N+1 queries, a versão em lote faz sempre 2.
+**Correção do benchmark (Parte 2 da Afinidade por IA):** antes, a seção B rodava todas as repetições dentro de UMA transação desfeita no final. Cada repetição apagava e regravava milhares de linhas de `matches_compatibilidade`, e dentro da transação o PostgreSQL não podia limpar as versões mortas: as repetições seguintes ficavam cada vez mais lentas, e N = 5.000 aparecia com **45,95 s** no lote. Agora cada repetição roda na **sua própria transação** (e a limpeza em outra), e a seção B só roda com `--banco-descartavel` num banco **vazio** (os dados sintéticos são gravados de verdade e apagados no final). Resultado: **2,42 s** para os mesmos 5.000 perfis.
+
+O ganho real em produção continua vindo do **padrão de acesso ao banco**: a versão loop faz N+1 consultas (2 por perfil: busca e grava), a versão em lote faz sempre 2 (mais 1 por lote de 1.000 linhas no upsert).
 
 ### Seção C — Sensibilidade dos pesos (20 bases × 1.000 outros, top-10 em comum com ±5 pp)
 
@@ -359,8 +362,9 @@ Mudar a afinidade por IA em 5 pontos troca em média 1 dos 10 primeiros da lista
 - **Score não é recalculado em cascata:** ao atualizar o perfil A, recalcula-se A ↔ todos os opostos, mas não os pares que não envolvem A.
 - **Região é binária:** qualquer diferença de grafia (maiúsculas, acentos, espaços extras) resulta em `sim_regiao = 0,0`. Normalização básica (`strip().lower()`) já é aplicada, mas variações como "sp" vs "São Paulo" não são tratadas.
 - **Campos categóricos sem valor reconhecido** usam o default definido em `config.py` (`flexivel`, `as_vezes`, `indiferente`) — o valor inválido não gera erro, mas pode distorcer silenciosamente o score.
-- **Benchmark rodado em máquina de desenvolvimento (Windows 10, sem Docker):** os números absolutos não refletem o ambiente de produção; os speedups relativos entre loop e lote são comparáveis.
-- **N=5.000 no benchmark com banco** teve as repetições reduzidas de 3 para 2 (warmup > 30s), e a seção B é distorcida pela transação única (veja a seção 9).
+- **Benchmark rodado em máquina de desenvolvimento (Windows 10, 2 núcleos físicos, com outros programas abertos):** os números absolutos não refletem o ambiente de produção e variam entre execuções; os speedups relativos entre loop e lote são comparáveis. O paralelismo (seção 12) é o mais afetado.
+- **N=5.000 no benchmark com banco** teve as repetições reduzidas de 3 para 2 (aquecimento do loop > 30 s).
+- **Gravar no banco domina o recálculo completo** (99,8% do tempo com 250.000 pares, seção 12.4 C): mais núcleos não aceleram o comando; a próxima otimização seria a gravação (`COPY`).
 - **Afinidade por IA mede assunto, não posição** ("durmo de madrugada" × "acordo às cinco" dá cosseno 0,78): por isso tem só 10% e a posição fica com os critérios estruturados (seção 11.4).
 - **Temas de frases muito curtas** são pouco confiáveis; a margem foi calibrada com bios completas (seção 11.5).
 - **Modelo ocupa ~560 MB de RAM** por processo do servidor (cada worker do gunicorn carrega o seu). Com `IA_HABILITADA=False` nada é carregado.
@@ -385,6 +389,8 @@ Evolução prevista no documento de abertura: "similaridade vetorial usando embe
 O fastembed 0.9.1 suporta exatamente o modelo pedido (`TextEmbedding.list_supported_models()`), então não foi preciso trocar. Alternativas avaliadas na mesma lista: `paraphrase-multilingual-mpnet-base-v2` (768 dimensões, 1 GB) e `multilingual-e5-large` (1024, 2,2 GB) — mais pesadas sem necessidade para bios de 500 caracteres.
 
 **Carga:** uma única vez por processo, sob demanda (primeiro uso), protegida por trava (`threading.RLock`): 8 threads pedindo o modelo ao mesmo tempo geram uma só carga (teste `test_carrega_uma_unica_vez_mesmo_com_varias_threads`). Com os arquivos já baixados, o modelo é aberto com `local_files_only=True` (nenhum acesso à rede). Se a carga falhar (sem internet na primeira vez, arquivo corrompido, falta de memória), o erro vai para o logger `ia.servico`, o serviço fica `indisponivel` e uma nova tentativa só acontece depois de 5 minutos (ou com `baixar_modelo_ia`). **Nenhuma rota devolve 500 por causa da IA.**
+
+**Aquecimento:** quando o servidor da API sobe (`runserver`, no processo que atende, ou `gunicorn`) com `IA_HABILITADA` e `IA_AQUECIMENTO` ligados, `IaConfig.ready()` inicia uma thread daemon que carrega o modelo e as frases dos temas em segundo plano: a subida não espera e o primeiro perfil salvo já encontra o modelo pronto. Nunca roda em testes, `migrate` ou outros comandos (`ia/aquecimento.py`). Durante a carga, `GET /api/admin/ia/status/` responde na hora com `situacao` = `carregando` (`situacao_texto` "Carregando"), e depois `disponivel` ou `indisponivel`: a carga usa uma trava própria e o status nunca espera por ela. No `gunicorn --preload`, cada worker zera o estado herdado do fork e aquece o seu próprio modelo.
 
 ### 11.2 Embeddings dos perfis (`ia_embeddingperfil`)
 
@@ -553,3 +559,181 @@ O custo do 7º critério no recálculo é de 0 a 20%: os vetores vêm na mesma c
 ### 11.10 Testes
 
 `ia/tests/` (87 testes) usa o **embedder falso determinístico** (`IA_EMBEDDER=falso`: cada radical de palavra vira um vetor pseudoaleatório fixo), sem baixar nem carregar modelo. Cobre: serviço (carga única com threads, falha de carga, nova tentativa, arquivo corrompido, IA desligada), calibração, pesos e renormalização, sem embedding, equivalência escalar × vetorial, signal (só regera quando o texto muda, bio curta, anúncio, modelo antigo, falhas), rotas (permissões, validações, N+1, 503, log sem textos, **nenhum 500 com o modelo fora do ar**), comandos e temas. Só `test_integracao_modelo.py` usa o modelo real e é **pulado** se ele não estiver baixado.
+
+---
+
+## 12. Paralelismo
+
+A seção 8 é **vetorização**: uma operação do NumPy percorre um array inteiro em código C, mas num único núcleo. Esta seção é **paralelismo**: vários núcleos trabalhando ao mesmo tempo nos processamentos em lote, o recálculo completo das compatibilidades e a geração de embeddings. O uso normal (salvar um perfil, que recalcula 1 × N pelo signal, e a Descoberta) **não mudou**.
+
+### 12.1 Recálculo completo em blocos
+
+`python manage.py recalcular_compatibilidades` (`matches/processamento.py`):
+
+1. **Carregar (sequencial, 2 consultas):** os atributos de todos os perfis buscando e oferecendo e os embeddings válidos são lidos **uma vez** e viram arrays NumPy (`algoritmo/matriz.py`, `Grupo`).
+2. **Calcular (paralelo):** a matriz buscando × oferecendo é dividida em **blocos de 256 × 256 pares** (`matriz.blocos`). Cada bloco é independente: as fórmulas da seção 4 são aplicadas por broadcasting (256 × 256 de uma vez) e os cossenos saem de um produto de matrizes (256 × 384 · 384 × 256). Os workers só fazem conta: **não acessam o banco nem carregam o modelo de IA**.
+3. **Gravar (sequencial):** o processo principal junta os blocos e grava tudo com `bulk_create` (upsert) em **uma transação**.
+
+Por que 256 × 256: medido nesta máquina, arrays acima de ~1 MB custam ~8× mais por elemento no Windows (cada operação pede memória nova ao sistema e paga as faltas de página), e até 512 KB o alocador reaproveita a memória; o bloco quadrado também deixa os embeddings do bloco (1,5 MB) no cache L3 (3 MB). Com blocos de 64 × 1024 o sequencial ficou ~1,6× mais lento.
+
+**Resultado idêntico com qualquer número de workers.** A divisão em blocos depende só do tamanho dos grupos, nunca do número de workers: os workers só escolhem **quem** calcula cada bloco, e cada bloco é sempre calculado do mesmo jeito. Além disso o núcleo reproduz bit a bit o cálculo do dia a dia (escalar e vetorial): as mesmas operações em float64 na mesma ordem e o `round(x, 4)` do Python reproduzido exatamente (`arredondar4`; o `np.round` erra em valores terminados em 5). O score volta como inteiro (score × 10.000, `uint16`). Os testes comparam a matriz inteira, com igualdade exata, nos modos sequencial, threads e processos com 1, 2 e 3 workers, e o comando contra os scores gravados pelo signal (`matches/test_paralelismo.py`); o benchmark confere de novo em cada repetição.
+
+### 12.2 Processos × threads (e o GIL)
+
+| | Threads (`ThreadPoolExecutor`) | Processos (`ProcessPoolExecutor`) |
+|---|---|---|
+| Memória | compartilhada: os workers leem os mesmos arrays | cada worker é outro interpretador; os arrays vão para **memória compartilhada** (`multiprocessing.shared_memory`) uma vez, e o initializer de cada worker só recebe os nomes e formatos e monta os arrays sobre ela, sem cópia. Os workers escrevem os scores direto numa matriz de saída também compartilhada. |
+| GIL | um só para todas as threads: o NumPy **solta o GIL** durante cada operação em array (o laço em C), então duas threads calculam ao mesmo tempo; o código Python entre as operações (montar o bloco, chamar a próxima operação) volta a disputar o GIL | cada processo tem o seu GIL: nenhuma disputa |
+| Custo de começar | quase zero (as threads nascem no mesmo processo) | **subir os workers**: no Windows (`spawn`) cada um é um interpretador novo que importa o NumPy de novo; no Linux/Docker usa-se `forkserver` com este módulo pré-carregado (os workers nascem de um processo limpo e já pronto; nada do Django é herdado) |
+| Falhas | erro numa thread → refaz no sequencial | não consegue criar processos, worker morto (`BrokenProcessPool`), sem memória → refaz no sequencial |
+
+Nos dois modos o BLAS (OpenBLAS, usado no produto de matrizes) fica limitado a **1 thread por worker** (`threadpoolctl`). Sem isso, 4 workers × 4 threads do OpenBLAS disputariam 4 núcleos lógicos, e o próprio "sequencial" usaria vários núcleos escondido, o que deixaria a comparação desonesta.
+
+Se o pool falhar, o cálculo é refeito no modo sequencial e o aviso vai para o log (`matches.processamento`) e para a saída do comando; nada é gravado pela metade, porque a gravação só acontece depois do cálculo inteiro.
+
+Opções: `--modo auto|processos|threads|sequencial` (padrão `auto`, veja 12.6) e `--workers N` (1 a 16; padrão `PROCESSAMENTO_WORKERS`, que por padrão é `min(4, núcleos)`).
+
+### 12.3 Lei de Amdahl
+
+Se uma fração **p** do trabalho pode ser dividida entre n workers e o resto (1 − p) não pode, o speedup máximo é
+
+```
+S(n) = 1 / ((1 − p) + p / n)            speedup  = tempo sequencial ÷ tempo paralelo
+                                        eficiência = speedup ÷ n
+```
+
+Mesmo com infinitos workers, S nunca passa de 1 / (1 − p). O benchmark estima p a partir dos speedups medidos com 2 e 4 workers (mínimos quadrados em 1/S = (1 − p) + p/n). Tudo o que não se divide entra em (1 − p): criar os processos, montar os blocos, juntar o resultado e, no comando real, **ler e gravar no banco**.
+
+### 12.4 Resultados medidos (`benchmark_paralelismo`)
+
+Medido em 20/11/2026 com `python manage.py benchmark_paralelismo --banco-descartavel` (23 min). Arquivos: [`benchmark/paralelismo.json`](./benchmark/paralelismo.json), [`paralelismo.csv`](./benchmark/paralelismo.csv) e o gráfico [`paralelismo.png`](./benchmark/paralelismo.png); o JSON é servido em `GET /api/admin/processamento/benchmark/` (administrador).
+
+**Ambiente:** Intel(R) Core(TM) i3-6006U CPU @ 2.00GHz (**2 núcleos físicos, 4 lógicos**), 16.384 MB de RAM (3.870 MB livres), Windows 10 (10.0.19045), Python 3.14.7, NumPy 2.5.4 (openblas 0.3.34.106.0 (4 threads); limitado a 1 thread por worker), threadpoolctl 3.8.0, fastembed 0.9.1, onnxruntime 1.32.0.
+
+> **Atenção: máquina ocupada.** A CPU já estava com **100% de uso no início** do benchmark e com **70% a 86% de uso médio** só com os programas abertos (VS Code, Chrome, Docker Desktop com o banco de desenvolvimento), medido antes e depois. Sobra cerca de 1 núcleo lógico livre: o ganho fica bem abaixo do teórico e os tempos variam muito entre repetições (veja 12.5). Para números limpos, rode o benchmark com a máquina ociosa; os arquivos e o gráfico são regravados.
+
+![Tempo × workers e speedup × workers](./benchmark/paralelismo.png)
+
+**A) Recálculo**: dados sintéticos em memória (metade buscando, metade oferecendo, 4 em cada 5 com embedding; N perfis → N²/4 pares), aquecimento e **mediana de 3 repetições**. "Idêntico": a matriz inteira de scores é igual à do sequencial em todas as repetições.
+
+| N perfis | Pares | Modo | Workers | Tempo (mediana) | Speedup | Eficiência | Idêntico |
+|---|---|---|---|---|---|---|---|
+| 1.000 | 250.000 | sequencial | 1 | 0,217 s | 1,00 | 1,00 | sim |
+| 1.000 | 250.000 | threads | 1 | 0,209 s | 1,04 | 1,04 | sim |
+| 1.000 | 250.000 | threads | 2 | 0,099 s | 2,20 | 1,10 | sim |
+| 1.000 | 250.000 | threads | 4 | 0,108 s | 2,00 | 0,50 | sim |
+| 1.000 | 250.000 | processos | 1 | 3,014 s | 0,07 | 0,07 | sim |
+| 1.000 | 250.000 | processos | 2 | 2,518 s | 0,09 | 0,04 | sim |
+| 1.000 | 250.000 | processos | 4 | 1,844 s | 0,12 | 0,03 | sim |
+| 2.000 | 1.000.000 | sequencial | 1 | 0,452 s | 1,00 | 1,00 | sim |
+| 2.000 | 1.000.000 | threads | 1 | 0,750 s | 0,60 | 0,60 | sim |
+| 2.000 | 1.000.000 | threads | 2 | 0,379 s | 1,19 | 0,60 | sim |
+| 2.000 | 1.000.000 | threads | 4 | 0,301 s | 1,50 | 0,38 | sim |
+| 2.000 | 1.000.000 | processos | 1 | 3,912 s | 0,12 | 0,12 | sim |
+| 2.000 | 1.000.000 | processos | 2 | 3,339 s | 0,14 | 0,07 | sim |
+| 2.000 | 1.000.000 | processos | 4 | 4,857 s | 0,09 | 0,02 | sim |
+| 5.000 | 6.250.000 | sequencial | 1 | 4,117 s | 1,00 | 1,00 | sim |
+| 5.000 | 6.250.000 | threads | 1 | 3,015 s | 1,37 | 1,37 | sim |
+| 5.000 | 6.250.000 | threads | 2 | 2,276 s | 1,81 | 0,91 | sim |
+| 5.000 | 6.250.000 | threads | 4 | 1,857 s | 2,22 | 0,55 | sim |
+| 5.000 | 6.250.000 | processos | 1 | 8,051 s | 0,51 | 0,51 | sim |
+| 5.000 | 6.250.000 | processos | 2 | 6,629 s | 0,62 | 0,31 | sim |
+| 5.000 | 6.250.000 | processos | 4 | 6,686 s | 0,62 | 0,15 | sim |
+| 10.000 | 25.000.000 | sequencial | 1 | 12,979 s | 1,00 | 1,00 | sim |
+| 10.000 | 25.000.000 | threads | 1 | 12,806 s | 1,01 | 1,01 | sim |
+| 10.000 | 25.000.000 | threads | 2 | 7,297 s | 1,78 | 0,89 | sim |
+| 10.000 | 25.000.000 | threads | 4 | 5,314 s | 2,44 | 0,61 | sim |
+| 10.000 | 25.000.000 | processos | 1 | 11,800 s | 1,10 | 1,10 | sim |
+| 10.000 | 25.000.000 | processos | 2 | 9,471 s | 1,37 | 0,69 | sim |
+| 10.000 | 25.000.000 | processos | 4 | 10,489 s | 1,24 | 0,31 | sim |
+| 20.000 | 100.000.000 | sequencial | 1 | 21,592 s | 1,00 | 1,00 | sim |
+| 20.000 | 100.000.000 | threads | 1 | 24,424 s | 0,88 | 0,88 | sim |
+| 20.000 | 100.000.000 | threads | 2 | 23,070 s | 0,94 | 0,47 | sim |
+| 20.000 | 100.000.000 | threads | 4 | 21,157 s | 1,02 | 0,26 | sim |
+| 20.000 | 100.000.000 | processos | 1 | 37,157 s | 0,58 | 0,58 | sim |
+| 20.000 | 100.000.000 | processos | 2 | 27,606 s | 0,78 | 0,39 | sim |
+| 20.000 | 100.000.000 | processos | 4 | 27,338 s | 0,79 | 0,20 | sim |
+
+**Fração paralelizável estimada (Lei de Amdahl, com 2 e 4 workers):**
+
+| N | Threads: p | Speedup máximo teórico | Processos: p | Speedup máximo teórico |
+|---|---|---|---|---|
+| 1.000 | 0,80 | 4,9 | 0,00 | 1,0 |
+| 2.000 | 0,41 | 1,7 | 0,00 | 1,0 |
+| 5.000 | 0,78 | 4,6 | 0,00 | 1,0 |
+| 10.000 | 0,81 | 5,4 | 0,34 | 1,5 |
+| 20.000 | 0,00 | 1,0 | 0,00 | 1,0 |
+
+p = 0 significa que o paralelo não ganhou do sequencial naquele tamanho: os custos fixos (subir os processos) ou a disputa pela CPU com os outros programas engoliram o ganho. Com 2 núcleos físicos o teto prático fica perto de 2 (os 4 núcleos lógicos são hyper-threading: dividem as mesmas unidades de cálculo).
+
+**B) Embeddings** (`gerar_embeddings`, modelo real, nada gravado; 1 worker = sessão ONNX normal, que já usa os núcleos internamente; 2 workers = paralelismo de dados do fastembed, `parallel=2`):
+
+| Bios | Workers | Tempo (mediana) | ms por bio | Speedup | Vetores idênticos |
+|---|---|---|---|---|---|
+| 50 | 1 | 2,69 s | 53,9 | 1,00 | sim |
+| 50 | 2 | 10,47 s | 209,5 | 0,26 | sim |
+| 400 | 1 | 19,90 s | 49,7 | 1,00 | sim |
+| 400 | 2 | 25,74 s | 64,4 | 0,77 | sim |
+
+Cada worker do fastembed é um processo novo que importa o fastembed e **carrega o modelo de novo** (~560 MB e alguns segundos), com uma sessão ONNX de 1 thread. Com 50 bios o custo fixo domina (10,5 s contra 2,7 s); com 400 bios ainda perde (0,77×). Pela tendência (~8 s de custo fixo e ~15 ms ganhos por bio) empataria perto de 500 a 600 bios nesta máquina. Por isso `gerar_embeddings` só usa workers com 400 textos pendentes ou mais.
+
+**C) Ponta a ponta no banco descartável** (PostgreSQL 16 em Docker; N = 1.000 → 250.000 pares gravados; 1 repetição):
+
+| Modo | Workers | Carregar | Calcular | Gravar | Total | Fração sequencial (banco) | Speedup total |
+|---|---|---|---|---|---|---|---|
+| sequencial | 1 | 0,07 s | 0,08 s | 39,95 s | 40,10 s | 0,998 | 1,00 |
+| threads | 2 | 0,08 s | 0,06 s | 41,57 s | 41,70 s | 0,999 | 0,96 |
+| processos | 2 | 0,06 s | 1,26 s | 45,60 s | 46,92 s | 0,973 | 0,85 |
+| processos | 4 | 0,09 s | 1,56 s | 46,57 s | 48,22 s | 0,968 | 0,83 |
+
+Esta é a Lei de Amdahl na prática: **gravar** os 250.000 pares leva ~40 s (montar 250 mil objetos do Django leva ~6,5 s, e o resto é o upsert em lotes de 1.000 no PostgreSQL do Docker), enquanto calcular leva 0,08 s. A parte sequencial é 99,8% do total, então nenhum número de workers muda o tempo do comando: S(∞) = 1 / 0,998 ≈ 1,002. Paralelizar o cálculo só faz diferença no comando quando o cálculo pesa; a próxima otimização seria a gravação (por exemplo, `COPY` do PostgreSQL), não mais núcleos.
+
+### 12.5 Repetição (variabilidade)
+
+N = 10.000 e 20.000 medidos de novo logo depois (mesma máquina e mesmos programas abertos; uso médio da CPU antes de começar: 86%):
+
+| N | Modo | Workers | 1ª medição | Repetição |
+|---|---|---|---|---|
+| 10.000 | sequencial | 1 | 13,0 s (speedup 1,00) | 14,1 s (speedup 1,00) |
+| 10.000 | threads | 1 | 12,8 s (speedup 1,01) | 6,6 s (speedup 2,14) |
+| 10.000 | threads | 2 | 7,3 s (speedup 1,78) | 4,3 s (speedup 3,25) |
+| 10.000 | threads | 4 | 5,3 s (speedup 2,44) | 4,9 s (speedup 2,85) |
+| 10.000 | processos | 1 | 11,8 s (speedup 1,10) | 10,6 s (speedup 1,34) |
+| 10.000 | processos | 2 | 9,5 s (speedup 1,37) | 9,0 s (speedup 1,56) |
+| 10.000 | processos | 4 | 10,5 s (speedup 1,24) | 10,7 s (speedup 1,32) |
+| 20.000 | sequencial | 1 | 21,6 s (speedup 1,00) | 22,1 s (speedup 1,00) |
+| 20.000 | threads | 1 | 24,4 s (speedup 0,88) | 23,4 s (speedup 0,95) |
+| 20.000 | threads | 2 | 23,1 s (speedup 0,94) | 25,2 s (speedup 0,88) |
+| 20.000 | threads | 4 | 21,2 s (speedup 1,02) | 19,2 s (speedup 1,16) |
+| 20.000 | processos | 1 | 37,2 s (speedup 0,58) | 40,8 s (speedup 0,54) |
+| 20.000 | processos | 2 | 27,6 s (speedup 0,78) | 26,9 s (speedup 0,82) |
+| 20.000 | processos | 4 | 27,3 s (speedup 0,79) | 24,9 s (speedup 0,89) |
+
+"Threads com 1 worker" faz exatamente o mesmo trabalho que o sequencial, num só núcleo, e mesmo assim saiu 2× mais rápido na repetição de N = 10.000. Isso é a carga dos outros programas mudando durante a medição, não paralelismo. Só os padrões que se repetem nas duas medições valem como conclusão (12.6).
+
+### 12.6 Conclusão
+
+- **Resultado sempre idêntico.** Em todos os tamanhos, modos e números de workers a matriz de scores foi exatamente a do sequencial (e a do cálculo do dia a dia). Isso não depende do ruído da máquina.
+- **Threads** não têm custo fixo e ganharam em todos os tamanhos até 10.000 perfis nas duas medições (melhor: 2,44× com 4 workers na 1ª medição e 3,25× com 2 workers na repetição, valor inflado pelo ruído). Com 20.000 perfis não ganharam em nenhuma das duas (1,02× e 1,16×). O NumPy solta o GIL durante as operações em array, mas o código Python entre elas volta a disputá-lo.
+- **Processos** pagam ~3 s para subir os workers no Windows (`spawn`: interpretador novo e import do NumPy; um worker vazio já custa ~1,5 s). Até 5.000 perfis (6,25 milhões de pares) **perdem** do sequencial (0,07× a 0,62×); só passaram do sequencial com 10.000 perfis (1,37× e 1,56×) e voltaram a perder com 20.000. No Linux/Docker, o `forkserver` com o módulo pré-carregado elimina quase todo esse custo: num teste de conferência dentro do contêiner, o segundo pool de 2 workers subiu e calculou um exemplo pequeno em 0,44 s.
+- **O banco manda no comando real.** De ponta a ponta, 99,8% do tempo é gravação; paralelizar o cálculo não muda o total (12.4 C).
+- **Embeddings em paralelo** não compensaram com 50 nem com 400 bios: cada worker recarrega o modelo, e a sessão normal do ONNX já usa os núcleos.
+- **Por isso o modo `auto`** do `recalcular_compatibilidades` usa **threads** a partir de 1 milhão de pares (N ≈ 2.000 perfis) e o sequencial abaixo disso. O modo processos fica disponível com `--modo processos`, para servidores Linux com mais núcleos.
+
+**Memória.** Os workers de processo não carregam o modelo de IA. Pico por worker: 99 a 120 MB com 10.000 perfis e 202 a 295 MB com 20.000 (os dados ficam em memória compartilhada, sem cópia, e a matriz de saída também). O processo principal chegou a 819 MB com 20.000 perfis: a matriz de 100 milhões de scores ocupa 200 MB em `uint16`, mais a cópia de referência que o benchmark guarda para conferir a igualdade. Nos embeddings, cada worker é um processo com o modelo (~560 MB): o padrão de 2 workers soma 3 processos com o modelo, e o máximo de 3 soma 4, o limite pedido para esta máquina (~4 GB livres). O comando reduz os workers se a memória livre não comportar (700 MB por worker + 1 GB de folga).
+
+### 12.7 Testes
+
+`matches/test_paralelismo.py` e `ia/tests/test_aquecimento_e_workers.py` cobrem:
+
+- arredondamento exato, inclusive empates e vizinhos a 1 ULP;
+- matriz × escalar × vetorial com igualdade exata;
+- **sequencial × threads × processos com 1, 2 e 3 workers idênticos**, com blocos pequenos para haver muitas tarefas por worker;
+- cálculo sem IA e com pesos personalizados;
+- o comando gravando os mesmos scores do signal em todos os modos, e o `auto` sem criar processos para poucos pares;
+- queda para o sequencial quando o pool não sobe, quando um worker morre (`BrokenProcessPool`) e quando uma thread falha;
+- opções inválidas;
+- o benchmark: JSON/CSV, igualdade, e banco descartável recusado quando há usuários, sem apagar nada;
+- a rota do benchmark: 200, 404 sem arquivo, 404 com arquivo corrompido, 401 e 403;
+- o aquecimento: detecção do servidor, nunca em testes ou `migrate`, thread daemon que não bloqueia, estado "carregando";
+- `gerar_embeddings --workers`: vetores idênticos, uma chamada só ao pool, limite de memória e poucos textos → sequencial.

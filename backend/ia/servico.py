@@ -54,10 +54,13 @@ class EmbedderFastembed:
         from fastembed import TextEmbedding  # import pesado (~4 s): só quando a IA é usada
         self._modelo = TextEmbedding(MODELO, cache_dir=pasta, local_files_only=apenas_local)
 
-    def embed(self, textos: list[str]) -> np.ndarray:
+    def embed(self, textos: list[str], workers: int = 1) -> np.ndarray:
         # batch_size=1: medido mais rápido em CPU (72 ms/texto contra 136 ms com 32), porque o lote
         # preenche todos os textos até o tamanho do mais longo. Veja docs/algoritmo-compatibilidade.md, 11.8.
-        return np.array(list(self._modelo.embed(textos, batch_size=1)), dtype=np.float32)
+        # workers > 1: paralelismo de dados do fastembed (`parallel`): cria `workers` processos, cada um
+        # carrega o modelo (~560 MB e alguns segundos) e recebe parte dos textos; a ordem é preservada.
+        paralelo = workers if workers > 1 else None
+        return np.array(list(self._modelo.embed(textos, batch_size=1, parallel=paralelo)), dtype=np.float32)
 
 
 _PALAVRAS_VAZIAS = {
@@ -81,7 +84,7 @@ class EmbedderFalso:
 
     nome = MODELO_FALSO
 
-    def embed(self, textos: list[str]) -> np.ndarray:
+    def embed(self, textos: list[str], workers: int = 1) -> np.ndarray:  # noqa: ARG002 — mesma assinatura do real
         return np.vstack([self._um(t) for t in textos]).astype(np.float32)
 
     @staticmethod
@@ -99,8 +102,19 @@ class EmbedderFalso:
 
 # ── Estado do processo (protegido pela trava) ──────────────────────────────────
 
+# _trava protege o dicionário de estado (seguro por pouco tempo: o status nunca espera a carga);
+# _trava_carga garante UMA carga por vez (quem chega durante a carga espera por ela e reaproveita o modelo).
 _trava = threading.RLock()
+_trava_carga = threading.Lock()
 _estado: dict = {}
+
+SITUACOES = {
+    'nao_carregado': 'Não carregado',
+    'carregando': 'Carregando',
+    'disponivel': 'Disponível',
+    'indisponivel': 'Indisponível',
+    'desabilitada': 'Desligada',
+}
 
 
 def reiniciar() -> None:
@@ -112,6 +126,19 @@ def reiniciar() -> None:
 
 
 reiniciar()
+
+
+def _depois_do_fork() -> None:
+    """
+    Processo filho de um fork (gunicorn --preload, por exemplo; chamado por ia/aquecimento.py): travas novas e
+    estado zerado. O modelo é recarregado sob demanda no filho: uma sessão ONNX não sobrevive ao fork e uma
+    trava pode ter ficado presa por uma thread que não existe no filho.
+    """
+    global _trava, _trava_carga
+    _trava = threading.RLock()
+    _trava_carga = threading.Lock()
+    reiniciar()
+
 
 
 def habilitada() -> bool:
@@ -145,17 +172,27 @@ def _criar_embedder(baixar: bool):
     return EmbedderFastembed(pasta_modelo(), apenas_local=(modelo_baixado() and not baixar))
 
 
+def _pronto():
+    if _estado['embedder'] is not None and _estado['embedder'].nome == nome_modelo():
+        return _estado['embedder']
+    return None
+
+
 def obter_embedder(forcar: bool = False, baixar: bool = False):
     """O embedder carregado, ou None (IA desligada ou indisponível). Nunca levanta exceção."""
     if not habilitada():
         return None
     with _trava:
-        if _estado['embedder'] is not None and _estado['embedder'].nome == nome_modelo():
-            return _estado['embedder']
-        if (_estado['situacao'] == 'indisponivel' and not forcar
-                and time.monotonic() - _estado['tentativa'] < NOVA_TENTATIVA_S):
-            return None
-        _estado['tentativa'] = time.monotonic()
+        if (pronto := _pronto()) is not None:
+            return pronto
+    with _trava_carga:
+        with _trava:
+            if (pronto := _pronto()) is not None:  # outra thread acabou de carregar
+                return pronto
+            if (_estado['situacao'] == 'indisponivel' and not forcar
+                    and time.monotonic() - _estado['tentativa'] < NOVA_TENTATIVA_S):
+                return None
+            _estado.update(situacao='carregando', tentativa=time.monotonic())
         inicio = time.perf_counter()
         try:
             embedder = _criar_embedder(baixar)
@@ -163,13 +200,24 @@ def obter_embedder(forcar: bool = False, baixar: bool = False):
         except Exception as erro:  # noqa: BLE001 — sem internet, arquivo corrompido, falta de memória: nunca vira 500
             logger.warning('Afinidade por IA indisponível: não foi possível carregar o modelo %s (%s: %s). '
                            'O score segue com os 6 critérios.', nome_modelo(), type(erro).__name__, erro)
-            _estado.update(embedder=None, situacao='indisponivel', erro=f'{type(erro).__name__}: {erro}'[:300], temas=None)
+            with _trava:
+                _estado.update(embedder=None, situacao='indisponivel', erro=f'{type(erro).__name__}: {erro}'[:300], temas=None)
             return None
         ms = (time.perf_counter() - inicio) * 1000
-        _estado.update(embedder=embedder, situacao='disponivel', erro='', tempo_carga_ms=round(ms, 1),
-                       carregado_em=time.time(), temas=None)
+        with _trava:
+            _estado.update(embedder=embedder, situacao='disponivel', erro='', tempo_carga_ms=round(ms, 1),
+                           carregado_em=time.time(), temas=None)
         logger.info('Modelo de IA %s carregado em %.0f ms.', embedder.nome, ms)
         return embedder
+
+
+def aquecer() -> None:
+    """Carrega o modelo e as frases dos temas (thread de aquecimento do servidor; nunca levanta exceção)."""
+    try:
+        if obter_embedder() is not None:
+            _matriz_temas()
+    except Exception:  # noqa: BLE001 — o aquecimento é só uma antecipação; o uso normal tenta de novo
+        logger.exception('Falha no aquecimento do modelo de IA.')
 
 
 def disponivel(carregar: bool = False) -> bool:
@@ -187,7 +235,7 @@ def disponivel(carregar: bool = False) -> bool:
         return True
     if situacao == 'indisponivel':
         return False
-    return modelo_baixado()
+    return modelo_baixado()  # não carregado ou carregando: pronto assim que a carga terminar
 
 
 def estado() -> dict:
@@ -195,6 +243,7 @@ def estado() -> dict:
         situacao = _estado['situacao'] if habilitada() else 'desabilitada'
         return {
             'situacao': situacao,
+            'situacao_texto': SITUACOES[situacao],
             'erro': _estado['erro'] or None,
             'tempo_carregamento_ms': _estado['tempo_carga_ms'],
             'carregado_em': _estado['carregado_em'],
@@ -210,15 +259,18 @@ def _normalizar(matriz: np.ndarray) -> np.ndarray:
     return m / normas
 
 
-def gerar_vetores(textos: list[str]) -> np.ndarray | None:
-    """Vetores normalizados (n × 384, float64) dos textos, ou None se a IA não estiver disponível."""
+def gerar_vetores(textos: list[str], workers: int = 1) -> np.ndarray | None:
+    """
+    Vetores normalizados (n × 384, float64) dos textos, ou None se a IA não estiver disponível.
+    workers > 1 só nos processamentos em lote (gerar_embeddings): o resultado é idêntico ao de workers=1.
+    """
     embedder = obter_embedder()
     if embedder is None or not textos:
         return None
     try:
-        brutos = embedder.embed(list(textos))
+        brutos = embedder.embed(list(textos), workers=workers)
     except Exception:
-        logger.exception('Falha ao gerar embeddings (%d texto(s)).', len(textos))
+        logger.exception('Falha ao gerar embeddings (%d texto(s), %d worker(s)).', len(textos), workers)
         return None
     if brutos.ndim != 2 or brutos.shape[1] != DIMENSOES:
         logger.error('Embedding com formato inesperado: %s.', brutos.shape)

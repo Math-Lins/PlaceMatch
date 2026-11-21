@@ -1,37 +1,36 @@
 ================================================================================
-  A) Cálculo em memória (sem banco)  —  rep=5
+  A) CÃ¡lculo em memÃ³ria (sem banco)  â€”  rep=3
 ================================================================================
         N   Loop med(s)   Loop min(s)   NumPy med(s)   NumPy min(s)   Speedup     MaxDiff
 --------------------------------------------------------------------------------
-      100      0.002553      0.002086       0.003876       0.001899     0.66x    0.00e+00
-    1,000      0.022388      0.020827       0.016405       0.014727     1.36x    0.00e+00
-   10,000      0.305483      0.083443       0.266742       0.249375     1.15x    0.00e+00
-   50,000      0.610897      0.560300       0.412539       0.382172     1.48x    0.00e+00
-  100,000      1.193900      1.045544       0.958178       0.834313     1.25x    0.00e+00
+      100      0.003592      0.003444       0.002548       0.002448     1.41x    0.00e+00
+    1,000      0.038859      0.037160       0.023621       0.023513     1.65x    0.00e+00
+   10,000      0.458948      0.392303       0.240550       0.231342     1.91x    0.00e+00
+   50,000      1.178413      1.174094       0.743974       0.628308     1.58x    0.00e+00
+  100,000      1.923110      1.754868       1.102609       0.968593     1.74x    0.00e+00
 
 ================================================================================
-  B) Ponta a ponta com banco  —  rep=5
+  B) Ponta a ponta com banco  â€”  rep=3
 ================================================================================
  N req   N real   Loop med(s)   Loop min(s)   NumPy med(s)   NumPy min(s)   Speedup   Qry Loop  Qry NumPy
 --------------------------------------------------------------------------------
-   100      100      0.927090      0.807200       0.027188       0.023577    34.10x        601          2
-C:\dev\projeto\PlaceMatch\backend\venv\Lib\site-packages\django\utils\connection.py:15: UserWarning: Limit for query logging exceeded, only the last 9000 queries will be returned.
-  return getattr(self._connections[self._alias], item)
- 1,000    1,000     11.506677      9.874515       0.253757       0.212910    45.35x          0          0
-  [aviso B N=5000] warmup=58.0s > 30.0s -> reps reduzidos de 5 para 2
- 5,000    5,000     73.799701     66.026058       1.216901       1.135152    60.65x          0          0 (reps=2)
+   100      100      1.257924      1.073435       0.043709       0.035573    28.78x        201          2
+ 1,000    1,000     10.887705      9.798430       0.315825       0.297092    34.47x       2001          2
+  [aviso B N=5000] warmup=68.0s > 30.0s -> reps reduzidos de 3 para 2
+ 5,000    5,000     62.841591     60.847698       2.415324       2.214622    26.02x      10001          6 (reps=2)
 
 ================================================================================
-  C) Sensibilidade dos pesos  (20 bases × 1.000 outros, top-10 overlap médio)
+  C) Sensibilidade dos pesos  (20 bases Ã— 1.000 outros, top-10 overlap mÃ©dio)
 ================================================================================
-    Critério  Peso atual    +5pp overlap    -5pp overlap
+    CritÃ©rio  Peso atual    +5pp overlap    -5pp overlap
 --------------------------------------------------------------------------------
-   orcamento        0.25         0.8800         0.8750
-      regiao        0.15         0.9700         0.8700
-      rotina        0.15         0.8750         0.8800
-     habitos        0.25         0.9050         0.9050
-     moradia        0.10         0.8550         0.8650
-       idade        0.10         0.8500         0.8100
+   orcamento        0.23         0.8750         0.8800
+      regiao        0.14         0.9800         0.8250
+      rotina        0.14         0.8800         0.8700
+     habitos        0.22         0.9050         0.8950
+     moradia        0.09         0.8350         0.8500
+       idade        0.08         0.8300         0.7850
+afinidade_ia        0.10         0.8950         0.8850
   -> C:\dev\projeto\PlaceMatch\docs\benchmark\benchmark_compatibilidade.csv
   -> C:\dev\projeto\PlaceMatch\docs\benchmark\sensibilidade_pesos.csv
   -> C:\dev\projeto\PlaceMatch\docs\benchmark\ambiente.txt

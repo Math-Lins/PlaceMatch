@@ -165,6 +165,7 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Moderação', 'description': 'Denúncias de usuários, análise pelo administrador e suspensão de contas.'},
         {'name': 'Painel administrativo', 'description': 'Dashboard, relatórios, lista de usuários e exportações CSV (somente administrador).'},
         {'name': 'Afinidade por IA', 'description': 'Modelo de linguagem local que compara as bios (7º critério do score): situação e teste (somente administrador).'},
+        {'name': 'Processamento em lote', 'description': 'Resultados do benchmark de paralelismo do recálculo e dos embeddings (somente administrador).'},
         {'name': 'Logs', 'description': 'Histórico de operações do sistema (somente administrador).'},
     ],
     'SERVERS': [{'url': 'http://localhost:8000', 'description': 'Desenvolvimento local'}],
@@ -251,3 +252,14 @@ IA_HABILITADA = os.getenv('IA_HABILITADA', 'True').strip().lower() in ('true', '
 IA_MODELO_DIR = os.getenv('IA_MODELO_DIR', '') or str(BASE_DIR / '.modelos')
 # Implementação dos embeddings: 'fastembed' (modelo real) ou 'falso' (determinístico, só para testes).
 IA_EMBEDDER = os.getenv('IA_EMBEDDER', 'fastembed')
+# Carrega o modelo em segundo plano quando o servidor da API sobe (runserver/gunicorn), para o primeiro
+# perfil salvo não esperar a carga. Nunca roda em testes, migrate ou outros comandos.
+IA_AQUECIMENTO = os.getenv('IA_AQUECIMENTO', 'True').strip().lower() in ('true', '1', 'sim', 'yes')
+
+# ─── Processamento em lote (recalcular_compatibilidades, benchmark_paralelismo) ──
+
+# Workers do recálculo completo em paralelo. Vazio/inválido = min(4, núcleos) (matches/processamento.py).
+PROCESSAMENTO_WORKERS = os.getenv('PROCESSAMENTO_WORKERS', '') or None
+# Resultado do benchmark_paralelismo, servido em GET /api/admin/processamento/benchmark/ (404 se não existir).
+PROCESSAMENTO_BENCHMARK_ARQUIVO = os.getenv('PROCESSAMENTO_BENCHMARK_ARQUIVO', '') or str(
+    BASE_DIR.parent / 'docs' / 'benchmark' / 'paralelismo.json')

@@ -88,7 +88,7 @@ class CoberturaDasRotasTest(APITestCase):
     def test_grupos_esperados(self):
         nomes = [t['name'] for t in _schema()['tags']]
         self.assertEqual(nomes, ['Autenticação', 'Perfis', 'Descoberta e Matches', 'Chat', 'Moderação',
-                                 'Painel administrativo', 'Afinidade por IA', 'Logs'])
+                                 'Painel administrativo', 'Afinidade por IA', 'Processamento em lote', 'Logs'])
 
     def test_rotas_publicas_nao_pedem_token(self):
         paths = _schema()['paths']

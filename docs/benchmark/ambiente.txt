@@ -1,7 +1,7 @@
-Data/hora    : 2026-11-20T11:51:45.531098
-Python       : 3.12.4 (tags/v3.12.4:8e8a4ba, Jun  6 2024, 19:30:16) [MSC v.1940 64 bit (AMD64)]
+Data/hora    : 2026-11-20T21:11:13.455748
+Python       : 3.14.7 (tags/v3.14.7:823f032, Aug  5 2026, 10:51:32) [MSC v.1944 64 bit (AMD64)]
 NumPy        : 2.5.4
 Django       : 6.1.1
 Sistema      : Windows 10
 CPU          : Intel64 Family 6 Model 78 Stepping 3, GenuineIntel
-Banco        : django.db.backends.postgresql  db=pm_bench
+Banco        : django.db.backends.postgresql  db=bench

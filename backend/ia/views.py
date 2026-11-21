@@ -42,6 +42,7 @@ class IAStatusView(APIView):
             'habilitada': servico.habilitada(),
             'disponivel': servico.disponivel(),
             'situacao': est['situacao'],
+            'situacao_texto': est['situacao_texto'],
             'erro': est['erro'],
             'modelo': modelo,
             'dimensoes': servico.DIMENSOES,

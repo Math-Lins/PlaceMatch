@@ -97,7 +97,7 @@ class CompatibilidadeDetalheTest(BaseIA):
         self.assertAlmostEqual(sum(c['contribuicao'] for c in d['criterios']), d['score'], places=3)
         self.assertAlmostEqual(sum(c['peso_efetivo'] for c in d['criterios']), 1.0, places=3)
         ia = d['criterios'][-1]
-        self.assertEqual((ia['nome'], ia['peso'], ia['peso_efetivo'], ia['considerado']), ('Afinidade de perfil (IA)', 0.1, 0.1, True))
+        self.assertEqual((ia['nome'], ia['peso'], ia['peso_efetivo'], ia['considerado']), ('Afinidade de interesses (IA)', 0.1, 0.1, True))
         self.assertEqual(ia['valor'], d['afinidade_ia'])
         self.assertEqual(d['criterios'][1]['valor'], 0.0)  # regiões diferentes
         self.assertIn('culinaria', [t['id'] for t in d['temas_em_comum']])

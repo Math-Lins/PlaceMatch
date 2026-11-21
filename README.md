@@ -26,6 +26,7 @@ Encontrar um colega de apartamento hoje é um processo manual e pouco confiável
 | **Chat** | Conversa entre as duas pessoas de um match (até 1000 caracteres), não lidas, busca e atualização automática. |
 | **Moderação** | Denúncias (spam, ofensivo, perfil falso, outro); o administrador resolve ou descarta e pode suspender/reativar contas. Conta suspensa não entra e some da descoberta, dos matches e do chat. |
 | **Painel administrativo** | Dashboard (KPIs e séries), 5 relatórios com filtros, lista de usuários e exportação em CSV. |
+| **Processamento em lote em paralelo** | O recálculo completo das compatibilidades divide a matriz de pares em blocos e usa vários núcleos (processos ou threads); `gerar_embeddings --workers` usa o paralelismo de dados do fastembed. Resultado idêntico ao sequencial, benchmark com speedup, eficiência e Lei de Amdahl. Veja [Processamento em paralelo](#processamento-em-paralelo). |
 | **Logs** | Registro automático de 18 tipos de operação, com listagem filtrada e exportação. Senhas, textos de mensagens e textos testados na IA nunca são gravados. |
 
 Perfis de acesso: `buscando_vaga`, `oferecendo_vaga` (cadastro pela tela "Criar conta") e `administrador` (somente pelo comando `criar_admin`; não participa de descoberta, curtidas nem chat).
@@ -87,6 +88,9 @@ cd ..
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` | SMTP para enviar o e-mail de recuperação. Sem `EMAIL_HOST`, o e-mail é impresso no console do servidor. | (vazio) / `587` / — / — / `True` / `PlaceMatch <nao-responda@placematch.local>` |
 | `IA_HABILITADA` | Liga o 7º critério do score (Afinidade por IA). `False` = só os 6 critérios, com os pesos renormalizados. | `True` |
 | `IA_MODELO_DIR` | Pasta do modelo de IA (baixado por `baixar_modelo_ia`). Vazio = `backend/.modelos/` (fora do git). | (vazio) |
+| `IA_AQUECIMENTO` | Carrega o modelo em segundo plano quando o servidor (`runserver`/`gunicorn`) sobe, sem atrasar a subida; o status da IA mostra "Carregando" → "Disponível". Nunca roda em testes, `migrate` ou outros comandos. `False` = carrega no primeiro uso. | `True` |
+| `PROCESSAMENTO_WORKERS` | Workers do `recalcular_compatibilidades` em paralelo (modos processos/threads). Vazio = `min(4, núcleos)`. Os workers não carregam o modelo de IA. | (vazio) |
+| `PROCESSAMENTO_BENCHMARK_ARQUIVO` | Arquivo lido por `GET /api/admin/processamento/benchmark/`. Vazio = `docs/benchmark/paralelismo.json`. | (vazio) |
 | `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SECURE_PROXY_SSL_HEADER`, `CORS_ALLOWED_ORIGINS` | Só para produção (veja "Implantação em produção"). | desligados |
 
 `frontend/.env`: `VITE_API_URL`, a URL da API. Sem a variável, o frontend usa `http://127.0.0.1:8000` (o CORS do backend libera `localhost:5173` e `127.0.0.1:5173`).
@@ -271,6 +275,23 @@ python manage.py verificar_banco       # avisa "perfis com bio suficiente sem em
 ```
 
 Rotas: `afinidade_ia` e `temas_em_comum` na Descoberta e no detalhe do perfil; `GET /api/compatibilidade/{perfil_id}/` (detalhamento dos 7 critérios); `GET /api/admin/ia/status/` e `POST /api/admin/ia/testar/` (administrador). Nos testes automatizados, um embedder falso e determinístico substitui o modelo (`IA_EMBEDDER=falso` em `placematch/test_settings.py`); só um teste usa o modelo real e é pulado se ele não estiver baixado.
+
+## Processamento em paralelo
+
+Os processamentos **em lote** usam vários núcleos; o uso normal (salvar perfil, Descoberta) não muda. Explicação (blocos, processos × threads, GIL, Lei de Amdahl) e resultados: [`docs/algoritmo-compatibilidade.md`, seção 12](./docs/algoritmo-compatibilidade.md#12-paralelismo).
+
+- **Recálculo das compatibilidades**: carrega todos os perfis e embeddings uma vez em arrays NumPy, divide a matriz de pares em blocos de 256 × 256 e distribui entre workers (processos ou threads), que só fazem conta; o processo principal grava tudo em uma transação. Resultado **idêntico** ao sequencial com qualquer número de workers (testado). Se o pool falhar, refaz no sequencial com aviso no log.
+- **Embeddings**: `gerar_embeddings --workers N` (padrão 2, máximo 3) usa o paralelismo de dados do fastembed. Cada worker carrega o modelo (~560 MB): com o processo principal, no máximo 4 processos com o modelo. Só é usado com 400+ textos pendentes e se houver memória livre.
+
+```powershell
+python manage.py recalcular_compatibilidades                          # --modo auto (padrão): threads a partir de 1 milhão de pares, senão sequencial
+python manage.py recalcular_compatibilidades --modo processos --workers 2
+python manage.py gerar_embeddings --workers 2
+python manage.py benchmark_paralelismo                                # dados sintéticos em memória: não grava no banco
+python manage.py benchmark_paralelismo --banco-descartavel            # + ponta a ponta (exige banco VAZIO)
+```
+
+O benchmark grava `docs/benchmark/paralelismo.json` (servido em `GET /api/admin/processamento/benchmark/`, administrador), `paralelismo.csv` e `paralelismo.png` (tempo × workers e speedup × workers). O gráfico precisa do `matplotlib` (`requirements-dev.txt`).
 
 ## Recuperação de senha
 

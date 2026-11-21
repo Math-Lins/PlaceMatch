@@ -40,7 +40,7 @@ NOMES_CRITERIOS: dict[str, str] = {
     'habitos':      'Hábitos de convivência',
     'moradia':      'Estilo de moradia',
     'idade':        'Faixa etária',
-    'afinidade_ia': 'Afinidade de perfil (IA)',
+    'afinidade_ia': 'Afinidade de interesses (IA)',
 }
 
 # ---------------------------------------------------------------------------

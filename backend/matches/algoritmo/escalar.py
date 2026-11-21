@@ -79,7 +79,7 @@ def detalhar_score(perfil_a, perfil_b, pesos=None) -> dict:
     diff_idade = abs(perfil_a.idade - perfil_b.idade)
     sim_idade  = max(0.0, 1.0 - diff_idade / DIV_IDADE)
 
-    # -- Afinidade de perfil (IA) ---------------------------------------------
+    # -- Afinidade de interesses (IA) ---------------------------------------------
     cos = cosseno(vetor_do_perfil(perfil_a), vetor_do_perfil(perfil_b))
     sim_ia = calibrar(cos)
 

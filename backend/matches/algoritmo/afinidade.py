@@ -1,5 +1,5 @@
 """
-7º critério — Afinidade de perfil (IA) — e a combinação final dos critérios.
+7º critério — Afinidade de interesses (IA) — e a combinação final dos critérios.
 
 Usado por escalar.py e vetorial.py (as duas implementações chamam as MESMAS funções de calibração e de
 combinação, então o resultado só pode divergir no produto escalar, que é arredondado em

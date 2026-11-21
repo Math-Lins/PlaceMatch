@@ -9,7 +9,9 @@ Uso (API em http://127.0.0.1:8001, administrador já criado com `criar_admin`):
 
 Afinidade por IA: a API principal precisa do modelo baixado (`baixar_modelo_ia`). Para capturar o 503 de
 POST /api/admin/ia/testar/, suba uma SEGUNDA API no MESMO banco com IA_HABILITADA=False e informe-a em
-BASE_SEM_IA (ex.: http://127.0.0.1:8002); sem ela, esse exemplo não é gerado.
+BASE_SEM_IA (ex.: http://127.0.0.1:8002); sem ela, esse exemplo não é gerado. O 404 de
+GET /api/admin/processamento/benchmark/ usa BASE_SEM_BENCHMARK (padrão: BASE_SEM_IA), uma API com
+PROCESSAMENTO_BENCHMARK_ARQUIVO apontando para um arquivo que não existe.
 
 Segredos: tokens saem como <TOKEN>/<REFRESH> e senhas como <SENHA>.
 """
@@ -25,6 +27,8 @@ import urllib.request
 
 BASE = (sys.argv[2] if len(sys.argv) > 2 else 'http://127.0.0.1:8001').rstrip('/')
 BASE_SEM_IA = os.environ.get('BASE_SEM_IA', '').rstrip('/')
+# API no mesmo banco com PROCESSAMENTO_BENCHMARK_ARQUIVO apontando para um arquivo inexistente (exemplo do 404).
+BASE_SEM_BENCHMARK = os.environ.get('BASE_SEM_BENCHMARK', '').rstrip('/') or BASE_SEM_IA
 SAIDA = sys.argv[1] if len(sys.argv) > 1 else 'exemplos_api.json'
 SENHA = 'SenhaExemplo123'  # só existe no banco descartável; nos exemplos aparece como <SENHA>
 ADMIN_EMAIL = os.environ['ADMIN_EMAIL']
@@ -308,6 +312,14 @@ def main():
         chamar('ia_testar_indisponivel', 'POST', '/api/admin/ia/testar/',
                {'texto_a': 'Adoro cozinhar para os amigos.', 'texto_b': 'Faço jantares em casa.'}, token=admin, papel='admin',
                nota='Servidor com IA_HABILITADA=False (o mesmo vale para o modelo indisponível).', base=BASE_SEM_IA)
+
+    # ── Processamento em lote (lê docs/benchmark/paralelismo.json do servidor; 404 se não existir) ──
+    chamar('processamento_benchmark', 'GET', '/api/admin/processamento/benchmark/', token=admin, papel='admin',
+           nota='Resultado de python manage.py benchmark_paralelismo (listas abreviadas).')
+    chamar('processamento_benchmark_comum', 'GET', '/api/admin/processamento/benchmark/', token=ana, papel='comum')
+    if BASE_SEM_BENCHMARK:
+        chamar('processamento_benchmark_sem_arquivo', 'GET', '/api/admin/processamento/benchmark/', token=admin, papel='admin',
+               nota='Servidor sem o arquivo do benchmark.', base=BASE_SEM_BENCHMARK)
 
     # ── Painel e logs ──
     chamar('dashboard', 'GET', '/api/admin/dashboard/', token=admin, papel='admin')

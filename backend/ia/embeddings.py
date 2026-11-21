@@ -37,16 +37,34 @@ def atualizar_embedding_perfil(perfil, forcar: bool = False) -> str:
         return ERRO
 
 
-def atualizar_lote(perfis, forcar: bool = False) -> list[str]:
-    """Mesma regra, com os textos de vários perfis passando juntos pelo modelo (comando gerar_embeddings)."""
+def atualizar_lote(perfis, forcar: bool = False, workers: int = 1) -> list[str]:
+    """
+    Mesma regra, com os textos de vários perfis passando juntos pelo modelo (comando gerar_embeddings).
+    workers > 1: os textos pendentes são divididos entre `workers` processos do fastembed (resultado idêntico).
+    """
     try:
-        return _atualizar_lote(list(perfis), forcar)
+        return _atualizar_lote(list(perfis), forcar, workers)
     except Exception:
         logger.exception('Falha ao atualizar embeddings em lote.')
         return [ERRO] * len(perfis)
 
 
-def _atualizar_lote(perfis: list, forcar: bool) -> list[str]:
+def contar_pendentes(perfis, forcar: bool = False) -> int:
+    """Quantos perfis precisariam passar pelo modelo (texto suficiente e novo/alterado), sem gerar nada."""
+    if not servico.habilitada():
+        return 0
+    atuais = {pid: (h, m) for pid, h, m in EmbeddingPerfil.objects.filter(perfil_id__in=[p.pk for p in perfis])
+              .values_list('perfil_id', 'hash_texto', 'modelo')}
+    modelo = servico.nome_modelo()
+    total = 0
+    for p in perfis:
+        texto = servico.texto_do_perfil(p)
+        if servico.texto_suficiente(texto) and (forcar or atuais.get(p.pk) != (servico.hash_texto(texto), modelo)):
+            total += 1
+    return total
+
+
+def _atualizar_lote(perfis: list, forcar: bool, workers: int = 1) -> list[str]:
     if not servico.habilitada():
         return [DESABILITADA] * len(perfis)
     resultados: list[str | None] = [None] * len(perfis)
@@ -76,7 +94,7 @@ def _atualizar_lote(perfis: list, forcar: bool) -> list[str]:
         return resultados
 
     inicio = time.perf_counter()
-    vetores = servico.gerar_vetores([t for _, _, t, _, _ in pendentes])
+    vetores = servico.gerar_vetores([t for _, _, t, _, _ in pendentes], workers=workers)
     temas = servico.temas_de_vetores(vetores) if vetores is not None else None
     if vetores is None or temas is None:
         # IA fora do ar: um vetor de texto ANTIGO não representa mais a bio → é apagado.

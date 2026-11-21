@@ -45,3 +45,5 @@ tqdm==4.70.1
 urllib3==2.8.0
 colorama==0.4.6; sys_platform == "win32"
 win32_setctime==1.2.1; sys_platform == "win32"
+# Processamento em lote em paralelo: limita o BLAS a 1 thread por worker (recalcular_compatibilidades)
+threadpoolctl==3.8.0

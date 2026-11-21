@@ -171,8 +171,11 @@ CompatibilidadeResposta = _classe('CompatibilidadeDetalhe', {
 _TemaContagem = _classe('TemaContagem', {'id': s.CharField(), 'nome': s.CharField(), 'perfis': s.IntegerField(help_text='Perfis com o tema.')})
 IAStatusResposta = _classe('IAStatus', {
     'habilitada': s.BooleanField(help_text='IA_HABILITADA.'), 'disponivel': s.BooleanField(),
-    'situacao': s.ChoiceField(choices=['nao_carregado', 'disponivel', 'indisponivel', 'desabilitada'],
-                              help_text='Estado do modelo neste processo do servidor.'),
+    'situacao': s.ChoiceField(choices=['nao_carregado', 'carregando', 'disponivel', 'indisponivel', 'desabilitada'],
+                              help_text='Estado do modelo neste processo do servidor. Com o aquecimento ligado (IA_AQUECIMENTO), '
+                                        'o servidor começa a carregar o modelo ao subir: `carregando` → `disponivel` (ou `indisponivel`).'),
+    'situacao_texto': s.CharField(help_text='O mesmo estado para exibição: "Não carregado", "Carregando", "Disponível", '
+                                            '"Indisponível" ou "Desligada".'),
     'erro': s.CharField(allow_null=True, help_text='Última falha ao carregar o modelo.'),
     'modelo': s.CharField(), 'dimensoes': s.IntegerField(), 'modelo_baixado': s.BooleanField(),
     'tempo_carregamento_ms': s.FloatField(allow_null=True),
@@ -187,6 +190,49 @@ IATestarResposta = _classe('IATestarResposta', {
     'temas_a': TemaSerializer(many=True), 'temas_b': TemaSerializer(many=True), 'temas_em_comum': TemaSerializer(many=True),
     'tempo_ms': s.FloatField(help_text='Tempo de processamento (os dois embeddings e os temas).'),
     'modelo': s.CharField(),
+})
+
+_LinhaRecalculo = _classe('BenchmarkRecalculoLinha', {
+    'N': s.IntegerField(help_text='Perfis (metade buscando, metade oferecendo).'), 'buscando': s.IntegerField(),
+    'oferecendo': s.IntegerField(), 'pares': s.IntegerField(help_text='buscando × oferecendo.'),
+    'modo': s.ChoiceField(choices=['sequencial', 'threads', 'processos']), 'workers': s.IntegerField(),
+    'tempo_mediana_s': s.FloatField(), 'tempo_min_s': s.FloatField(), 'tempos_s': s.ListField(child=s.FloatField()),
+    'ns_por_par': s.FloatField(), 'speedup': s.FloatField(help_text='tempo sequencial ÷ tempo desta configuração.'),
+    'eficiencia': s.FloatField(help_text='speedup ÷ workers.'),
+    'identico_ao_sequencial': s.BooleanField(help_text='Matriz de scores idêntica à do sequencial (conferida a cada repetição).'),
+    'hash_resultado': s.CharField(), 'memoria_principal_pico_mb': s.FloatField(allow_null=True),
+    'memoria_por_worker_mb': s.FloatField(allow_null=True, help_text='Pico de um worker (só no modo processos).'),
+    'aviso': s.CharField(allow_null=True, help_text='Preenchido quando o pool falhou e o cálculo caiu para o sequencial.'),
+})
+_LinhaAmdahl = _classe('BenchmarkAmdahl', {
+    'N': s.IntegerField(), 'modo': s.CharField(),
+    'fracao_paralelizavel': s.FloatField(help_text='p da Lei de Amdahl, S(n) = 1 / ((1 - p) + p / n), ajustado com 2 e 4 workers.'),
+    'speedup_maximo_teorico': s.FloatField(allow_null=True, help_text='1 / (1 - p).'),
+    'pontos': s.ListField(child=s.DictField()),
+})
+_LinhaEmbeddings = _classe('BenchmarkEmbeddings', {
+    'bios': s.IntegerField(), 'workers': s.IntegerField(), 'tempo_mediana_s': s.FloatField(),
+    'tempos_s': s.ListField(child=s.FloatField()), 'ms_por_bio': s.FloatField(), 'speedup': s.FloatField(),
+    'eficiencia': s.FloatField(), 'identico_ao_sequencial': s.BooleanField(),
+})
+_LinhaPontaAPonta = _classe('BenchmarkPontaAPonta', {
+    'N': s.IntegerField(), 'pares': s.IntegerField(), 'modo': s.CharField(), 'workers': s.IntegerField(),
+    'tempo_carregar_s': s.FloatField(), 'tempo_calcular_s': s.FloatField(), 'tempo_gravar_s': s.FloatField(),
+    'tempo_total_s': s.FloatField(),
+    'fracao_sequencial_banco': s.FloatField(help_text='(carregar + gravar) ÷ total: a parte que não paraleliza.'),
+    'speedup_total': s.FloatField(),
+})
+BenchmarkParalelismoResposta = _classe('BenchmarkParalelismo', {
+    'gerado_em': s.DateTimeField(), 'duracao_total_s': s.FloatField(),
+    'ambiente': s.DictField(help_text='CPU, núcleos físicos e lógicos, RAM total e livre, carga da CPU no início, sistema e versões.'),
+    'parametros': s.DictField(help_text='Tamanhos, workers, repetições e tamanho do bloco.'),
+    'recalculo': _LinhaRecalculo(many=True, help_text='N × modo × workers (dados sintéticos em memória).'),
+    'tamanhos_pulados': s.ListField(child=s.CharField(), help_text='Tamanhos que não couberam na memória livre.'),
+    'amdahl': _LinhaAmdahl(many=True),
+    'ponto_de_equilibrio': s.DictField(help_text='Por modo: menor N medido a partir do qual o paralelo supera o sequencial.'),
+    'embeddings': _LinhaEmbeddings(many=True, help_text='gerar_embeddings com 1 e 2 workers (vazio sem o modelo).'),
+    'ponta_a_ponta': _LinhaPontaAPonta(many=True, help_text='Carregar + calcular + gravar no banco descartável (vazio se não medido).'),
+    'observacoes': s.ListField(child=s.CharField(), help_text='Conclusões calculadas a partir dos números.'),
 })
 
 
@@ -311,7 +357,7 @@ OPERACOES = {
         descricao=('Cria o perfil do usuário logado (um por usuário). Quem oferece vaga pode enviar também os campos do anúncio '
                    '(`titulo_anuncio`, `descricao_imovel`, `fotos_imovel`, `foto_perfil_url`). Ao salvar, as compatibilidades com os perfis '
                    'do tipo oposto são recalculadas. Com a bio (+ anúncio) de 20 letras ou mais, o modelo de IA local gera o embedding '
-                   'usado no critério "Afinidade de perfil (IA)"; o texto não sai do servidor.'),
+                   'usado no critério "Afinidade de interesses (IA)"; o texto não sai do servidor.'),
         request=PerfilSerializer, req_ex=[('perfil_criar', 'Perfil de quem procura vaga'), ('perfil_criar_anuncio', 'Perfil com anúncio (oferecendo vaga)')],
         ok=(201, PerfilSerializer, 'perfil_criar', 'Perfil criado.', [('perfil_criar_anuncio', 'Perfil com anúncio')]),
         erros=[(400, 'perfil_criar_invalido', 'Campos inválidos'), (400, 'perfil_criar_duplicado', 'Usuário já tem perfil'),
@@ -579,6 +625,19 @@ OPERACOES = {
         ok=(200, IATestarResposta, 'ia_testar_ok', 'Resultado da comparação.', [('ia_testar_opostos', 'Festas × silêncio')]),
         erros=[(400, 'ia_testar_invalido', 'Texto vazio ou com mais de 1000 caracteres'), (403, 'ia_testar_comum', 'Usuário comum'),
                (503, 'ia_testar_indisponivel', 'IA desligada ou modelo indisponível')],
+    ),
+    # ───────── Processamento em lote ─────────
+    'processamento_benchmark': dict(
+        metodo='GET', rota='/api/admin/processamento/benchmark/', tag='Processamento em lote', quem=ADMIN,
+        resumo='Resultado do benchmark de paralelismo',
+        descricao=('Conteúdo de `docs/benchmark/paralelismo.json`, gravado por `python manage.py benchmark_paralelismo`: '
+                   'tempo, speedup e eficiência do recálculo das compatibilidades por N × modo (sequencial, threads, processos) × '
+                   'workers, a fração paralelizável estimada pela Lei de Amdahl, o ponto a partir do qual o paralelo compensa, '
+                   'os embeddings com 1 e 2 workers e o ambiente (CPU, núcleos, RAM, versões). Só lê o arquivo; não executa nada. '
+                   'Sem o arquivo → 404.'),
+        ok=(200, BenchmarkParalelismoResposta, 'processamento_benchmark', 'Resultado do benchmark (listas abreviadas no exemplo).', []),
+        erros=[(403, 'processamento_benchmark_comum', 'Usuário comum'),
+               (404, 'processamento_benchmark_sem_arquivo', 'Benchmark ainda não executado')],
     ),
     # ───────── Logs ─────────
     'logs_listar': dict(

@@ -4,7 +4,7 @@
 
 ## Visão geral
 
-API REST em JSON (Django REST Framework), versão **1.0.0-rc2**, com 34 operações em 29 rotas, organizadas em 7 grupos: Autenticação, Perfis, Descoberta e Matches, Chat, Moderação, Painel administrativo e Logs.
+API REST em JSON (Django REST Framework), versão **1.0.0-rc2**, com 35 operações em 30 rotas, organizadas em 7 grupos: Autenticação, Perfis, Descoberta e Matches, Chat, Moderação, Painel administrativo e Logs.
 
 | Recurso | Onde |
 |---|---|
@@ -450,7 +450,7 @@ HTTP 200
 **Quem pode:** Usuário comum (`buscando_vaga` ou `oferecendo_vaga`); o administrador recebe 403.  
 **Operação (OpenAPI):** `perfis_criar`
 
-Cria o perfil do usuário logado (um por usuário). Quem oferece vaga pode enviar também os campos do anúncio (`titulo_anuncio`, `descricao_imovel`, `fotos_imovel`, `foto_perfil_url`). Ao salvar, as compatibilidades com os perfis do tipo oposto são recalculadas. Com a bio (+ anúncio) de 20 letras ou mais, o modelo de IA local gera o embedding usado no critério "Afinidade de perfil (IA)"; o texto não sai do servidor.
+Cria o perfil do usuário logado (um por usuário). Quem oferece vaga pode enviar também os campos do anúncio (`titulo_anuncio`, `descricao_imovel`, `fotos_imovel`, `foto_perfil_url`). Ao salvar, as compatibilidades com os perfis do tipo oposto são recalculadas. Com a bio (+ anúncio) de 20 letras ou mais, o modelo de IA local gera o embedding usado no critério "Afinidade de interesses (IA)"; o texto não sai do servidor.
 
 **Corpo de entrada** (JSON)
 

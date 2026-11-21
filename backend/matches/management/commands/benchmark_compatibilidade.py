@@ -1,12 +1,15 @@
 """
-python manage.py benchmark_compatibilidade [--repeticoes N] [--incluir-10000] [--sem-banco]
+python manage.py benchmark_compatibilidade [--repeticoes N] [--banco-descartavel [--incluir-10000]] [--sem-banco]
 
 Medições:
   A) Cálculo puro em memória — loop (calcular_score) vs NumPy (calcular_scores_lote)
      N = 100, 1 000, 10 000, 50 000, 100 000
-  B) Ponta a ponta com banco — recalcular_loop vs recalcular_lote
+  B) Ponta a ponta com banco — recalcular_loop vs recalcular_lote  (só com --banco-descartavel)
      N = 100, 1 000, 5 000 (+ 10 000 com --incluir-10000)
-     Todo dado sintético criado é revertido via rollback (sem rastro no banco).
+     Exige um banco VAZIO (descartável): os dados sintéticos são gravados (commit), medidos e apagados no fim.
+     Cada repetição roda na SUA transação. Antes, tudo rodava dentro de uma única transação revertida no
+     final: as linhas apagadas entre as repetições não podiam ser limpas pelo PostgreSQL e se acumulavam,
+     e o tempo de N = 5 000 subia para ~46 s (veja docs/algoritmo-compatibilidade.md, seção 9).
   C) Análise de sensibilidade dos pesos (sem banco, em memória)
      20 bases × 1 000 outros; top-10 overlap para +-5pp em cada critério.
 
@@ -35,10 +38,9 @@ import numpy as np
 
 import django
 from django.contrib.auth.hashers import make_password
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import connection, transaction
 from django.db.models import Q
-from django.test.utils import CaptureQueriesContext
 
 from ia import servico as servico_ia
 from ia.models import EmbeddingPerfil
@@ -116,6 +118,21 @@ def _perfil_db(usuario, idx: int) -> Perfil:
     )
 
 
+class _Contador:
+    """
+    Conta as consultas enviadas ao banco (connection.execute_wrapper): sem o limite de 9.000 do log do Django
+    e sem BEGIN/COMMIT/SAVEPOINT, que aparecem porque cada repetição roda na sua transação.
+    """
+
+    def __init__(self):
+        self.n = 0
+
+    def __call__(self, execute, sql, params, many, context):
+        if not sql.lstrip().upper().startswith(('SAVEPOINT', 'RELEASE')):
+            self.n += 1
+        return execute(sql, params, many, context)
+
+
 def _redistribuir(pesos_base: dict, criterio: str, delta: float) -> dict:
     """
     Varia o peso de `criterio` em `delta` pp e redistribui a variação
@@ -148,6 +165,10 @@ class Command(BaseCommand):
             help='Inclui N=10.000 na medição B (banco).',
         )
         parser.add_argument(
+            '--banco-descartavel', action='store_true',
+            help='Executa a medição B (banco). O banco precisa estar VAZIO (nenhum usuário).',
+        )
+        parser.add_argument(
             '--sem-banco', action='store_true',
             help='Executa só a medição A (memória) — não acessa o banco.',
         )
@@ -156,7 +177,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         reps      = options['repeticoes']
-        sem_banco = options['sem_banco']
+        sem_banco = options['sem_banco'] or not options['banco_descartavel']
+        if not sem_banco and Usuario.objects.exists():
+            raise CommandError('--banco-descartavel: o banco tem usuários. Rode a medição B só em um banco VAZIO '
+                               '(descartável); nada foi criado nem apagado.')
+        if not options['banco_descartavel'] and not options['sem_banco']:
+            self.stdout.write('Medição B (banco) pulada: use --banco-descartavel com um banco vazio.')
         inc10k    = options['incluir_10000']
 
         rows_a: list[dict] = []
@@ -293,16 +319,14 @@ class Command(BaseCommand):
 
     def _medir_banco(self, N_req: int, reps: int) -> dict | None:
         try:
-            with transaction.atomic():
-                try:
-                    return self._medir_banco_inner(N_req, reps)
-                finally:
-                    # garante rollback mesmo em caso de erro
-                    transaction.set_rollback(True)
+            return self._medir_banco_inner(N_req, reps)
         except Exception as exc:  # noqa: BLE001 - o erro é exibido com traceback e o benchmark segue
             self.stderr.write(self.style.ERROR(f'  ERRO B N={N_req}: {exc}'))
             self.stderr.write(traceback.format_exc())
             return None
+        finally:
+            # Os dados sintéticos foram gravados (commit): apaga tudo (perfis, embeddings e compatibilidades em cascata).
+            Usuario.objects.filter(username__startswith='_bch_').delete()
 
     def _medir_banco_inner(self, N_req: int, reps: int) -> dict:
         # Quantos perfis do tipo oposto já existem?
@@ -379,22 +403,28 @@ class Command(BaseCommand):
         t_loop, t_np = [], []
         qry_loop = qry_np = 0
 
+        # Cada repetição na sua transação (e a limpeza em outra): as linhas apagadas de uma repetição ficam
+        # invisíveis para as próximas e o PostgreSQL pode reaproveitá-las.
         for rep in range(reps_efetivos):
-            with CaptureQueriesContext(connection) as ctx:
+            contador = _Contador()
+            with connection.execute_wrapper(contador), transaction.atomic():
                 t0 = time.perf_counter()
                 recalcular_loop(perfil_novo)
                 t_loop.append(time.perf_counter() - t0)
             if rep == 0:
-                qry_loop = len(ctx)
-            limpar()
+                qry_loop = contador.n
+            with transaction.atomic():
+                limpar()
 
-            with CaptureQueriesContext(connection) as ctx:
+            contador = _Contador()
+            with connection.execute_wrapper(contador), transaction.atomic():
                 t0 = time.perf_counter()
                 recalcular_lote(perfil_novo)
                 t_np.append(time.perf_counter() - t0)
             if rep == 0:
-                qry_np = len(ctx)
-            limpar()
+                qry_np = contador.n
+            with transaction.atomic():
+                limpar()
 
         med_l, min_l = statistics.median(t_loop), min(t_loop)
         med_n, min_n = statistics.median(t_np),   min(t_np)

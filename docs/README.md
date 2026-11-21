@@ -28,7 +28,7 @@
 | Arquivo | Descrição |
 |---|---|
 | [`algoritmo-compatibilidade.md`](./algoritmo-compatibilidade.md) | Algoritmo de compatibilidade: os 6 critérios, pesos, fórmulas, versão vetorial (NumPy) e resultados do benchmark. |
-| [`benchmark/`](./benchmark/) | Dados brutos do benchmark do algoritmo: `benchmark_compatibilidade.csv` (tempos laço × NumPy), `sensibilidade_pesos.csv` (efeito de mudar cada peso), `ambiente.txt` (máquina e versões) e `saida_terminal.txt` (saída do comando `benchmark_compatibilidade`). |
+| [`benchmark/`](./benchmark/) | Dados brutos do benchmark do algoritmo: `benchmark_compatibilidade.csv` (tempos laço × NumPy), `sensibilidade_pesos.csv` (efeito de mudar cada peso), `ambiente.txt` (máquina e versões) e `saida_terminal.txt` (saída do comando `benchmark_compatibilidade`). Paralelismo (`benchmark_paralelismo`): `paralelismo.json` (lido por `GET /api/admin/processamento/benchmark/`), `paralelismo.csv` e `paralelismo.png` (tempo × workers e speedup × workers). |
 | [`modulo-chat.md`](./modulo-chat.md) | Módulo de chat: modelo de dados, regras de acesso, endpoints e atualização automática. |
 
 ## Operação

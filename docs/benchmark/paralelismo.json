@@ -1,0 +1,1239 @@
+{
+  "gerado_em": "2026-11-20T19:29:58-03:00",
+  "ambiente": {
+    "cpu": "Intel(R) Core(TM) i3-6006U CPU @ 2.00GHz",
+    "nucleos_fisicos": 2,
+    "nucleos_logicos": 4,
+    "ram_total_mb": 16384.0,
+    "ram_livre_mb": 3870.4,
+    "carga_cpu_inicio_pct": 100,
+    "sistema": "Windows 10 (10.0.19045)",
+    "python": "3.14.7",
+    "numpy": "2.5.4",
+    "django": "6.1.1",
+    "threadpoolctl": "3.8.0",
+    "fastembed": "0.9.1",
+    "onnxruntime": "1.32.0",
+    "blas": "openblas 0.3.34.106.0 (4 threads)"
+  },
+  "parametros": {
+    "tamanhos": [
+      1000,
+      2000,
+      5000,
+      10000,
+      20000
+    ],
+    "workers": [
+      1,
+      2,
+      4
+    ],
+    "repeticoes": 3,
+    "bloco": "256 × 256 pares",
+    "perfis_com_embedding": "4 em cada 5",
+    "dados": "sintéticos em memória (metade buscando, metade oferecendo)",
+    "blas_por_worker": 1
+  },
+  "recalculo": [
+    {
+      "N": 1000,
+      "buscando": 500,
+      "oferecendo": 500,
+      "pares": 250000,
+      "modo": "sequencial",
+      "workers": 1,
+      "tempo_mediana_s": 0.2167,
+      "tempo_min_s": 0.2052,
+      "tempos_s": [
+        0.2167,
+        0.2242,
+        0.2052
+      ],
+      "ns_por_par": 866.7,
+      "speedup": 1.0,
+      "eficiencia": 1.0,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fe4337e028c891cc",
+      "memoria_principal_pico_mb": 101.4,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 1000,
+      "buscando": 500,
+      "oferecendo": 500,
+      "pares": 250000,
+      "modo": "threads",
+      "workers": 1,
+      "tempo_mediana_s": 0.2091,
+      "tempo_min_s": 0.1672,
+      "tempos_s": [
+        0.2091,
+        0.2256,
+        0.1672
+      ],
+      "ns_por_par": 836.5,
+      "speedup": 1.036,
+      "eficiencia": 1.036,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fe4337e028c891cc",
+      "memoria_principal_pico_mb": 101.5,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 1000,
+      "buscando": 500,
+      "oferecendo": 500,
+      "pares": 250000,
+      "modo": "threads",
+      "workers": 2,
+      "tempo_mediana_s": 0.0986,
+      "tempo_min_s": 0.0893,
+      "tempos_s": [
+        0.1222,
+        0.0986,
+        0.0893
+      ],
+      "ns_por_par": 394.4,
+      "speedup": 2.197,
+      "eficiencia": 1.099,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fe4337e028c891cc",
+      "memoria_principal_pico_mb": 107.2,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 1000,
+      "buscando": 500,
+      "oferecendo": 500,
+      "pares": 250000,
+      "modo": "threads",
+      "workers": 4,
+      "tempo_mediana_s": 0.1083,
+      "tempo_min_s": 0.0968,
+      "tempos_s": [
+        0.1274,
+        0.0968,
+        0.1083
+      ],
+      "ns_por_par": 433.1,
+      "speedup": 2.001,
+      "eficiencia": 0.5,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fe4337e028c891cc",
+      "memoria_principal_pico_mb": 109.2,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 1000,
+      "buscando": 500,
+      "oferecendo": 500,
+      "pares": 250000,
+      "modo": "processos",
+      "workers": 1,
+      "tempo_mediana_s": 3.014,
+      "tempo_min_s": 2.6937,
+      "tempos_s": [
+        4.5132,
+        3.014,
+        2.6937
+      ],
+      "ns_por_par": 12056.0,
+      "speedup": 0.072,
+      "eficiencia": 0.072,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fe4337e028c891cc",
+      "memoria_principal_pico_mb": 109.2,
+      "memoria_por_worker_mb": 46.2,
+      "aviso": null
+    },
+    {
+      "N": 1000,
+      "buscando": 500,
+      "oferecendo": 500,
+      "pares": 250000,
+      "modo": "processos",
+      "workers": 2,
+      "tempo_mediana_s": 2.5179,
+      "tempo_min_s": 1.9338,
+      "tempos_s": [
+        2.7131,
+        2.5179,
+        1.9338
+      ],
+      "ns_por_par": 10071.6,
+      "speedup": 0.086,
+      "eficiencia": 0.043,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fe4337e028c891cc",
+      "memoria_principal_pico_mb": 109.2,
+      "memoria_por_worker_mb": 46.1,
+      "aviso": null
+    },
+    {
+      "N": 1000,
+      "buscando": 500,
+      "oferecendo": 500,
+      "pares": 250000,
+      "modo": "processos",
+      "workers": 4,
+      "tempo_mediana_s": 1.8444,
+      "tempo_min_s": 1.5009,
+      "tempos_s": [
+        1.8444,
+        1.5009,
+        2.4258
+      ],
+      "ns_por_par": 7377.6,
+      "speedup": 0.117,
+      "eficiencia": 0.029,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fe4337e028c891cc",
+      "memoria_principal_pico_mb": 109.2,
+      "memoria_por_worker_mb": 46.1,
+      "aviso": null
+    },
+    {
+      "N": 2000,
+      "buscando": 1000,
+      "oferecendo": 1000,
+      "pares": 1000000,
+      "modo": "sequencial",
+      "workers": 1,
+      "tempo_mediana_s": 0.4519,
+      "tempo_min_s": 0.4449,
+      "tempos_s": [
+        0.768,
+        0.4449,
+        0.4519
+      ],
+      "ns_por_par": 451.9,
+      "speedup": 1.0,
+      "eficiencia": 1.0,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "c19297977b218174",
+      "memoria_principal_pico_mb": 109.2,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 2000,
+      "buscando": 1000,
+      "oferecendo": 1000,
+      "pares": 1000000,
+      "modo": "threads",
+      "workers": 1,
+      "tempo_mediana_s": 0.75,
+      "tempo_min_s": 0.5348,
+      "tempos_s": [
+        0.5348,
+        0.75,
+        0.7691
+      ],
+      "ns_por_par": 750.0,
+      "speedup": 0.603,
+      "eficiencia": 0.603,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "c19297977b218174",
+      "memoria_principal_pico_mb": 111.7,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 2000,
+      "buscando": 1000,
+      "oferecendo": 1000,
+      "pares": 1000000,
+      "modo": "threads",
+      "workers": 2,
+      "tempo_mediana_s": 0.379,
+      "tempo_min_s": 0.3414,
+      "tempos_s": [
+        0.3958,
+        0.3414,
+        0.379
+      ],
+      "ns_por_par": 379.0,
+      "speedup": 1.192,
+      "eficiencia": 0.596,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "c19297977b218174",
+      "memoria_principal_pico_mb": 114.7,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 2000,
+      "buscando": 1000,
+      "oferecendo": 1000,
+      "pares": 1000000,
+      "modo": "threads",
+      "workers": 4,
+      "tempo_mediana_s": 0.3015,
+      "tempo_min_s": 0.2556,
+      "tempos_s": [
+        0.3598,
+        0.3015,
+        0.2556
+      ],
+      "ns_por_par": 301.5,
+      "speedup": 1.499,
+      "eficiencia": 0.375,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "c19297977b218174",
+      "memoria_principal_pico_mb": 122.2,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 2000,
+      "buscando": 1000,
+      "oferecendo": 1000,
+      "pares": 1000000,
+      "modo": "processos",
+      "workers": 1,
+      "tempo_mediana_s": 3.9123,
+      "tempo_min_s": 3.7139,
+      "tempos_s": [
+        4.807,
+        3.9123,
+        3.7139
+      ],
+      "ns_por_par": 3912.3,
+      "speedup": 0.116,
+      "eficiencia": 0.116,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "c19297977b218174",
+      "memoria_principal_pico_mb": 122.2,
+      "memoria_por_worker_mb": 50.7,
+      "aviso": null
+    },
+    {
+      "N": 2000,
+      "buscando": 1000,
+      "oferecendo": 1000,
+      "pares": 1000000,
+      "modo": "processos",
+      "workers": 2,
+      "tempo_mediana_s": 3.3392,
+      "tempo_min_s": 2.7281,
+      "tempos_s": [
+        4.4245,
+        2.7281,
+        3.3392
+      ],
+      "ns_por_par": 3339.2,
+      "speedup": 0.135,
+      "eficiencia": 0.068,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "c19297977b218174",
+      "memoria_principal_pico_mb": 122.2,
+      "memoria_por_worker_mb": 48.8,
+      "aviso": null
+    },
+    {
+      "N": 2000,
+      "buscando": 1000,
+      "oferecendo": 1000,
+      "pares": 1000000,
+      "modo": "processos",
+      "workers": 4,
+      "tempo_mediana_s": 4.8571,
+      "tempo_min_s": 3.4529,
+      "tempos_s": [
+        4.8571,
+        3.4529,
+        7.0214
+      ],
+      "ns_por_par": 4857.1,
+      "speedup": 0.093,
+      "eficiencia": 0.023,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "c19297977b218174",
+      "memoria_principal_pico_mb": 122.2,
+      "memoria_por_worker_mb": 48.7,
+      "aviso": null
+    },
+    {
+      "N": 5000,
+      "buscando": 2500,
+      "oferecendo": 2500,
+      "pares": 6250000,
+      "modo": "sequencial",
+      "workers": 1,
+      "tempo_mediana_s": 4.1172,
+      "tempo_min_s": 3.0964,
+      "tempos_s": [
+        4.1934,
+        4.1172,
+        3.0964
+      ],
+      "ns_por_par": 658.8,
+      "speedup": 1.0,
+      "eficiencia": 1.0,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fac5a1b6d6d92881",
+      "memoria_principal_pico_mb": 151.5,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 5000,
+      "buscando": 2500,
+      "oferecendo": 2500,
+      "pares": 6250000,
+      "modo": "threads",
+      "workers": 1,
+      "tempo_mediana_s": 3.015,
+      "tempo_min_s": 2.5785,
+      "tempos_s": [
+        3.015,
+        3.04,
+        2.5785
+      ],
+      "ns_por_par": 482.4,
+      "speedup": 1.366,
+      "eficiencia": 1.366,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fac5a1b6d6d92881",
+      "memoria_principal_pico_mb": 154.4,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 5000,
+      "buscando": 2500,
+      "oferecendo": 2500,
+      "pares": 6250000,
+      "modo": "threads",
+      "workers": 2,
+      "tempo_mediana_s": 2.2758,
+      "tempo_min_s": 1.7379,
+      "tempos_s": [
+        1.7379,
+        2.2758,
+        2.4064
+      ],
+      "ns_por_par": 364.1,
+      "speedup": 1.809,
+      "eficiencia": 0.905,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fac5a1b6d6d92881",
+      "memoria_principal_pico_mb": 159.2,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 5000,
+      "buscando": 2500,
+      "oferecendo": 2500,
+      "pares": 6250000,
+      "modo": "threads",
+      "workers": 4,
+      "tempo_mediana_s": 1.8575,
+      "tempo_min_s": 1.783,
+      "tempos_s": [
+        1.783,
+        1.871,
+        1.8575
+      ],
+      "ns_por_par": 297.2,
+      "speedup": 2.217,
+      "eficiencia": 0.554,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fac5a1b6d6d92881",
+      "memoria_principal_pico_mb": 167.1,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 5000,
+      "buscando": 2500,
+      "oferecendo": 2500,
+      "pares": 6250000,
+      "modo": "processos",
+      "workers": 1,
+      "tempo_mediana_s": 8.0507,
+      "tempo_min_s": 5.9866,
+      "tempos_s": [
+        8.0507,
+        5.9866,
+        9.3988
+      ],
+      "ns_por_par": 1288.1,
+      "speedup": 0.511,
+      "eficiencia": 0.511,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fac5a1b6d6d92881",
+      "memoria_principal_pico_mb": 167.1,
+      "memoria_por_worker_mb": 68.9,
+      "aviso": null
+    },
+    {
+      "N": 5000,
+      "buscando": 2500,
+      "oferecendo": 2500,
+      "pares": 6250000,
+      "modo": "processos",
+      "workers": 2,
+      "tempo_mediana_s": 6.6291,
+      "tempo_min_s": 6.3611,
+      "tempos_s": [
+        6.6291,
+        6.8887,
+        6.3611
+      ],
+      "ns_por_par": 1060.7,
+      "speedup": 0.621,
+      "eficiencia": 0.311,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fac5a1b6d6d92881",
+      "memoria_principal_pico_mb": 167.1,
+      "memoria_por_worker_mb": 69.0,
+      "aviso": null
+    },
+    {
+      "N": 5000,
+      "buscando": 2500,
+      "oferecendo": 2500,
+      "pares": 6250000,
+      "modo": "processos",
+      "workers": 4,
+      "tempo_mediana_s": 6.6857,
+      "tempo_min_s": 5.7506,
+      "tempos_s": [
+        5.7506,
+        6.6857,
+        7.3289
+      ],
+      "ns_por_par": 1069.7,
+      "speedup": 0.616,
+      "eficiencia": 0.154,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fac5a1b6d6d92881",
+      "memoria_principal_pico_mb": 167.1,
+      "memoria_por_worker_mb": 63.0,
+      "aviso": null
+    },
+    {
+      "N": 10000,
+      "buscando": 5000,
+      "oferecendo": 5000,
+      "pares": 25000000,
+      "modo": "sequencial",
+      "workers": 1,
+      "tempo_mediana_s": 12.9793,
+      "tempo_min_s": 11.3623,
+      "tempos_s": [
+        11.3623,
+        13.1386,
+        12.9793
+      ],
+      "ns_por_par": 519.2,
+      "speedup": 1.0,
+      "eficiencia": 1.0,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "cfa401c92adcbad2",
+      "memoria_principal_pico_mb": 257.7,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 10000,
+      "buscando": 5000,
+      "oferecendo": 5000,
+      "pares": 25000000,
+      "modo": "threads",
+      "workers": 1,
+      "tempo_mediana_s": 12.8055,
+      "tempo_min_s": 10.7944,
+      "tempos_s": [
+        12.8055,
+        10.7944,
+        14.329
+      ],
+      "ns_por_par": 512.2,
+      "speedup": 1.014,
+      "eficiencia": 1.014,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "cfa401c92adcbad2",
+      "memoria_principal_pico_mb": 283.6,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 10000,
+      "buscando": 5000,
+      "oferecendo": 5000,
+      "pares": 25000000,
+      "modo": "threads",
+      "workers": 2,
+      "tempo_mediana_s": 7.2966,
+      "tempo_min_s": 6.1687,
+      "tempos_s": [
+        8.4184,
+        7.2966,
+        6.1687
+      ],
+      "ns_por_par": 291.9,
+      "speedup": 1.779,
+      "eficiencia": 0.889,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "cfa401c92adcbad2",
+      "memoria_principal_pico_mb": 288.0,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 10000,
+      "buscando": 5000,
+      "oferecendo": 5000,
+      "pares": 25000000,
+      "modo": "threads",
+      "workers": 4,
+      "tempo_mediana_s": 5.3143,
+      "tempo_min_s": 5.0846,
+      "tempos_s": [
+        5.0846,
+        5.3143,
+        5.6762
+      ],
+      "ns_por_par": 212.6,
+      "speedup": 2.442,
+      "eficiencia": 0.611,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "cfa401c92adcbad2",
+      "memoria_principal_pico_mb": 298.9,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 10000,
+      "buscando": 5000,
+      "oferecendo": 5000,
+      "pares": 25000000,
+      "modo": "processos",
+      "workers": 1,
+      "tempo_mediana_s": 11.7997,
+      "tempo_min_s": 11.4274,
+      "tempos_s": [
+        11.9516,
+        11.4274,
+        11.7997
+      ],
+      "ns_por_par": 472.0,
+      "speedup": 1.1,
+      "eficiencia": 1.1,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "cfa401c92adcbad2",
+      "memoria_principal_pico_mb": 310.6,
+      "memoria_por_worker_mb": 119.6,
+      "aviso": null
+    },
+    {
+      "N": 10000,
+      "buscando": 5000,
+      "oferecendo": 5000,
+      "pares": 25000000,
+      "modo": "processos",
+      "workers": 2,
+      "tempo_mediana_s": 9.4709,
+      "tempo_min_s": 9.4489,
+      "tempos_s": [
+        9.4489,
+        11.6869,
+        9.4709
+      ],
+      "ns_por_par": 378.8,
+      "speedup": 1.37,
+      "eficiencia": 0.685,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "cfa401c92adcbad2",
+      "memoria_principal_pico_mb": 310.6,
+      "memoria_por_worker_mb": 115.8,
+      "aviso": null
+    },
+    {
+      "N": 10000,
+      "buscando": 5000,
+      "oferecendo": 5000,
+      "pares": 25000000,
+      "modo": "processos",
+      "workers": 4,
+      "tempo_mediana_s": 10.489,
+      "tempo_min_s": 9.7106,
+      "tempos_s": [
+        10.9957,
+        10.489,
+        9.7106
+      ],
+      "ns_por_par": 419.6,
+      "speedup": 1.237,
+      "eficiencia": 0.309,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "cfa401c92adcbad2",
+      "memoria_principal_pico_mb": 310.6,
+      "memoria_por_worker_mb": 99.3,
+      "aviso": null
+    },
+    {
+      "N": 20000,
+      "buscando": 10000,
+      "oferecendo": 10000,
+      "pares": 100000000,
+      "modo": "sequencial",
+      "workers": 1,
+      "tempo_mediana_s": 21.5922,
+      "tempo_min_s": 20.0398,
+      "tempos_s": [
+        22.2219,
+        21.5922,
+        20.0398
+      ],
+      "ns_por_par": 215.9,
+      "speedup": 1.0,
+      "eficiencia": 1.0,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "d30e138d65c6795d",
+      "memoria_principal_pico_mb": 664.1,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 20000,
+      "buscando": 10000,
+      "oferecendo": 10000,
+      "pares": 100000000,
+      "modo": "threads",
+      "workers": 1,
+      "tempo_mediana_s": 24.4243,
+      "tempo_min_s": 22.0028,
+      "tempos_s": [
+        24.4243,
+        22.0028,
+        38.3248
+      ],
+      "ns_por_par": 244.2,
+      "speedup": 0.884,
+      "eficiencia": 0.884,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "d30e138d65c6795d",
+      "memoria_principal_pico_mb": 798.4,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 20000,
+      "buscando": 10000,
+      "oferecendo": 10000,
+      "pares": 100000000,
+      "modo": "threads",
+      "workers": 2,
+      "tempo_mediana_s": 23.0695,
+      "tempo_min_s": 22.7708,
+      "tempos_s": [
+        23.192,
+        23.0695,
+        22.7708
+      ],
+      "ns_por_par": 230.7,
+      "speedup": 0.936,
+      "eficiencia": 0.468,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "d30e138d65c6795d",
+      "memoria_principal_pico_mb": 798.4,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 20000,
+      "buscando": 10000,
+      "oferecendo": 10000,
+      "pares": 100000000,
+      "modo": "threads",
+      "workers": 4,
+      "tempo_mediana_s": 21.1568,
+      "tempo_min_s": 19.8568,
+      "tempos_s": [
+        19.8568,
+        21.6193,
+        21.1568
+      ],
+      "ns_por_par": 211.6,
+      "speedup": 1.021,
+      "eficiencia": 0.255,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "d30e138d65c6795d",
+      "memoria_principal_pico_mb": 798.4,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 20000,
+      "buscando": 10000,
+      "oferecendo": 10000,
+      "pares": 100000000,
+      "modo": "processos",
+      "workers": 1,
+      "tempo_mediana_s": 37.1572,
+      "tempo_min_s": 34.2686,
+      "tempos_s": [
+        56.8103,
+        37.1572,
+        34.2686
+      ],
+      "ns_por_par": 371.6,
+      "speedup": 0.581,
+      "eficiencia": 0.581,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "d30e138d65c6795d",
+      "memoria_principal_pico_mb": 818.6,
+      "memoria_por_worker_mb": 294.7,
+      "aviso": null
+    },
+    {
+      "N": 20000,
+      "buscando": 10000,
+      "oferecendo": 10000,
+      "pares": 100000000,
+      "modo": "processos",
+      "workers": 2,
+      "tempo_mediana_s": 27.6057,
+      "tempo_min_s": 27.184,
+      "tempos_s": [
+        29.3639,
+        27.6057,
+        27.184
+      ],
+      "ns_por_par": 276.1,
+      "speedup": 0.782,
+      "eficiencia": 0.391,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "d30e138d65c6795d",
+      "memoria_principal_pico_mb": 818.8,
+      "memoria_por_worker_mb": 283.8,
+      "aviso": null
+    },
+    {
+      "N": 20000,
+      "buscando": 10000,
+      "oferecendo": 10000,
+      "pares": 100000000,
+      "modo": "processos",
+      "workers": 4,
+      "tempo_mediana_s": 27.3377,
+      "tempo_min_s": 25.6443,
+      "tempos_s": [
+        25.6443,
+        27.3377,
+        28.2361
+      ],
+      "ns_por_par": 273.4,
+      "speedup": 0.79,
+      "eficiencia": 0.197,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "d30e138d65c6795d",
+      "memoria_principal_pico_mb": 818.8,
+      "memoria_por_worker_mb": 202.0,
+      "aviso": null
+    }
+  ],
+  "tamanhos_pulados": [],
+  "amdahl": [
+    {
+      "N": 1000,
+      "modo": "threads",
+      "fracao_paralelizavel": 0.7971,
+      "speedup_maximo_teorico": 4.93,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 1.036
+        },
+        {
+          "workers": 2,
+          "speedup": 2.197
+        },
+        {
+          "workers": 4,
+          "speedup": 2.001
+        }
+      ]
+    },
+    {
+      "N": 1000,
+      "modo": "processos",
+      "fracao_paralelizavel": 0.0,
+      "speedup_maximo_teorico": 1.0,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 0.072
+        },
+        {
+          "workers": 2,
+          "speedup": 0.086
+        },
+        {
+          "workers": 4,
+          "speedup": 0.117
+        }
+      ]
+    },
+    {
+      "N": 2000,
+      "modo": "threads",
+      "fracao_paralelizavel": 0.4064,
+      "speedup_maximo_teorico": 1.68,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 0.603
+        },
+        {
+          "workers": 2,
+          "speedup": 1.192
+        },
+        {
+          "workers": 4,
+          "speedup": 1.499
+        }
+      ]
+    },
+    {
+      "N": 2000,
+      "modo": "processos",
+      "fracao_paralelizavel": 0.0,
+      "speedup_maximo_teorico": 1.0,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 0.116
+        },
+        {
+          "workers": 2,
+          "speedup": 0.135
+        },
+        {
+          "workers": 4,
+          "speedup": 0.093
+        }
+      ]
+    },
+    {
+      "N": 5000,
+      "modo": "threads",
+      "fracao_paralelizavel": 0.7819,
+      "speedup_maximo_teorico": 4.59,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 1.366
+        },
+        {
+          "workers": 2,
+          "speedup": 1.809
+        },
+        {
+          "workers": 4,
+          "speedup": 2.217
+        }
+      ]
+    },
+    {
+      "N": 5000,
+      "modo": "processos",
+      "fracao_paralelizavel": 0.0,
+      "speedup_maximo_teorico": 1.0,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 0.511
+        },
+        {
+          "workers": 2,
+          "speedup": 0.621
+        },
+        {
+          "workers": 4,
+          "speedup": 0.616
+        }
+      ]
+    },
+    {
+      "N": 10000,
+      "modo": "threads",
+      "fracao_paralelizavel": 0.8145,
+      "speedup_maximo_teorico": 5.39,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 1.014
+        },
+        {
+          "workers": 2,
+          "speedup": 1.779
+        },
+        {
+          "workers": 4,
+          "speedup": 2.442
+        }
+      ]
+    },
+    {
+      "N": 10000,
+      "modo": "processos",
+      "fracao_paralelizavel": 0.3431,
+      "speedup_maximo_teorico": 1.52,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 1.1
+        },
+        {
+          "workers": 2,
+          "speedup": 1.37
+        },
+        {
+          "workers": 4,
+          "speedup": 1.237
+        }
+      ]
+    },
+    {
+      "N": 20000,
+      "modo": "threads",
+      "fracao_paralelizavel": 0.0,
+      "speedup_maximo_teorico": 1.0,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 0.884
+        },
+        {
+          "workers": 2,
+          "speedup": 0.936
+        },
+        {
+          "workers": 4,
+          "speedup": 1.021
+        }
+      ]
+    },
+    {
+      "N": 20000,
+      "modo": "processos",
+      "fracao_paralelizavel": 0.0,
+      "speedup_maximo_teorico": 1.0,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 0.581
+        },
+        {
+          "workers": 2,
+          "speedup": 0.782
+        },
+        {
+          "workers": 4,
+          "speedup": 0.79
+        }
+      ]
+    }
+  ],
+  "ponto_de_equilibrio": {
+    "threads": {
+      "N_minimo": null,
+      "pares_minimo": null,
+      "ganhou_em_N": [
+        1000,
+        2000,
+        5000,
+        10000
+      ],
+      "perdeu_ou_empatou_em_N": [
+        20000
+      ],
+      "melhor_por_N": {
+        "1000": {
+          "workers": 2,
+          "speedup": 2.197
+        },
+        "2000": {
+          "workers": 4,
+          "speedup": 1.499
+        },
+        "5000": {
+          "workers": 4,
+          "speedup": 2.217
+        },
+        "10000": {
+          "workers": 4,
+          "speedup": 2.442
+        },
+        "20000": {
+          "workers": 4,
+          "speedup": 1.021
+        }
+      }
+    },
+    "processos": {
+      "N_minimo": null,
+      "pares_minimo": null,
+      "ganhou_em_N": [
+        10000
+      ],
+      "perdeu_ou_empatou_em_N": [
+        1000,
+        2000,
+        5000,
+        20000
+      ],
+      "melhor_por_N": {
+        "1000": {
+          "workers": 4,
+          "speedup": 0.117
+        },
+        "2000": {
+          "workers": 2,
+          "speedup": 0.135
+        },
+        "5000": {
+          "workers": 2,
+          "speedup": 0.621
+        },
+        "10000": {
+          "workers": 2,
+          "speedup": 1.37
+        },
+        "20000": {
+          "workers": 4,
+          "speedup": 0.79
+        }
+      }
+    }
+  },
+  "embeddings": [
+    {
+      "bios": 50,
+      "workers": 1,
+      "tempo_mediana_s": 2.694,
+      "tempos_s": [
+        2.584,
+        3.059,
+        2.694
+      ],
+      "ms_por_bio": 53.9,
+      "speedup": 1.0,
+      "eficiencia": 1.0,
+      "identico_ao_sequencial": true
+    },
+    {
+      "bios": 50,
+      "workers": 2,
+      "tempo_mediana_s": 10.475,
+      "tempos_s": [
+        11.287,
+        10.475,
+        10.443
+      ],
+      "ms_por_bio": 209.5,
+      "speedup": 0.257,
+      "eficiencia": 0.129,
+      "identico_ao_sequencial": true
+    },
+    {
+      "bios": 400,
+      "workers": 1,
+      "tempo_mediana_s": 19.897,
+      "tempos_s": [
+        20.271,
+        19.897,
+        19.762
+      ],
+      "ms_por_bio": 49.7,
+      "speedup": 1.0,
+      "eficiencia": 1.0,
+      "identico_ao_sequencial": true
+    },
+    {
+      "bios": 400,
+      "workers": 2,
+      "tempo_mediana_s": 25.743,
+      "tempos_s": [
+        25.33,
+        25.743,
+        31.071
+      ],
+      "ms_por_bio": 64.4,
+      "speedup": 0.773,
+      "eficiencia": 0.386,
+      "identico_ao_sequencial": true
+    }
+  ],
+  "ponta_a_ponta": [
+    {
+      "N": 1000,
+      "pares": 250000,
+      "modo": "sequencial",
+      "workers": 1,
+      "tempo_carregar_s": 0.069,
+      "tempo_calcular_s": 0.082,
+      "tempo_gravar_s": 39.946,
+      "tempo_total_s": 40.096,
+      "fracao_sequencial_banco": 0.998,
+      "speedup_total": 1.0
+    },
+    {
+      "N": 1000,
+      "pares": 250000,
+      "modo": "threads",
+      "workers": 2,
+      "tempo_carregar_s": 0.082,
+      "tempo_calcular_s": 0.056,
+      "tempo_gravar_s": 41.567,
+      "tempo_total_s": 41.705,
+      "fracao_sequencial_banco": 0.999,
+      "speedup_total": 0.961
+    },
+    {
+      "N": 1000,
+      "pares": 250000,
+      "modo": "processos",
+      "workers": 2,
+      "tempo_carregar_s": 0.055,
+      "tempo_calcular_s": 1.261,
+      "tempo_gravar_s": 45.603,
+      "tempo_total_s": 46.919,
+      "fracao_sequencial_banco": 0.973,
+      "speedup_total": 0.855
+    },
+    {
+      "N": 1000,
+      "pares": 250000,
+      "modo": "processos",
+      "workers": 4,
+      "tempo_carregar_s": 0.089,
+      "tempo_calcular_s": 1.556,
+      "tempo_gravar_s": 46.57,
+      "tempo_total_s": 48.215,
+      "fracao_sequencial_banco": 0.968,
+      "speedup_total": 0.832
+    }
+  ],
+  "observacoes": [
+    "A CPU já tinha 100% de uso de outros programas no início: o ganho medido é menor que o de uma máquina ociosa e os tempos variam entre repetições.",
+    "Threads: ganhou em N = 1.000, 2.000, 5.000, 10.000 e não em N = 20.000. Melhor speedup por tamanho: N = 1.000: 2.20 (2 workers), N = 2.000: 1.50 (4 workers), N = 5.000: 2.22 (4 workers), N = 10.000: 2.44 (4 workers), N = 20.000: 1.02 (4 workers).",
+    "Processos: ganhou em N = 10.000 e não em N = 1.000, 2.000, 5.000, 20.000. Melhor speedup por tamanho: N = 1.000: 0.12 (4 workers), N = 2.000: 0.14 (2 workers), N = 5.000: 0.62 (2 workers), N = 10.000: 1.37 (2 workers), N = 20.000: 0.79 (4 workers).",
+    "Melhor resultado: N = 10.000, threads com 4 workers, speedup 2.44 (eficiência 0.61).",
+    "Amdahl (threads): maior fração paralelizável estimada p = 0.81 em N = 10.000 (speedup máximo teórico ~ 5.4).",
+    "Amdahl (processos): maior fração paralelizável estimada p = 0.34 em N = 10.000 (speedup máximo teórico ~ 1.5).",
+    "Embeddings, 50 bios: 2 workers mais lento que 1 (speedup 0.26; cada worker carrega o modelo).",
+    "Embeddings, 400 bios: 2 workers mais lento que 1 (speedup 0.77; cada worker carrega o modelo)."
+  ],
+  "duracao_total_s": 1393.2
+}
