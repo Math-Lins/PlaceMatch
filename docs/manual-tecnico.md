@@ -305,7 +305,7 @@ O relatório de auditoria está em [`docs/auditoria-rc.md`](./auditoria-rc.md).
 
 | Verificação | Comando | Resultado na v1.0.0 |
 |---|---|---|
-| Testes do backend | `python manage.py test --settings=placematch.test_settings` | 824 testes OK (nenhum pulado; o teste com o modelo real de IA roda quando ele está baixado) |
+| Testes do backend | `python manage.py test --settings=placematch.test_settings` | 833 testes OK (nenhum pulado; o teste com o modelo real de IA roda quando ele está baixado) |
 | Migrações em dia | `python manage.py makemigrations --check --dry-run --settings=placematch.test_settings` | Sem alterações |
 | Permissões | `python manage.py matriz_permissoes --settings=placematch.test_settings` | Sem divergências |
 | Contrato da API | `python manage.py spectacular --validate --fail-on-warn --file ../docs/openapi.yaml --settings=placematch.test_settings` | Sem avisos |

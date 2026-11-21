@@ -246,7 +246,7 @@ npm run e2e:db:parar
 
 Pare o frontend de desenvolvimento antes: o Playwright sobe a API (8001) e o frontend (5173). A campanha de testes está em [`docs/testes-sprint9.md`](./docs/testes-sprint9.md).
 
-**Evidências da Release Candidate** (prints da interface final, fora do `npm run e2e`):
+**Prints da interface final** (`evidencias-rc`, fora do `npm run e2e`):
 
 ```powershell
 cd frontend
@@ -359,7 +359,7 @@ PlaceMatch/
 | `/api/schema/` · [`docs/openapi.yaml`](./docs/openapi.yaml) | Schema OpenAPI 3 |
 | [`docs/banco-de-dados.md`](./docs/banco-de-dados.md) | Dicionário de dados e regras protegidas no banco |
 | [`docs/testes-sprint9.md`](./docs/testes-sprint9.md) | Campanha de testes e bugs corrigidos |
-| [`docs/execucoes-rc/`](./docs/execucoes-rc/) | Saídas das verificações finais da Release Candidate (testes, banco, permissões, OpenAPI, build, e2e) |
+| [`docs/execucoes-rc/`](./docs/execucoes-rc/) | Saídas das verificações finais da v1.0.0 (833 testes, banco, permissões, OpenAPI, build, 15 roteiros e2e) |
 | [`docs/auditoria-rc.md`](./docs/auditoria-rc.md) · [`docs/revisao-codigo.md`](./docs/revisao-codigo.md) | Auditorias da Release Candidate e revisão final do código (ruff, checklist por módulo, métricas) |
 | [`docs/algoritmo-compatibilidade.md`](./docs/algoritmo-compatibilidade.md) | Fórmulas, pesos e benchmark do score; Afinidade por IA — ThoLuk (modelo, calibração, temas, desempenho, privacidade); paralelismo |
 | [`docs/modulo-chat.md`](./docs/modulo-chat.md) · [`docs/runbook-docker.md`](./docs/runbook-docker.md) | Chat e operação com Docker |

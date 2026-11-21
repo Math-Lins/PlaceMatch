@@ -2,6 +2,8 @@
 
 Revisão feita em **20/11/2026** sobre a versão **v1.0.0-rc2** (branch `main`, commit `b3122a9`). Objetivo: deixar o código e o repositório organizados para a entrega, **sem mudar comportamento, contrato da API nem regra de negócio**. Esta revisão complementa as duas rodadas de auditoria da Release Candidate em [`auditoria-rc.md`](./auditoria-rc.md) (itens AUD-01 a AUD-20), que tratam de defeitos funcionais e de segurança. Aqui o foco é a qualidade do código e a organização do repositório.
 
+> **Como ler este documento.** As seções 1 a 8 são o **registro da revisão de 20/11/2026 sobre a v1.0.0-rc2** (commit `b3122a9`) e foram mantidas como estavam, com os números daquela data. A revisão da versão final está na [seção 9](#9-revisão-pré-freeze-21112026--v100) (21/11/2026, v1.0.0), com as verificações finais e as métricas atualizadas.
+
 ## 1. Ferramentas usadas
 
 | Ferramenta | Uso | Resultado final |
@@ -206,3 +208,81 @@ Nenhuma senha real, token de serviço, chave de API, chave privada ou `.env` foi
 | `npm run build` | OK (JS 395 kB, 109 kB gzip) |
 | `npm run e2e:tour` | 1 teste OK; RC-29/RC-30 atualizadas |
 | e2e N01–N14 | Não rodados: a única mudança no frontend é um comentário em `App.tsx` (nenhum roteiro afetado) |
+
+
+## 9. Revisão pré-freeze (21/11/2026) — v1.0.0
+
+Revisão feita antes do Code Freeze sobre o código acrescentado depois da rc2: o ThoLuk (afinidade por IA, 7º critério) e o processamento paralelo. Só correções pontuais e o nome da IA, sem funcionalidade nova. As seções 1 a 8 continuam valendo para o restante do código.
+
+### 9.1 O que foi revisado e corrigido
+
+| Item | Correção |
+|---|---|
+| Nome da IA | Nome exibido **ThoLuk** ("ThoLuk, a IA de afinidade do PlaceMatch", no masculino) em toda a interface, nas mensagens e rótulos da API (campo informativo `nome_ia`), no grupo do Swagger "Afinidade por IA (ThoLuk)", na saída dos comandos e na documentação. O código mantém o nome técnico: app `ia`, modelos, tabelas, campos JSON (`afinidade_ia`, `temas_em_comum`, `analise_ia`), rotas `/api/admin/ia/…`, variáveis `IA_*` e a ação de log `IA_TESTE` (o rótulo exibido vem de `LogOperacao.ROTULO_EXIBIDO`, sem migração nova). |
+| Temas de convivência (`ia/temas.py`) | Falsos positivos no laboratório ("Faço jantares em casa…" recebia Trabalho remoto e Organização; "Amo festas…" recebia Organização e Culinária). As frases-modelo foram reescritas centradas no assunto (44 frases em 16 temas) e a margem relativa passou de 0,13 para **0,135** (`MARGEM_TEMA`). Novo teste com o **modelo real** (`ia/tests/test_temas_modelo_real.py`, pulado sem o modelo): os 3 exemplos do laboratório, 16 bios do seed e as bios dos exemplos do Swagger. Limitação documentada em `algoritmo-compatibilidade.md` (11.5). |
+| Status do ThoLuk | O tempo exibido incluía a carga do modelo na 1ª chamada (709,8 ms). Agora o modelo e as frases dos temas são carregados antes da medição; o status mostra o **tempo típico** (mediana por bio) e, separado, a **carga do modelo**. |
+| Conclusão do benchmark | Resumo curto em pt-BR (no máximo 5 itens, vírgula decimal) em `observacoes`; o detalhe fica em `observacoes_detalhadas`. Gerado a partir do `docs/benchmark/paralelismo.json` existente, sem benchmark novo. |
+| Gerador do `api.md` | `scripts/gerar_docs_markdown.py` com os **9 grupos** do Swagger (inclui "Afinidade por IA (ThoLuk)" e "Processamento em lote"); `docs/api.md` e `docs/openapi.yaml` regerados: 35 operações em 30 rotas. |
+| Interface e comentários | Emojis retirados da interface e da documentação (selos, botões, cards, horários); ficam só símbolos funcionais (●, ✕, ⓘ). Comentários históricos ou redundantes removidos do código alterado. |
+| Prints | Tour com filtro `TOUR_PRINTS` (regera só as prints pedidas); as 50 prints (RC-01 a RC-50) foram regeradas com o modelo real. |
+
+### 9.2 Verificação final
+
+Saídas completas em [`execucoes-rc/`](./execucoes-rc/) (cabeçalho v1.0.0, 21/11/2026).
+
+| Verificação | Resultado |
+|---|---|
+| `manage.py test --settings=placematch.test_settings` | **833 testes, OK** (nenhum pulado; inclui o teste com o modelo real) |
+| `makemigrations --check --dry-run` | No changes detected |
+| `ruff check .` (backend) | All checks passed! |
+| `spectacular --validate --fail-on-warn` | Sem erros nem avisos (schema 1.0.0, 35 operações) |
+| `tsc --noEmit` / `--noUnusedLocals --noUnusedParameters` | 0 erros |
+| `npm run build` | OK (JS 426 kB, 117 kB gzip) |
+| e2e (Playwright, um roteiro por vez, 1 worker, sem trace) | **15 roteiros, 31 testes**, nenhuma falha |
+| `npm run e2e:tour` | 50 prints (RC-01 a RC-50) |
+| `matriz_permissoes` e `verificar_banco` (banco de desenvolvimento, só leitura, e banco de demonstração) | OK; 0 erros |
+
+**Versão:** tag **`v1.0.0`** no commit `5835f15`. Tags do projeto: `v1.0.0-rc1`, `v1.0.0-rc2` e `v1.0.0`.
+
+### 9.3 Métricas atualizadas (commit `5835f15`)
+
+Calculadas do mesmo jeito da seção 5: arquivos `.py`, `.ts`, `.tsx` e `.css` versionados, sem migrações; arquivo de teste = nome começando com `test` ou dentro de `tests/`, e todo `frontend/e2e/`; testes = funções `test_*` do backend. Aplicado ao commit `8699050`, o mesmo cálculo reproduz a tabela da seção 5 (685 testes).
+
+| Módulo | Arquivos | Linhas (sem testes) | Não vazias | Arq. de teste | Linhas de teste | Total com testes |
+|---|---:|---:|---:|---:|---:|---:|
+| `backend/usuarios` | 12 | 837 | 702 | 2 | 560 | 1.397 |
+| `backend/perfis` | 11 | 1.022 | 910 | 2 | 365 | 1.387 |
+| `backend/matches` | 24 | 3.362 | 2.826 | 4 | 1.694 | 5.056 |
+| `backend/chat` | 10 | 407 | 337 | 3 | 766 | 1.173 |
+| `backend/moderacao` | 7 | 449 | 374 | 4 | 1.091 | 1.540 |
+| `backend/painel` | 10 | 1.235 | 1.035 | 4 | 1.291 | 2.526 |
+| `backend/logs` | 7 | 284 | 241 | 2 | 391 | 675 |
+| `backend/ia` (novo) | 15 | 1.123 | 918 | 12 | 1.351 | 2.474 |
+| `backend/placematch` ¹ | 13 | 3.738 | 3.570 | 7 | 1.484 | 5.222 |
+| `backend/scripts` | 3 | 671 | 597 | 0 | 0 | 671 |
+| `backend` (raiz: `manage.py`, `seed.py`) | 2 | 320 | 261 | 0 | 0 | 320 |
+| **Backend (total)** | **114** | **13.448** | **11.771** | **40** | **8.993** | **22.441** |
+| `frontend/src` | 7 | 5.449 | 4.953 | 0 | 0 | 5.449 |
+| `frontend/src/admin` | 8 | 2.137 | 1.933 | 0 | 0 | 2.137 |
+| `frontend/e2e` | 0 | 0 | 0 | 19 | 2.733 | 2.733 |
+| `frontend` (config: `vite.config.ts`) | 1 | 21 | 20 | 0 | 0 | 21 |
+| **Frontend (total)** | **16** | **7.607** | **6.906** | **19** | **2.733** | **10.340** |
+
+¹ Inclui `exemplos_api.py` (2.314 linhas **geradas** com as respostas reais da API) e `api_docs.py` (759 linhas de anotações do OpenAPI).
+
+Maiores arquivos do frontend: `App.tsx` 3.711 · `api.ts` 903 · `ui.tsx` 488 · `admin/IATab.tsx` 429 · `admin/graficos.tsx` 343. Usos de `any`: **0**.
+
+| App | Testes (backend) | Migrações |
+|---|---:|---:|
+| `usuarios` | 68 | 4 |
+| `perfis` | 46 | 6 |
+| `matches` | 129 | 2 |
+| `chat` | 60 | 3 |
+| `moderacao` | 72 | 2 |
+| `painel` | 161 | — |
+| `logs` | 41 | 5 |
+| `ia` (novo) | 117 | 1 |
+| `placematch` (testes transversais: auditorias, docs da API, correções) | 139 | — |
+| **Total** | **833** | **23** |
+
+Diferença para a seção 5: +148 testes (+30 em `matches`, paralelismo; +117 no novo app `ia`; +1 em `placematch`, docs da API) e +2 migrações (`ia` e `logs`, ação `IA_TESTE`). Frontend: 15 roteiros e2e (31 testes, desktop e mobile) + o tour de prints. Repositório: 70 commits na `main`, 465 arquivos versionados, 159 prints em `frontend/e2e/evidencias*/`; o maior arquivo continua sendo `RC-33-mobile-detalhe.png` (663 KB).

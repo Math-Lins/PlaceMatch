@@ -579,7 +579,7 @@ O custo do 7º critério no recálculo é de 0 a 20%: os vetores vêm na mesma c
 
 ### 11.10 Testes
 
-`ia/tests/` (87 testes) usa o **embedder falso determinístico** (`IA_EMBEDDER=falso`: cada radical de palavra vira um vetor pseudoaleatório fixo), sem baixar nem carregar modelo. Cobre: serviço (carga única com threads, falha de carga, nova tentativa, arquivo corrompido, IA desligada), calibração, pesos e renormalização, sem embedding, equivalência escalar × vetorial, signal (só regera quando o texto muda, bio curta, anúncio, modelo antigo, falhas), rotas (permissões, validações, N+1, 503, log sem textos, **nenhum 500 com o modelo fora do ar**), comandos e temas. Só `test_integracao_modelo.py` usa o modelo real e é **pulado** se ele não estiver baixado.
+`ia/tests/` (117 testes) usa o **embedder falso determinístico** (`IA_EMBEDDER=falso`: cada radical de palavra vira um vetor pseudoaleatório fixo), sem baixar nem carregar modelo. Cobre: serviço (carga única com threads, falha de carga, nova tentativa, arquivo corrompido, IA desligada), calibração, pesos e renormalização, sem embedding, equivalência escalar × vetorial, signal (só regera quando o texto muda, bio curta, anúncio, modelo antigo, falhas), rotas (permissões, validações, N+1, 503, log sem textos, **nenhum 500 com o modelo fora do ar**), comandos e temas. Só `test_integracao_modelo.py` usa o modelo real e é **pulado** se ele não estiver baixado.
 
 ---
 

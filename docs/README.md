@@ -13,7 +13,7 @@
 
 | Arquivo | Descrição |
 |---|---|
-| [`api.md`](./api.md) | Referência de todos os endpoints (31 operações em 26 rotas), com exemplos **reais** de requisição e resposta. Gerado por `backend/scripts/gerar_docs_api.py markdown`; não edite à mão. |
+| [`api.md`](./api.md) | Referência de todos os endpoints (35 operações em 9 grupos, 30 rotas), com exemplos **reais** de requisição e resposta. Gerado por `backend/scripts/gerar_docs_api.py markdown`; não edite à mão. |
 | [`openapi.yaml`](./openapi.yaml) | Schema OpenAPI 3 da API, gerado pelo `drf-spectacular` (`manage.py spectacular --validate --fail-on-warn`). Interativo em `/api/docs/` (Swagger UI). |
 
 ## Banco de dados
@@ -27,7 +27,7 @@
 
 | Arquivo | Descrição |
 |---|---|
-| [`algoritmo-compatibilidade.md`](./algoritmo-compatibilidade.md) | Algoritmo de compatibilidade: os 6 critérios, pesos, fórmulas, versão vetorial (NumPy) e resultados do benchmark. |
+| [`algoritmo-compatibilidade.md`](./algoritmo-compatibilidade.md) | Algoritmo de compatibilidade: os 7 critérios (6 estruturados + afinidade por IA, o ThoLuk), pesos, fórmulas, versão vetorial (NumPy), ThoLuk (modelo, temas, calibração), processamento paralelo e resultados dos benchmarks. |
 | [`benchmark/`](./benchmark/) | Dados brutos do benchmark do algoritmo: `benchmark_compatibilidade.csv` (tempos laço × NumPy), `sensibilidade_pesos.csv` (efeito de mudar cada peso), `ambiente.txt` (máquina e versões) e `saida_terminal.txt` (saída do comando `benchmark_compatibilidade`). Paralelismo (`benchmark_paralelismo`): `paralelismo.json` (lido por `GET /api/admin/processamento/benchmark/`), `paralelismo.csv` e `paralelismo.png` (tempo × workers e speedup × workers). |
 | [`modulo-chat.md`](./modulo-chat.md) | Módulo de chat: modelo de dados, regras de acesso, endpoints e atualização automática. |
 
@@ -43,13 +43,13 @@
 |---|---|
 | [`testes-sprint9.md`](./testes-sprint9.md) | Campanha de testes (funcionais, validação e navegação e2e), bugs encontrados e corrigidos e evolução do total de testes até a v1.0.0. |
 | [`auditoria-rc.md`](./auditoria-rc.md) | Auditorias da Release Candidate (duas rodadas): defeitos encontrados (AUD-01…), correções, itens mantidos com justificativa e totais. |
-| [`revisao-codigo.md`](./revisao-codigo.md) | Revisão final do código (Sprint 11): ferramentas, checklist por módulo, correções, itens mantidos, métricas e organização do repositório. |
-| [`execucoes-rc/`](./execucoes-rc/) | Saídas das verificações finais (v1.0.0): `testes-backend.txt` (suíte completa), `verificar-banco.txt` (consistência do banco), `matriz-permissoes.txt` (rota × perfil de acesso), `openapi-validate.txt` (validação do schema), `build-frontend.txt` (`tsc` + build) e `e2e-navegacao.txt` (roteiros Playwright). |
+| [`revisao-codigo.md`](./revisao-codigo.md) | Revisão do código: seções 1 a 8 (20/11, v1.0.0-rc2: ferramentas, checklist por módulo, correções, itens mantidos, métricas e organização do repositório) e seção 9 (revisão pré-freeze de 21/11, v1.0.0: ThoLuk, paralelismo, verificações finais e métricas atualizadas). |
+| [`execucoes-rc/`](./execucoes-rc/) | Saídas das verificações finais (v1.0.0): `testes-backend.txt` (suíte completa: 833 testes), `verificar-banco.txt` (consistência do banco), `matriz-permissoes.txt` (rota × perfil de acesso), `openapi-validate.txt` (validação do schema), `build-frontend.txt` (`tsc` + build) e `e2e-navegacao.txt` (15 roteiros Playwright, 31 testes). |
 
 ## Fora de `docs/`
 
 | Local | Descrição |
 |---|---|
 | [`../frontend/e2e/README.md`](../frontend/e2e/README.md) | Como rodar os testes de navegação (Playwright) com banco descartável. |
-| [`../frontend/e2e/evidencias/`](../frontend/e2e/evidencias/) | Prints dos roteiros de navegação (N01 a N14), com `INDICE.md`. |
-| [`../frontend/e2e/evidencias-rc/`](../frontend/e2e/evidencias-rc/) | Prints da interface final (RC-01 a RC-50; RC-43 a RC-50: ThoLuk, a IA de afinidade, e processamento paralelo), com `INDICE.md`. |
+| [`../frontend/e2e/evidencias/`](../frontend/e2e/evidencias/) | Prints dos roteiros de navegação (N01 a N15), com `INDICE.md`. |
+| [`../frontend/e2e/evidencias-rc/`](../frontend/e2e/evidencias-rc/) | Prints da interface final (50 prints, RC-01 a RC-50; RC-43 a RC-50: ThoLuk, a IA de afinidade, e processamento paralelo), com `INDICE.md`. |
