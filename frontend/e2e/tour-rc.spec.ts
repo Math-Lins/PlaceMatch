@@ -132,7 +132,7 @@ test.afterAll(() => {
     '',
     '| Arquivo | Tela | Perfil de acesso | Viewport |',
     '|---|---|---|---|',
-    ...indice.map(l => `| ${l.arquivo} | ${l.tela} | ${l.perfil} | ${l.viewport} |`),
+    ...[...indice].sort((x, y) => x.arquivo.localeCompare(y.arquivo)).map(l => `| ${l.arquivo} | ${l.tela} | ${l.perfil} | ${l.viewport} |`),
     '',
   ];
   fs.writeFileSync(path.join(PASTA, 'INDICE.md'), linhas.join('\n'), 'utf-8');
@@ -140,7 +140,14 @@ test.afterAll(() => {
   fs.rmSync(ZIP, { force: true });
   const pastas = [PASTA, ...(fs.existsSync(EXECUCOES) ? [EXECUCOES] : [])];
   if (process.platform === 'win32') {
-    execFileSync('powershell', ['-NoProfile', '-Command', `Compress-Archive -Path ${pastas.map(p => `'${p}'`).join(',')} -DestinationPath '${ZIP}' -Force`]);
+    // tar.exe (Windows 10+) abre os arquivos em modo compartilhado; o Compress-Archive falha quando o antivírus
+    // ou o editor está com uma das prints recém-gravadas aberta ("acesso negado").
+    const tar = path.join(process.env.SystemRoot ?? 'C:/Windows', 'System32', 'tar.exe');
+    if (fs.existsSync(tar)) {
+      execFileSync(tar, ['-a', '-c', '-f', ZIP, ...pastas.flatMap(p => ['-C', path.dirname(p), path.basename(p)])]);
+    } else {
+      execFileSync('powershell', ['-NoProfile', '-Command', `Compress-Archive -Path ${pastas.map(p => `'${p}'`).join(',')} -DestinationPath '${ZIP}' -Force`]);
+    }
   } else {
     for (const p of pastas) execFileSync('zip', ['-r', '-q', ZIP, path.basename(p)], { cwd: path.dirname(p) });
   }
@@ -433,4 +440,79 @@ test('tour da Release Candidate (desktop 1366×768 e celular 375×812)', async (
     await print(pr, 42, 'link-invalido', 'Link de redefinição inválido (já usado)', 'Visitante');
   });
   await r.context.close();
+
+  // ── Afinidade por IA e paralelismo (v1.0.0): RC-43 a RC-50 (acrescentadas ao fim, sem renumerar) ──
+  // Par de maior afinidade do seed (modelo real): Isabela (estuda nutrição, adora cozinhar) × anúncio do Henrique
+  // (estuda gastronomia, faz jantares em casa) — o mesmo interesse escrito com palavras diferentes.
+  const ANUNCIO_HENRIQUE = 'Quarto em casa com cozinha gourmet em Casa Forte';
+  const ISABELA = 'isabela@seed.pm';
+  const topoNoPainel = async (p: Page) => {
+    const painel = p.getByTestId('painel-por-que-combinam');
+    await expect(painel.getByRole('list', { name: 'Compatibilidade por critério' }).getByRole('listitem')).toHaveCount(7, { timeout: 30_000 });
+    await painel.evaluate(e => e.scrollIntoView({ block: 'start' }));
+  };
+  const i = await sessao(browser);
+  const pi = i.page;
+  await test.step('IA para o usuário: card com selo, "Por que vocês combinam" e temas do Meu Perfil', async () => {
+    await entrar(pi, ISABELA, SENHA_SEED);
+    await expect(pi.getByRole('heading', { name: 'Vagas para você' })).toBeVisible({ timeout: 60_000 });
+    await expect(visiveis(pi, ANUNCIO_HENRIQUE)).toBeVisible();
+    const selo = visiveis(pi, 'Interesses em comum: Culinária').first();
+    await expect(selo).toBeVisible();
+    await selo.evaluate(e => e.scrollIntoView({ block: 'center' }));
+    await print(pi, 44, 'descoberta-selo-interesses-em-comum', 'Descoberta com o selo "✨ Interesses em comum" (afinidade por IA ≥ 70%)', 'Procura vaga');
+
+    await visiveis(pi, ANUNCIO_HENRIQUE).click();
+    await expect(pi.getByRole('heading', { name: ANUNCIO_HENRIQUE })).toBeVisible();
+    await topoNoPainel(pi);
+    await expect(pi.getByText(/A IA identificou interesses em comum/)).toBeVisible();
+    await print(pi, 43, 'por-que-voces-combinam', 'Detalhe do anúncio — painel "Por que vocês combinam" (7 critérios, IA em destaque, temas em comum)', 'Procura vaga');
+
+    await menu(pi, 'Perfil').click();
+    const temas = pi.getByTestId('temas-minha-bio');
+    await expect(temas.getByRole('list', { name: 'Temas identificados na sua bio' })).toBeVisible();
+    await temas.evaluate(e => e.scrollIntoView({ block: 'center' }));
+    await print(pi, 45, 'meu-perfil-temas-da-ia', 'Meu Perfil — temas que a IA identificou na bio', 'Procura vaga');
+  });
+  await i.context.close();
+
+  const adIA = await sessao(browser);
+  const pad2 = adIA.page;
+  await test.step('aba IA do painel admin: status, laboratório e processamento paralelo', async () => {
+    await entrar(pad2, ADMIN.email, ADMIN.senha);
+    await expect(pad2.getByRole('heading', { name: 'Painel Admin' })).toBeVisible({ timeout: 60_000 });
+    await pad2.getByRole('button', { name: /^IA$/ }).click();
+    await expect(pad2.getByRole('status').filter({ hasText: 'Disponível' })).toBeVisible({ timeout: 90_000 });
+    await print(pad2, 46, 'admin-ia-status', 'Painel admin — aba IA: situação do modelo e temas', 'Administrador');
+
+    await pad2.getByRole('button', { name: 'Laboratório' }).click();
+    for (const [n, exemplo, slug, tela] of [
+      [47, 'Interesses parecidos, palavras diferentes', 'admin-ia-laboratorio-exemplo-1', 'Laboratório da IA — exemplo 1: interesses parecidos, palavras diferentes'],
+      [48, 'Estilos diferentes', 'admin-ia-laboratorio-exemplo-2', 'Laboratório da IA — exemplo 2: estilos diferentes (festas × silêncio)'],
+    ] as const) {
+      await pad2.getByRole('button', { name: exemplo }).click();
+      await expect(pad2.getByTestId('resultado-laboratorio')).toBeVisible({ timeout: 60_000 });
+      await expect(pad2.getByRole('button', { name: /Comparar com IA/ })).toBeEnabled({ timeout: 60_000 });
+      await print(pad2, n, slug, tela, 'Administrador', { paginaInteira: true });
+    }
+
+    await pad2.getByRole('button', { name: 'Processamento paralelo' }).click();
+    await expect(pad2.getByTestId('graficos-paralelismo')).toBeVisible({ timeout: 30_000 });
+    await pad2.getByRole('button', { name: '10.000', exact: true }).click();
+    await print(pad2, 49, 'admin-processamento-paralelo', 'Painel admin — processamento paralelo (tempo e speedup × workers, Amdahl, tabela)', 'Administrador', { paginaInteira: true });
+  });
+  await adIA.context.close();
+
+  const im = await sessao(browser, MOBILE);
+  const pim = im.page;
+  await test.step('celular: painel "Por que vocês combinam"', async () => {
+    await entrar(pim, ISABELA, SENHA_SEED);
+    // no celular a Descoberta mostra um card por vez: a busca leva ao anúncio
+    await pim.getByPlaceholder('Buscar por nome, região...').fill('cozinha gourmet');
+    await expect(visiveis(pim, ANUNCIO_HENRIQUE).first()).toBeVisible({ timeout: 60_000 });
+    await visiveis(pim, ANUNCIO_HENRIQUE).first().click();
+    await topoNoPainel(pim);
+    await print(pim, 50, 'mobile-por-que-voces-combinam', 'Painel "Por que vocês combinam" no celular', 'Procura vaga');
+  });
+  await im.context.close();
 });

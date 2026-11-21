@@ -1,6 +1,6 @@
 # Manual do Usuário — PlaceMatch
 
-**Versão do sistema:** v1.0.0-rc2  
+**Versão do sistema:** v1.0.0  
 **Grupo 07 — Turma 8 NA — Ciência da Computação (UNINASSAU) — Fábrica de Software, 2026.2**
 
 Este manual explica como usar o PlaceMatch, passo a passo, para quem nunca usou o sistema. As imagens são capturas da versão atual, feitas com os dados de demonstração (pessoas e anúncios fictícios de bairros do Recife).
@@ -25,6 +25,7 @@ Este manual explica como usar o PlaceMatch, passo a passo, para quem nunca usou 
 14. [Painel administrativo](#14-painel-administrativo)
 15. [Uso no celular](#15-uso-no-celular)
 16. [Mensagens, validações e situações comuns](#16-mensagens-validações-e-situações-comuns)
+17. [Afinidade de interesses (IA)](#17-afinidade-de-interesses-ia)
 
 ---
 
@@ -119,6 +120,7 @@ Depois do cadastro, o sistema pede o perfil, em etapas. A barra no topo mostra *
 
 - **Link da sua foto** (opcional): endereço de uma imagem começando com `http://` ou `https://`. Quando o link é válido, a foto aparece no círculo. Clicar no círculo leva ao campo do link.
 - **Nome** (2 a 150 caracteres), **Idade** (18 a 100), **Região ou bairro** e **Sobre você** (até 500 caracteres).
+- **Dica:** escreva em "Sobre você" o que você gosta de fazer (cozinhar, estudar, música, esportes…). A IA usa esse texto para encontrar pessoas com interesses parecidos ([seção 17](#17-afinidade-de-interesses-ia)).
 
 ### Etapa 2 — Preferências de moradia
 
@@ -168,7 +170,7 @@ O endereço da página acompanha a tela aberta: recarregar a página (F5) manté
 
 Quem procura um lugar vê **"Vagas para você"**: cada card traz foto do imóvel, título, bairro, tipo, número de pessoas, faixa de preço, etiquetas (Aceita pets, Não fumante…) e quem anunciou. Quem tem um lugar vê **"Interessados na sua vaga"**: cada card traz foto, nome, idade, bairro e etiquetas de hábitos.
 
-Todo card mostra o **percentual de compatibilidade**. A lista vem ordenada do mais compatível para o menos compatível.
+Todo card mostra o **percentual de compatibilidade**. A lista vem ordenada do mais compatível para o menos compatível. Quando a IA percebe que as biografias falam dos mesmos interesses, o card ganha o selo **"✨ Interesses em comum: …"** (veja a [seção 17](#17-afinidade-de-interesses-ia)).
 
 | ![Quem procura vaga](../frontend/e2e/evidencias-rc/RC-09-descoberta-quem-procura-vaga.png) | ![Quem oferece vaga](../frontend/e2e/evidencias-rc/RC-10-descoberta-quem-oferece-vaga.png) |
 |---|---|
@@ -183,7 +185,7 @@ Todo card mostra o **percentual de compatibilidade**. A lista vem ordenada do ma
 | 60% a 79% | Alta compatibilidade |
 | 80% a 100% | Combinação perfeita |
 
-O percentual considera seis critérios: orçamento, hábitos, região, rotina, tipo de moradia e idade.
+O percentual considera sete critérios: orçamento, hábitos, região, rotina, tipo de moradia, idade e a **afinidade de interesses (IA)**, que compara o que as duas pessoas escreveram em "Sobre você". Se uma das bios for curta demais, a IA fica de fora e o percentual usa só os outros seis, sem tirar pontos de ninguém.
 
 ### 8.2 Buscar e filtrar
 
@@ -198,7 +200,7 @@ Se nenhum resultado aparecer, o sistema mostra **"Nenhum perfil com esses filtro
 
 ### 8.3 Ver detalhes, curtir e recusar
 
-- Clique no card para ver o **detalhe**: fotos (clique nas miniaturas para trocar), preço, compatibilidade, descrição, dados da vaga e quem anunciou.
+- Clique no card para ver o **detalhe**: fotos (clique nas miniaturas para trocar), preço, compatibilidade, descrição, o painel **"Por que vocês combinam"** (critério a critério, [seção 17](#17-afinidade-de-interesses-ia)), dados da vaga e quem anunciou.
 - **Coração / Tenho interesse**: demonstra interesse.
 - **X / Recusar**: tira a opção da sua lista.
 - Cada perfil só pode ser avaliado uma vez.
@@ -240,7 +242,7 @@ A tela **Notificações** lista os novos matches, do mais recente para o mais an
 
 ## 12. Meu Perfil: ver, editar e excluir
 
-- **Ver**: em **Perfil**, aparecem todos os seus dados: sobre mim, preferências de moradia, convivência e hábitos (e o anúncio, para quem oferece vaga).
+- **Ver**: em **Perfil**, aparecem todos os seus dados: sobre mim, os **temas que a IA identificou na sua bio**, preferências de moradia, convivência e hábitos (e o anúncio, para quem oferece vaga).
 - **Editar**: clique em **Editar**, altere os campos (inclusive o link da foto) e clique em **Salvar**. **Cancelar** descarta as mudanças. As regras são as mesmas da criação.
 - **Excluir**: clique em **Excluir perfil** e confirme em **Excluir definitivamente**. **Atenção:** você perde todas as curtidas, matches e conversas, e a ação não pode ser desfeita.
 
@@ -264,7 +266,7 @@ A equipe de administração analisa cada denúncia. Enquanto houver uma denúnci
 
 ## 14. Painel administrativo
 
-O administrador entra pelo mesmo login e cai direto no **Painel Admin**, com cinco abas. As contas de administrador são criadas pela equipe técnica, não pelo cadastro.
+O administrador entra pelo mesmo login e cai direto no **Painel Admin**, com seis abas. As contas de administrador são criadas pela equipe técnica, não pelo cadastro.
 
 ### 14.1 Painel
 
@@ -282,7 +284,7 @@ Indicadores do período (Usuários, Perfis, Curtidas, Matches, Taxa de match, Sc
 
 ### 14.3 Logs
 
-Histórico das operações do sistema (logins, cadastros, curtidas, matches, mensagens, denúncias, exportações, redefinições de senha). Filtre por ação, usuário, entidade e período; clique numa linha para ver os detalhes. Os logs nunca mostram senhas nem o texto das mensagens. Também podem ser exportados em CSV.
+Histórico das operações do sistema (logins, cadastros, curtidas, matches, mensagens, denúncias, exportações, redefinições de senha e testes da IA no laboratório, em **Teste da IA (painel)**). Filtre por ação, usuário, entidade e período; clique numa linha para ver os detalhes. Os logs nunca mostram senhas nem o texto das mensagens. Também podem ser exportados em CSV.
 
 ![Logs](../frontend/e2e/evidencias-rc/RC-24-admin-logs.png)
 
@@ -304,6 +306,48 @@ O número ao lado da aba indica denúncias pendentes.
 
 | ![Moderação](../frontend/e2e/evidencias-rc/RC-26-admin-moderacao.png) | ![Análise](../frontend/e2e/evidencias-rc/RC-27-admin-analise-de-denuncia.png) |
 |---|---|
+
+### 14.6 IA
+
+A aba **IA** mostra como está a inteligência artificial do sistema e permite testá-la. Ela tem três partes, escolhidas nos botões do topo.
+
+**Status.** Mostra a situação do modelo: **Carregando** (logo depois que o servidor liga; a tela se atualiza sozinha), **Disponível** ou **Indisponível**. Também mostra:
+
+- o nome do modelo e o tamanho do vetor (384 números por bio);
+- quantos perfis já foram analisados, do total;
+- o tempo médio para analisar uma bio;
+- os 16 temas de convivência, com quantas pessoas têm cada um;
+- a última atualização.
+
+![Aba IA — status](../frontend/e2e/evidencias-rc/RC-46-admin-ia-status.png)
+
+**Laboratório.** Serve para ver a IA funcionando com qualquer texto.
+
+1. Escreva dois textos (até 1000 caracteres cada) ou clique num exemplo pronto: **Interesses parecidos, palavras diferentes**, **Estilos diferentes** ou **Estudo e foco**.
+2. Clique em **Comparar com IA**.
+3. Leia o resultado:
+   - a **similaridade** (o quanto os textos falam das mesmas coisas);
+   - a **afinidade** (o valor que entra no score);
+   - os temas de cada texto, com os temas em comum destacados com ✨;
+   - o tempo que a IA levou.
+
+Os textos testados não são guardados: o log registra só o tamanho e o resultado.
+
+| ![Laboratório — exemplo 1](../frontend/e2e/evidencias-rc/RC-47-admin-ia-laboratorio-exemplo-1.png) | ![Laboratório — exemplo 2](../frontend/e2e/evidencias-rc/RC-48-admin-ia-laboratorio-exemplo-2.png) |
+|---|---|
+
+No exemplo 2 (festas × silêncio), a afinidade sai baixa porque os assuntos são outros. Quando as preferências são opostas sobre o **mesmo** assunto, quem separa as pessoas são os critérios de hábitos e rotina. A nota fixa abaixo dos campos lembra isso.
+
+**Processamento paralelo.** Mostra o resultado do teste de desempenho que mede o recálculo de todas as compatibilidades usando vários núcleos do processador. Os gráficos mostram, para cada quantidade de perfis (escolha nos botões), o **tempo** e o **speedup** (quantas vezes ficou mais rápido) com 1, 2 e 4 workers, em dois modos: *threads* e *processos*. A tela também mostra:
+
+- a fração do trabalho que pode ser dividida (Lei de Amdahl);
+- uma tabela com todos os números;
+- o computador usado no teste;
+- as conclusões.
+
+Se o teste ainda não foi executado, a tela mostra o comando para a equipe técnica rodar.
+
+![Processamento paralelo](../frontend/e2e/evidencias-rc/RC-49-admin-processamento-paralelo.png)
 
 ## 15. Uso no celular
 
@@ -342,3 +386,38 @@ O sistema se adapta a telas pequenas: o menu vira uma barra na parte de baixo, o
 - **Quero trocar o tipo da conta** (procurar ↔ oferecer). Não é possível pelo sistema: crie outra conta com outro e-mail.
 - **A pessoa sumiu dos meus matches.** Ela excluiu o perfil ou a conta foi suspensa.
 - **Perdi o que estava digitando no perfil.** O formulário mantém os dados ao voltar entre etapas, mas não guarda se a aba for fechada antes de concluir.
+
+## 17. Afinidade de interesses (IA)
+
+O PlaceMatch usa uma **inteligência artificial** (um modelo de linguagem) que lê o texto **"Sobre você"** das duas pessoas e compara o **significado**, não só as palavras. Por exemplo, "adoro cozinhar para os amigos" e "faço jantares em casa" falam do mesmo interesse, mesmo sem nenhuma palavra igual.
+
+- **Onde roda:** no próprio servidor do PlaceMatch. Nenhum texto é enviado para outras empresas ou serviços.
+- **Quanto vale:** 10% do percentual de compatibilidade. Os outros 90% vêm de orçamento, hábitos, região, rotina, moradia e idade.
+- **O que ela mede:** interesses em comum, isto é, o assunto das bios. Preferências do dia a dia, como gostar de festas ou de silêncio, horários e organização, ficam com os critérios de hábitos e rotina.
+- **Bio curta:** textos com menos de 20 letras não são analisados. O percentual usa os outros 6 critérios, e você não perde pontos por isso. Para quem oferece vaga, o título e a descrição do anúncio também contam.
+
+### 17.1 Selo "Interesses em comum" na Descoberta
+
+Quando a afinidade é alta (70% ou mais) e a IA encontra um tema em comum, o card mostra o selo **"✨ Interesses em comum: Culinária"**, por exemplo. O card mostra só um tema; os demais aparecem no detalhe.
+
+![Selo de interesses em comum](../frontend/e2e/evidencias-rc/RC-44-descoberta-selo-interesses-em-comum.png)
+
+### 17.2 Painel "Por que vocês combinam"
+
+No detalhe de um anúncio ou de uma pessoa, este painel explica o percentual:
+
+- o **percentual total** em destaque;
+- uma **barra para cada critério**, com o valor (quanto vocês combinam naquele ponto) e o **peso** (quanto ele vale no total). A afinidade de interesses aparece por último, em verde, com o selo **✨ IA**;
+- os **interesses em comum** que a IA encontrou ("A IA identificou interesses em comum: …"). Se não houver nenhum, aparece "A IA não encontrou interesses em comum nas biografias.";
+- se uma das bios for curta demais, um aviso explica que o percentual usa os outros 6 critérios, e a barra da IA não aparece.
+
+O link **ⓘ Como a IA funciona** abre um resumo destas explicações.
+
+| ![Por que vocês combinam](../frontend/e2e/evidencias-rc/RC-43-por-que-voces-combinam.png) | ![No celular](../frontend/e2e/evidencias-rc/RC-50-mobile-por-que-voces-combinam.png) |
+|---|---|
+
+### 17.3 Temas da sua bio (Meu Perfil)
+
+Em **Perfil**, o bloco **"Temas que a IA identificou na sua bio"** mostra os temas de convivência encontrados no seu texto (por exemplo: Culinária, Estudos, Pets, Música). Se nenhum aparecer, escreva mais sobre o que você gosta de fazer: **"Escreva sobre seus interesses para a IA encontrar pessoas com afinidade."** Se a bio estiver curta demais, o bloco avisa quantas letras faltam para a análise.
+
+![Temas da IA no Meu Perfil](../frontend/e2e/evidencias-rc/RC-45-meu-perfil-temas-da-ia.png)

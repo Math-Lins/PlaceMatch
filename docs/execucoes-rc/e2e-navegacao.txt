@@ -1,699 +1,219 @@
-# 18/11/2026 10:12:39 -0300 | diretório: frontend | v1.0.0-rc2 | comando (um roteiro por vez): npx playwright test -c e2e/playwright.config.ts <roteiro> --workers=1 --trace=off --reporter=list
+# 20/11/2026 22:39:41 -0300 | diretório: frontend | v1.0.0 | comando (um roteiro por vez): npx playwright test -c e2e/playwright.config.ts <roteiro> --workers=1 --trace=off --reporter=list
 # Banco descartável placematch_e2e_db (porta 5433) recriado do zero antes do n01. O Playwright sobe a API Django (127.0.0.1:8001) e o Vite (127.0.0.1:5173) e os encerra ao fim de cada roteiro.
-# E-mails do e2e (recuperação de senha): backend de arquivo em placematch-e2e-emails/ (pasta temporária do sistema); limites de login e de pedido de link desligados.
-# Antes de começar: nenhum processo e2e antigo em execução; portas 8001 e 5173 livres; memória: 5,5 GB livres.
+# API do e2e com o MODELO DE IA REAL (backend/.modelos, aquecido na subida do servidor); E-mails: backend de arquivo; limites de login e de pedido de link desligados.
+# Antes de começar: nenhum processo e2e antigo em execução; portas 8001 e 5173 livres; memória: 5,4 GB livres.
 
 ==================================================================================
-# 18/11/2026 10:12:44 -0300 | roteiro n01 | memória antes: 5,5 GB livres | npx playwright test -c e2e/playwright.config.ts n01 --workers=1 --trace=off --reporter=list
+# 20/11/2026 22:39:41 -0300 | roteiro n01 | memória antes: 5,4 GB livres | npx playwright test -c e2e/playwright.config.ts n01 --workers=1 --trace=off --reporter=list
 ==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:13:24] "GET /api/auth/me/ HTTP/1.1" 401 68
 
 Running 9 tests using 1 worker
 
-[WebServer] Unauthorized: /api/auth/login/
-[WebServer] [18/Nov/2026 10:13:43] "POST /api/auth/login/ HTTP/1.1" 401 40
-  ✓  1 [desktop] › e2e\n01-visitante.spec.ts:4:3 › N01 Visitante › tela inicial → Entrar → voltar → Criar conta (9.1s)
-  ✓  2 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "discovery" sem login leva ao login (2.5s)
-  ✓  3 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "notifications" sem login leva ao login (2.3s)
-  ✓  4 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "matches" sem login leva ao login (2.3s)
-  ✓  5 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "profile" sem login leva ao login (2.3s)
-  ✓  6 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "profile-create" sem login leva ao login (2.2s)
-  ✓  7 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "profile-detail" sem login leva ao login (2.0s)
-  ✓  8 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "match" sem login leva ao login (1.8s)
-  ✓  9 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "chat" sem login leva ao login (2.1s)
+  ✓  1 [desktop] › e2e\n01-visitante.spec.ts:4:3 › N01 Visitante › tela inicial → Entrar → voltar → Criar conta (10.9s)
+  ✓  2 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "discovery" sem login leva ao login (3.2s)
+  ✓  3 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "notifications" sem login leva ao login (2.8s)
+  ✓  4 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "matches" sem login leva ao login (2.6s)
+  ✓  5 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "profile" sem login leva ao login (2.8s)
+  ✓  6 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "profile-create" sem login leva ao login (2.4s)
+  ✓  7 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "profile-detail" sem login leva ao login (2.8s)
+  ✓  8 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "match" sem login leva ao login (2.4s)
+  ✓  9 [desktop] › e2e\n01-visitante.spec.ts:84:5 › N01 Visitante › tela interna "chat" sem login leva ao login (2.6s)
 
-  9 passed (1.1m)
-# resultado: n01: PASSOU (9 passed) em 77s (código de saída 0)
+  9 passed (1.8m)
+# resultado: n01: PASSOU (9 passed) em 134s (código de saída 0)
 
 ==================================================================================
-# 18/11/2026 10:14:07 -0300 | roteiro n02 | memória antes: 5,5 GB livres | npx playwright test -c e2e/playwright.config.ts n02 --workers=1 --trace=off --reporter=list
+# 20/11/2026 22:41:57 -0300 | roteiro n02 | memória antes: 5,4 GB livres | npx playwright test -c e2e/playwright.config.ts n02 --workers=1 --trace=off --reporter=list
 ==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:14:43] "GET /api/auth/me/ HTTP/1.1" 401 68
 
 Running 1 test using 1 worker
 
-[WebServer] [18/Nov/2026 10:14:57] "POST /api/auth/registrar/ HTTP/1.1" 201 132
-[WebServer] [18/Nov/2026 10:14:59] "POST /api/auth/login/ HTTP/1.1" 200 489
-[WebServer] [18/Nov/2026 10:14:59] "GET /api/auth/me/ HTTP/1.1" 200 182
-[WebServer] [18/Nov/2026 10:14:59] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:15:00] "POST /api/perfis/ HTTP/1.1" 201 474
-[WebServer] [18/Nov/2026 10:15:01] "GET /api/descoberta/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:15:05] "POST /api/auth/registrar/ HTTP/1.1" 201 107
-[WebServer] [18/Nov/2026 10:15:07] "POST /api/auth/login/ HTTP/1.1" 200 489
-[WebServer] [18/Nov/2026 10:15:07] "GET /api/auth/me/ HTTP/1.1" 200 144
-[WebServer] [18/Nov/2026 10:15:07] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:15:07] "GET /api/auth/me/ HTTP/1.1" 200 144
-[WebServer] [18/Nov/2026 10:15:11] "POST /api/perfis/ HTTP/1.1" 201 435
-[WebServer] [18/Nov/2026 10:15:11] "GET /api/descoberta/ HTTP/1.1" 200 516
-[WebServer] [18/Nov/2026 10:15:11] "GET /api/descoberta/ HTTP/1.1" 200 516
-  ✓  1 [desktop] › e2e\n02-cadastro-busca.spec.ts:3:1 › N02 Cadastro "Maria José da Silva" (buscando vaga) → perfil em etapas → Descoberta (18.8s)
+  ✓  1 [desktop] › e2e\n02-cadastro-busca.spec.ts:3:1 › N02 Cadastro "Maria José da Silva" (buscando vaga) → perfil em etapas → Descoberta (34.0s)
 
-  1 passed (50.3s)
-# resultado: n02: PASSOU (1 passed) em 63s (código de saída 0)
+  1 passed (1.7m)
+# resultado: n02: PASSOU (1 passed) em 116s (código de saída 0)
 
 ==================================================================================
-# 18/11/2026 10:15:18 -0300 | roteiro n03 | memória antes: 5,7 GB livres | npx playwright test -c e2e/playwright.config.ts n03 --workers=1 --trace=off --reporter=list
+# 20/11/2026 22:43:54 -0300 | roteiro n03 | memória antes: 5,4 GB livres | npx playwright test -c e2e/playwright.config.ts n03 --workers=1 --trace=off --reporter=list
 ==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:15:55] "GET /api/auth/me/ HTTP/1.1" 401 68
 
 Running 2 tests using 1 worker
 
-[WebServer] [18/Nov/2026 10:16:09] "POST /api/auth/registrar/ HTTP/1.1" 201 134
-[WebServer] [18/Nov/2026 10:16:11] "POST /api/auth/login/ HTTP/1.1" 200 489
-[WebServer] [18/Nov/2026 10:16:11] "GET /api/auth/me/ HTTP/1.1" 200 186
-[WebServer] [18/Nov/2026 10:16:11] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:16:12] "POST /api/perfis/ HTTP/1.1" 201 454
-[WebServer] [18/Nov/2026 10:16:17] "POST /api/auth/registrar/ HTTP/1.1" 201 116
-[WebServer] [18/Nov/2026 10:16:19] "POST /api/auth/login/ HTTP/1.1" 200 489
-[WebServer] [18/Nov/2026 10:16:19] "GET /api/auth/me/ HTTP/1.1" 200 158
-[WebServer] [18/Nov/2026 10:16:19] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:16:23] "POST /api/perfis/ HTTP/1.1" 201 576
-[WebServer] [18/Nov/2026 10:16:23] "GET /api/descoberta/ HTTP/1.1" 200 969
-[WebServer] [18/Nov/2026 10:16:23] "GET /api/descoberta/ HTTP/1.1" 200 969
-[WebServer] [18/Nov/2026 10:16:24] "GET /api/auth/me/ HTTP/1.1" 200 158
-[WebServer] [18/Nov/2026 10:16:24] "GET /api/auth/me/ HTTP/1.1" 200 158
-[WebServer] [18/Nov/2026 10:16:24] "GET /api/perfis/ HTTP/1.1" 200 578
-[WebServer] [18/Nov/2026 10:16:24] "GET /api/matches/ HTTP/1.1" 200 2
-  ✓  1 [desktop] › e2e\n03-cadastro-oferece.spec.ts:3:1 › N03 Cadastro oferecendo vaga → etapas + anúncio com foto → Descoberta "Interessados na sua vaga" (21.1s)
-[WebServer] [18/Nov/2026 10:16:29] "POST /api/auth/registrar/ HTTP/1.1" 201 118
-[WebServer] [18/Nov/2026 10:16:31] "POST /api/auth/login/ HTTP/1.1" 200 489
-[WebServer] [18/Nov/2026 10:16:31] "GET /api/auth/me/ HTTP/1.1" 200 161
-[WebServer] [18/Nov/2026 10:16:31] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:16:33] "POST /api/perfis/ HTTP/1.1" 201 452
-  ✓  2 [desktop] › e2e\n03-cadastro-oferece.spec.ts:105:1 › N03b criarPerfilCompleto (helper) cobre as 5 etapas (8.0s)
+  ✓  1 [desktop] › e2e\n03-cadastro-oferece.spec.ts:3:1 › N03 Cadastro oferecendo vaga → etapas + anúncio com foto → Descoberta "Interessados na sua vaga" (29.9s)
+  ✓  2 [desktop] › e2e\n03-cadastro-oferece.spec.ts:105:1 › N03b criarPerfilCompleto (helper) cobre as 5 etapas (11.6s)
 
-  2 passed (1.0m)
-# resultado: n03: PASSOU (2 passed) em 74s (código de saída 0)
+  2 passed (1.5m)
+# resultado: n03: PASSOU (2 passed) em 106s (código de saída 0)
 
 ==================================================================================
-# 18/11/2026 10:16:39 -0300 | roteiro n04 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n04 --workers=1 --trace=off --reporter=list
+# 20/11/2026 22:45:40 -0300 | roteiro n04 | memória antes: 5,4 GB livres | npx playwright test -c e2e/playwright.config.ts n04 --workers=1 --trace=off --reporter=list
 ==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:17:12] "GET /api/auth/me/ HTTP/1.1" 401 68
 
 Running 1 test using 1 worker
 
-[WebServer] [18/Nov/2026 10:17:37] "POST /api/auth/registrar/ HTTP/1.1" 201 110
-[WebServer] [18/Nov/2026 10:17:39] "POST /api/auth/login/ HTTP/1.1" 200 489
-[WebServer] [18/Nov/2026 10:17:39] "GET /api/auth/me/ HTTP/1.1" 200 150
-[WebServer] [18/Nov/2026 10:17:39] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:41] "POST /api/perfis/ HTTP/1.1" 201 438
-[WebServer] [18/Nov/2026 10:17:41] "GET /api/descoberta/ HTTP/1.1" 200 1627
-[WebServer] [18/Nov/2026 10:17:41] "GET /api/descoberta/ HTTP/1.1" 200 1627
-[WebServer] [18/Nov/2026 10:17:41] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:41] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:41] "GET /api/conversas/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:41] "GET /api/conversas/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:42] "GET /api/descoberta/ HTTP/1.1" 200 1627
-[WebServer] [18/Nov/2026 10:17:42] "GET /api/descoberta/ HTTP/1.1" 200 1627
-[WebServer] [18/Nov/2026 10:17:42] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:42] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:42] "GET /api/conversas/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:42] "GET /api/conversas/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:42] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:42] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:42] "GET /api/descoberta/ HTTP/1.1" 200 1627
-[WebServer] [18/Nov/2026 10:17:43] "GET /api/descoberta/ HTTP/1.1" 200 1627
-[WebServer] [18/Nov/2026 10:17:43] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:43] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:43,253] - Broken pipe from ('127.0.0.1', 62125)
-[WebServer] [18/Nov/2026 10:17:43,315] - Broken pipe from ('127.0.0.1', 62117)
-[WebServer] [18/Nov/2026 10:17:43] "GET /api/auth/me/ HTTP/1.1" 200 150
-[WebServer] [18/Nov/2026 10:17:43] "GET /api/auth/me/ HTTP/1.1" 200 150
-[WebServer] [18/Nov/2026 10:17:44] "GET /api/perfis/ HTTP/1.1" 200 440
-[WebServer] [18/Nov/2026 10:17:44] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:44] "GET /api/conversas/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:44] "GET /api/conversas/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:17:45] "GET /api/auth/me/ HTTP/1.1" 200 150
-[WebServer] [18/Nov/2026 10:17:45] "GET /api/auth/me/ HTTP/1.1" 200 150
-[WebServer] [18/Nov/2026 10:17:45] "GET /api/perfis/ HTTP/1.1" 200 440
-[WebServer] [18/Nov/2026 10:17:45] "GET /api/matches/ HTTP/1.1" 200 2
-  ✓  1 [desktop] › e2e\n04-menu-e-sessao.spec.ts:3:1 › N04 Menu lateral, item ativo, botão voltar do navegador e recarregar mantém sessão e tela (14.7s)
-
-  1 passed (56.2s)
-# resultado: n04: PASSOU (1 passed) em 68s (código de saída 0)
-
-==================================================================================
-# 18/11/2026 10:17:52 -0300 | roteiro n05 | memória antes: 5,6 GB livres | npx playwright test -c e2e/playwright.config.ts n05 --workers=1 --trace=off --reporter=list
-==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:18:44] "GET /api/auth/me/ HTTP/1.1" 401 68
-
-Running 1 test using 1 worker
-
-[WebServer] [18/Nov/2026 10:19:02] "POST /api/auth/registrar/ HTTP/1.1" 201 118
-[WebServer] [18/Nov/2026 10:19:05] "POST /api/auth/login/ HTTP/1.1" 200 489
-[WebServer] [18/Nov/2026 10:19:05] "GET /api/auth/me/ HTTP/1.1" 200 161
-[WebServer] [18/Nov/2026 10:19:05] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:19:06] "POST /api/perfis/ HTTP/1.1" 201 466
-[WebServer] [18/Nov/2026 10:19:11] "POST /api/auth/registrar/ HTTP/1.1" 201 118
-[WebServer] [18/Nov/2026 10:19:14] "POST /api/auth/login/ HTTP/1.1" 200 489
-[WebServer] [18/Nov/2026 10:19:14] "GET /api/auth/me/ HTTP/1.1" 200 161
-[WebServer] [18/Nov/2026 10:19:14] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:19:15] "POST /api/perfis/ HTTP/1.1" 201 460
-[WebServer] [18/Nov/2026 10:19:21] "POST /api/auth/registrar/ HTTP/1.1" 201 110
-[WebServer] [18/Nov/2026 10:19:24] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:19:24] "GET /api/auth/me/ HTTP/1.1" 200 151
-[WebServer] [18/Nov/2026 10:19:24] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:19:25] "POST /api/perfis/ HTTP/1.1" 201 439
-[WebServer] [18/Nov/2026 10:19:25] "GET /api/descoberta/ HTTP/1.1" 200 2639
-[WebServer] [18/Nov/2026 10:19:25] "GET /api/descoberta/ HTTP/1.1" 200 2639
-[WebServer] [18/Nov/2026 10:19:26] "GET /api/descoberta/?q=Casa+Forte HTTP/1.1" 200 505
-[WebServer] [18/Nov/2026 10:19:27] "GET /api/descoberta/ HTTP/1.1" 200 2639
-[WebServer] [18/Nov/2026 10:19:28] "GET /api/descoberta/?tipo_imovel=casa HTTP/1.1" 200 505
-[WebServer] [18/Nov/2026 10:19:29] "GET /api/descoberta/?tipo_imovel=casa HTTP/1.1" 200 505
-[WebServer] [18/Nov/2026 10:19:29] "GET /api/descoberta/?tipo_imovel=casa HTTP/1.1" 200 505
-[WebServer] [18/Nov/2026 10:19:29] "GET /api/descoberta/ HTTP/1.1" 200 2639
-[WebServer] [18/Nov/2026 10:19:30] "GET /api/descoberta/?aceita_pets=true&ordenar=orcamento_asc HTTP/1.1" 200 2135
-[WebServer] [18/Nov/2026 10:19:30] "GET /api/descoberta/?ordenar=orcamento_asc HTTP/1.1" 200 2639
-[WebServer] [18/Nov/2026 10:19:30] "GET /api/descoberta/ HTTP/1.1" 200 2639
-[WebServer] [18/Nov/2026 10:19:31] "GET /api/descoberta/?q=zzzz-nao-existe HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:19:32] "GET /api/descoberta/ HTTP/1.1" 200 2639
-[WebServer] [18/Nov/2026 10:19:34] "GET /api/descoberta/?q=Boa+Viagem HTTP/1.1" 200 1127
-[WebServer] [18/Nov/2026 10:19:35] "GET /api/descoberta/?q=Casa+Forte HTTP/1.1" 200 505
-[WebServer] [18/Nov/2026 10:19:38] "GET /api/descoberta/ HTTP/1.1" 200 2639
-[WebServer] [18/Nov/2026 10:19:39] "GET /api/descoberta/?q=Casa+Forte HTTP/1.1" 200 505
-[WebServer] [18/Nov/2026 10:19:40] "POST /api/curtidas/ HTTP/1.1" 201 15
-  ✓  1 [desktop] › e2e\n05-descoberta.spec.ts:3:1 › N05 Descoberta: busca, filtros, chips, limpar, estado vazio e detalhe do anúncio (47.3s)
-
-  1 passed (1.4m)
-# resultado: n05: PASSOU (1 passed) em 106s (código de saída 0)
-
-==================================================================================
-# 18/11/2026 10:19:46 -0300 | roteiro n06 | memória antes: 5,7 GB livres | npx playwright test -c e2e/playwright.config.ts n06 --workers=1 --trace=off --reporter=list
-==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:20:20] "GET /api/auth/me/ HTTP/1.1" 401 68
-
-Running 1 test using 1 worker
-
-[WebServer] [18/Nov/2026 10:20:33] "POST /api/auth/registrar/ HTTP/1.1" 201 109
-[WebServer] [18/Nov/2026 10:20:35] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:20:35] "GET /api/auth/me/ HTTP/1.1" 200 149
-[WebServer] [18/Nov/2026 10:20:35] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:20:37] "POST /api/perfis/ HTTP/1.1" 201 439
-[WebServer] [18/Nov/2026 10:20:37] "GET /api/descoberta/ HTTP/1.1" 200 2639
-[WebServer] [18/Nov/2026 10:20:37] "GET /api/descoberta/ HTTP/1.1" 200 2639
-[WebServer] [18/Nov/2026 10:20:40] "POST /api/auth/registrar/ HTTP/1.1" 201 115
-[WebServer] [18/Nov/2026 10:20:42] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:20:42] "GET /api/auth/me/ HTTP/1.1" 200 157
-[WebServer] [18/Nov/2026 10:20:42] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:20:43] "POST /api/perfis/ HTTP/1.1" 201 458
-[WebServer] [18/Nov/2026 10:20:44] "GET /api/descoberta/ HTTP/1.1" 200 2402
-[WebServer] [18/Nov/2026 10:20:44] "GET /api/descoberta/ HTTP/1.1" 200 2402
-[WebServer] [18/Nov/2026 10:20:44] "GET /api/descoberta/?q=Anuncio+n06+28789 HTTP/1.1" 200 500
-[WebServer] [18/Nov/2026 10:20:45] "POST /api/curtidas/ HTTP/1.1" 201 15
-[WebServer] [18/Nov/2026 10:20:45] "GET /api/descoberta/?q=Pessoa+n06+busca+28789 HTTP/1.1" 200 479
-[WebServer] [18/Nov/2026 10:20:46] "POST /api/curtidas/ HTTP/1.1" 201 1071
-[WebServer] [18/Nov/2026 10:20:46] "GET /api/matches/1/mensagens/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:20:46] "GET /api/matches/1/mensagens/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:20:46] "POST /api/matches/1/mensagens/ HTTP/1.1" 201 162
-[WebServer] [18/Nov/2026 10:20:47] "GET /api/conversas/ HTTP/1.1" 200 544
-[WebServer] [18/Nov/2026 10:20:47] "GET /api/conversas/ HTTP/1.1" 200 544
-[WebServer] [18/Nov/2026 10:20:47] "GET /api/matches/ HTTP/1.1" 200 1045
-[WebServer] [18/Nov/2026 10:20:47] "GET /api/matches/ HTTP/1.1" 200 1045
-[WebServer] [18/Nov/2026 10:20:47,937] - Broken pipe from ('127.0.0.1', 62362)
-[WebServer] [18/Nov/2026 10:20:47] "GET /api/descoberta/?q=Anuncio+n06+28789 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:20:47,951] - Broken pipe from ('127.0.0.1', 62355)
-[WebServer] [18/Nov/2026 10:20:48] "GET /api/auth/me/ HTTP/1.1" 200 149
-[WebServer] [18/Nov/2026 10:20:48] "GET /api/auth/me/ HTTP/1.1" 200 149
-[WebServer] [18/Nov/2026 10:20:48] "GET /api/perfis/ HTTP/1.1" 200 441
-[WebServer] [18/Nov/2026 10:20:48] "GET /api/matches/ HTTP/1.1" 200 1045
-[WebServer] [18/Nov/2026 10:20:48] "GET /api/descoberta/?q=Anuncio+n06+28789 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:20:48] "GET /api/descoberta/?q=Anuncio+n06+28789 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:20:48] "GET /api/conversas/ HTTP/1.1" 200 544
-[WebServer] [18/Nov/2026 10:20:48] "GET /api/conversas/ HTTP/1.1" 200 544
-[WebServer] [18/Nov/2026 10:20:48] "GET /api/matches/1/mensagens/ HTTP/1.1" 200 163
-[WebServer] [18/Nov/2026 10:20:48] "GET /api/matches/1/mensagens/ HTTP/1.1" 200 163
-[WebServer] [18/Nov/2026 10:20:49] "POST /api/matches/1/mensagens/ HTTP/1.1" 201 141
-[WebServer] [18/Nov/2026 10:20:50] "GET /api/matches/1/mensagens/?apos=1 HTTP/1.1" 200 142
-[WebServer] [18/Nov/2026 10:20:52] "GET /api/matches/1/mensagens/?apos=2 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:20:55] "POST /api/matches/1/mensagens/ HTTP/1.1" 201 149
-[WebServer] [18/Nov/2026 10:20:55] "GET /api/matches/1/mensagens/?apos=2 HTTP/1.1" 200 151
-[WebServer] [18/Nov/2026 10:20:56] "GET /api/matches/1/mensagens/?apos=2 HTTP/1.1" 200 150
-[WebServer] [18/Nov/2026 10:21:00] "GET /api/matches/1/mensagens/?apos=3 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:21:02] "GET /api/matches/1/mensagens/?apos=3 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:21:03] "GET /api/conversas/ HTTP/1.1" 200 531
-[WebServer] [18/Nov/2026 10:21:03] "GET /api/conversas/ HTTP/1.1" 200 531
-[WebServer] [18/Nov/2026 10:21:03] "GET /api/descoberta/?q=Anuncio+n06+28789 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:21:03] "GET /api/descoberta/?q=Anuncio+n06+28789 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:21:03] "GET /api/conversas/ HTTP/1.1" 200 510
-[WebServer] [18/Nov/2026 10:21:03] "GET /api/conversas/ HTTP/1.1" 200 510
-[WebServer] [18/Nov/2026 10:21:04] "GET /api/conversas/ HTTP/1.1" 200 510
-[WebServer] [18/Nov/2026 10:21:04] "GET /api/conversas/ HTTP/1.1" 200 510
-[WebServer] [18/Nov/2026 10:21:04] "GET /api/matches/1/mensagens/ HTTP/1.1" 200 453
-[WebServer] [18/Nov/2026 10:21:04] "GET /api/matches/1/mensagens/ HTTP/1.1" 200 453
-[WebServer] [18/Nov/2026 10:21:04] "GET /api/matches/ HTTP/1.1" 200 1045
-[WebServer] [18/Nov/2026 10:21:05,026] - Broken pipe from ('127.0.0.1', 62440)
-[WebServer] [18/Nov/2026 10:21:05,036] - Broken pipe from ('127.0.0.1', 62439)
-[WebServer] [18/Nov/2026 10:21:05] "GET /api/auth/me/ HTTP/1.1" 200 157
-[WebServer] [18/Nov/2026 10:21:05] "GET /api/auth/me/ HTTP/1.1" 200 157
-[WebServer] [18/Nov/2026 10:21:05] "GET /api/perfis/ HTTP/1.1" 200 460
-[WebServer] [18/Nov/2026 10:21:05] "GET /api/matches/ HTTP/1.1" 200 1045
-[WebServer] [18/Nov/2026 10:21:05] "GET /api/matches/ HTTP/1.1" 200 1045
-[WebServer] [18/Nov/2026 10:21:05] "GET /api/matches/1/mensagens/ HTTP/1.1" 200 453
-[WebServer] [18/Nov/2026 10:21:05] "GET /api/matches/1/mensagens/ HTTP/1.1" 200 453
-[WebServer] [18/Nov/2026 10:21:06] "GET /api/auth/me/ HTTP/1.1" 200 157
-[WebServer] [18/Nov/2026 10:21:06] "GET /api/auth/me/ HTTP/1.1" 200 157
-[WebServer] [18/Nov/2026 10:21:06] "GET /api/perfis/ HTTP/1.1" 200 460
-[WebServer] [18/Nov/2026 10:21:07] "GET /api/matches/ HTTP/1.1" 200 1045
-[WebServer] [18/Nov/2026 10:21:07] "GET /api/matches/ HTTP/1.1" 200 1045
-[WebServer] [18/Nov/2026 10:21:07] "GET /api/conversas/ HTTP/1.1" 200 510
-[WebServer] [18/Nov/2026 10:21:07] "GET /api/conversas/ HTTP/1.1" 200 510
-  ✓  1 [desktop] › e2e\n06-match-e-chat.spec.ts:3:1 › N06 Match e chat com duas sessões isoladas (39.0s)
+  ✓  1 [desktop] › e2e\n04-menu-e-sessao.spec.ts:3:1 › N04 Menu lateral, item ativo, botão voltar do navegador e recarregar mantém sessão e tela (17.8s)
 
   1 passed (1.1m)
-# resultado: n06: PASSOU (1 passed) em 81s (código de saída 0)
+# resultado: n04: PASSOU (1 passed) em 78s (código de saída 0)
 
 ==================================================================================
-# 18/11/2026 10:21:13 -0300 | roteiro n07 | memória antes: 5,6 GB livres | npx playwright test -c e2e/playwright.config.ts n07 --workers=1 --trace=off --reporter=list
+# 20/11/2026 22:46:59 -0300 | roteiro n05 | memória antes: 5,5 GB livres | npx playwright test -c e2e/playwright.config.ts n05 --workers=1 --trace=off --reporter=list
 ==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:21:51] "GET /api/auth/me/ HTTP/1.1" 401 68
 
 Running 1 test using 1 worker
 
-[WebServer] [18/Nov/2026 10:22:04] "POST /api/auth/registrar/ HTTP/1.1" 201 110
-[WebServer] [18/Nov/2026 10:22:06] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:22:06] "GET /api/auth/me/ HTTP/1.1" 200 151
-[WebServer] [18/Nov/2026 10:22:06] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:22:07] "POST /api/perfis/ HTTP/1.1" 201 440
-[WebServer] [18/Nov/2026 10:22:07] "GET /api/descoberta/ HTTP/1.1" 200 3138
-[WebServer] [18/Nov/2026 10:22:07] "GET /api/descoberta/ HTTP/1.1" 200 3138
-[WebServer] [18/Nov/2026 10:22:09] "PATCH /api/perfis/12/ HTTP/1.1" 200 468
-[WebServer] [18/Nov/2026 10:22:11] "DELETE /api/perfis/12/ HTTP/1.1" 204 0
-  ✓  1 [desktop] › e2e\n07-perfil.spec.ts:3:1 › N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil (12.8s)
+  ✓  1 [desktop] › e2e\n05-descoberta.spec.ts:3:1 › N05 Descoberta: busca, filtros, chips, limpar, estado vazio e detalhe do anúncio (46.8s)
 
-  1 passed (43.2s)
-# resultado: n07: PASSOU (1 passed) em 56s (código de saída 0)
+  1 passed (1.5m)
+# resultado: n05: PASSOU (1 passed) em 105s (código de saída 0)
 
 ==================================================================================
-# 18/11/2026 10:22:16 -0300 | roteiro n08 | memória antes: 5,7 GB livres | npx playwright test -c e2e/playwright.config.ts n08 --workers=1 --trace=off --reporter=list
+# 20/11/2026 22:48:45 -0300 | roteiro n06 | memória antes: 5,5 GB livres | npx playwright test -c e2e/playwright.config.ts n06 --workers=1 --trace=off --reporter=list
 ==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:22:51] "GET /api/auth/me/ HTTP/1.1" 401 68
 
 Running 1 test using 1 worker
 
-[WebServer] [18/Nov/2026 10:23:05] "POST /api/auth/registrar/ HTTP/1.1" 201 112
-[WebServer] [18/Nov/2026 10:23:07] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:23:07] "GET /api/auth/me/ HTTP/1.1" 200 154
-[WebServer] [18/Nov/2026 10:23:07] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:23:08] "POST /api/perfis/ HTTP/1.1" 201 441
-[WebServer] [18/Nov/2026 10:23:08] "GET /api/descoberta/ HTTP/1.1" 200 3138
-[WebServer] [18/Nov/2026 10:23:08] "GET /api/descoberta/ HTTP/1.1" 200 3138
-[WebServer] [18/Nov/2026 10:23:08] "GET /api/conversas/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:23:08] "GET /api/conversas/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:23:11] "POST /api/auth/registrar/ HTTP/1.1" 201 118
-[WebServer] [18/Nov/2026 10:23:13] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:23:13] "GET /api/auth/me/ HTTP/1.1" 200 162
-[WebServer] [18/Nov/2026 10:23:13] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:23:15] "POST /api/perfis/ HTTP/1.1" 201 462
-[WebServer] [18/Nov/2026 10:23:15] "GET /api/descoberta/ HTTP/1.1" 200 2882
-[WebServer] [18/Nov/2026 10:23:15] "GET /api/descoberta/ HTTP/1.1" 200 2882
-[WebServer] [18/Nov/2026 10:23:15] "GET /api/descoberta/ HTTP/1.1" 200 3641
-[WebServer] [18/Nov/2026 10:23:15] "GET /api/descoberta/ HTTP/1.1" 200 3641
-[WebServer] [18/Nov/2026 10:23:15] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:23:15] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:23:16] "POST /api/auth/logout/ HTTP/1.1" 204 0
-[WebServer] Unauthorized: /api/auth/login/refresh/
-[WebServer] [18/Nov/2026 10:23:16] "POST /api/auth/login/refresh/ HTTP/1.1" 401 62
-  ✓  1 [desktop] › e2e\n08-sair-da-conta.spec.ts:3:1 › N08 Sair da conta: volta ao início, voltar do navegador não reabre tela interna, segunda aba mantém a sessão (17.9s)
+  ✓  1 [desktop] › e2e\n06-match-e-chat.spec.ts:3:1 › N06 Match e chat com duas sessões isoladas (51.8s)
 
-  1 passed (48.6s)
-# resultado: n08: PASSOU (1 passed) em 61s (código de saída 0)
+  1 passed (1.7m)
+# resultado: n06: PASSOU (1 passed) em 115s (código de saída 0)
 
 ==================================================================================
-# 18/11/2026 10:23:24 -0300 | roteiro n09 | memória antes: 5,7 GB livres | npx playwright test -c e2e/playwright.config.ts n09 --workers=1 --trace=off --reporter=list
+# 20/11/2026 22:50:40 -0300 | roteiro n07 | memória antes: 5,5 GB livres | npx playwright test -c e2e/playwright.config.ts n07 --workers=1 --trace=off --reporter=list
 ==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:23:59] "GET /api/auth/me/ HTTP/1.1" 401 68
+
+Running 1 test using 1 worker
+
+  ✓  1 [desktop] › e2e\n07-perfil.spec.ts:3:1 › N07 Meu Perfil: editar todos os campos, cancelar descarta, excluir perfil (17.8s)
+
+  1 passed (1.1m)
+# resultado: n07: PASSOU (1 passed) em 76s (código de saída 0)
+
+==================================================================================
+# 20/11/2026 22:51:57 -0300 | roteiro n08 | memória antes: 5,5 GB livres | npx playwright test -c e2e/playwright.config.ts n08 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 1 test using 1 worker
+
+  ✓  1 [desktop] › e2e\n08-sair-da-conta.spec.ts:3:1 › N08 Sair da conta: volta ao início, voltar do navegador não reabre tela interna, segunda aba mantém a sessão (20.6s)
+
+  1 passed (1.1m)
+# resultado: n08: PASSOU (1 passed) em 75s (código de saída 0)
+
+==================================================================================
+# 20/11/2026 22:53:13 -0300 | roteiro n09 | memória antes: 5,6 GB livres | npx playwright test -c e2e/playwright.config.ts n09 --workers=1 --trace=off --reporter=list
+==================================================================================
 
 Running 2 tests using 1 worker
 
-[WebServer] [18/Nov/2026 10:24:13] "POST /api/auth/registrar/ HTTP/1.1" 201 110
-[WebServer] [18/Nov/2026 10:24:15] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:24:15] "GET /api/auth/me/ HTTP/1.1" 200 151
-[WebServer] [18/Nov/2026 10:24:15] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:24:16] "POST /api/perfis/ HTTP/1.1" 201 440
-[WebServer] [18/Nov/2026 10:24:16] "GET /api/descoberta/ HTTP/1.1" 200 3641
-[WebServer] [18/Nov/2026 10:24:16] "GET /api/descoberta/ HTTP/1.1" 200 3641
-[WebServer] [18/Nov/2026 10:24:17] "GET /api/auth/me/ HTTP/1.1" 200 151
-[WebServer] [18/Nov/2026 10:24:17] "GET /api/auth/me/ HTTP/1.1" 200 151
-[WebServer] [18/Nov/2026 10:24:17] "GET /api/perfis/ HTTP/1.1" 200 442
-[WebServer] [18/Nov/2026 10:24:17] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:24:17] "GET /api/descoberta/ HTTP/1.1" 200 3641
-[WebServer] [18/Nov/2026 10:24:17] "GET /api/descoberta/ HTTP/1.1" 200 3641
-[WebServer] Forbidden: /api/admin/dashboard/
-[WebServer] [18/Nov/2026 10:24:18] "GET /api/admin/dashboard/ HTTP/1.1" 403 65
-[WebServer] Forbidden: /api/admin/usuarios/
-[WebServer] [18/Nov/2026 10:24:18] "GET /api/admin/usuarios/ HTTP/1.1" 403 65
-[WebServer] Forbidden: /api/admin/logs/
-[WebServer] [18/Nov/2026 10:24:18] "GET /api/admin/logs/ HTTP/1.1" 403 65
-[WebServer] Forbidden: /api/admin/moderacao/denuncias/
-[WebServer] [18/Nov/2026 10:24:19] "GET /api/admin/moderacao/denuncias/ HTTP/1.1" 403 65
-  ✓  1 [desktop] › e2e\n09-permissoes.spec.ts:4:3 › N09 Permissões na navegação › usuário comum não vê nem alcança o painel admin (10.8s)
-[WebServer] [18/Nov/2026 10:24:23] "POST /api/auth/login/ HTTP/1.1" 200 489
-[WebServer] [18/Nov/2026 10:24:23] "GET /api/auth/me/ HTTP/1.1" 200 123
-[WebServer] [18/Nov/2026 10:24:23] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:24:23] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:24:24] "GET /api/admin/dashboard/ HTTP/1.1" 200 3657
-[WebServer] [18/Nov/2026 10:24:24] "GET /api/admin/dashboard/ HTTP/1.1" 200 3657
-[WebServer] 10:24:24 [vite] (client) [console.error] Encountered two children with the same key, `2`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
-[WebServer] 10:24:24 [vite] (client) [console.error] Encountered two children with the same key, `2`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
-[WebServer] [18/Nov/2026 10:24:24] "GET /api/auth/me/ HTTP/1.1" 200 123
-[WebServer] [18/Nov/2026 10:24:24] "GET /api/auth/me/ HTTP/1.1" 200 123
-[WebServer] [18/Nov/2026 10:24:25] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:24:25] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:24:25] "GET /api/admin/dashboard/ HTTP/1.1" 200 3657
-[WebServer] [18/Nov/2026 10:24:25,499] - Broken pipe from ('127.0.0.1', 62737)
-  ✓  2 [desktop] › e2e\n09-permissoes.spec.ts:34:3 › N09 Permissões na navegação › administrador entra direto no painel e não vê a Descoberta (6.0s)
+  ✓  1 [desktop] › e2e\n09-permissoes.spec.ts:4:3 › N09 Permissões na navegação › usuário comum não vê nem alcança o painel admin (12.2s)
+  ✓  2 [desktop] › e2e\n09-permissoes.spec.ts:34:3 › N09 Permissões na navegação › administrador entra direto no painel e não vê a Descoberta (11.0s)
 
-  2 passed (47.2s)
-# resultado: n09: PASSOU (2 passed) em 61s (código de saída 0)
+  2 passed (59.2s)
+# resultado: n09: PASSOU (2 passed) em 70s (código de saída 0)
 
 ==================================================================================
-# 18/11/2026 10:24:29 -0300 | roteiro n10 | memória antes: 5,7 GB livres | npx playwright test -c e2e/playwright.config.ts n10 --workers=1 --trace=off --reporter=list
+# 20/11/2026 22:54:23 -0300 | roteiro n10 | memória antes: 5,5 GB livres | npx playwright test -c e2e/playwright.config.ts n10 --workers=1 --trace=off --reporter=list
 ==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:25:04] "GET /api/auth/me/ HTTP/1.1" 401 68
 
 Running 1 test using 1 worker
 
-[WebServer] [18/Nov/2026 10:25:17] "POST /api/auth/registrar/ HTTP/1.1" 201 110
-[WebServer] [18/Nov/2026 10:25:19] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:25:19] "GET /api/auth/me/ HTTP/1.1" 200 151
-[WebServer] [18/Nov/2026 10:25:19] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:25:20] "POST /api/perfis/ HTTP/1.1" 201 440
-[WebServer] [18/Nov/2026 10:25:25] "POST /api/auth/login/ HTTP/1.1" 200 489
-[WebServer] [18/Nov/2026 10:25:25] "GET /api/auth/me/ HTTP/1.1" 200 123
 N10 PASSO > 1. aba Painel mostra os indicadores
-[WebServer] [18/Nov/2026 10:25:25] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:25:25] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:25:25] "GET /api/admin/dashboard/ HTTP/1.1" 200 3657
-[WebServer] [18/Nov/2026 10:25:25] "GET /api/admin/dashboard/ HTTP/1.1" 200 3657
-[WebServer] 10:25:25 [vite] (client) [console.error] Encountered two children with the same key, `2`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
-[WebServer] 10:25:25 [vite] (client) [console.error] Encountered two children with the same key, `2`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
 N10 PASSO > 2. Painel: período invertido mostra erro e não chama a API
-[WebServer] 10:25:25 [vite] (client) [console.error] Encountered two children with the same key, `2`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
-[WebServer] 10:25:25 [vite] (client) [console.error] Encountered two children with the same key, `2`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
 N10 PASSO > 3. aba Relatórios: período invertido mostra erro; gerar relatório e exportar CSV
-[WebServer] [18/Nov/2026 10:25:27] "GET /api/admin/relatorios/ HTTP/1.1" 200 855
-[WebServer] [18/Nov/2026 10:25:27] "GET /api/admin/relatorios/ HTTP/1.1" 200 855
-[WebServer] [18/Nov/2026 10:25:27] "GET /api/admin/dashboard/ HTTP/1.1" 200 3657
-[WebServer] [18/Nov/2026 10:25:27] "GET /api/admin/relatorios/matches/ HTTP/1.1" 200 329
-[WebServer] [18/Nov/2026 10:25:27] "GET /api/admin/relatorios/matches/?formato=csv HTTP/1.1" 200 163
 N10 PASSO > 4. aba Logs: período invertido, paginação e expandir linha
-[WebServer] [18/Nov/2026 10:25:28] "GET /api/admin/logs/?page=1 HTTP/1.1" 200 5620
-[WebServer] [18/Nov/2026 10:25:28] "GET /api/admin/logs/?page=1 HTTP/1.1" 200 5620
-[WebServer] [18/Nov/2026 10:25:28] "GET /api/admin/logs/?data_inicio=2025-12-31&page=1 HTTP/1.1" 200 5620
-[WebServer] [18/Nov/2026 10:25:29] "GET /api/admin/logs/?data_fim=2025-01-01&page=1 HTTP/1.1" 200 33
-[WebServer] [18/Nov/2026 10:25:29] "GET /api/admin/logs/?page=1 HTTP/1.1" 200 5620
-[WebServer] [18/Nov/2026 10:25:29] "GET /api/admin/logs/?page=2 HTTP/1.1" 200 5527
-[WebServer] [18/Nov/2026 10:25:30] "GET /api/admin/logs/?page=1 HTTP/1.1" 200 5620
 N10 PASSO > 5. aba Usuários: lista, filtro de período invertido e CSV
-[WebServer] [18/Nov/2026 10:25:30] "GET /api/admin/usuarios/?page=1 HTTP/1.1" 200 3668
-[WebServer] [18/Nov/2026 10:25:30] "GET /api/admin/usuarios/?page=1 HTTP/1.1" 200 3668
-[WebServer] [18/Nov/2026 10:25:31] "GET /api/admin/usuarios/?data_inicio=2025-12-31&page=1 HTTP/1.1" 200 3668
-[WebServer] [18/Nov/2026 10:25:31] "GET /api/admin/usuarios/?data_inicio=2025-01-01&data_fim=2025-12-31&page=1 HTTP/1.1" 200 33
-[WebServer] [18/Nov/2026 10:25:31] "GET /api/admin/usuarios/?data_fim=2025-12-31&page=1 HTTP/1.1" 200 33
-[WebServer] [18/Nov/2026 10:25:32] "GET /api/admin/usuarios/?page=1 HTTP/1.1" 200 3668
-[WebServer] [18/Nov/2026 10:25:33] "GET /api/admin/usuarios/?q=e2e-admin&page=1 HTTP/1.1" 200 215
-[WebServer] [18/Nov/2026 10:25:34] "GET /api/admin/usuarios/exportar/?q=e2e-admin HTTP/1.1" 200 137
 N10 PASSO > 6. aba Moderação: lista de denúncias e período invertido
-[WebServer] [18/Nov/2026 10:25:35] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:25:35] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 2
-  ✓  1 [desktop] › e2e\n10-painel-admin.spec.ts:10:1 › N10 Painel admin: abas, período invertido, relatório, CSV, paginação e linha de log (22.0s)
+  ✓  1 [desktop] › e2e\n10-painel-admin.spec.ts:10:1 › N10 Painel admin: abas, período invertido, relatório, CSV, paginação e linha de log (28.7s)
 
-  1 passed (50.5s)
-# resultado: n10: PASSOU (1 passed) em 63s (código de saída 0)
+  1 passed (1.1m)
+# resultado: n10: PASSOU (1 passed) em 80s (código de saída 0)
 
 ==================================================================================
-# 18/11/2026 10:25:40 -0300 | roteiro n11 | memória antes: 5,8 GB livres | npx playwright test -c e2e/playwright.config.ts n11 --workers=1 --trace=off --reporter=list
+# 20/11/2026 22:55:44 -0300 | roteiro n11 | memória antes: 5,6 GB livres | npx playwright test -c e2e/playwright.config.ts n11 --workers=1 --trace=off --reporter=list
 ==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:26:19] "GET /api/auth/me/ HTTP/1.1" 401 68
 
 Running 1 test using 1 worker
 
-[WebServer] [18/Nov/2026 10:26:32] "POST /api/auth/registrar/ HTTP/1.1" 201 110
-[WebServer] [18/Nov/2026 10:26:34] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:26:34] "GET /api/auth/me/ HTTP/1.1" 200 151
-[WebServer] [18/Nov/2026 10:26:35] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:26:36] "POST /api/perfis/ HTTP/1.1" 201 440
-[WebServer] [18/Nov/2026 10:26:36] "GET /api/descoberta/ HTTP/1.1" 200 3641
-[WebServer] [18/Nov/2026 10:26:36] "GET /api/descoberta/ HTTP/1.1" 200 3641
-[WebServer] [18/Nov/2026 10:26:40] "POST /api/auth/registrar/ HTTP/1.1" 201 116
-[WebServer] [18/Nov/2026 10:26:42] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:26:42] "GET /api/auth/me/ HTTP/1.1" 200 159
-[WebServer] [18/Nov/2026 10:26:42] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:26:43] "POST /api/perfis/ HTTP/1.1" 201 460
-[WebServer] [18/Nov/2026 10:26:44] "GET /api/descoberta/ HTTP/1.1" 200 4319
-[WebServer] [18/Nov/2026 10:26:44] "GET /api/descoberta/ HTTP/1.1" 200 4319
-[WebServer] [18/Nov/2026 10:26:44] "GET /api/descoberta/?q=Anuncio+n11+388074 HTTP/1.1" 200 502
-[WebServer] [18/Nov/2026 10:26:44] "POST /api/curtidas/ HTTP/1.1" 201 15
-[WebServer] [18/Nov/2026 10:26:45] "GET /api/descoberta/?q=Pessoa+n11+busca+388073 HTTP/1.1" 200 480
-[WebServer] [18/Nov/2026 10:26:45] "POST /api/curtidas/ HTTP/1.1" 201 1074
-[WebServer] [18/Nov/2026 10:26:46] "GET /api/matches/2/mensagens/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:26:46] "GET /api/matches/2/mensagens/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:26:46] "POST /api/matches/2/mensagens/ HTTP/1.1" 201 154
-[WebServer] [18/Nov/2026 10:26:46] "GET /api/conversas/ HTTP/1.1" 200 538
-[WebServer] [18/Nov/2026 10:26:46] "GET /api/conversas/ HTTP/1.1" 200 538
-[WebServer] [18/Nov/2026 10:26:47] "GET /api/matches/2/mensagens/ HTTP/1.1" 200 155
-[WebServer] [18/Nov/2026 10:26:47] "GET /api/matches/2/mensagens/ HTTP/1.1" 200 155
-[WebServer] [18/Nov/2026 10:26:47] "POST /api/moderacao/denuncias/ HTTP/1.1" 201 102
-[WebServer] [18/Nov/2026 10:26:50] "GET /api/matches/2/mensagens/?apos=4 HTTP/1.1" 200 2
-[WebServer] Bad Request: /api/moderacao/denuncias/
-[WebServer] [18/Nov/2026 10:26:51] "POST /api/moderacao/denuncias/ HTTP/1.1" 400 101
-[WebServer] [18/Nov/2026 10:26:51] "GET /api/matches/2/mensagens/?apos=4 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:26:54] "POST /api/auth/login/ HTTP/1.1" 200 489
-[WebServer] [18/Nov/2026 10:26:54] "GET /api/matches/2/mensagens/?apos=4 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:26:54] "GET /api/auth/me/ HTTP/1.1" 200 123
-[WebServer] [18/Nov/2026 10:26:54] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 379
-[WebServer] [18/Nov/2026 10:26:54] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 379
-[WebServer] [18/Nov/2026 10:26:54] "GET /api/admin/dashboard/ HTTP/1.1" 200 3657
-[WebServer] [18/Nov/2026 10:26:54] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 379
-[WebServer] [18/Nov/2026 10:26:54] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 379
-[WebServer] [18/Nov/2026 10:26:54] "GET /api/admin/dashboard/ HTTP/1.1" 200 3657
-[WebServer] [18/Nov/2026 10:26:55] "GET /api/matches/2/mensagens/?apos=4 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:26:55] "GET /api/admin/moderacao/denuncias/?status=pendente&data_inicio=2026-11-20 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:26:55] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 379
-[WebServer] [18/Nov/2026 10:26:56] "PATCH /api/admin/moderacao/denuncias/1/ HTTP/1.1" 200 82
-[WebServer] [18/Nov/2026 10:26:56] "GET /api/admin/moderacao/denuncias/?status=pendente HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:26:56] "GET /api/admin/usuarios/?page=1 HTTP/1.1" 200 4094
-[WebServer] [18/Nov/2026 10:26:56] "GET /api/admin/usuarios/?page=1 HTTP/1.1" 200 4094
-[WebServer] [18/Nov/2026 10:26:56] "GET /api/admin/usuarios/?q=e2e-n11-oferece-17950083880742%40teste.com&page=1 HTTP/1.1" 200 248
-[WebServer] [18/Nov/2026 10:26:57] "POST /api/admin/moderacao/usuarios/19/suspender/ HTTP/1.1" 200 74
-[WebServer] [18/Nov/2026 10:26:57] "POST /api/auth/logout/ HTTP/1.1" 204 0
-[WebServer] [18/Nov/2026 10:26:59] "GET /api/matches/2/mensagens/?apos=4 HTTP/1.1" 200 2
-[WebServer] Unauthorized: /api/auth/login/
-[WebServer] [18/Nov/2026 10:27:02] "POST /api/auth/login/ HTTP/1.1" 401 47
-[WebServer] [18/Nov/2026 10:27:03] "GET /api/matches/2/mensagens/?apos=4 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:27:03] "GET /api/admin/usuarios/?q=e2e-n11-oferece-17950083880742%40teste.com&page=1 HTTP/1.1" 200 249
-[WebServer] [18/Nov/2026 10:27:03] "POST /api/admin/moderacao/usuarios/19/reativar/ HTTP/1.1" 200 73
-[WebServer] [18/Nov/2026 10:27:06] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:27:06] "GET /api/auth/me/ HTTP/1.1" 200 159
-[WebServer] [18/Nov/2026 10:27:07] "GET /api/perfis/ HTTP/1.1" 200 462
-[WebServer] [18/Nov/2026 10:27:07] "GET /api/matches/2/mensagens/?apos=4 HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:27:07] "GET /api/matches/ HTTP/1.1" 200 1048
-[WebServer] [18/Nov/2026 10:27:07] "GET /api/descoberta/ HTTP/1.1" 200 3840
-[WebServer] [18/Nov/2026 10:27:07] "GET /api/descoberta/ HTTP/1.1" 200 3840
-  ✓  1 [desktop] › e2e\n11-moderacao.spec.ts:3:1 › N11 Moderação ponta a ponta: denúncia → análise com suspensão → "Conta suspensa" → reativação → entrada (40.5s)
+  ✓  1 [desktop] › e2e\n11-moderacao.spec.ts:3:1 › N11 Moderação ponta a ponta: denúncia → análise com suspensão → "Conta suspensa" → reativação → entrada (40.0s)
 
-  1 passed (1.2m)
+  1 passed (1.3m)
 # resultado: n11: PASSOU (1 passed) em 88s (código de saída 0)
 
 ==================================================================================
-# 18/11/2026 10:27:14 -0300 | roteiro n12 | memória antes: 5,7 GB livres | npx playwright test -c e2e/playwright.config.ts n12 --workers=1 --trace=off --reporter=list
+# 20/11/2026 22:57:13 -0300 | roteiro n12 | memória antes: 5,7 GB livres | npx playwright test -c e2e/playwright.config.ts n12 --workers=1 --trace=off --reporter=list
 ==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:28:07] "GET /api/auth/me/ HTTP/1.1" 401 68
 
 Running 4 tests using 1 worker
 
-[WebServer] [18/Nov/2026 10:28:21] "POST /api/auth/registrar/ HTTP/1.1" 201 112
-[WebServer] [18/Nov/2026 10:28:22] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:28:22] "GET /api/auth/me/ HTTP/1.1" 200 154
-[WebServer] [18/Nov/2026 10:28:22] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:28:24] "POST /api/perfis/ HTTP/1.1" 201 441
-[WebServer] [18/Nov/2026 10:28:24] "GET /api/descoberta/ HTTP/1.1" 200 4142
-[WebServer] [18/Nov/2026 10:28:24] "GET /api/descoberta/ HTTP/1.1" 200 4142
-[WebServer] Unauthorized: /api/conversas/
-[WebServer] Unauthorized: /api/conversas/
-[WebServer] [18/Nov/2026 10:28:24] "GET /api/conversas/ HTTP/1.1" 401 197
-[WebServer] [18/Nov/2026 10:28:24] "GET /api/conversas/ HTTP/1.1" 401 197
-[WebServer] [18/Nov/2026 10:28:25] "POST /api/auth/login/refresh/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:28:25] "GET /api/conversas/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:28:25] "GET /api/conversas/ HTTP/1.1" 200 2
-[WebServer] Unauthorized: /api/matches/
-[WebServer] Unauthorized: /api/matches/
-[WebServer] [18/Nov/2026 10:28:25] "GET /api/matches/ HTTP/1.1" 401 197
-[WebServer] [18/Nov/2026 10:28:25] "GET /api/matches/ HTTP/1.1" 401 197
-[WebServer] [18/Nov/2026 10:28:25] "POST /api/auth/login/refresh/ HTTP/1.1" 200 491
-[WebServer] Unauthorized: /api/descoberta/
-[WebServer] [18/Nov/2026 10:28:25] "GET /api/descoberta/ HTTP/1.1" 401 197
-[WebServer] Unauthorized: /api/descoberta/
-[WebServer] [18/Nov/2026 10:28:25] "GET /api/descoberta/ HTTP/1.1" 401 197
-[WebServer] [18/Nov/2026 10:28:25] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:28:25] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:28:25,755] - Broken pipe from ('127.0.0.1', 63081)
-  ✓  1 [desktop] › e2e\n12-sessao.spec.ts:4:3 › N12 Sessão › access inválido/expirado: a próxima ação renova a sessão sem deslogar (8.8s)
-[WebServer] [18/Nov/2026 10:28:29] "POST /api/auth/registrar/ HTTP/1.1" 201 112
-[WebServer] [18/Nov/2026 10:28:31] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:28:31] "GET /api/auth/me/ HTTP/1.1" 200 154
-[WebServer] [18/Nov/2026 10:28:31] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:28:33] "POST /api/perfis/ HTTP/1.1" 201 441
-[WebServer] [18/Nov/2026 10:28:33] "GET /api/descoberta/ HTTP/1.1" 200 4142
-[WebServer] Unauthorized: /api/conversas/
-[WebServer] [18/Nov/2026 10:28:33] "GET /api/conversas/ HTTP/1.1" 401 197
-[WebServer] [18/Nov/2026 10:28:33] "GET /api/descoberta/ HTTP/1.1" 200 4142
-[WebServer] Unauthorized: /api/conversas/
-[WebServer] Unauthorized: /api/auth/login/refresh/
-[WebServer] [18/Nov/2026 10:28:33] "GET /api/conversas/ HTTP/1.1" 401 197
-[WebServer] [18/Nov/2026 10:28:33] "POST /api/auth/login/refresh/ HTTP/1.1" 401 58
-  ✓  2 [desktop] › e2e\n12-sessao.spec.ts:39:3 › N12 Sessão › refresh inválido: vai ao login com "Sua sessão expirou. Entre novamente." (8.6s)
-[WebServer] [18/Nov/2026 10:28:39] "POST /api/auth/registrar/ HTTP/1.1" 201 112
-[WebServer] [18/Nov/2026 10:28:42] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:28:42] "GET /api/auth/me/ HTTP/1.1" 200 154
-[WebServer] [18/Nov/2026 10:28:42] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:28:43] "POST /api/perfis/ HTTP/1.1" 201 441
-[WebServer] [18/Nov/2026 10:28:44] "GET /api/descoberta/ HTTP/1.1" 200 4142
-[WebServer] [18/Nov/2026 10:28:44,254] - Broken pipe from ('127.0.0.1', 63120)
-[WebServer] [18/Nov/2026 10:28:44] "POST /api/auth/logout/ HTTP/1.1" 204 0
-[WebServer] [18/Nov/2026 10:28:47] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:28:47] "POST /api/auth/logout/ HTTP/1.1" 204 0
-[WebServer] [18/Nov/2026 10:28:50] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:28:50] "GET /api/auth/me/ HTTP/1.1" 200 154
-[WebServer] [18/Nov/2026 10:28:50] "GET /api/perfis/ HTTP/1.1" 200 443
-[WebServer] [18/Nov/2026 10:28:50] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:28:50] "GET /api/descoberta/ HTTP/1.1" 200 4142
-[WebServer] [18/Nov/2026 10:28:50] "GET /api/descoberta/ HTTP/1.1" 200 4142
-  ✓  3 [desktop] › e2e\n12-sessao.spec.ts:61:3 › N12 Sessão › login com falha ao carregar a conta: avisa, não manda para "Criar perfil" e dá para tentar de novo (AUD-F07) (17.1s)
-[WebServer] [18/Nov/2026 10:28:55] "POST /api/auth/registrar/ HTTP/1.1" 201 112
-[WebServer] [18/Nov/2026 10:29:00] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:29:00] "GET /api/auth/me/ HTTP/1.1" 200 154
-[WebServer] [18/Nov/2026 10:29:00] "GET /api/perfis/ HTTP/1.1" 200 2
-  ✓  4 [desktop] › e2e\n12-sessao.spec.ts:80:3 › N12 Sessão › cadastro: conta criada e login automático falhou leva ao login com aviso, sem tentar cadastrar de novo (AUD-F12) (9.2s)
+  ✓  1 [desktop] › e2e\n12-sessao.spec.ts:4:3 › N12 Sessão › access inválido/expirado: a próxima ação renova a sessão sem deslogar (10.3s)
+  ✓  2 [desktop] › e2e\n12-sessao.spec.ts:39:3 › N12 Sessão › refresh inválido: vai ao login com "Sua sessão expirou. Entre novamente." (10.4s)
+  ✓  3 [desktop] › e2e\n12-sessao.spec.ts:61:3 › N12 Sessão › login com falha ao carregar a conta: avisa, não manda para "Criar perfil" e dá para tentar de novo (AUD-F07) (16.3s)
+  ✓  4 [desktop] › e2e\n12-sessao.spec.ts:80:3 › N12 Sessão › cadastro: conta criada e login automático falhou leva ao login com aviso, sem tentar cadastrar de novo (AUD-F12) (8.7s)
 
-  4 passed (1.3m)
-# resultado: n12: PASSOU (4 passed) em 102s (código de saída 0)
+  4 passed (1.4m)
+# resultado: n12: PASSOU (4 passed) em 95s (código de saída 0)
 
 ==================================================================================
-# 18/11/2026 10:29:06 -0300 | roteiro n13 | memória antes: 5,7 GB livres | npx playwright test -c e2e/playwright.config.ts n13 --workers=1 --trace=off --reporter=list
+# 20/11/2026 22:58:48 -0300 | roteiro n13 | memória antes: 5,6 GB livres | npx playwright test -c e2e/playwright.config.ts n13 --workers=1 --trace=off --reporter=list
 ==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:29:42] "GET /api/auth/me/ HTTP/1.1" 401 68
 
 Running 3 tests using 1 worker
 
-[WebServer] [18/Nov/2026 10:29:56] "POST /api/auth/registrar/ HTTP/1.1" 201 132
-[WebServer] [18/Nov/2026 10:29:58] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:29:58] "GET /api/auth/me/ HTTP/1.1" 200 183
-[WebServer] [18/Nov/2026 10:29:58] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:29:59] "POST /api/perfis/ HTTP/1.1" 201 476
-[WebServer] [18/Nov/2026 10:30:04] "POST /api/auth/registrar/ HTTP/1.1" 201 110
-[WebServer] [18/Nov/2026 10:30:06] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:30:06] "GET /api/auth/me/ HTTP/1.1" 200 151
-[WebServer] [18/Nov/2026 10:30:06] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:30:08] "POST /api/perfis/ HTTP/1.1" 201 440
-[WebServer] [18/Nov/2026 10:30:08] "GET /api/descoberta/ HTTP/1.1" 200 4659
-[WebServer] [18/Nov/2026 10:30:08] "GET /api/descoberta/ HTTP/1.1" 200 4659
-[WebServer] [18/Nov/2026 10:30:08] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:30:08] "GET /api/matches/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:30:08] "GET /api/conversas/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:30:08] "GET /api/conversas/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:30:09] "GET /api/descoberta/ HTTP/1.1" 200 4659
-[WebServer] [18/Nov/2026 10:30:09] "GET /api/descoberta/ HTTP/1.1" 200 4659
-[WebServer] [18/Nov/2026 10:30:10] "GET /api/descoberta/ HTTP/1.1" 200 4659
-[WebServer] [18/Nov/2026 10:30:10] "GET /api/descoberta/ HTTP/1.1" 200 4659
-  ✓  1 [mobile] › e2e\n13-mobile.spec.ts:10:1 › N13 Mobile (375 px): cadastro resumido, Descoberta, menu e chat sem estourar a largura (19.2s)
-[WebServer] [18/Nov/2026 10:30:14] "POST /api/auth/registrar/ HTTP/1.1" 201 112
-[WebServer] [18/Nov/2026 10:30:17] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:30:17] "GET /api/auth/me/ HTTP/1.1" 200 154
-[WebServer] [18/Nov/2026 10:30:17] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:30:19] "POST /api/perfis/ HTTP/1.1" 201 441
-[WebServer] [18/Nov/2026 10:30:19] "GET /api/descoberta/ HTTP/1.1" 200 4659
-[WebServer] [18/Nov/2026 10:30:19] "GET /api/descoberta/ HTTP/1.1" 200 4659
-[WebServer] [18/Nov/2026 10:30:22] "POST /api/auth/registrar/ HTTP/1.1" 201 118
-[WebServer] [18/Nov/2026 10:30:24] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:30:24] "GET /api/auth/me/ HTTP/1.1" 200 162
-[WebServer] [18/Nov/2026 10:30:24] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:30:25] "POST /api/perfis/ HTTP/1.1" 201 462
-[WebServer] [18/Nov/2026 10:30:25] "GET /api/descoberta/ HTTP/1.1" 200 6718
-[WebServer] [18/Nov/2026 10:30:25] "GET /api/descoberta/ HTTP/1.1" 200 6718
-[WebServer] [18/Nov/2026 10:30:26] "GET /api/descoberta/?q=Anuncio+n13m+610919 HTTP/1.1" 200 504
-[WebServer] [18/Nov/2026 10:30:26] "POST /api/curtidas/ HTTP/1.1" 201 15
-[WebServer] [18/Nov/2026 10:30:27] "GET /api/descoberta/?q=Pessoa+n13m+busca+610919 HTTP/1.1" 200 481
-[WebServer] [18/Nov/2026 10:30:27] "POST /api/curtidas/ HTTP/1.1" 201 1077
-[WebServer] [18/Nov/2026 10:30:28] "GET /api/matches/3/mensagens/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:30:28] "GET /api/matches/3/mensagens/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:30:28] "POST /api/matches/3/mensagens/ HTTP/1.1" 201 413
-[WebServer] [18/Nov/2026 10:30:28] "GET /api/conversas/ HTTP/1.1" 200 799
-[WebServer] [18/Nov/2026 10:30:28] "GET /api/conversas/ HTTP/1.1" 200 799
-  ✓  2 [mobile] › e2e\n13-mobile.spec.ts:67:1 › N13b Mobile: match e chat sem estourar a largura (18.3s)
-[WebServer] [18/Nov/2026 10:30:30] "POST /api/auth/senha/solicitar/ HTTP/1.1" 200 87
-  ✓  3 [mobile] › e2e\n13-mobile.spec.ts:88:1 › N13c Mobile (375 px): recuperação de senha sem estourar a largura (3.4s)
+  ✓  1 [mobile] › e2e\n13-mobile.spec.ts:10:1 › N13 Mobile (375 px): cadastro resumido, Descoberta, menu e chat sem estourar a largura (23.9s)
+  ✓  2 [mobile] › e2e\n13-mobile.spec.ts:67:1 › N13b Mobile: match e chat sem estourar a largura (20.7s)
+  ✓  3 [mobile] › e2e\n13-mobile.spec.ts:88:1 › N13c Mobile (375 px): recuperação de senha sem estourar a largura (3.9s)
 
-  3 passed (1.2m)
-# resultado: n13: PASSOU (3 passed) em 86s (código de saída 0)
+  3 passed (1.5m)
+# resultado: n13: PASSOU (3 passed) em 99s (código de saída 0)
 
 ==================================================================================
-# 18/11/2026 10:30:36 -0300 | roteiro n14 | memória antes: 5,7 GB livres | npx playwright test -c e2e/playwright.config.ts n14 --workers=1 --trace=off --reporter=list
+# 20/11/2026 23:00:28 -0300 | roteiro n14 | memória antes: 5,6 GB livres | npx playwright test -c e2e/playwright.config.ts n14 --workers=1 --trace=off --reporter=list
 ==================================================================================
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:31:15] "GET /api/auth/me/ HTTP/1.1" 401 68
 
 Running 2 tests using 1 worker
 
-[WebServer] [18/Nov/2026 10:31:28] "POST /api/auth/registrar/ HTTP/1.1" 201 110
-[WebServer] [18/Nov/2026 10:31:30] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:31:30] "GET /api/auth/me/ HTTP/1.1" 200 151
-[WebServer] [18/Nov/2026 10:31:30] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] [18/Nov/2026 10:31:32] "POST /api/auth/senha/solicitar/ HTTP/1.1" 200 87
-[WebServer] [18/Nov/2026 10:31:34] "POST /api/auth/senha/solicitar/ HTTP/1.1" 200 87
-[WebServer] Bad Request: /api/auth/senha/redefinir/
-[WebServer] [18/Nov/2026 10:31:35] "POST /api/auth/senha/redefinir/ HTTP/1.1" 400 131
-[WebServer] [18/Nov/2026 10:31:38] "POST /api/auth/senha/redefinir/ HTTP/1.1" 200 54
-[WebServer] Unauthorized: /api/auth/login/
-[WebServer] [18/Nov/2026 10:31:40] "POST /api/auth/login/ HTTP/1.1" 401 40
-[WebServer] [18/Nov/2026 10:31:44] "POST /api/auth/login/ HTTP/1.1" 200 491
-[WebServer] [18/Nov/2026 10:31:44] "GET /api/auth/me/ HTTP/1.1" 200 151
-[WebServer] [18/Nov/2026 10:31:44] "GET /api/perfis/ HTTP/1.1" 200 2
-[WebServer] Unauthorized: /api/auth/login/refresh/
-[WebServer] [18/Nov/2026 10:31:44] "POST /api/auth/login/refresh/ HTTP/1.1" 401 62
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:31:45] "GET /api/auth/me/ HTTP/1.1" 401 197
-[WebServer] Unauthorized: /api/auth/me/
-[WebServer] [18/Nov/2026 10:31:45] "GET /api/auth/me/ HTTP/1.1" 401 197
-[WebServer] Unauthorized: /api/auth/login/refresh/
-[WebServer] [18/Nov/2026 10:31:45] "POST /api/auth/login/refresh/ HTTP/1.1" 401 62
-[WebServer] Bad Request: /api/auth/senha/redefinir/
-[WebServer] [18/Nov/2026 10:31:46] "POST /api/auth/senha/redefinir/ HTTP/1.1" 400 60
-  ✓  1 [desktop] › e2e\n14-recuperar-senha.spec.ts:8:1 › N14 Recuperar senha: pedir link → e-mail → senha fraca → redefinir → entrar → link usado fica inválido (22.4s)
-[WebServer] Bad Request: /api/auth/senha/redefinir/
-[WebServer] [18/Nov/2026 10:31:49] "POST /api/auth/senha/redefinir/ HTTP/1.1" 400 60
-  ✓  2 [desktop] › e2e\n14-recuperar-senha.spec.ts:165:1 › N14b Recuperar senha: link sem código ou adulterado mostra link inválido (2.4s)
+  ✓  1 [desktop] › e2e\n14-recuperar-senha.spec.ts:8:1 › N14 Recuperar senha: pedir link → e-mail → senha fraca → redefinir → entrar → link usado fica inválido (24.4s)
+  ✓  2 [desktop] › e2e\n14-recuperar-senha.spec.ts:165:1 › N14b Recuperar senha: link sem código ou adulterado mostra link inválido (3.3s)
 
-  2 passed (56.0s)
-# resultado: n14: PASSOU (2 passed) em 71s (código de saída 0)
+  2 passed (1.2m)
+# resultado: n14: PASSOU (2 passed) em 87s (código de saída 0)
 
 ==================================================================================
-# RESUMO (18/11/2026 10:31:54 -0300)
-  n01: PASSOU (9 passed) em 77s
-  n02: PASSOU (1 passed) em 63s
-  n03: PASSOU (2 passed) em 74s
-  n04: PASSOU (1 passed) em 68s
-  n05: PASSOU (1 passed) em 106s
-  n06: PASSOU (1 passed) em 81s
-  n07: PASSOU (1 passed) em 56s
-  n08: PASSOU (1 passed) em 61s
-  n09: PASSOU (2 passed) em 61s
-  n10: PASSOU (1 passed) em 63s
+# 20/11/2026 23:01:56 -0300 | roteiro n15 | memória antes: 5,7 GB livres | npx playwright test -c e2e/playwright.config.ts n15 --workers=1 --trace=off --reporter=list
+==================================================================================
+
+Running 1 test using 1 worker
+
+N15 PASSO > 1. card da Descoberta com o selo de interesses em comum
+N15 PASSO > 2. detalhe: "Por que vocês combinam" com as 7 barras e os temas em comum
+N15 PASSO > 3. perfil com bio curta: 6 barras e o aviso, sem o critério da IA
+N15 PASSO > 4. Meu Perfil mostra os temas da própria bio
+N15 PASSO > 5. aba IA: status do modelo
+N15 PASSO > 6. laboratório com o exemplo 1: medidores e temas em comum
+N15 PASSO > 7. laboratório valida texto vazio sem chamar a IA
+N15 PASSO > 8. processamento paralelo: gráficos do benchmark (ou a instrução, sem benchmark)
+N15 PASSO > 9. aba Logs: filtro "Teste da IA (painel)" encontra o teste do laboratório
+  ✓  1 [desktop] › e2e\n15-ia.spec.ts:14:1 › N15 IA: por que vocês combinam, selo, temas do perfil, aba IA (status, laboratório, paralelismo) e log (43.0s)
+
+  1 passed (1.5m)
+# resultado: n15: PASSOU (1 passed) em 101s (código de saída 0)
+
+# RESUMO (20/11/2026 23:03:37 -0300)
+  n01: PASSOU (9 passed) em 134s
+  n02: PASSOU (1 passed) em 116s
+  n03: PASSOU (2 passed) em 106s
+  n04: PASSOU (1 passed) em 78s
+  n05: PASSOU (1 passed) em 105s
+  n06: PASSOU (1 passed) em 115s
+  n07: PASSOU (1 passed) em 76s
+  n08: PASSOU (1 passed) em 75s
+  n09: PASSOU (2 passed) em 70s
+  n10: PASSOU (1 passed) em 80s
   n11: PASSOU (1 passed) em 88s
-  n12: PASSOU (4 passed) em 102s
-  n13: PASSOU (3 passed) em 86s
-  n14: PASSOU (2 passed) em 71s
-  TOTAL: 14 roteiros, 30 testes e2e passaram; roteiros com falha: 0
+  n12: PASSOU (4 passed) em 95s
+  n13: PASSOU (3 passed) em 99s
+  n14: PASSOU (2 passed) em 87s
+  n15: PASSOU (1 passed) em 101s
+  TOTAL: 15 roteiros, 31 testes e2e passaram; roteiros com falha: 0
+# Depois: portas 8001 e 5173 livres; memória: 5,7 GB livres.

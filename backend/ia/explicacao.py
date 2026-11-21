@@ -57,3 +57,21 @@ def explicar_par(perfil_a, perfil_b) -> dict:
         'temas_b': nomes(temas_b),
         'temas_em_comum': temas_em_comum(temas_a, temas_b) if cos is not None else [],
     }
+
+
+def analise_do_perfil(perfil) -> dict:
+    """O que a IA entendeu da bio do próprio usuário (campo `analise_ia` do perfil). Não chama o modelo."""
+    from matches.algoritmo.afinidade import ia_ligada
+    from matches.algoritmo.config import MIN_CARACTERES_TEXTO
+
+    from . import servico
+
+    uteis = servico.caracteres_uteis(servico.texto_do_perfil(perfil))
+    base = {'temas': [], 'caracteres_uteis': uteis, 'minimo_caracteres': MIN_CARACTERES_TEXTO}
+    if not ia_ligada():
+        return {'situacao': 'ia_desligada', **base}
+    if uteis < MIN_CARACTERES_TEXTO:
+        return {'situacao': 'bio_curta', **base}
+    if vetor_do_perfil(perfil) is None:
+        return {'situacao': 'pendente', **base}
+    return {'situacao': 'analisada', **base, 'temas': nomes(temas_do_perfil(perfil))}

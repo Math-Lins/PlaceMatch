@@ -59,7 +59,7 @@ class PerfilViewSet(viewsets.ModelViewSet):
             return Perfil.objects.all()
         # LIST retorna apenas o perfil do próprio usuário.
         if self.action == 'list':
-            return Perfil.objects.filter(usuario=user)
+            return Perfil.objects.filter(usuario=user).select_related('usuario', 'embedding_ia')  # analise_ia sem consultas extras
         # Demais ações (retrieve, update, destroy) recebem queryset completo;
         # get_object() aplica as restrições de acesso adicionais.
         return Perfil.objects.all()

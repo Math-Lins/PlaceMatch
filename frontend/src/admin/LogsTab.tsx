@@ -27,6 +27,7 @@ const ACOES: { value: string; label: string }[] = [
   { value: 'USUARIO_REATIVADO', label: 'Usuário reativado' },
   { value: 'SENHA_SOLICITADA', label: 'Redefinição de senha solicitada' },
   { value: 'SENHA_REDEFINIDA', label: 'Senha redefinida' },
+  { value: 'IA_TESTE', label: 'Teste da IA (painel)' },
 ];
 
 // A API filtra a entidade pelo nome exato gravado no log.

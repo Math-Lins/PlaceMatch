@@ -21,7 +21,8 @@ import {
   solicitarRedefinicaoSenha,
   redefinirSenha,
 } from './api';
-import type { Perfil as PerfilAPI, PerfilPayload, PerfilDescoberto, PerfilBasico, MatchData, Conversa, MensagemAPI, DescobertaParams } from './api';
+import type { Perfil as PerfilAPI, PerfilPayload, PerfilDescoberto, PerfilBasico, MatchData, Conversa, MensagemAPI, DescobertaParams, Tema } from './api';
+import { PainelPorQueCombinam, SeloInteresses, TemasDaMinhaBio } from './ia';
 import AdminPanel from './admin/AdminPanel';
 import {
   C, RAIO, SOMBRA, FONTE_TEXTO, FONTE_TITULO, ESTILO_TITULO_TELA, ESTILO_ROTULO, ESTILO_ERRO_CAMPO,
@@ -80,6 +81,9 @@ interface Profile {
   fotosImovel?: string[];
   fotoPerfilUrl?: string;
   usuarioId?: number;
+  // Afinidade por IA com o usuário logado (Descoberta)
+  afinidadeIa?: number | null;
+  temasEmComum?: Tema[];
 }
 
 // ─── Dados ───────────────────────────────────────────
@@ -158,6 +162,8 @@ function perfilDescobertoParaProfile(p: PerfilDescoberto): Profile {
     fotosImovel: p.fotos_imovel,
     fotoPerfilUrl: p.foto_perfil_url ?? undefined,
     usuarioId: p.usuario_id,
+    afinidadeIa: p.afinidade_ia ?? null,
+    temasEmComum: p.temas_em_comum ?? [],
   };
 }
 
@@ -1934,6 +1940,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
                       {p.pets && <Tag label="Aceita pets" />}
                       {!p.smoker && <Tag label="Não fumante" />}
+                      <SeloInteresses afinidade={p.afinidadeIa} temas={p.temasEmComum} />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '12px', borderTop: `1px solid ${C.border}` }}>
                       <ImagemComFallback src={p.fotoPerfilUrl} alt={p.name}
@@ -1959,6 +1966,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                         <p style={{ fontFamily: FONTE_TEXTO, fontSize: '14px', color: 'rgba(255,255,255,0.9)', margin: 0 }}>📍 {p.region}</p>
                       </div>
                       <CompatBadge value={p.compat} sobreFoto />
+                      <SeloInteresses afinidade={p.afinidadeIa} temas={p.temasEmComum} sobreFoto />
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
                       {p.tags.map(t => (
@@ -2015,6 +2023,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                         <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '10px' }}>
                           {p.pets && <Tag label="Aceita pets" />}
                           {!p.smoker && <Tag label="Não fumante" />}
+                          <SeloInteresses afinidade={p.afinidadeIa} temas={p.temasEmComum} />
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '10px', borderTop: `1px solid ${C.border}` }}>
                           <ImagemComFallback src={p.fotoPerfilUrl} alt={p.name}
@@ -2040,6 +2049,7 @@ function DiscoveryScreen({ nav, setMatchProfile, onSelectProfile, showFilters, s
                             <p style={{ fontFamily: FONTE_TEXTO, fontSize: '13px', color: 'rgba(255,255,255,0.9)', margin: 0 }}>📍 {p.region}</p>
                           </div>
                           <CompatBadge value={p.compat} sobreFoto />
+                          <SeloInteresses afinidade={p.afinidadeIa} temas={p.temasEmComum} sobreFoto />
                         </div>
                         <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                           {p.tags.slice(0, 3).map(t => (
@@ -2161,6 +2171,8 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
             </p>
           )}
 
+          {profile.id > 0 && <PainelPorQueCombinam perfilId={profile.id} />}
+
           {/* Sobre a vaga */}
           <CartaoSecao titulo="Sobre a vaga">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -2240,6 +2252,8 @@ function ProfileDetailScreen({ nav, profile, backScreen, onLike, onRecusar }: {
         </div>
 
         {profile.bio && <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: C.text, lineHeight: 1.7, marginBottom: '24px' }}>{profile.bio}</p>}
+
+        {profile.id > 0 && <PainelPorQueCombinam perfilId={profile.id} />}
 
         <CartaoSecao titulo="Preferências de moradia">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -3189,6 +3203,8 @@ function MyProfileScreen({ meuPerfil, tipo, onPerfilAtualizado, onPerfilExcluido
                 <CartaoSecao titulo="Sobre mim">
                   <p style={{ fontFamily: FONTE_TEXTO, fontSize: '15px', color: meuPerfil.bio ? C.text : C.muted, lineHeight: 1.7, margin: 0 }}>{meuPerfil.bio || 'Você ainda não escreveu uma apresentação.'}</p>
                 </CartaoSecao>
+
+                <TemasDaMinhaBio analise={meuPerfil.analise_ia} />
 
                 <CartaoSecao titulo="Preferências de moradia">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

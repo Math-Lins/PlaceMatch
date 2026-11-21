@@ -23,7 +23,8 @@ from placematch.api_docs import OPERACOES, erros_da_operacao  # noqa: E402
 from placematch.exemplos_api import EXEMPLOS  # noqa: E402
 
 SAIDA = os.path.join(os.path.dirname(RAIZ), 'docs', 'api.md')
-GRUPOS = ['Autenticação', 'Perfis', 'Descoberta e Matches', 'Chat', 'Moderação', 'Painel administrativo', 'Logs']
+GRUPOS = ['Autenticação', 'Perfis', 'Descoberta e Matches', 'Chat', 'Moderação', 'Painel administrativo', 'Afinidade por IA',
+          'Processamento em lote', 'Logs']
 
 TIPOS = {
     OpenApiTypes.INT: 'inteiro', OpenApiTypes.STR: 'texto', OpenApiTypes.DECIMAL: 'decimal',
@@ -193,7 +194,7 @@ def gerar():
           '## Visão geral', '',
           f'API REST em JSON (Django REST Framework), versão **{settings.SPECTACULAR_SETTINGS["VERSION"]}**, '
           f'com {len(OPERACOES)} operações em {len({o["rota"] for o in OPERACOES.values()})} rotas, organizadas em {len(GRUPOS)} grupos: '
-          'Autenticação, Perfis, Descoberta e Matches, Chat, Moderação, Painel administrativo e Logs.', '',
+          f'{", ".join(GRUPOS[:-1])} e {GRUPOS[-1]}.', '',
           '| Recurso | Onde |', '|---|---|',
           '| Documentação interativa (Swagger UI, com botão **Authorize**) | `<BASE>/api/docs/` |',
           '| Schema OpenAPI 3 | `<BASE>/api/schema/` e [`docs/openapi.yaml`](./openapi.yaml) |',

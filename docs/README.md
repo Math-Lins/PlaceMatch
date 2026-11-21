@@ -1,6 +1,6 @@
 # Documentação do PlaceMatch — índice
 
-Índice de toda a documentação do projeto (versão **v1.0.0-rc2**). Instalação e execução estão no [README da raiz](../README.md).
+Índice de toda a documentação do projeto (versão **v1.0.0**). Instalação e execução estão no [README da raiz](../README.md).
 
 ## Manuais
 
@@ -41,10 +41,10 @@
 
 | Arquivo | Descrição |
 |---|---|
-| [`testes-sprint9.md`](./testes-sprint9.md) | Campanha de testes (funcionais, validação e navegação e2e), bugs encontrados e corrigidos e evolução do total de testes até a rc2. |
+| [`testes-sprint9.md`](./testes-sprint9.md) | Campanha de testes (funcionais, validação e navegação e2e), bugs encontrados e corrigidos e evolução do total de testes até a v1.0.0. |
 | [`auditoria-rc.md`](./auditoria-rc.md) | Auditorias da Release Candidate (duas rodadas): defeitos encontrados (AUD-01…), correções, itens mantidos com justificativa e totais. |
 | [`revisao-codigo.md`](./revisao-codigo.md) | Revisão final do código (Sprint 11): ferramentas, checklist por módulo, correções, itens mantidos, métricas e organização do repositório. |
-| [`execucoes-rc/`](./execucoes-rc/) | Saídas das verificações finais da rc2: `testes-backend.txt` (suíte completa), `verificar-banco.txt` (consistência do banco), `matriz-permissoes.txt` (rota × perfil de acesso), `openapi-validate.txt` (validação do schema), `build-frontend.txt` (`tsc` + build) e `e2e-navegacao.txt` (roteiros Playwright). |
+| [`execucoes-rc/`](./execucoes-rc/) | Saídas das verificações finais (v1.0.0): `testes-backend.txt` (suíte completa), `verificar-banco.txt` (consistência do banco), `matriz-permissoes.txt` (rota × perfil de acesso), `openapi-validate.txt` (validação do schema), `build-frontend.txt` (`tsc` + build) e `e2e-navegacao.txt` (roteiros Playwright). |
 
 ## Fora de `docs/`
 
@@ -52,4 +52,4 @@
 |---|---|
 | [`../frontend/e2e/README.md`](../frontend/e2e/README.md) | Como rodar os testes de navegação (Playwright) com banco descartável. |
 | [`../frontend/e2e/evidencias/`](../frontend/e2e/evidencias/) | Prints dos roteiros de navegação (N01 a N14), com `INDICE.md`. |
-| [`../frontend/e2e/evidencias-rc/`](../frontend/e2e/evidencias-rc/) | Prints da interface final da Release Candidate (RC-01 a RC-42), com `INDICE.md`. |
+| [`../frontend/e2e/evidencias-rc/`](../frontend/e2e/evidencias-rc/) | Prints da interface final (RC-01 a RC-50; RC-43 a RC-50: Afinidade por IA e processamento paralelo), com `INDICE.md`. |

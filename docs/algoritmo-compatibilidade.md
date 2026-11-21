@@ -515,6 +515,7 @@ O score total continua dominado pelos critérios estruturados: Isabela × Henriq
 |---|---|---|
 | `GET /api/descoberta/` | usuário comum | `afinidade_ia` (0 a 1 ou `null`) e `temas_em_comum` em cada item; embeddings via `select_related` (o número de consultas não cresce com o número de cards — teste `test_sem_consultas_n_mais_1`) |
 | `GET /api/perfis/{id}/` | logado | os mesmos dois campos em relação ao usuário (`null`/`[]` no próprio perfil e para o admin) |
+| `GET /api/perfis/` (e a resposta de criar/editar) | dono do perfil | `analise_ia`: `situacao` (`analisada`, `bio_curta`, `pendente` ou `ia_desligada`), os temas da própria bio e a contagem de letras e dígitos (mínimo 20); `null` nos perfis de outras pessoas. É o bloco "Temas que a IA identificou na sua bio" do Meu Perfil |
 | `GET /api/compatibilidade/{perfil_id}/` | usuário comum, perfil do tipo oposto ativo | score, os 7 critérios (peso, peso efetivo, valor, contribuição), afinidade, cosseno, temas de cada um e em comum, `ia_disponivel`, `motivo_sem_ia` |
 | `GET /api/admin/ia/status/` | administrador | modelo, dimensões, disponível, perfis com embedding × total, temas (com contagem), tempo médio de geração, última atualização, calibração |
 | `POST /api/admin/ia/testar/` | administrador | `{texto_a, texto_b}` (até 1000 caracteres) → cosseno, afinidade, temas, tempo; 503 sem o modelo; log `IA_TESTE` **sem os textos** |

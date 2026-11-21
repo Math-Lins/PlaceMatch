@@ -250,3 +250,94 @@ export function ScoreDistChart({ data, title }: { data: DistribuicaoScore[]; tit
     </svg>
   );
 }
+
+// ─── Linhas por número de workers (benchmark de paralelismo) ──────────────────
+
+export interface SerieWorkers {
+  rotulo: string;
+  cor: string;
+  pontos: { x: number; y: number }[];
+  /** Linha de referência (sequencial, ideal): tracejada e sem marcadores. */
+  referencia?: boolean;
+  marcador?: 'circulo' | 'quadrado';
+}
+
+/**
+ * Valor (eixo y) × workers (eixo x), uma linha por série. Rótulo do último ponto direto na linha e
+ * legenda embaixo (a identidade nunca depende só da cor: marcadores diferentes e texto).
+ */
+export function GraficoWorkers({ series, titulo, rotuloY, formatarY }: {
+  series: SerieWorkers[]; titulo: string; rotuloY: string; formatarY: (v: number) => string;
+}) {
+  const xs = Array.from(new Set(series.flatMap(s => s.pontos.map(p => p.x)))).sort((a, b) => a - b);
+  if (!xs.length) return null;
+  const ML = 56, MR = 74, MT = 16, MB = 64;
+  const W = 520, H = 280;
+  const CW = W - ML - MR, CH = H - MT - MB;
+  // Passo "redondo" (1, 2, 2,5 ou 5 × 10^k) com no máximo 5 intervalos.
+  const maior = Math.max(...series.flatMap(s => s.pontos.map(p => p.y)), 0.0001) * 1.05;
+  const bruto = maior / 5;
+  const mag = Math.pow(10, Math.floor(Math.log10(bruto)));
+  const passo = ([1, 2, 2.5, 5, 10].find(f => f * mag >= bruto) ?? 10) * mag;
+  const maxY = Math.ceil(maior / passo) * passo;
+  const xOf = (x: number) => ML + (xs.length <= 1 ? CW / 2 : (xs.indexOf(x) * CW) / (xs.length - 1));
+  const yOf = (y: number) => MT + CH - Math.max(0, Math.min(1, y / maxY)) * CH;
+  const ticks = Array.from({ length: Math.round(maxY / passo) + 1 }, (_, i) => i * passo);
+
+  // rótulos do último ponto sem sobreposição (afasta pelo menos 14 px)
+  const finais = series.filter(s => !s.referencia && s.pontos.length)
+    .map(s => ({ s, p: s.pontos[s.pontos.length - 1] }))
+    .sort((a, b) => yOf(b.p.y) - yOf(a.p.y));
+  const posRotulo = new Map<string, number>();
+  let ultimo = Infinity;
+  for (const { s, p } of finais) {
+    const y = Math.min(yOf(p.y) + 4, ultimo - 14);
+    posRotulo.set(s.rotulo, y);
+    ultimo = y;
+  }
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block' }} role="img" aria-label={titulo}>
+      <title>{titulo}</title>
+      {ticks.map(t => (
+        <g key={t}>
+          <line x1={ML} y1={yOf(t)} x2={ML + CW} y2={yOf(t)} stroke={C.border} strokeWidth="1" />
+          <text x={ML - 6} y={yOf(t) + 4} textAnchor="end" fontSize="11" fill={C.muted} fontFamily={FONTE_TEXTO}>{formatarY(t)}</text>
+        </g>
+      ))}
+      <line x1={ML} y1={MT + CH} x2={ML + CW} y2={MT + CH} stroke={C.borderStrong} strokeWidth="1.5" />
+      {xs.map(x => (
+        <text key={x} x={xOf(x)} y={MT + CH + 18} textAnchor="middle" fontSize="12" fill={C.muted} fontFamily={FONTE_TEXTO}>{x}</text>
+      ))}
+      <text x={ML + CW / 2} y={MT + CH + 36} textAnchor="middle" fontSize="11" fill={C.muted} fontFamily={FONTE_TEXTO}>workers</text>
+      <text x={14} y={MT + CH / 2} textAnchor="middle" fontSize="11" fill={C.muted} fontFamily={FONTE_TEXTO}
+        transform={`rotate(-90 14 ${MT + CH / 2})`}>{rotuloY}</text>
+
+      {series.map(s => {
+        const d = s.pontos.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xOf(p.x).toFixed(1)},${yOf(p.y).toFixed(1)}`).join(' ');
+        return (
+          <g key={s.rotulo}>
+            <path d={d} fill="none" stroke={s.cor} strokeWidth={s.referencia ? 1.5 : 2.5} strokeDasharray={s.referencia ? '6 5' : undefined}
+              strokeLinecap="round" strokeLinejoin="round" />
+            {!s.referencia && s.pontos.map(p => s.marcador === 'quadrado'
+              ? <rect key={p.x} x={xOf(p.x) - 5} y={yOf(p.y) - 5} width="10" height="10" rx="2" fill={s.cor} stroke={C.card} strokeWidth="2" />
+              : <circle key={p.x} cx={xOf(p.x)} cy={yOf(p.y)} r="5.5" fill={s.cor} stroke={C.card} strokeWidth="2" />)}
+            {!s.referencia && s.pontos.length > 0 && (
+              <text x={xOf(s.pontos[s.pontos.length - 1].x) + 10} y={posRotulo.get(s.rotulo)} fontSize="11" fill={C.text}
+                fontFamily={FONTE_TEXTO} fontWeight="700">{formatarY(s.pontos[s.pontos.length - 1].y)}</text>
+            )}
+          </g>
+        );
+      })}
+
+      {series.map((s, i) => (
+        <g key={`leg-${s.rotulo}`} transform={`translate(${ML + i * 118}, ${H - 12})`}>
+          {s.referencia
+            ? <line x1="0" y1="-4" x2="14" y2="-4" stroke={s.cor} strokeWidth="2" strokeDasharray="4 3" />
+            : s.marcador === 'quadrado' ? <rect x="2" y="-9" width="10" height="10" rx="2" fill={s.cor} /> : <circle cx="7" cy="-4" r="5" fill={s.cor} />}
+          <text x="18" y="0" fontSize="11" fill={C.text} fontFamily={FONTE_TEXTO} fontWeight="600">{s.rotulo}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}

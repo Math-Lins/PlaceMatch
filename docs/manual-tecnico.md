@@ -1,6 +1,6 @@
 # Manual Técnico — PlaceMatch
 
-**Versão do sistema:** v1.0.0-rc2  
+**Versão do sistema:** v1.0.0  
 **Grupo 07 — Turma 8 NA — Ciência da Computação (UNINASSAU) — Fábrica de Software e Tópicos Avançados, 2026.2**  
 **Repositório:** https://github.com/Math-Lins/PlaceMatch
 
@@ -40,8 +40,10 @@ flowchart LR
     U[Navegador<br/>usuário ou administrador] -->|HTTPS / JSON| F[Frontend<br/>React + TypeScript<br/>Vite :5173]
     F -->|REST + JWT<br/>Authorization: Bearer| A[API Django REST Framework<br/>:8000]
     A -->|ORM Django| D[(PostgreSQL 16)]
-    A --> C[Algoritmo de compatibilidade<br/>NumPy, em lote]
+    A --> C[Algoritmo de compatibilidade<br/>NumPy, em lote e em paralelo]
     C --> D
+    A --> M[Modelo de linguagem local<br/>fastembed + ONNX Runtime]
+    M -->|embeddings das bios| D
     A -->|SMTP opcional| E[Servidor de e-mail]
     A --> L[Logs de operação<br/>tabela logs_logoperacao]
 ```
@@ -60,7 +62,7 @@ flowchart LR
 
 | Camada | Tecnologia | Versão | Uso |
 |---|---|---|---|
-| Linguagem do backend | Python | 3.12+ (Docker: 3.13) | — |
+| Linguagem do backend | Python | 3.12+ (desenvolvimento: 3.14; Docker: 3.13) | — |
 | Framework web | Django | 6.1.1 | ORM, migrações, administração, configurações |
 | API | Django REST Framework | 3.18.1 | Views, serializers, permissões, paginação |
 | Autenticação | djangorestframework-simplejwt | 5.5.1 | JWT (access 1 h, refresh 7 dias, rotação e lista de bloqueio) |
@@ -69,6 +71,8 @@ flowchart LR
 | Banco | PostgreSQL + psycopg2-binary | 16 / 2.9.13 | Persistência |
 | Processamento | NumPy | 2.x | Cálculo de compatibilidade em lote |
 | Afinidade por IA | fastembed + ONNX Runtime | 0.9.1 / 1.32.0 | Modelo de linguagem local (`paraphrase-multilingual-MiniLM-L12-v2`, 384 dimensões) que compara as bios; sem PyTorch e sem serviço externo |
+| Processamento paralelo | concurrent.futures + threadpoolctl | (biblioteca padrão) / 3.8.0 | Recálculo completo em vários núcleos (processos ou threads); `threadpoolctl` limita o BLAS a 1 thread por worker |
+| Gráfico do benchmark | matplotlib | 3.11.2 | Só desenvolvimento (`requirements-dev.txt`): gera `docs/benchmark/paralelismo.png` |
 | Configuração | python-dotenv | 1.2.3 | Leitura do `.env` |
 | Linguagem do frontend | TypeScript | 5.9 | — |
 | Interface | React | 19.3 | Componentes e estado |
@@ -95,7 +99,8 @@ Cada app Django segue a mesma organização: `models.py` (tabelas), `serializers
 | `moderacao/` | Denúncias, decisão do administrador, suspensão e reativação | — |
 | `painel/` | Dashboard, relatórios, lista de usuários, exportação CSV, filtros comuns | `verificar_banco` |
 | `logs/` | Registro de operações (18 ações) e consulta/exportação | — |
-| `ia/` | Afinidade por IA: serviço do modelo (`servico.py`, carga única e thread-safe), embeddings das bios (`embeddings.py`), temas de convivência (`temas.py`), rotas de administrador | `baixar_modelo_ia`, `gerar_embeddings` |
+| `ia/` | Afinidade por IA: serviço do modelo (`servico.py`, carga única e thread-safe, estados "carregando/disponível/indisponível"), aquecimento na subida do servidor (`aquecimento.py`), embeddings das bios (`embeddings.py`), temas de convivência (`temas.py`), explicação para a API (`explicacao.py`: afinidade, temas em comum e o campo `analise_ia` do próprio perfil), rotas de administrador | `baixar_modelo_ia`, `gerar_embeddings [--workers N]` |
+| `painel/` (processamento) | `GET /api/admin/processamento/benchmark/`: devolve o resultado do `benchmark_paralelismo` para a aba IA do painel | — |
 | `scripts/` | Geração dos exemplos reais da API e do `docs/api.md` | — |
 
 ### 3.2 Frontend (`frontend/src/`)
@@ -104,12 +109,13 @@ Cada app Django segue a mesma organização: `models.py` (tabelas), `serializers
 |---|---|
 | `main.tsx` | Ponto de entrada; carrega fontes e estilos |
 | `App.tsx` | Telas do usuário (início, login, cadastro, recuperação de senha, criação/edição de perfil, Descoberta, detalhe, matches, chat, notificações, Meu Perfil), navegação por `?screen=`, guarda de rotas e restauração da sessão |
+| `ia.tsx` | Afinidade por IA para o usuário: painel "Por que vocês combinam" (7 critérios, peso efetivo, temas em comum), selo "✨ Interesses em comum" dos cards, temas da própria bio (Meu Perfil) e o "ⓘ Como a IA funciona" |
 | `api.ts` | Cliente HTTP: tokens em `sessionStorage`, renovação automática, tradução de erros, download de CSV |
 | `ui.tsx` | Componentes visuais comuns (`Botao`, `Campo`, `Selo`, `Modal`, estados de carregando/vazio/erro) e formatação pt-BR (moeda, datas) |
-| `admin/` | Painel administrativo: `AdminPanel.tsx` (abas), `PainelTab`, `RelatoriosTab`, `LogsTab`, `UsuariosTab`, `ModeracaoTab`, `graficos.tsx` |
+| `admin/` | Painel administrativo: `AdminPanel.tsx` (abas), `PainelTab`, `RelatoriosTab`, `LogsTab`, `UsuariosTab`, `ModeracaoTab`, `IATab` (status do modelo, laboratório e processamento paralelo), `graficos.tsx` (inclui o gráfico por número de workers) |
 | `index.css` | Paleta e estilos globais (Tailwind) |
 
-Testes de navegação em `frontend/e2e/` (14 roteiros `n01` a `n14` e o roteiro de capturas `tour-rc.spec.ts`).
+Testes de navegação em `frontend/e2e/` (15 roteiros `n01` a `n15` e o roteiro de capturas `tour-rc.spec.ts`, RC-01 a RC-50).
 
 ### 3.3 Navegação e permissões
 
@@ -201,13 +207,19 @@ Os valores reais ficam **somente** nos arquivos `.env`, que não são versionado
 | `PROXIES_CONFIAVEIS` | Quantos proxies confiáveis há na frente da API (para o IP real) |
 | `FRONTEND_URL` | Endereço do frontend usado no link de redefinição de senha |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` | Envio de e-mail por SMTP. Sem `EMAIL_HOST`, o e-mail é impresso no console do servidor |
+| `IA_HABILITADA` | Liga o 7º critério (Afinidade por IA). `False` = só os 6 critérios, pesos renormalizados (padrão `True`) |
+| `IA_MODELO_DIR` | Pasta do modelo baixado por `baixar_modelo_ia` (vazio = `backend/.modelos/`, fora do Git) |
+| `IA_AQUECIMENTO` | Carrega o modelo em segundo plano quando o servidor sobe (padrão `True`; nunca em testes ou outros comandos) |
+| `IA_EMBEDDER` | Só nos testes automatizados (`falso`, determinístico); não use em desenvolvimento nem em produção |
+| `PROCESSAMENTO_WORKERS` | Workers do `recalcular_compatibilidades` em paralelo (vazio = `min(4, núcleos)`) |
+| `PROCESSAMENTO_BENCHMARK_ARQUIVO` | Arquivo servido em `GET /api/admin/processamento/benchmark/` (vazio = `docs/benchmark/paralelismo.json`) |
 | `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SECURE_PROXY_SSL_HEADER`, `CORS_ALLOWED_ORIGINS` | Somente produção (HTTPS e origem do frontend) |
 
 | Variável (frontend) | Para que serve |
 |---|---|
 | `VITE_API_URL` | Endereço da API (padrão `http://127.0.0.1:8000`) |
 
-**Serviços necessários:** PostgreSQL 16. **Opcional:** servidor SMTP para o e-mail de recuperação de senha (por exemplo, Gmail com senha de app). Nunca coloque credenciais no código, no README ou em commits.
+**Serviços necessários:** PostgreSQL 16. **Modelo de IA:** baixado uma vez com `python manage.py baixar_modelo_ia` (~241 MB em disco, ~560 MB de RAM por processo); sem ele, o sistema funciona com os 6 critérios. **Opcional:** servidor SMTP para o e-mail de recuperação de senha (por exemplo, Gmail com senha de app). Nunca coloque credenciais no código, no README ou em commits.
 
 ## 8. Como executar
 
@@ -223,16 +235,19 @@ Build de produção do frontend: `npm run build` (gera `frontend/dist`). Orienta
 
 ## 9. APIs e integração
 
-A API segue REST com JSON e está documentada em três formas: Swagger UI interativo (`/api/docs/`), schema OpenAPI 3 (`/api/schema/` e [`docs/openapi.yaml`](./openapi.yaml)) e referência em texto com exemplos reais ([`docs/api.md`](./api.md)). São **31 operações em 26 rotas**, em sete grupos:
+A API segue REST com JSON e está documentada em três formas: Swagger UI interativo (`/api/docs/`), schema OpenAPI 3 (`/api/schema/` e [`docs/openapi.yaml`](./openapi.yaml)) e referência em texto com exemplos reais ([`docs/api.md`](./api.md)). São **35 operações em 30 rotas**, em nove grupos:
 
 | Grupo | Rotas principais |
 |---|---|
 | Autenticação | `POST /api/auth/registrar/`, `login/`, `login/refresh/`, `logout/`, `senha/solicitar/`, `senha/redefinir/`; `GET /api/auth/me/` |
 | Perfis | `GET/POST /api/perfis/`; `GET/PUT/PATCH/DELETE /api/perfis/{id}/` |
-| Descoberta e Matches | `GET /api/descoberta/` (filtros e ordenação), `POST /api/curtidas/`, `GET /api/matches/` |
+| Perfis (IA) | `GET /api/perfis/` traz `analise_ia` no próprio perfil (situação e temas que a IA encontrou na bio) |
+| Descoberta e Matches | `GET /api/descoberta/` (filtros e ordenação; `afinidade_ia` e `temas_em_comum` em cada card), `POST /api/curtidas/`, `GET /api/matches/`, `GET /api/compatibilidade/{perfil_id}/` (os 7 critérios, peso efetivo e temas) |
 | Chat | `GET /api/conversas/`; `GET/POST /api/matches/{match_id}/mensagens/` |
 | Moderação | `POST /api/moderacao/denuncias/`; rotas `/api/admin/moderacao/...` para listar, decidir, suspender e reativar |
 | Painel | `GET /api/admin/dashboard/`, `relatorios/`, `relatorios/{rel_id}/` (JSON ou CSV), `usuarios/`, `usuarios/exportar/` |
+| Afinidade por IA | `GET /api/admin/ia/status/` (situação do modelo), `POST /api/admin/ia/testar/` (comparar dois textos; 503 sem o modelo) |
+| Processamento em lote | `GET /api/admin/processamento/benchmark/` (resultado do benchmark de paralelismo; 404 sem o arquivo) |
 | Logs | `GET /api/admin/logs/`, `logs/exportar/` |
 
 **Convenções:**
@@ -241,7 +256,7 @@ A API segue REST com JSON e está documentada em três formas: Swagger UI intera
 - Datas de filtro em `AAAA-MM-DD`, período máximo de 366 dias, a partir de 2000.
 - Listas do painel paginadas por `page` e `page_size`.
 - CSV com separador `;`, datas `dd/mm/aaaa`, vírgula decimal e células protegidas contra fórmulas.
-- Códigos: `400` (dados inválidos), `401` (sem login ou token inválido), `403` (sem permissão), `404` (não encontrado), `429` (muitas tentativas). Nenhuma entrada deve gerar `500`.
+- Códigos: `400` (dados inválidos), `401` (sem login ou token inválido), `403` (sem permissão), `404` (não encontrado), `429` (muitas tentativas), `503` (só no teste da IA, quando o modelo está fora do ar). Nenhuma entrada deve gerar `500`.
 
 Um teste automatizado compara as rotas documentadas com as rotas reais e falha se alguma faltar ou sobrar.
 
@@ -253,12 +268,13 @@ O núcleo de processamento do PlaceMatch é o **algoritmo de compatibilidade**, 
 
 | Critério | Peso | Como é medido |
 |---|---|---|
-| Orçamento | 25% | Sobreposição das faixas de preço |
-| Hábitos | 25% | Fumante, pets, visitas e escalas de bagunça, organização e vida social |
-| Região | 15% | Mesma região/bairro (comparação normalizada) |
-| Rotina | 15% | Perfil de horário (tabela de similaridade) e tolerância a barulho |
-| Moradia | 10% | Tipo de imóvel (tabela de similaridade) e número de moradores |
-| Idade | 10% | Diferença de idade (zero a partir de 20 anos) |
+| Orçamento | 23% | Sobreposição das faixas de preço |
+| Hábitos | 22% | Fumante, pets, visitas e escalas de bagunça, organização e vida social |
+| Região | 14% | Mesma região/bairro (comparação normalizada) |
+| Rotina | 14% | Perfil de horário (tabela de similaridade) e tolerância a barulho |
+| Moradia | 9% | Tipo de imóvel (tabela de similaridade) e número de moradores |
+| Idade | 8% | Diferença de idade (zero a partir de 20 anos) |
+| Afinidade de interesses (IA) | 10% | Cosseno entre os embeddings das bios (modelo de linguagem local), calibrado para 0 a 1. Sem bio suficiente (20+ letras) ou com a IA desligada, sai do cálculo e os outros 6 pesos são renormalizados |
 
 **Implementação:**
 
@@ -268,9 +284,9 @@ O núcleo de processamento do PlaceMatch é o **algoritmo de compatibilidade**, 
 - `algoritmo/matriz.py` + `algoritmo/paralelo.py` + `processamento.py`: recálculo **completo** (todos os pares) em blocos de 256 × 256 pares, nos modos sequencial, threads ou processos; resultado idêntico ao escalar com qualquer número de workers.
 - Comandos: `recalcular_compatibilidades [--modo auto|processos|threads|sequencial] [--workers N]` (recalcula tudo), `benchmark_compatibilidade` (loop × NumPy) e `benchmark_paralelismo` (speedup, eficiência e Lei de Amdahl; grava `docs/benchmark/paralelismo.*`). Os dois benchmarks só usam banco com `--banco-descartavel` (banco vazio).
 
-**Desempenho medido (Sprint 6):** com banco, o cálculo em lote foi **34× a 61× mais rápido** que a versão item a item (100 a 5.000 perfis), principalmente por trocar N+1 consultas por 2.
+**Desempenho medido:** com banco, o cálculo em lote (1 perfil contra todos) é **26× a 34× mais rápido** que a versão item a item (100 a 5.000 perfis, já com a IA), principalmente por trocar N+1 consultas por 2. No recálculo completo em paralelo (benchmark de 1.000 a 20.000 perfis, i3 de 2 núcleos com outros programas abertos), threads chegaram a **2,4×**. Processos perderam até 5.000 perfis, por causa de ~3 s para subir os workers no Windows. Ponta a ponta, gravar no banco é 99,8% do tempo (Lei de Amdahl). Detalhes na seção 12 de [`algoritmo-compatibilidade.md`](./algoritmo-compatibilidade.md) e na aba IA do painel.
 
-**Limitações conhecidas:** a região é comparada por igualdade de texto normalizado (grafias diferentes não combinam); scores de pares que não envolvem o perfil alterado não são recalculados em cascata. Detalhes, fórmulas e tabelas: [`docs/algoritmo-compatibilidade.md`](./algoritmo-compatibilidade.md) e [`docs/benchmark/`](./benchmark/).
+**Limitações conhecidas:** a região é comparada por igualdade de texto normalizado (grafias diferentes não combinam); scores de pares que não envolvem o perfil alterado não são recalculados em cascata; a IA mede o **assunto** das bios, não a posição ("durmo tarde" × "acordo cedo" falam do mesmo assunto), por isso tem só 10% e a posição fica com hábitos e rotina. Detalhes, fórmulas e tabelas: [`docs/algoritmo-compatibilidade.md`](./algoritmo-compatibilidade.md) e [`docs/benchmark/`](./benchmark/).
 
 ## 11. Segurança
 
@@ -287,15 +303,17 @@ O relatório de auditoria está em [`docs/auditoria-rc.md`](./auditoria-rc.md).
 
 ## 12. Testes e verificações
 
-| Verificação | Comando | Resultado na v1.0.0-rc2 |
+| Verificação | Comando | Resultado na v1.0.0 |
 |---|---|---|
-| Testes do backend | `python manage.py test --settings=placematch.test_settings` | 685 testes OK |
+| Testes do backend | `python manage.py test --settings=placematch.test_settings` | 824 testes OK (nenhum pulado; o teste com o modelo real de IA roda quando ele está baixado) |
 | Migrações em dia | `python manage.py makemigrations --check --dry-run --settings=placematch.test_settings` | Sem alterações |
 | Permissões | `python manage.py matriz_permissoes --settings=placematch.test_settings` | Sem divergências |
 | Contrato da API | `python manage.py spectacular --validate --fail-on-warn --file ../docs/openapi.yaml --settings=placematch.test_settings` | Sem avisos |
 | Consistência do banco | `python manage.py verificar_banco` | 0 erros |
-| Tipos e build | `npx tsc --noEmit` e `npm run build` | Sem erros |
-| Navegação (Playwright) | `npm run e2e:db`, `npm run e2e`, `npm run e2e:db:parar` | 14 roteiros, 30 testes |
+| Análise estática | `ruff check .` (backend) | Sem erros |
+| Tipos e build | `npx tsc --noEmit --noUnusedLocals --noUnusedParameters` e `npm run build` | Sem erros |
+| Navegação (Playwright) | `npm run e2e:db`, `npm run e2e`, `npm run e2e:db:parar` | 15 roteiros, 31 testes (um roteiro por vez, com o modelo de IA real) |
+| Prints da interface | `npm run e2e:tour` | RC-01 a RC-50 (RC-43 a RC-50: IA e processamento paralelo) |
 
 As saídas completas da última execução estão em [`docs/execucoes-rc/`](./execucoes-rc/).
 
@@ -313,6 +331,8 @@ As saídas completas da última execução estão em [`docs/execucoes-rc/`](./ex
 | Quero… | Onde mexer |
 |---|---|
 | Mudar pesos ou tabelas do score | `backend/matches/algoritmo/config.py`; depois `python manage.py recalcular_compatibilidades` |
+| Mudar os temas da IA ou a calibração | `backend/ia/temas.py` e `matches/algoritmo/config.py`; depois `python manage.py gerar_embeddings --forcar` |
+| Medir o paralelismo de novo | `python manage.py benchmark_paralelismo` (com a máquina ociosa); a aba IA do painel lê o resultado |
 | Novo campo no perfil | `perfis/models.py` → `makemigrations`/`migrate` → `perfis/serializers.py` → formulário em `App.tsx` → algoritmo, se influenciar o score → `docs/banco-de-dados.md` |
 | Nova rota da API | `views.py` + `urls.py` do app, permissão, testes, anotação `@extend_schema` e regeneração de `docs/api.md` e `docs/openapi.yaml` (scripts em `backend/scripts/`) |
 | Nova ação de log | `logs/models.py` (`ACAO_CHOICES`) + migração + rótulo no filtro da aba Logs |

@@ -1,10 +1,8 @@
-# 18/11/2026 09:55:00 -0300 | diretório: backend | v1.0.0-rc2 | comando: python manage.py test --settings=placematch.test_settings -v 2
-
-Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Found 685 test(s).
+# 20/11/2026 23:04:29 -0300 | diretório: backend | v1.0.0 | comando: python manage.py test --settings=placematch.test_settings -v 2
+Found 824 test(s).
 Operations to perform:
   Synchronize unmigrated apps: corsheaders, drf_spectacular, messages, painel, rest_framework, rest_framework_simplejwt, staticfiles
-  Apply all migrations: admin, auth, chat, contenttypes, logs, matches, moderacao, perfis, sessions, token_blacklist, usuarios
+  Apply all migrations: admin, auth, chat, contenttypes, ia, logs, matches, moderacao, perfis, sessions, token_blacklist, usuarios
 Synchronizing apps without migrations:
   Creating tables...
     Running deferred SQL...
@@ -38,10 +36,12 @@ Running migrations:
   Applying chat.0001_initial... OK
   Applying chat.0002_renomear_indice_mensagem... OK
   Applying chat.0003_restricoes_de_banco... OK
+  Applying ia.0001_initial... OK
   Applying logs.0001_initial... OK
   Applying logs.0002_alter_logoperacao_acao... OK
   Applying logs.0003_alter_logoperacao_entidade_id... OK
   Applying logs.0004_alter_logoperacao_acao... OK
+  Applying logs.0005_acao_ia_teste... OK
   Applying moderacao.0001_initial... OK
   Applying moderacao.0002_restricoes_de_banco... OK
   Applying sessions.0001_initial... OK
@@ -59,7 +59,318 @@ Running migrations:
   Applying token_blacklist.0013_alter_blacklistedtoken_options_and_more... OK
   Applying usuarios.0002_manager_email_iexact... OK
   Applying usuarios.0003_copiar_username_para_first_name... OK
-  Applying usuarios.0004_restricoes_de_banco...test_ctf19_listar_conversas (chat.test_funcionais_sprint9.FuncionaisChatTest.test_ctf19_listar_conversas) ... ok
+  Applying usuarios.0004_restricoes_de_banco... OK
+System check identified no issues (0 silenced).
+
+[CT-V78] status=400 body={"detail": "O conteúdo da mensagem não pode ser vazio."}
+
+[CT-V79] status=400 body={"detail": "O conteúdo da mensagem não pode ser vazio."}
+
+[CT-V80] status=400 body={"detail": "O conteúdo da mensagem não pode ter mais de 1000 caracteres."}
+
+[CT-V81] status=404 body={"detail": "Match não encontrado."}
+
+[CT-V82] status=400 body={"detail": "O conteúdo da mensagem não pode ser vazio."}
+
+[CT-V83] status=400 body={"detail": "O conteúdo da mensagem deve ser um texto."}
+
+[CT-V84] status=403 body={"detail": "Você não tem acesso a este match."}
+
+[CT-V85] status=400 body={"detail": "Você precisa criar um perfil antes de acessar o chat."}
+
+[CT-V86] status=400 body={"detail": "O parâmetro \"apos\" inválido. Informe um número inteiro. Informe o número da última mensagem já recebida."}
+
+[CT-V87] status=403 body={"detail": "Não é possível enviar mensagens: a conta do outro participante está suspensa."}
+
+[CT-V88] status=201 body={"id": 1, "match_id": 1, "remetente_id": 1, "conteudo": "ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá
+
+[CT-V134] status=200 body={"count": 1, "page": 1, "results": [{"id": 1, "data_hora": "2026-11-21T02:04:53.082224Z", "usuario": {"id": 1, "nome": "buscando", "email": "buscando@t.com"}, "acao": "LOGIN", "acao_label": "Login", "entidade": "", "entidade_id": null, "detalhes": {}, "ip": null}]}
+
+[CT-V108] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
+
+[CT-V109] status=400 body={"detail": "Formato de data_fim inválido. Use AAAA-MM-DD."}
+
+[CT-V110] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
+
+[CT-V111] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
+
+[CT-V112] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
+
+[CT-V113] status=200 body={"count": 0, "page": 9999, "results": []}
+
+[CT-V114] status=200 body={"count": 0, "page": 1, "results": []}
+
+[CT-V115] status=400 body={"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA, IA_TESTE."
+
+[CT-V116] status=200 body={"count": 0, "page": 1, "results": []}
+
+[CT-V56] status=400 body={"perfil_destino": ["O identificador \"999999\" não existe."]}
+
+[CT-V57] status=400 body={"perfil_destino": ["Este campo é obrigatório."], "tipo": ["Este campo é obrigatório."]}
+
+[CT-V58] status=400 body={"tipo": ["\"amar\" não é uma opção válida."]}
+
+[CT-V59] status=400 body={"perfil_destino": ["Valor inválido. Informe o número do identificador (recebido: str)."]}
+
+[CT-V60] status=400 body={"perfil_destino": ["Este campo não pode ser nulo."]}
+
+[CT-V61] status=400 body={"detail": "Você não pode curtir o seu próprio perfil."}
+
+[CT-V62a] status=201 body={"match": false}
+
+[CT-V62] status=400 body={"detail": "Você já avaliou este perfil."}
+
+[CT-V63] status=400 body={"detail": "Você só pode avaliar perfis do tipo oposto."}
+
+[CT-V64] status=400 body={"non_field_errors": ["Dado inválido. Esperava um dicionário, mas recebeu list."]}
+
+[CT-V65] status=400 body={"detail": "Você precisa criar um perfil antes de curtir."}
+
+[CT-V66] status=403 body={"detail": "Administradores não podem avaliar perfis."}
+
+[CT-V67] status=404 body={"detail": "Perfil não encontrado."}
+
+[CT-V68] status=400 body={"detail": "score_min deve ser um número entre 0 e 100."}
+
+[CT-V69] status=400 body={"detail": "score_min deve ser um número entre 0 e 100."}
+
+[CT-V70] status=400 body={"detail": "score_min deve ser um número entre 0 e 100."}
+
+[CT-V71] status=400 body={"detail": "Valor inválido para orcamento_min. Informe um número entre 0 e 99999999.99."}
+
+[CT-V72] status=400 body={"detail": "Valor inválido para orcamento_min. Informe um número entre 0 e 99999999.99."}
+
+[CT-V73] status=400 body={"detail": "Valor inválido para orcamento_max. Informe um número entre 0 e 99999999.99."}
+
+[CT-V74] status=400 body={"detail": "ordenar inválido. Use: score, orcamento_asc, orcamento_desc."}
+
+[CT-V75] status=400 body={"detail": "Valor inválido para fumante. Use true ou false."}
+
+[CT-V76] status=400 body={"detail": "Valor inválido para orcamento_min. Informe um número entre 0 e 99999999.99."}
+
+[CT-V77] status=400 body={"detail": "Você precisa criar um perfil antes de acessar a descoberta."}
+[OK] 1. Cadastro usuário A (buscando_vaga) -> 201
+[OK] 1. Cadastro usuário B (oferecendo_vaga) -> 201
+[OK] 1. Auto-cadastro como admin bloqueado -> 400
+[OK] 2. Login usuário A -> 200
+[OK] 2. Login usuário B -> 200
+[OK] 2. /api/auth/me/ retorna tipo correto para A -> 200
+[OK] 3. Perfil com orcamento_min > orcamento_max rejeitado -> 400
+[OK] 3. Criação de perfil A -> 201
+[OK] 3. Criação de perfil B -> 201
+[OK] 4. A enxerga B na descoberta -> 200
+[OK] 4. Admin recebe 403 na descoberta -> 403
+[OK] 5. A curte B (sem match ainda) -> 201
+[OK] 5. Curtida duplicada rejeitada -> 400
+[OK] 5. B curte A -> match criado -> 201
+[OK] 6. B desaparece da descoberta de A após match -> 200
+[OK] 7. Admin recebe 403 em /api/conversas/ -> 403
+[OK] 7. A visualiza conversa do match -> 200
+[OK] 7. A envia mensagem no chat -> 201
+[OK] 7. Mensagem vazia rejeitada -> 400
+[OK] 7. Mensagem com >1000 chars rejeitada -> 400
+[OK] 7. B recebe mensagens do chat -> 200
+[OK] 8. A denuncia B -> 201
+[OK] 8. Admin resolve denúncia como "resolvida" -> 200
+[OK] 8. Admin suspende B -> 200
+[OK] 9. Login de conta suspensa retorna 401 -> 401
+[OK] 10. Admin reativa B -> 200
+[OK] 10. B loga com sucesso após reativação -> 200
+[OK] 11. Admin acessa dashboard -> 200
+[OK] 11. Admin acessa catálogo de relatórios -> 200
+[OK] 11. Admin acessa relatorio compatibilidade-regiao -> 200
+[OK] 11. Admin acessa relatorio denuncias -> 200
+[OK] 12. Usuário comum bloqueado em /api/admin/dashboard/ -> 403
+[OK] 12. Usuário comum bloqueado em /api/admin/moderacao/denuncias/ -> 403
+[OK] 12. Usuário comum bloqueado em /api/admin/moderacao/usuarios/2/suspender/ -> 403
+[OK] 12. Usuário comum bloqueado em /api/admin/relatorios/ -> 403
+
+[FLUXO COMPLETO] Todos os 12 passos verificados com sucesso.
+
+[CT-V100] status=404 body={"detail": "Denúncia não encontrada."}
+
+[CT-V101] status=404 body={"detail": "Usuário não encontrado."}
+
+[CT-V102] status=400 body={"detail": "Este usuário já está suspenso."}
+
+[CT-V103] status=400 body={"detail": "Este usuário já está ativo."}
+
+[CT-V104] status=400 body={"detail": "A resolução deve ter no máximo 500 caracteres (enviados: 5000)."}
+
+[CT-V105] status=400 body={"detail": "O motivo da suspensão deve ter no máximo 500 caracteres (enviados: 5000)."}
+
+[CT-V106] status=400 body={"detail": "Status inválido. Use: pendente, resolvida, descartada."}
+
+[CT-V107] status=400 body={"detail": "O filtro \"denunciado\" inválido. Informe um número inteiro."}
+
+[CT-V99] status=400 body={"detail": "Status inválido. Use \"resolvida\" ou \"descartada\"."}
+
+[CT-V89] status=400 body={"detail": "Motivo inválido. Use: spam, ofensivo, falso, outro."}
+
+[CT-V90] status=400 body={"detail": "A descrição deve ter no máximo 500 caracteres (enviados: 501)."}
+
+[CT-V91] status=400 body={"detail": "Usuário denunciado não encontrado."}
+
+[CT-V92] status=400 body={"detail": "O campo \"denunciado\" inválido. Informe um número inteiro."}
+
+[CT-V93] status=400 body={"detail": "O campo \"denunciado\" inválido. Informe um número inteiro."}
+
+[CT-V94] status=400 body={"detail": "O campo \"denunciado\" é obrigatório."}
+
+[CT-V95] status=400 body={"detail": "Motivo inválido. Use: spam, ofensivo, falso, outro."}
+
+[CT-V96] status=400 body={"detail": "Você não pode denunciar a si mesmo."}
+
+[CT-V97] status=201 body={"id": 1, "denunciado": 2, "motivo": "spam", "status": "pendente", "criada_em": "2026-11-21T02:05:57.597922Z"}
+
+[CT-V98] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON."}
+
+[CT-V117] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
+
+[CT-V118] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
+
+[CT-V119] status=404 body={"detail": "Relatório \"nao-existe\" não encontrado."}
+
+[CT-V120] status=400 body={"detail": "Formato de data_fim inválido. Use AAAA-MM-DD."}
+
+[CT-V121] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
+
+[CT-V122] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
+
+[CT-V123] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
+
+[CT-V124] status=200 body={"count": 3, "page": 9999, "results": []}
+
+[CT-V125] status=200 body={"count": 3, "page": 1, "results": [{"id": 3, "nome": "adm", "email": "adm@t.com", "tipo": "administrador", "regiao": null, "data_cadastro": "2026-11-21T02:06:03.455673Z", "tem_perfil": false, "ativo": true}, {"id": 2, "nome": "oferece", "email": "oferece@t.com", "tipo": "oferecendo_vaga", "regiao":
+
+[CT-V126] status=400 body={"detail": "Valor inválido para ativo. Use true ou false."}
+
+[CT-V127] status=400 body={"detail": "Tipo inválido. Use: buscando_vaga, oferecendo_vaga, administrador."}
+
+[CT-V128] status=400 body={"detail": "Formato inválido. Use: json, csv."}
+
+[CT-V129] status=400 body={"detail": "Tipo inválido. Use: buscando_vaga, oferecendo_vaga, administrador."}
+
+[CT-V130] status=400 body={"detail": "data_inicio não pode ser anterior a 01/01/2000."}
+
+[CT-V28] status=400 body={"nome": ["Este campo não pode ficar em branco."]}
+
+[CT-V29] status=400 body={"nome": ["Este campo não pode ficar em branco."]}
+
+[CT-V30] status=400 body={"idade": ["Este campo é obrigatório."]}
+
+[CT-V31] status=400 body={"idade": ["A idade mínima permitida é 18 anos."]}
+
+[CT-V32] status=400 body={"idade": ["Informe uma idade válida (máximo 100 anos)."]}
+
+[CT-V33] status=400 body={"idade": ["Certifique-se de que este valor seja maior ou igual a 0."]}
+
+[CT-V34] status=400 body={"idade": ["Um número inteiro válido é exigido."]}
+
+[CT-V35] status=400 body={"orcamento_min": ["O orçamento mínimo deve ser maior que zero."]}
+
+[CT-V36] status=400 body={"orcamento_max": ["O orçamento máximo deve ser maior ou igual ao mínimo."]}
+
+[CT-V37] status=400 body={"orcamento_min": ["Um número válido é necessário."]}
+
+[CT-V38] status=400 body={"orcamento_max": ["Este campo é obrigatório."]}
+
+[CT-V39] status=400 body={"tolerancia_bagunca": ["Certifique-se de que este valor seja maior ou igual a 1."]}
+
+[CT-V40] status=400 body={"nivel_organizacao": ["Certifique-se de que este valor seja inferior ou igual a 5."]}
+
+[CT-V41] status=400 body={"nivel_ruido": ["Certifique-se de que este valor seja maior ou igual a 1."]}
+
+[CT-V42] status=400 body={"nivel_social": ["Um número inteiro válido é exigido."]}
+
+[CT-V43] status=400 body={"bio": ["A bio deve ter no máximo 500 caracteres (enviados: 501)."]}
+
+[CT-V44] status=400 body={"foto_perfil_url": ["Insira um URL válido."]}
+
+[CT-V45] status=400 body={"foto_perfil_url": ["Insira um URL válido."]}
+
+[CT-V46] status=400 body={"detail": "Você já possui um perfil."}
+
+[CT-V47] status=400 body={"regiao": ["Este campo não pode ficar em branco."]}
+
+[CT-V48] status=400 body={"nome": ["Certifique-se de que este campo não tenha mais de 150 caracteres."]}
+
+[CT-V49] status=400 body={"idade": ["Um número inteiro válido é exigido."]}
+
+[CT-V50] status=400 body={"tipo_imovel": ["\"castelo\" não é uma opção válida."]}
+
+[CT-V51] status=400 body={"qtd_moradores": ["Certifique-se de que este valor seja maior ou igual a 1."]}
+
+[CT-V52] status=400 body={"idade": ["A idade mínima permitida é 18 anos."]}
+
+[CT-V53] status=400 body={"orcamento_max": ["O orçamento máximo deve ser maior ou igual ao mínimo."]}
+
+[CT-V54] status=403 body={"detail": "O administrador não participa deste recurso."}
+
+[CT-V55] status=400 body={"orcamento_max": ["Certifique-se de que não haja mais de 10 dígitos no total."]}
+
+[CT-V131] status=201 body={"username": "Maria Silva", "email": "novo@t.com", "tipo": "buscando_vaga"}
+
+[CT-V132] status=201 body={"username": "Joao", "email": "j2@t.com", "tipo": "buscando_vaga"}
+
+[CT-V133] status=201 body={"username": "José", "email": "novo@t.com", "tipo": "buscando_vaga"}
+
+[CT-V01] status=400 body={"email": ["O e-mail não pode ficar em branco."]}
+
+[CT-V02] status=400 body={"email": ["Informe um e-mail válido."]}
+
+[CT-V03] status=400 body={"email": ["Este e-mail já está cadastrado."]}
+
+[CT-V04] status=400 body={"email": ["Este e-mail já está cadastrado."]}
+
+[CT-V05] status=400 body={"password": ["A senha deve ter no mínimo 8 caracteres."]}
+
+[CT-V06] status=400 body={"password": ["A senha não pode ficar em branco."]}
+
+[CT-V07] status=400 body={"tipo": ["Tipo de conta inválido. Use \"buscando_vaga\" ou \"oferecendo_vaga\"."]}
+
+[CT-V08] status=400 body={"tipo": ["Tipo de conta inválido. Use \"buscando_vaga\" ou \"oferecendo_vaga\"."]}
+
+[CT-V09] status=400 body={"username": ["O nome é obrigatório."], "email": ["O e-mail é obrigatório."], "password": ["A senha é obrigatória."], "tipo": ["O tipo de conta é obrigatório."]}
+
+[CT-V10] status=400 body={"username": ["O nome é obrigatório."]}
+
+[CT-V11] status=400 body={"non_field_errors": ["Dado inválido. Esperava um dicionário, mas recebeu list."]}
+
+[CT-V12] status=400 body={"password": ["Esta senha é muito comum.", "Esta senha é inteiramente numérica."]}
+
+[CT-V13] status=400 body={"email": ["Informe o e-mail."], "password": ["Informe a senha."]}
+
+[CT-V14] status=401 body={"detail": "E-mail ou senha incorretos."}
+
+[CT-V15] status=401 body={"detail": "E-mail ou senha incorretos."}
+
+[CT-V16] status=401 body={"detail": "Conta suspensa. Procure o suporte."}
+
+[CT-V17] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON com e-mail e senha."}
+
+[CT-V18] status=200 body={"refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTgzMTU4NiwiaWF0IjoxNzk1MjI2Nzg2LCJqdGkiOiI5NDk0MDdkMTVkMzg0NWFkYTE5ZjJiNDU4MWQ3N2Y3OSIsInVzZXJfaWQiOiIxIn0.sLJ1u9V-dSxFpmQLWfRJue5P_iy68PZJvNShcJ7ipKM", "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0
+
+[CT-V19] status=400 body={"email": ["Informe o e-mail."]}
+
+[CT-V20] status=400 body={"password": ["Informe a senha."]}
+
+[CT-V21] status=401 body={"detail": "As credenciais de autenticação não foram fornecidas."}
+
+[CT-V22] status=401 body={"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}
+
+[CT-V23] status=401 body={"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "Token expirado"}]}
+
+[CT-V24] status=401 body={"detail": "Cabeçalho de autorização deve conter dois valores delimitados por espaço", "code": "bad_authorization_header"}
+
+[CT-V25] status=401 body={"detail": "O token é inválido", "code": "token_not_valid"}
+
+[CT-V26] status=400 body={"refresh": ["Este campo é obrigatório."]}
+
+[CT-V27] status=401 body={"detail": "Usuário está inativo", "code": "user_inactive"}
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+test_ctf19_listar_conversas (chat.test_funcionais_sprint9.FuncionaisChatTest.test_ctf19_listar_conversas) ... ok
 test_ctf20_enviar_mensagem_201 (chat.test_funcionais_sprint9.FuncionaisChatTest.test_ctf20_enviar_mensagem_201) ... ok
 test_ctf21_consultar_mensagens_e_marcar_lidas (chat.test_funcionais_sprint9.FuncionaisChatTest.test_ctf21_consultar_mensagens_e_marcar_lidas) ... ok
 test_ctf22_notificacoes_nao_lidas_via_conversas (chat.test_funcionais_sprint9.FuncionaisChatTest.test_ctf22_notificacoes_nao_lidas_via_conversas)
@@ -121,6 +432,70 @@ test_proprias_mensagens_nao_contam_como_nao_lidas (chat.tests_integracao.FluxoCo
 test_terceiro_usuario_nao_pode_enviar_mensagem (chat.tests_integracao.FluxoCompletoTest.test_terceiro_usuario_nao_pode_enviar_mensagem) ... ok
 test_terceiro_usuario_nao_pode_ler_mensagens (chat.tests_integracao.FluxoCompletoTest.test_terceiro_usuario_nao_pode_ler_mensagens) ... ok
 test_troca_de_mensagens_nos_dois_sentidos (chat.tests_integracao.FluxoCompletoTest.test_troca_de_mensagens_nos_dois_sentidos) ... ok
+test_anuncio_conta_no_texto_de_quem_oferece_vaga (ia.tests.test_analise_perfil.AnaliseIATest.test_anuncio_conta_no_texto_de_quem_oferece_vaga) ... ok
+test_atualizar_a_bio_devolve_a_analise_nova (ia.tests.test_analise_perfil.AnaliseIATest.test_atualizar_a_bio_devolve_a_analise_nova) ... ok
+test_bio_analisada_traz_os_temas (ia.tests.test_analise_perfil.AnaliseIATest.test_bio_analisada_traz_os_temas) ... ok
+test_bio_curta (ia.tests.test_analise_perfil.AnaliseIATest.test_bio_curta) ... ok
+test_ia_desligada (ia.tests.test_analise_perfil.AnaliseIATest.test_ia_desligada) ... ok
+test_ia_indisponivel_quando_a_bio_foi_salva_fica_pendente (ia.tests.test_analise_perfil.AnaliseIATest.test_ia_indisponivel_quando_a_bio_foi_salva_fica_pendente) ... ok
+test_listar_sem_consultas_extras (ia.tests.test_analise_perfil.AnaliseIATest.test_listar_sem_consultas_extras) ... ok
+test_perfil_de_outra_pessoa_nao_expoe_a_analise (ia.tests.test_analise_perfil.AnaliseIATest.test_perfil_de_outra_pessoa_nao_expoe_a_analise) ... ok
+test_detalha_os_7_criterios_e_a_soma_e_o_score_gravado (ia.tests.test_api.CompatibilidadeDetalheTest.test_detalha_os_7_criterios_e_a_soma_e_o_score_gravado) ... ok
+test_ia_desligada (ia.tests.test_api.CompatibilidadeDetalheTest.test_ia_desligada) ... ok
+test_meu_perfil_sem_embedding (ia.tests.test_api.CompatibilidadeDetalheTest.test_meu_perfil_sem_embedding) ... ok
+test_modelo_fora_do_ar_nao_impede_a_consulta (ia.tests.test_api.CompatibilidadeDetalheTest.test_modelo_fora_do_ar_nao_impede_a_consulta) ... ok
+test_permissoes_e_validacoes (ia.tests.test_api.CompatibilidadeDetalheTest.test_permissoes_e_validacoes) ... ok
+test_sem_embedding_renormaliza_e_explica (ia.tests.test_api.CompatibilidadeDetalheTest.test_sem_embedding_renormaliza_e_explica) ... ok
+test_usuario_sem_perfil (ia.tests.test_api.CompatibilidadeDetalheTest.test_usuario_sem_perfil) ... ok
+test_cada_item_traz_afinidade_e_temas (ia.tests.test_api.DescobertaComIATest.test_cada_item_traz_afinidade_e_temas) ... ok
+test_ia_desligada_devolve_null (ia.tests.test_api.DescobertaComIATest.test_ia_desligada_devolve_null) ... ok
+test_meu_perfil_sem_bio_devolve_null_para_todos (ia.tests.test_api.DescobertaComIATest.test_meu_perfil_sem_bio_devolve_null_para_todos) ... ok
+test_sem_consultas_n_mais_1 (ia.tests.test_api.DescobertaComIATest.test_sem_consultas_n_mais_1) ... ok
+test_campos_de_ia_nao_aparecem_na_edicao (ia.tests.test_api.DetalhePerfilComIATest.test_campos_de_ia_nao_aparecem_na_edicao) ... ok
+test_perfil_do_tipo_oposto_traz_a_afinidade (ia.tests.test_api.DetalhePerfilComIATest.test_perfil_do_tipo_oposto_traz_a_afinidade) ... ok
+test_proprio_perfil_e_admin_recebem_null (ia.tests.test_api.DetalhePerfilComIATest.test_proprio_perfil_e_admin_recebem_null) ... ok
+test_admin_ve_a_situacao (ia.tests.test_api.IAStatusTest.test_admin_ve_a_situacao) ... ok
+test_conta_perfis_que_ficaram_sem_embedding (ia.tests.test_api.IAStatusTest.test_conta_perfis_que_ficaram_sem_embedding) ... ok
+test_falha_de_carga_aparece_no_status (ia.tests.test_api.IAStatusTest.test_falha_de_carga_aparece_no_status) ... ok
+test_somente_administrador (ia.tests.test_api.IAStatusTest.test_somente_administrador) ... ok
+test_compara_dois_textos (ia.tests.test_api.IATestarTest.test_compara_dois_textos) ... ok
+test_ia_desligada_responde_503 (ia.tests.test_api.IATestarTest.test_ia_desligada_responde_503) ... ok
+test_modelo_indisponivel_responde_503_em_portugues (ia.tests.test_api.IATestarTest.test_modelo_indisponivel_responde_503_em_portugues) ... ok
+test_registra_o_log_sem_guardar_os_textos (ia.tests.test_api.IATestarTest.test_registra_o_log_sem_guardar_os_textos) ... ok
+test_somente_administrador (ia.tests.test_api.IATestarTest.test_somente_administrador) ... ok
+test_validacoes (ia.tests.test_api.IATestarTest.test_validacoes) ... ok
+test_fluxo_completo_com_o_modelo_indisponivel (ia.tests.test_api.SemErro500Test.test_fluxo_completo_com_o_modelo_indisponivel) ... ok
+test_falha_no_aquecimento_vira_indisponivel_sem_excecao (ia.tests.test_aquecimento_e_workers.EstadoCarregandoTest.test_falha_no_aquecimento_vira_indisponivel_sem_excecao) ... ok
+test_quem_chega_durante_a_carga_espera_e_reaproveita (ia.tests.test_aquecimento_e_workers.EstadoCarregandoTest.test_quem_chega_durante_a_carga_espera_e_reaproveita) ... ok
+test_status_mostra_carregando_sem_esperar_a_carga_e_depois_disponivel (ia.tests.test_aquecimento_e_workers.EstadoCarregandoTest.test_status_mostra_carregando_sem_esperar_a_carga_e_depois_disponivel) ... ok
+test_textos_de_todas_as_situacoes (ia.tests.test_aquecimento_e_workers.EstadoCarregandoTest.test_textos_de_todas_as_situacoes) ... ok
+test_com_workers_os_vetores_sao_identicos_e_o_pool_e_usado_uma_vez (ia.tests.test_aquecimento_e_workers.GerarEmbeddingsWorkersTest.test_com_workers_os_vetores_sao_identicos_e_o_pool_e_usado_uma_vez) ... ok
+test_pouca_memoria_reduz_workers_com_aviso (ia.tests.test_aquecimento_e_workers.GerarEmbeddingsWorkersTest.test_pouca_memoria_reduz_workers_com_aviso) ... ok
+test_poucos_textos_usa_sequencial (ia.tests.test_aquecimento_e_workers.GerarEmbeddingsWorkersTest.test_poucos_textos_usa_sequencial) ... ok
+test_workers_invalidos (ia.tests.test_aquecimento_e_workers.GerarEmbeddingsWorkersTest.test_workers_invalidos) ... ok
+test_embedder_falso_nao_baixa_nada (ia.tests.test_comandos.BaixarModeloTest.test_embedder_falso_nao_baixa_nada) ... ok
+test_falha_no_download_vira_erro_do_comando (ia.tests.test_comandos.BaixarModeloTest.test_falha_no_download_vira_erro_do_comando) ... ok
+test_ia_desligada (ia.tests.test_comandos.BaixarModeloTest.test_ia_desligada) ... ok
+test_sucesso_mostra_tempo_tamanho_e_teste (ia.tests.test_comandos.BaixarModeloTest.test_sucesso_mostra_tempo_tamanho_e_teste) ... ok
+test_gera_para_todos_com_progresso_tempo_e_recalculo (ia.tests.test_comandos.GerarEmbeddingsTest.test_gera_para_todos_com_progresso_tempo_e_recalculo) ... ok
+test_ia_desligada (ia.tests.test_comandos.GerarEmbeddingsTest.test_ia_desligada) ... ok
+test_modelo_indisponivel (ia.tests.test_comandos.GerarEmbeddingsTest.test_modelo_indisponivel) ... ok
+test_sem_forcar_so_processa_o_que_mudou_e_com_forcar_regera (ia.tests.test_comandos.GerarEmbeddingsTest.test_sem_forcar_so_processa_o_que_mudou_e_com_forcar_regera) ... ok
+test_aviso_de_perfis_com_bio_sem_embedding (ia.tests.test_comandos.VerificarBancoTest.test_aviso_de_perfis_com_bio_sem_embedding) ... ok
+test_anuncio_entra_no_texto_de_quem_oferece_vaga (ia.tests.test_sinais.SinalEmbeddingTest.test_anuncio_entra_no_texto_de_quem_oferece_vaga) ... ok
+test_bio_curta_nao_gera_e_encurtar_remove (ia.tests.test_sinais.SinalEmbeddingTest.test_bio_curta_nao_gera_e_encurtar_remove) ... ok
+test_compatibilidade_recalculada_usa_a_afinidade (ia.tests.test_sinais.SinalEmbeddingTest.test_compatibilidade_recalculada_usa_a_afinidade) ... ok
+test_criar_perfil_gera_embedding_compacto_com_hash_e_temas (ia.tests.test_sinais.SinalEmbeddingTest.test_criar_perfil_gera_embedding_compacto_com_hash_e_temas) ... ok
+test_editar_a_bio_atualiza_o_score (ia.tests.test_sinais.SinalEmbeddingTest.test_editar_a_bio_atualiza_o_score) ... ok
+test_mudar_a_bio_regera (ia.tests.test_sinais.SinalEmbeddingTest.test_mudar_a_bio_regera) ... ok
+test_salvar_sem_mudar_o_texto_nao_regera (ia.tests.test_sinais.SinalEmbeddingTest.test_salvar_sem_mudar_o_texto_nao_regera) ... ok
+test_sem_embedding_o_score_e_renormalizado (ia.tests.test_sinais.SinalEmbeddingTest.test_sem_embedding_o_score_e_renormalizado) ... ok
+test_excecao_inesperada_vira_log (ia.tests.test_sinais.SinalSemIATest.test_excecao_inesperada_vira_log) ... ok
+test_excluir_o_perfil_apaga_o_embedding (ia.tests.test_sinais.SinalSemIATest.test_excluir_o_perfil_apaga_o_embedding) ... ok
+test_ia_desligada_nao_gera_e_nao_quebra (ia.tests.test_sinais.SinalSemIATest.test_ia_desligada_nao_gera_e_nao_quebra) ... ok
+test_modelo_indisponivel_mantem_vetor_se_o_texto_nao_mudou (ia.tests.test_sinais.SinalSemIATest.test_modelo_indisponivel_mantem_vetor_se_o_texto_nao_mudou) ... ok
+test_modelo_indisponivel_salva_o_perfil_e_apaga_vetor_velho (ia.tests.test_sinais.SinalSemIATest.test_modelo_indisponivel_salva_o_perfil_e_apaga_vetor_velho) ... ok
+test_vetor_de_outro_modelo_e_ignorado_e_regerado (ia.tests.test_sinais.SinalSemIATest.test_vetor_de_outro_modelo_e_ignorado_e_regerado) ... ok
 test_ctv134_filtro_usuario_por_email (logs.test_funcionais_sprint9.FiltroUsuarioPeloFrontTest.test_ctv134_filtro_usuario_por_email) ... ok
 test_ctf27_admin_lista_logs (logs.test_funcionais_sprint9.FuncionaisLogsTest.test_ctf27_admin_lista_logs) ... ok
 test_ctf28_filtrar_logs_por_acao (logs.test_funcionais_sprint9.FuncionaisLogsTest.test_ctf28_filtrar_logs_por_acao) ... ok
@@ -213,6 +588,21 @@ test_ctv74_ordenar_invalido (matches.test_funcionais_sprint9.ValidacaoFiltrosDes
 test_ctv75_bool_invalido (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv75_bool_invalido) ... ok
 test_ctv76_orcamento_negativo (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv76_orcamento_negativo) ... ok
 test_ctv77_usuario_sem_perfil_na_descoberta (matches.test_funcionais_sprint9.ValidacaoFiltrosDescobertaTest.test_ctv77_usuario_sem_perfil_na_descoberta) ... ok
+test_admin_recebe_o_conteudo_do_arquivo (matches.test_paralelismo.BenchmarkEndpointTest.test_admin_recebe_o_conteudo_do_arquivo) ... ok
+test_arquivo_corrompido_nao_vira_500 (matches.test_paralelismo.BenchmarkEndpointTest.test_arquivo_corrompido_nao_vira_500) ... ok
+test_permissoes (matches.test_paralelismo.BenchmarkEndpointTest.test_permissoes) ... ok
+test_sem_arquivo_404_em_portugues (matches.test_paralelismo.BenchmarkEndpointTest.test_sem_arquivo_404_em_portugues) ... ok
+test_banco_descartavel_recusa_banco_com_usuarios_sem_apagar_nada (matches.test_paralelismo.BenchmarkParalelismoTest.test_banco_descartavel_recusa_banco_com_usuarios_sem_apagar_nada) ... ok
+test_benchmark_compatibilidade_tambem_exige_banco_vazio (matches.test_paralelismo.BenchmarkParalelismoTest.test_benchmark_compatibilidade_tambem_exige_banco_vazio) ... ok
+test_gera_json_e_csv_com_resultados_identicos (matches.test_paralelismo.BenchmarkParalelismoTest.test_gera_json_e_csv_com_resultados_identicos) ... ok
+test_opcoes_invalidas (matches.test_paralelismo.BenchmarkParalelismoTest.test_opcoes_invalidas) ... ok
+test_auto_com_poucos_pares_usa_sequencial_sem_criar_processos (matches.test_paralelismo.ComandoRecalcularTest.test_auto_com_poucos_pares_usa_sequencial_sem_criar_processos) ... ok
+test_carregar_faz_2_consultas (matches.test_paralelismo.ComandoRecalcularTest.test_carregar_faz_2_consultas) ... ok
+test_falha_do_pool_cai_para_sequencial_e_avisa (matches.test_paralelismo.ComandoRecalcularTest.test_falha_do_pool_cai_para_sequencial_e_avisa) ... ok
+test_ia_desligada_usa_os_6_criterios (matches.test_paralelismo.ComandoRecalcularTest.test_ia_desligada_usa_os_6_criterios) ... ok
+test_opcoes_invalidas (matches.test_paralelismo.ComandoRecalcularTest.test_opcoes_invalidas) ... ok
+test_saida_mostra_pares_modo_e_fases (matches.test_paralelismo.ComandoRecalcularTest.test_saida_mostra_pares_modo_e_fases) ... ok
+test_todos_os_modos_gravam_os_mesmos_scores_do_signal (matches.test_paralelismo.ComandoRecalcularTest.test_todos_os_modos_gravam_os_mesmos_scores_do_signal) ... ok
 test_campo_usuario_exclui_administradores (matches.test_seed_regressao.AdminDjangoNaoOfereceAdministradorComoDonoDePerfilTest.test_campo_usuario_exclui_administradores) ... ok
 test_curtida_mutua_cria_match (matches.test_seed_regressao.SeedCurtidasEMatchesTest.test_curtida_mutua_cria_match) ... ok
 test_duas_execucoes_com_sorteios_diferentes_nunca_criam_match_sem_curtida_mutua (matches.test_seed_regressao.SeedCurtidasEMatchesTest.test_duas_execucoes_com_sorteios_diferentes_nunca_criam_match_sem_curtida_mutua)
@@ -265,7 +655,7 @@ test_admin_retorna_403_na_descoberta (matches.tests.DescobertaTest.test_admin_re
 test_descoberta_nao_retorna_ja_curtidos (matches.tests.DescobertaTest.test_descoberta_nao_retorna_ja_curtidos) ... ok
 test_descoberta_nao_retorna_ja_matched (matches.tests.DescobertaTest.test_descoberta_nao_retorna_ja_matched) ... ok
 test_scores_lote_equivalentes_ao_escalar (matches.tests.EquivalenciaVetorialEscalarReforcoTest.test_scores_lote_equivalentes_ao_escalar) ... 
-[EquivalenciaReforco] pares comparados: 50,562 | maior diferença absoluta: 0.00e+00
+[EquivalenciaReforco] pares comparados: 50,562 (28,560 com afinidade por IA) | maior diferença absoluta: 0.00e+00
 ok
 test_perfis_identicos_em_todos_campos_retornam_score_1 (matches.tests.PerfilIdenticoTest.test_perfis_identicos_em_todos_campos_retornam_score_1) ... ok
 test_comando_executa_sem_excecao (matches.tests.RecalcularComandoTest.test_comando_executa_sem_excecao) ... ok
@@ -582,6 +972,7 @@ test_em_desenvolvimento_fica_aberta (placematch.test_api_docs.AcessoADocumentaca
 test_em_producao_administrador_acessa (placematch.test_api_docs.AcessoADocumentacaoTest.test_em_producao_administrador_acessa) ... ok
 test_em_producao_anonimo_e_usuario_comum_nao_acessam (placematch.test_api_docs.AcessoADocumentacaoTest.test_em_producao_anonimo_e_usuario_comum_nao_acessam) ... ok
 test_em_producao_staff_logado_por_sessao_acessa (placematch.test_api_docs.AcessoADocumentacaoTest.test_em_producao_staff_logado_por_sessao_acessa) ... ok
+test_docs_api_md_tem_secao_para_todos_os_grupos (placematch.test_api_docs.CoberturaDasRotasTest.test_docs_api_md_tem_secao_para_todos_os_grupos) ... ok
 test_exemplos_reais_em_cada_operacao (placematch.test_api_docs.CoberturaDasRotasTest.test_exemplos_reais_em_cada_operacao) ... ok
 test_grupos_esperados (placematch.test_api_docs.CoberturaDasRotasTest.test_grupos_esperados) ... ok
 test_rotas_publicas_nao_pedem_token (placematch.test_api_docs.CoberturaDasRotasTest.test_rotas_publicas_nao_pedem_token) ... ok
@@ -776,7 +1167,7 @@ test_token_expirado_apos_1_hora (usuarios.test_recuperacao_senha.RedefinirSenhaT
 test_token_usado_nao_vale_de_novo (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_token_usado_nao_vale_de_novo) ... ok
 test_uid_invalido (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_uid_invalido) ... ok
 test_zera_o_contador_de_tentativas_de_login_do_email (usuarios.test_recuperacao_senha.RedefinirSenhaTest.test_zera_o_contador_de_tentativas_de_login_do_email) ... ok
-test_catalogo_de_acoes_tem_as_17_e_rotulos_em_portugues (usuarios.test_recuperacao_senha.Registro17AcoesTest.test_catalogo_de_acoes_tem_as_17_e_rotulos_em_portugues) ... ok
+test_catalogo_de_acoes_tem_as_18_e_rotulos_em_portugues (usuarios.test_recuperacao_senha.RegistroAcoesTest.test_catalogo_de_acoes_tem_as_18_e_rotulos_em_portugues) ... ok
 test_administrador_ativo_pode_recuperar_a_senha (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_administrador_ativo_pode_recuperar_a_senha) ... ok
 test_conta_suspensa_recebe_a_mesma_resposta_mas_nao_recebe_e_mail (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_conta_suspensa_recebe_a_mesma_resposta_mas_nao_recebe_e_mail) ... ok
 test_conteudo_do_email (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_conteudo_do_email) ... ok
@@ -801,324 +1192,83 @@ ok
 test_link_usa_frontend_url (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_link_usa_frontend_url) ... ok
 test_nao_exige_login_e_ignora_cabecalho_de_autorizacao_invalido (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_nao_exige_login_e_ignora_cabecalho_de_autorizacao_invalido) ... ok
 test_resposta_identica_para_email_existente_e_inexistente (usuarios.test_recuperacao_senha.SolicitarSenhaTest.test_resposta_identica_para_email_existente_e_inexistente) ... ok
+test_configuracao_desliga (ia.tests.test_aquecimento_e_workers.DeteccaoDoServidorTest.test_configuracao_desliga) ... ok
+test_nao_rodou_nos_testes (ia.tests.test_aquecimento_e_workers.DeteccaoDoServidorTest.test_nao_rodou_nos_testes) ... ok
+test_no_servidor_inicia_thread_daemon_que_nao_bloqueia (ia.tests.test_aquecimento_e_workers.DeteccaoDoServidorTest.test_no_servidor_inicia_thread_daemon_que_nao_bloqueia) ... ok
+test_so_o_servidor_da_api_aquece (ia.tests.test_aquecimento_e_workers.DeteccaoDoServidorTest.test_so_o_servidor_da_api_aquece) ... ok
+test_memoria_limita_os_workers (ia.tests.test_aquecimento_e_workers.EmbedderWorkersTest.test_memoria_limita_os_workers) ... ok
+test_workers_vira_parallel_do_fastembed (ia.tests.test_aquecimento_e_workers.EmbedderWorkersTest.test_workers_vira_parallel_do_fastembed) ... ok
+test_escala_linear_limitada (ia.tests.test_calibracao.CalibracaoTest.test_escala_linear_limitada) ... ok
+test_monotonica (ia.tests.test_calibracao.CalibracaoTest.test_monotonica) ... ok
+test_piso_menor_que_teto_e_dentro_do_intervalo_do_cosseno (ia.tests.test_calibracao.CalibracaoTest.test_piso_menor_que_teto_e_dentro_do_intervalo_do_cosseno) ... ok
+test_lote_igual_ao_escalar (ia.tests.test_calibracao.EquivalenciaComIATest.test_lote_igual_ao_escalar) ... ok
+test_novos_pesos_somam_100 (ia.tests.test_calibracao.PesosTest.test_novos_pesos_somam_100) ... ok
+test_pesos_efetivos_com_ia_sao_os_configurados (ia.tests.test_calibracao.PesosTest.test_pesos_efetivos_com_ia_sao_os_configurados) ... ok
+test_pesos_efetivos_sem_ia_renormalizam_os_6 (ia.tests.test_calibracao.PesosTest.test_pesos_efetivos_sem_ia_renormalizam_os_6) ... ok
+test_com_ia_o_criterio_entra_com_10_por_cento (ia.tests.test_calibracao.RenormalizacaoTest.test_com_ia_o_criterio_entra_com_10_por_cento) ... ok
+test_detalhar_devolve_os_7_valores (ia.tests.test_calibracao.RenormalizacaoTest.test_detalhar_devolve_os_7_valores) ... ok
+test_ia_desligada_ignora_os_vetores (ia.tests.test_calibracao.RenormalizacaoTest.test_ia_desligada_ignora_os_vetores) ... ok
+test_ninguem_e_penalizado_por_bio_curta (ia.tests.test_calibracao.RenormalizacaoTest.test_ninguem_e_penalizado_por_bio_curta)
+Par perfeito nos 6 critérios: 1.0 sem embedding (e não 0.90). ... ok
+test_sem_ia_e_a_media_ponderada_dos_6 (ia.tests.test_calibracao.RenormalizacaoTest.test_sem_ia_e_a_media_ponderada_dos_6) ... ok
+test_so_um_dos_perfis_com_embedding_tambem_ignora (ia.tests.test_calibracao.RenormalizacaoTest.test_so_um_dos_perfis_com_embedding_tambem_ignora) ... ok
+test_significado_parecido_com_palavras_diferentes (ia.tests.test_integracao_modelo.ModeloRealTest.test_significado_parecido_com_palavras_diferentes) ... ok
+test_arquivo_corrompido_vira_indisponivel (ia.tests.test_servico.CargaDoModeloTest.test_arquivo_corrompido_vira_indisponivel)
+Simula o fastembed falhando ao abrir o .onnx. ... ok
+test_carrega_uma_unica_vez_mesmo_com_varias_threads (ia.tests.test_servico.CargaDoModeloTest.test_carrega_uma_unica_vez_mesmo_com_varias_threads) ... ok
+test_erro_ao_gerar_embedding_devolve_none (ia.tests.test_servico.CargaDoModeloTest.test_erro_ao_gerar_embedding_devolve_none) ... ok
+test_falha_na_carga_marca_indisponivel_registra_no_log_e_nao_levanta (ia.tests.test_servico.CargaDoModeloTest.test_falha_na_carga_marca_indisponivel_registra_no_log_e_nao_levanta) ... ok
+test_gera_vetores_normalizados (ia.tests.test_servico.CargaDoModeloTest.test_gera_vetores_normalizados) ... ok
+test_ia_desligada (ia.tests.test_servico.CargaDoModeloTest.test_ia_desligada) ... ok
+test_nova_tentativa_depois_do_intervalo (ia.tests.test_servico.CargaDoModeloTest.test_nova_tentativa_depois_do_intervalo) ... Afinidade por IA indisponível: não foi possível carregar o modelo falso/hash-384 (OSError: x). O score segue com os 6 critérios.
+ok
+test_deterministico_e_com_384_dimensoes (ia.tests.test_servico.EmbedderFalsoTest.test_deterministico_e_com_384_dimensoes) ... ok
+test_palavras_em_comum_aproximam_os_textos (ia.tests.test_servico.EmbedderFalsoTest.test_palavras_em_comum_aproximam_os_textos) ... ok
+test_texto_sem_palavras_nao_gera_vetor_nulo (ia.tests.test_servico.EmbedderFalsoTest.test_texto_sem_palavras_nao_gera_vetor_nulo) ... ok
+test_embedder_falso_dispensa_download (ia.tests.test_servico.ModeloBaixadoTest.test_embedder_falso_dispensa_download) ... ok
+test_procura_o_onnx_na_pasta_configurada (ia.tests.test_servico.ModeloBaixadoTest.test_procura_o_onnx_na_pasta_configurada) ... ok
+test_hash_muda_com_o_texto (ia.tests.test_servico.TextoDeOrigemTest.test_hash_muda_com_o_texto) ... ok
+test_minimo_de_20_caracteres_uteis (ia.tests.test_servico.TextoDeOrigemTest.test_minimo_de_20_caracteres_uteis) ... ok
+test_quem_busca_vaga_usa_so_a_bio (ia.tests.test_servico.TextoDeOrigemTest.test_quem_busca_vaga_usa_so_a_bio) ... ok
+test_quem_oferece_vaga_inclui_titulo_e_descricao_do_anuncio (ia.tests.test_servico.TextoDeOrigemTest.test_quem_oferece_vaga_inclui_titulo_e_descricao_do_anuncio) ... ok
+test_16_temas_com_2_ou_3_frases_em_portugues (ia.tests.test_temas.CatalogoTest.test_16_temas_com_2_ou_3_frases_em_portugues) ... ok
+test_nomes_seguem_a_ordem_do_catalogo_e_ignoram_desconhecidos (ia.tests.test_temas.CatalogoTest.test_nomes_seguem_a_ordem_do_catalogo_e_ignoram_desconhecidos) ... ok
+test_temas_em_comum_e_a_intersecao (ia.tests.test_temas.CatalogoTest.test_temas_em_comum_e_a_intersecao) ... ok
+test_com_o_embedder_falso_detecta_o_tema_pelas_palavras (ia.tests.test_temas.ClassificacaoTest.test_com_o_embedder_falso_detecta_o_tema_pelas_palavras) ... ok
+test_frases_dos_temas_sao_calculadas_uma_vez (ia.tests.test_temas.ClassificacaoTest.test_frases_dos_temas_sao_calculadas_uma_vez) ... ok
+test_no_maximo_max_temas_em_ordem_de_nota (ia.tests.test_temas.ClassificacaoTest.test_no_maximo_max_temas_em_ordem_de_nota) ... ok
+test_precisa_passar_do_limiar_e_da_margem (ia.tests.test_temas.ClassificacaoTest.test_precisa_passar_do_limiar_e_da_margem) ... ok
+test_sem_modelo_nao_classifica (ia.tests.test_temas.ClassificacaoTest.test_sem_modelo_nao_classifica) ... ok
+test_tema_generico_que_parece_com_tudo_nao_entra (ia.tests.test_temas.ClassificacaoTest.test_tema_generico_que_parece_com_tudo_nao_entra) ... ok
+test_igual_ao_round_do_python_inclusive_nos_empates (matches.test_paralelismo.ArredondamentoExatoTest.test_igual_ao_round_do_python_inclusive_nos_empates) ... ok
+test_divisao_em_blocos_nao_depende_dos_workers (matches.test_paralelismo.EquivalenciaModosTest.test_divisao_em_blocos_nao_depende_dos_workers) ... ok
+test_grupos_vazios (matches.test_paralelismo.EquivalenciaModosTest.test_grupos_vazios) ... ok
+test_matriz_igual_ao_vetorial_e_ao_escalar (matches.test_paralelismo.EquivalenciaModosTest.test_matriz_igual_ao_vetorial_e_ao_escalar) ... ok
+test_sem_ia_e_pesos_personalizados (matches.test_paralelismo.EquivalenciaModosTest.test_sem_ia_e_pesos_personalizados) ... ok
+test_sequencial_threads_e_processos_com_1_2_e_3_workers_sao_identicos (matches.test_paralelismo.EquivalenciaModosTest.test_sequencial_threads_e_processos_com_1_2_e_3_workers_sao_identicos) ... ok
+test_processos_que_nao_sobem_caem_para_sequencial_com_aviso (matches.test_paralelismo.FalhaDoPoolTest.test_processos_que_nao_sobem_caem_para_sequencial_com_aviso) ... ok
+test_threads_com_erro_tambem_caem_para_sequencial (matches.test_paralelismo.FalhaDoPoolTest.test_threads_com_erro_tambem_caem_para_sequencial) ... ok
+test_worker_que_morre_no_meio (matches.test_paralelismo.FalhaDoPoolTest.test_worker_que_morre_no_meio) ... ok
+test_amdahl (matches.test_paralelismo.ValidacaoTest.test_amdahl) ... ok
+test_auto_escolhe_pelo_numero_de_pares (matches.test_paralelismo.ValidacaoTest.test_auto_escolhe_pelo_numero_de_pares) ... ok
+test_grupo_sintetico_deterministico (matches.test_paralelismo.ValidacaoTest.test_grupo_sintetico_deterministico) ... ok
+test_modo_e_workers_invalidos (matches.test_paralelismo.ValidacaoTest.test_modo_e_workers_invalidos) ... ok
+test_workers_padrao (matches.test_paralelismo.ValidacaoTest.test_workers_padrao) ... ok
 
 ----------------------------------------------------------------------
-Ran 685 tests in 78.640s
+Ran 824 tests in 120.642s
 
 OK
 Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
- OK
-System check identified no issues (0 silenced).
-
-[CT-V78] status=400 body={"detail": "O conteúdo da mensagem não pode ser vazio."}
-
-[CT-V79] status=400 body={"detail": "O conteúdo da mensagem não pode ser vazio."}
-
-[CT-V80] status=400 body={"detail": "O conteúdo da mensagem não pode ter mais de 1000 caracteres."}
-
-[CT-V81] status=404 body={"detail": "Match não encontrado."}
-
-[CT-V82] status=400 body={"detail": "O conteúdo da mensagem não pode ser vazio."}
-
-[CT-V83] status=400 body={"detail": "O conteúdo da mensagem deve ser um texto."}
-
-[CT-V84] status=403 body={"detail": "Você não tem acesso a este match."}
-
-[CT-V85] status=400 body={"detail": "Você precisa criar um perfil antes de acessar o chat."}
-
-[CT-V86] status=400 body={"detail": "O parâmetro \"apos\" inválido. Informe um número inteiro. Informe o número da última mensagem já recebida."}
-
-[CT-V87] status=403 body={"detail": "Não é possível enviar mensagens: a conta do outro participante está suspensa."}
-
-[CT-V88] status=201 body={"id": 1, "match_id": 1, "remetente_id": 1, "conteudo": "ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá
-
-[CT-V134] status=200 body={"count": 1, "page": 1, "results": [{"id": 1, "data_hora": "2026-11-18T12:55:24.030232Z", "usuario": {"id": 1, "nome": "buscando", "email": "buscando@t.com"}, "acao": "LOGIN", "acao_label": "Login", "entidade": "", "entidade_id": null, "detalhes": {}, "ip": null}]}
-
-[CT-V108] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
-
-[CT-V109] status=400 body={"detail": "Formato de data_fim inválido. Use AAAA-MM-DD."}
-
-[CT-V110] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
-
-[CT-V111] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
-
-[CT-V112] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
-
-[CT-V113] status=200 body={"count": 0, "page": 9999, "results": []}
-
-[CT-V114] status=200 body={"count": 0, "page": 1, "results": []}
-
-[CT-V115] status=400 body={"detail": "Ação inválida. Use: LOGIN, LOGIN_FALHA, CADASTRO, PERFIL_CRIADO, PERFIL_EDITADO, PERFIL_EXCLUIDO, CURTIDA, RECUSA, MATCH_CRIADO, MENSAGEM_ENVIADA, RELATORIO_EXPORTADO, DENUNCIA_CRIADA, DENUNCIA_RESOLVIDA, USUARIO_SUSPENSO, USUARIO_REATIVADO, SENHA_SOLICITADA, SENHA_REDEFINIDA."}
-
-[CT-V116] status=200 body={"count": 0, "page": 1, "results": []}
-
-[CT-V56] status=400 body={"perfil_destino": ["O identificador \"999999\" não existe."]}
-
-[CT-V57] status=400 body={"perfil_destino": ["Este campo é obrigatório."], "tipo": ["Este campo é obrigatório."]}
-
-[CT-V58] status=400 body={"tipo": ["\"amar\" não é uma opção válida."]}
-
-[CT-V59] status=400 body={"perfil_destino": ["Valor inválido. Informe o número do identificador (recebido: str)."]}
-
-[CT-V60] status=400 body={"perfil_destino": ["Este campo não pode ser nulo."]}
-
-[CT-V61] status=400 body={"detail": "Você não pode curtir o seu próprio perfil."}
-
-[CT-V62a] status=201 body={"match": false}
-
-[CT-V62] status=400 body={"detail": "Você já avaliou este perfil."}
-
-[CT-V63] status=400 body={"detail": "Você só pode avaliar perfis do tipo oposto."}
-
-[CT-V64] status=400 body={"non_field_errors": ["Dado inválido. Esperava um dicionário, mas recebeu list."]}
-
-[CT-V65] status=400 body={"detail": "Você precisa criar um perfil antes de curtir."}
-
-[CT-V66] status=403 body={"detail": "Administradores não podem avaliar perfis."}
-
-[CT-V67] status=404 body={"detail": "Perfil não encontrado."}
-
-[CT-V68] status=400 body={"detail": "score_min deve ser um número entre 0 e 100."}
-
-[CT-V69] status=400 body={"detail": "score_min deve ser um número entre 0 e 100."}
-
-[CT-V70] status=400 body={"detail": "score_min deve ser um número entre 0 e 100."}
-
-[CT-V71] status=400 body={"detail": "Valor inválido para orcamento_min. Informe um número entre 0 e 99999999.99."}
-
-[CT-V72] status=400 body={"detail": "Valor inválido para orcamento_min. Informe um número entre 0 e 99999999.99."}
-
-[CT-V73] status=400 body={"detail": "Valor inválido para orcamento_max. Informe um número entre 0 e 99999999.99."}
-
-[CT-V74] status=400 body={"detail": "ordenar inválido. Use: score, orcamento_asc, orcamento_desc."}
-
-[CT-V75] status=400 body={"detail": "Valor inválido para fumante. Use true ou false."}
-
-[CT-V76] status=400 body={"detail": "Valor inválido para orcamento_min. Informe um número entre 0 e 99999999.99."}
-
-[CT-V77] status=400 body={"detail": "Você precisa criar um perfil antes de acessar a descoberta."}
-[OK] 1. Cadastro usuário A (buscando_vaga) -> 201
-[OK] 1. Cadastro usuário B (oferecendo_vaga) -> 201
-[OK] 1. Auto-cadastro como admin bloqueado -> 400
-[OK] 2. Login usuário A -> 200
-[OK] 2. Login usuário B -> 200
-[OK] 2. /api/auth/me/ retorna tipo correto para A -> 200
-[OK] 3. Perfil com orcamento_min > orcamento_max rejeitado -> 400
-[OK] 3. Criação de perfil A -> 201
-[OK] 3. Criação de perfil B -> 201
-[OK] 4. A enxerga B na descoberta -> 200
-[OK] 4. Admin recebe 403 na descoberta -> 403
-[OK] 5. A curte B (sem match ainda) -> 201
-[OK] 5. Curtida duplicada rejeitada -> 400
-[OK] 5. B curte A -> match criado -> 201
-[OK] 6. B desaparece da descoberta de A após match -> 200
-[OK] 7. Admin recebe 403 em /api/conversas/ -> 403
-[OK] 7. A visualiza conversa do match -> 200
-[OK] 7. A envia mensagem no chat -> 201
-[OK] 7. Mensagem vazia rejeitada -> 400
-[OK] 7. Mensagem com >1000 chars rejeitada -> 400
-[OK] 7. B recebe mensagens do chat -> 200
-[OK] 8. A denuncia B -> 201
-[OK] 8. Admin resolve denúncia como "resolvida" -> 200
-[OK] 8. Admin suspende B -> 200
-[OK] 9. Login de conta suspensa retorna 401 -> 401
-[OK] 10. Admin reativa B -> 200
-[OK] 10. B loga com sucesso após reativação -> 200
-[OK] 11. Admin acessa dashboard -> 200
-[OK] 11. Admin acessa catálogo de relatórios -> 200
-[OK] 11. Admin acessa relatorio compatibilidade-regiao -> 200
-[OK] 11. Admin acessa relatorio denuncias -> 200
-[OK] 12. Usuário comum bloqueado em /api/admin/dashboard/ -> 403
-[OK] 12. Usuário comum bloqueado em /api/admin/moderacao/denuncias/ -> 403
-[OK] 12. Usuário comum bloqueado em /api/admin/moderacao/usuarios/2/suspender/ -> 403
-[OK] 12. Usuário comum bloqueado em /api/admin/relatorios/ -> 403
-
-[FLUXO COMPLETO] Todos os 12 passos verificados com sucesso.
-
-[CT-V100] status=404 body={"detail": "Denúncia não encontrada."}
-
-[CT-V101] status=404 body={"detail": "Usuário não encontrado."}
-
-[CT-V102] status=400 body={"detail": "Este usuário já está suspenso."}
-
-[CT-V103] status=400 body={"detail": "Este usuário já está ativo."}
-
-[CT-V104] status=400 body={"detail": "A resolução deve ter no máximo 500 caracteres (enviados: 5000)."}
-
-[CT-V105] status=400 body={"detail": "O motivo da suspensão deve ter no máximo 500 caracteres (enviados: 5000)."}
-
-[CT-V106] status=400 body={"detail": "Status inválido. Use: pendente, resolvida, descartada."}
-
-[CT-V107] status=400 body={"detail": "O filtro \"denunciado\" inválido. Informe um número inteiro."}
-
-[CT-V99] status=400 body={"detail": "Status inválido. Use \"resolvida\" ou \"descartada\"."}
-
-[CT-V89] status=400 body={"detail": "Motivo inválido. Use: spam, ofensivo, falso, outro."}
-
-[CT-V90] status=400 body={"detail": "A descrição deve ter no máximo 500 caracteres (enviados: 501)."}
-
-[CT-V91] status=400 body={"detail": "Usuário denunciado não encontrado."}
-
-[CT-V92] status=400 body={"detail": "O campo \"denunciado\" inválido. Informe um número inteiro."}
-
-[CT-V93] status=400 body={"detail": "O campo \"denunciado\" inválido. Informe um número inteiro."}
-
-[CT-V94] status=400 body={"detail": "O campo \"denunciado\" é obrigatório."}
-
-[CT-V95] status=400 body={"detail": "Motivo inválido. Use: spam, ofensivo, falso, outro."}
-
-[CT-V96] status=400 body={"detail": "Você não pode denunciar a si mesmo."}
-
-[CT-V97] status=201 body={"id": 1, "denunciado": 2, "motivo": "spam", "status": "pendente", "criada_em": "2026-11-18T12:55:35.397699Z"}
-
-[CT-V98] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON."}
-
-[CT-V117] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
-
-[CT-V118] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
-
-[CT-V119] status=404 body={"detail": "Relatório \"nao-existe\" não encontrado."}
-
-[CT-V120] status=400 body={"detail": "Formato de data_fim inválido. Use AAAA-MM-DD."}
-
-[CT-V121] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
-
-[CT-V122] status=400 body={"detail": "Formato de data_inicio inválido. Use AAAA-MM-DD."}
-
-[CT-V123] status=400 body={"detail": "data_inicio não pode ser maior que data_fim."}
-
-[CT-V124] status=200 body={"count": 3, "page": 9999, "results": []}
-
-[CT-V125] status=200 body={"count": 3, "page": 1, "results": [{"id": 3, "nome": "adm", "email": "adm@t.com", "tipo": "administrador", "regiao": null, "data_cadastro": "2026-11-18T12:55:42.966293Z", "tem_perfil": false, "ativo": true}, {"id": 2, "nome": "oferece", "email": "oferece@t.com", "tipo": "oferecendo_vaga", "regiao":
-
-[CT-V126] status=400 body={"detail": "Valor inválido para ativo. Use true ou false."}
-
-[CT-V127] status=400 body={"detail": "Tipo inválido. Use: buscando_vaga, oferecendo_vaga, administrador."}
-
-[CT-V128] status=400 body={"detail": "Formato inválido. Use: json, csv."}
-
-[CT-V129] status=400 body={"detail": "Tipo inválido. Use: buscando_vaga, oferecendo_vaga, administrador."}
-
-[CT-V130] status=400 body={"detail": "data_inicio não pode ser anterior a 01/01/2000."}
-
-[CT-V28] status=400 body={"nome": ["Este campo não pode ficar em branco."]}
-
-[CT-V29] status=400 body={"nome": ["Este campo não pode ficar em branco."]}
-
-[CT-V30] status=400 body={"idade": ["Este campo é obrigatório."]}
-
-[CT-V31] status=400 body={"idade": ["A idade mínima permitida é 18 anos."]}
-
-[CT-V32] status=400 body={"idade": ["Informe uma idade válida (máximo 100 anos)."]}
-
-[CT-V33] status=400 body={"idade": ["Certifique-se de que este valor seja maior ou igual a 0."]}
-
-[CT-V34] status=400 body={"idade": ["Um número inteiro válido é exigido."]}
-
-[CT-V35] status=400 body={"orcamento_min": ["O orçamento mínimo deve ser maior que zero."]}
-
-[CT-V36] status=400 body={"orcamento_max": ["O orçamento máximo deve ser maior ou igual ao mínimo."]}
-
-[CT-V37] status=400 body={"orcamento_min": ["Um número válido é necessário."]}
-
-[CT-V38] status=400 body={"orcamento_max": ["Este campo é obrigatório."]}
-
-[CT-V39] status=400 body={"tolerancia_bagunca": ["Certifique-se de que este valor seja maior ou igual a 1."]}
-
-[CT-V40] status=400 body={"nivel_organizacao": ["Certifique-se de que este valor seja inferior ou igual a 5."]}
-
-[CT-V41] status=400 body={"nivel_ruido": ["Certifique-se de que este valor seja maior ou igual a 1."]}
-
-[CT-V42] status=400 body={"nivel_social": ["Um número inteiro válido é exigido."]}
-
-[CT-V43] status=400 body={"bio": ["A bio deve ter no máximo 500 caracteres (enviados: 501)."]}
-
-[CT-V44] status=400 body={"foto_perfil_url": ["Insira um URL válido."]}
-
-[CT-V45] status=400 body={"foto_perfil_url": ["Insira um URL válido."]}
-
-[CT-V46] status=400 body={"detail": "Você já possui um perfil."}
-
-[CT-V47] status=400 body={"regiao": ["Este campo não pode ficar em branco."]}
-
-[CT-V48] status=400 body={"nome": ["Certifique-se de que este campo não tenha mais de 150 caracteres."]}
-
-[CT-V49] status=400 body={"idade": ["Um número inteiro válido é exigido."]}
-
-[CT-V50] status=400 body={"tipo_imovel": ["\"castelo\" não é uma opção válida."]}
-
-[CT-V51] status=400 body={"qtd_moradores": ["Certifique-se de que este valor seja maior ou igual a 1."]}
-
-[CT-V52] status=400 body={"idade": ["A idade mínima permitida é 18 anos."]}
-
-[CT-V53] status=400 body={"orcamento_max": ["O orçamento máximo deve ser maior ou igual ao mínimo."]}
-
-[CT-V54] status=403 body={"detail": "O administrador não participa deste recurso."}
-
-[CT-V55] status=400 body={"orcamento_max": ["Certifique-se de que não haja mais de 10 dígitos no total."]}
-
-[CT-V131] status=201 body={"username": "Maria Silva", "email": "novo@t.com", "tipo": "buscando_vaga"}
-
-[CT-V132] status=201 body={"username": "Joao", "email": "j2@t.com", "tipo": "buscando_vaga"}
-
-[CT-V133] status=201 body={"username": "José", "email": "novo@t.com", "tipo": "buscando_vaga"}
-
-[CT-V01] status=400 body={"email": ["O e-mail não pode ficar em branco."]}
-
-[CT-V02] status=400 body={"email": ["Informe um e-mail válido."]}
-
-[CT-V03] status=400 body={"email": ["Este e-mail já está cadastrado."]}
-
-[CT-V04] status=400 body={"email": ["Este e-mail já está cadastrado."]}
-
-[CT-V05] status=400 body={"password": ["A senha deve ter no mínimo 8 caracteres."]}
-
-[CT-V06] status=400 body={"password": ["A senha não pode ficar em branco."]}
-
-[CT-V07] status=400 body={"tipo": ["Tipo de conta inválido. Use \"buscando_vaga\" ou \"oferecendo_vaga\"."]}
-
-[CT-V08] status=400 body={"tipo": ["Tipo de conta inválido. Use \"buscando_vaga\" ou \"oferecendo_vaga\"."]}
-
-[CT-V09] status=400 body={"username": ["O nome é obrigatório."], "email": ["O e-mail é obrigatório."], "password": ["A senha é obrigatória."], "tipo": ["O tipo de conta é obrigatório."]}
-
-[CT-V10] status=400 body={"username": ["O nome é obrigatório."]}
-
-[CT-V11] status=400 body={"non_field_errors": ["Dado inválido. Esperava um dicionário, mas recebeu list."]}
-
-[CT-V12] status=400 body={"password": ["Esta senha é muito comum.", "Esta senha é inteiramente numérica."]}
-
-[CT-V13] status=400 body={"email": ["Informe o e-mail."], "password": ["Informe a senha."]}
-
-[CT-V14] status=401 body={"detail": "E-mail ou senha incorretos."}
-
-[CT-V15] status=401 body={"detail": "E-mail ou senha incorretos."}
-
-[CT-V16] status=401 body={"detail": "Conta suspensa. Procure o suporte."}
-
-[CT-V17] status=400 body={"detail": "O corpo da requisição deve ser um objeto JSON com e-mail e senha."}
-
-[CT-V18] status=200 body={"refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTYxMTM5NSwiaWF0IjoxNzk1MDA2NTk1LCJqdGkiOiIwYTI0OGRjYjQ5OWM0ZmVlOGZlNjM3NDU5YjMwMzM3ZiIsInVzZXJfaWQiOiIxIn0.m5Hx_RmjLhy2qmqa2cUEayudoa0D10Kx9IYCM3Rr3kA", "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0
-
-[CT-V19] status=400 body={"email": ["Informe o e-mail."]}
-
-[CT-V20] status=400 body={"password": ["Informe a senha."]}
-
-[CT-V21] status=401 body={"detail": "As credenciais de autenticação não foram fornecidas."}
-
-[CT-V22] status=401 body={"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}
-
-[CT-V23] status=401 body={"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "Token expirado"}]}
-
-[CT-V24] status=401 body={"detail": "Cabeçalho de autorização deve conter dois valores delimitados por espaço", "code": "bad_authorization_header"}
-
-[CT-V25] status=401 body={"detail": "O token é inválido", "code": "token_not_valid"}
-
-[CT-V26] status=400 body={"refresh": ["Este campo é obrigatório."]}
-
-[CT-V27] status=401 body={"detail": "Usuário está inativo", "code": "user_inactive"}
-
 # código de saída: 0
 
-# 18/11/2026 09:56:39 -0300 | diretório: backend | comando: python manage.py makemigrations --check --dry-run --settings=placematch.test_settings
+# resumo: 824 testes em 120.642 s, OK, nenhum pulado
+
+# 20/11/2026 23:06:45 -0300 | diretório: backend | comando: python manage.py makemigrations --check --dry-run --settings=placematch.test_settings
 No changes detected
 # código de saída: 0
+
+# 20/11/2026 23:06:54 -0300 | diretório: backend | comando: python -m ruff check .
+All checks passed!
+# código de saída: 0
+

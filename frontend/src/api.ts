@@ -283,9 +283,24 @@ export interface PerfilPayload {
   foto_perfil_url?: string;
 }
 
+/** Tema de convivência detectado pela IA numa bio (ex.: {id: 'culinaria', nome: 'Culinária'}). */
+export interface Tema {
+  id: string;
+  nome: string;
+}
+
+/** O que a IA entendeu da bio do próprio usuário (só vem no PRÓPRIO perfil). */
+export interface AnaliseIA {
+  situacao: 'analisada' | 'bio_curta' | 'pendente' | 'ia_desligada';
+  temas: Tema[];
+  caracteres_uteis: number;
+  minimo_caracteres: number;
+}
+
 export interface Perfil extends PerfilPayload {
   id: number;
   usuario: number;
+  analise_ia?: AnaliseIA | null;
 }
 
 export async function listarPerfis(): Promise<Perfil[]> {
@@ -331,6 +346,9 @@ export interface PerfilDescoberto {
   descricao_imovel?: string | null;
   fotos_imovel?: string[];
   foto_perfil_url?: string | null;
+  /** Afinidade por IA entre as bios (0 a 1); null sem bio suficiente ou com a IA desligada. */
+  afinidade_ia?: number | null;
+  temas_em_comum?: Tema[];
 }
 
 export interface PerfilBasico {
@@ -739,4 +757,142 @@ export async function reativarUsuario(id: number): Promise<void> {
     method: 'POST',
     body: JSON.stringify({}),
   });
+}
+
+// ─── Afinidade por IA ──────────────────────────────────────────────────────────
+
+export type CriterioId = 'orcamento' | 'regiao' | 'rotina' | 'habitos' | 'moradia' | 'idade' | 'afinidade_ia';
+
+export interface CriterioCompatibilidade {
+  criterio: CriterioId;
+  nome: string;
+  peso: number;
+  /** Peso usado neste par (sem a IA, os outros 6 são renormalizados). */
+  peso_efetivo: number;
+  valor: number | null;
+  contribuicao: number;
+  considerado: boolean;
+}
+
+export interface CompatibilidadeDetalhe {
+  perfil_id: number;
+  nome: string;
+  score: number;
+  criterios: CriterioCompatibilidade[];
+  afinidade_ia: number | null;
+  similaridade_ia: number | null;
+  temas_em_comum: Tema[];
+  temas_meu_perfil: Tema[];
+  temas_outro_perfil: Tema[];
+  ia_disponivel: boolean;
+  motivo_sem_ia: string | null;
+}
+
+export async function getCompatibilidade(perfilId: number): Promise<CompatibilidadeDetalhe> {
+  return req<CompatibilidadeDetalhe>(`/api/compatibilidade/${perfilId}/`);
+}
+
+export type SituacaoIA = 'nao_carregado' | 'carregando' | 'disponivel' | 'indisponivel' | 'desabilitada';
+
+export interface IAStatus {
+  habilitada: boolean;
+  disponivel: boolean;
+  situacao: SituacaoIA;
+  situacao_texto: string;
+  erro: string | null;
+  modelo: string;
+  dimensoes: number;
+  modelo_baixado: boolean;
+  tempo_carregamento_ms: number | null;
+  perfis_total: number;
+  perfis_com_texto_suficiente: number;
+  perfis_com_embedding: number;
+  perfis_sem_embedding_com_texto: number;
+  temas_cadastrados: number;
+  temas: (Tema & { perfis: number })[];
+  tempo_medio_geracao_ms: number | null;
+  ultima_atualizacao: string | null;
+  calibracao: Record<string, number>;
+}
+
+export async function getIAStatus(): Promise<IAStatus> {
+  return req<IAStatus>('/api/admin/ia/status/');
+}
+
+export interface IATesteResultado {
+  similaridade: number;
+  afinidade: number;
+  temas_a: Tema[];
+  temas_b: Tema[];
+  temas_em_comum: Tema[];
+  tempo_ms: number;
+  modelo: string;
+}
+
+export async function testarIA(texto_a: string, texto_b: string): Promise<IATesteResultado> {
+  return req<IATesteResultado>('/api/admin/ia/testar/', { method: 'POST', body: JSON.stringify({ texto_a, texto_b }) });
+}
+
+// ─── Processamento em lote (benchmark de paralelismo) ─────────────────────────
+
+export type ModoParalelo = 'sequencial' | 'threads' | 'processos';
+
+export interface BenchmarkLinha {
+  N: number;
+  pares: number;
+  modo: ModoParalelo;
+  workers: number;
+  tempo_mediana_s: number;
+  speedup: number | null;
+  eficiencia: number | null;
+  identico_ao_sequencial: boolean;
+  memoria_por_worker_mb?: number | null;
+}
+
+export interface BenchmarkAmdahl {
+  N: number;
+  modo: ModoParalelo;
+  fracao_paralelizavel: number;
+  speedup_maximo_teorico: number | null;
+}
+
+export interface BenchmarkEmbeddings {
+  bios: number;
+  workers: number;
+  tempo_mediana_s: number;
+  ms_por_bio: number;
+  speedup: number;
+}
+
+export interface BenchmarkPontaAPonta {
+  N: number;
+  pares: number;
+  modo: ModoParalelo;
+  workers: number;
+  tempo_carregar_s: number;
+  tempo_calcular_s: number;
+  tempo_gravar_s: number;
+  tempo_total_s: number;
+  fracao_sequencial_banco: number;
+  speedup_total: number;
+}
+
+export interface BenchmarkParalelismo {
+  gerado_em: string;
+  duracao_total_s?: number;
+  ambiente: {
+    cpu?: string; nucleos_fisicos?: number | null; nucleos_logicos?: number | null; ram_total_mb?: number | null;
+    ram_livre_mb?: number | null; carga_cpu_inicio_pct?: number | null; carga_cpu_fundo_pct?: number | null;
+    sistema?: string; python?: string; numpy?: string;
+  };
+  parametros?: { repeticoes?: number; bloco?: string };
+  recalculo: BenchmarkLinha[];
+  amdahl: BenchmarkAmdahl[];
+  embeddings: BenchmarkEmbeddings[];
+  ponta_a_ponta: BenchmarkPontaAPonta[];
+  observacoes: string[];
+}
+
+export async function getBenchmarkParalelismo(): Promise<BenchmarkParalelismo> {
+  return req<BenchmarkParalelismo>('/api/admin/processamento/benchmark/');
 }

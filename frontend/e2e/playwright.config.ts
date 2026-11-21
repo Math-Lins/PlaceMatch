@@ -55,7 +55,7 @@ export const envBackend = {
 
 export default defineConfig({
   testDir: aqui,
-  // Só os 13 roteiros nXX. O roteiro de prints (tour-rc) tem configuração própria: playwright.tour.config.ts.
+  // Só os roteiros nXX (n01 a n15). O roteiro de prints (tour-rc) tem configuração própria: playwright.tour.config.ts.
   testMatch: /n\d\d-.*\.spec\.ts/,
   outputDir: path.join(aqui, 'resultados'),
   // Os roteiros compartilham o mesmo banco e criam usuários próprios: rodar em série evita ruído.

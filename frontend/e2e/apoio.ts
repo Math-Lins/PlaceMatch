@@ -78,6 +78,8 @@ export type Perfil = {
   pets?: boolean;
   fuma?: boolean;
   titulo?: string;
+  /** "Sobre você" (etapa 1). Sem bio, o perfil fica sem a análise da IA. */
+  bio?: string;
 };
 
 export function novoPerfil(prefixo: string, tipo: 'busca' | 'oferece', extra: Partial<Perfil> = {}): Perfil {
@@ -129,6 +131,7 @@ export async function preencherEtapa1(page: Page, p: Perfil) {
   await page.getByPlaceholder('Seu nome completo').fill(p.nome);
   await page.getByPlaceholder('Sua idade').fill(p.idade ?? '28');
   await page.getByPlaceholder('Ex: Boa Viagem, Recife').fill(p.regiao);
+  if (p.bio) await page.getByPlaceholder(/Conte um pouco sobre você/).fill(p.bio);
 }
 export async function preencherEtapa2(page: Page, p: Perfil) {
   await page.getByPlaceholder('700').fill(p.min ?? '800');

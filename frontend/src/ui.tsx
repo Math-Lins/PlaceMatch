@@ -389,7 +389,7 @@ export const ROTULO_STATUS_DENUNCIA: Record<string, string> = {
 
 export const ROTULO_ENTIDADE: Record<string, string> = {
   usuario: 'Usuário', perfil: 'Perfil', match: 'Match', mensagem: 'Mensagem',
-  denuncia: 'Denúncia', relatorio: 'Relatório', log: 'Log',
+  denuncia: 'Denúncia', relatorio: 'Relatório', log: 'Log', ia: 'IA',
 };
 
 /** Rótulos de filtros e totais vindos da API (chaves internas → texto). */
@@ -402,6 +402,8 @@ export const ROTULO_CHAVE: Record<string, string> = {
   novo_status: 'Nova situação', email: 'E-mail', campos: 'Campos alterados', relatorio: 'Relatório',
   filtros: 'Filtros', ip: 'IP', q: 'Busca', ativo: 'Situação', acao: 'Ação', usuario: 'Usuário', entidade: 'Entidade',
   page: 'Página', formato: 'Formato',
+  caracteres_a: 'Caracteres do texto A', caracteres_b: 'Caracteres do texto B', ia_disponivel: 'IA disponível',
+  afinidade: 'Afinidade', tempo_ms: 'Tempo (ms)',
 };
 
 const ROTULO_VALOR: Record<string, string> = {

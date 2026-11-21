@@ -1,10 +1,26 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from matches.serializers import CamposIAMixin
+from matches.serializers import CamposIAMixin, TemaSerializer
 from .models import Perfil
 
 
+class AnaliseIASerializer(serializers.Serializer):
+    """Só para documentar o campo `analise_ia` (o que a IA entendeu da bio do próprio usuário)."""
+
+    situacao = serializers.ChoiceField(
+        choices=['analisada', 'bio_curta', 'pendente', 'ia_desligada'],
+        help_text='`analisada`: a bio tem embedding e temas; `bio_curta`: menos de 20 letras e dígitos (o score usa os '
+                  'outros 6 critérios); `pendente`: texto suficiente, mas a IA estava indisponível quando a bio foi salva '
+                  '(gerado depois com `gerar_embeddings`); `ia_desligada`: IA_HABILITADA=False.')
+    temas = TemaSerializer(many=True, help_text='Temas de convivência detectados na bio (vazio se não `analisada`).')
+    caracteres_uteis = serializers.IntegerField(help_text='Letras e dígitos do texto analisado (bio + anúncio).')
+    minimo_caracteres = serializers.IntegerField(help_text='Mínimo para a IA analisar (20).')
+
+
 class PerfilSerializer(serializers.ModelSerializer):
+    analise_ia = serializers.SerializerMethodField()
+
     class Meta:
         model = Perfil
         fields = [
@@ -13,9 +29,20 @@ class PerfilSerializer(serializers.ModelSerializer):
             'tolerancia_bagunca', 'nivel_organizacao',
             'perfil_horario', 'nivel_ruido', 'nivel_social',
             'aceita_visitas', 'tipo_imovel', 'qtd_moradores',
-            'titulo_anuncio', 'descricao_imovel', 'fotos_imovel', 'foto_perfil_url',
+            'titulo_anuncio', 'descricao_imovel', 'fotos_imovel', 'foto_perfil_url', 'analise_ia',
         ]
         read_only_fields = ['id', 'usuario']
+
+    @extend_schema_field(AnaliseIASerializer(
+        allow_null=True,
+        help_text='O que a IA entendeu da bio. Só vem preenchido no PRÓPRIO perfil (`null` para os perfis de outras pessoas).'))
+    def get_analise_ia(self, obj):
+        request = self.context.get('request')
+        usuario = getattr(request, 'user', None)
+        if usuario is None or obj.usuario_id != getattr(usuario, 'id', None):
+            return None
+        from ia.explicacao import analise_do_perfil
+        return analise_do_perfil(obj)
 
     def validate_nome(self, value):
         if not value or not value.strip():

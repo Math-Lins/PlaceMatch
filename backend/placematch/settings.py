@@ -154,7 +154,7 @@ SPECTACULAR_SETTINGS = {
         '**Erros:** sempre em português — `{"detail": "mensagem"}` ou `{"campo": ["mensagem"]}`.\n\n'
         'Os exemplos são respostas reais da API em um banco de teste (listas longas abreviadas).'
     ),
-    'VERSION': '1.0.0-rc2',
+    'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'SCHEMA_PATH_PREFIX': r'/api',
     'TAGS': [

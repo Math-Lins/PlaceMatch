@@ -4,7 +4,7 @@
 
 ## Visão geral
 
-API REST em JSON (Django REST Framework), versão **1.0.0-rc2**, com 35 operações em 30 rotas, organizadas em 7 grupos: Autenticação, Perfis, Descoberta e Matches, Chat, Moderação, Painel administrativo e Logs.
+API REST em JSON (Django REST Framework), versão **1.0.0**, com 35 operações em 30 rotas, organizadas em 9 grupos: Autenticação, Perfis, Descoberta e Matches, Chat, Moderação, Painel administrativo, Afinidade por IA, Processamento em lote e Logs.
 
 | Recurso | Onde |
 |---|---|
@@ -87,6 +87,9 @@ Somente `registrar`, `login` e `login/refresh` são públicos. O frontend guarda
 | Painel administrativo | `GET` | `/api/admin/relatorios/{rel_id}/` | Somente administrador | Gerar um relatório (JSON ou CSV) |
 | Painel administrativo | `GET` | `/api/admin/usuarios/` | Somente administrador | Listar usuários |
 | Painel administrativo | `GET` | `/api/admin/usuarios/exportar/` | Somente administrador | Exportar usuários (CSV) |
+| Afinidade por IA | `GET` | `/api/admin/ia/status/` | Somente administrador | Situação da IA |
+| Afinidade por IA | `POST` | `/api/admin/ia/testar/` | Somente administrador | Testar a IA com dois textos |
+| Processamento em lote | `GET` | `/api/admin/processamento/benchmark/` | Somente administrador | Resultado do benchmark de paralelismo |
 | Logs | `GET` | `/api/admin/logs/` | Somente administrador | Listar logs de operações |
 | Logs | `GET` | `/api/admin/logs/exportar/` | Somente administrador | Exportar logs (CSV) |
 
@@ -431,7 +434,13 @@ HTTP 200
     "titulo_anuncio": "",
     "descricao_imovel": "",
     "fotos_imovel": [],
-    "foto_perfil_url": ""
+    "foto_perfil_url": "",
+    "analise_ia": {
+      "situacao": "analisada",
+      "temas": [],
+      "caracteres_uteis": 36,
+      "minimo_caracteres": 20
+    }
   }
 ]
 ```
@@ -512,7 +521,13 @@ HTTP 201
   "titulo_anuncio": "",
   "descricao_imovel": "",
   "fotos_imovel": [],
-  "foto_perfil_url": ""
+  "foto_perfil_url": "",
+  "analise_ia": {
+    "situacao": "analisada",
+    "temas": [],
+    "caracteres_uteis": 36,
+    "minimo_caracteres": 20
+  }
 }
 ```
 
@@ -552,7 +567,26 @@ HTTP 201
     "https://exemplo.com/fotos/quarto.jpg",
     "https://exemplo.com/fotos/sala.jpg"
   ],
-  "foto_perfil_url": "https://exemplo.com/fotos/bruno.jpg"
+  "foto_perfil_url": "https://exemplo.com/fotos/bruno.jpg",
+  "analise_ia": {
+    "situacao": "analisada",
+    "temas": [
+      {
+        "id": "trabalho_remoto",
+        "nome": "Trabalho remoto"
+      },
+      {
+        "id": "silencio",
+        "nome": "Silêncio e tranquilidade"
+      },
+      {
+        "id": "organizacao",
+        "nome": "Organização e limpeza"
+      }
+    ],
+    "caracteres_uteis": 113,
+    "minimo_caracteres": 20
+  }
 }
 ```
 
@@ -618,6 +652,7 @@ HTTP 200
     "https://exemplo.com/fotos/sala.jpg"
   ],
   "foto_perfil_url": "https://exemplo.com/fotos/bruno.jpg",
+  "analise_ia": null,
   "afinidade_ia": 0.0,
   "temas_em_comum": []
 }
@@ -707,7 +742,18 @@ HTTP 200
   "titulo_anuncio": "",
   "descricao_imovel": "",
   "fotos_imovel": [],
-  "foto_perfil_url": ""
+  "foto_perfil_url": "",
+  "analise_ia": {
+    "situacao": "analisada",
+    "temas": [
+      {
+        "id": "culinaria",
+        "nome": "Culinária"
+      }
+    ],
+    "caracteres_uteis": 52,
+    "minimo_caracteres": 20
+  }
 }
 ```
 
@@ -796,7 +842,18 @@ HTTP 200
   "titulo_anuncio": "",
   "descricao_imovel": "",
   "fotos_imovel": [],
-  "foto_perfil_url": ""
+  "foto_perfil_url": "",
+  "analise_ia": {
+    "situacao": "analisada",
+    "temas": [
+      {
+        "id": "culinaria",
+        "nome": "Culinária"
+      }
+    ],
+    "caracteres_uteis": 52,
+    "minimo_caracteres": 20
+  }
 }
 ```
 
@@ -2436,6 +2493,552 @@ HTTP 200  (text/csv)
 
 ---
 
+## Afinidade por IA
+
+### `GET /api/admin/ia/status/` — Situação da IA
+
+**Quem pode:** Somente administrador.  
+**Operação (OpenAPI):** `ia_status`
+
+Modelo, dimensões, se a IA está ligada e disponível, perfis com embedding × total, temas cadastrados (com quantos perfis têm cada um), tempo médio de geração de um embedding e data da última atualização. Não carrega o modelo: `disponivel` reflete o estado atual (carregado, falhou ou baixado e pronto para carregar).
+
+**Resposta de sucesso:** `200` — Situação da IA.
+
+**Exemplo**
+
+```bash
+curl -X GET "<BASE>/api/admin/ia/status/" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+```json
+HTTP 200
+{
+  "habilitada": true,
+  "disponivel": true,
+  "situacao": "disponivel",
+  "situacao_texto": "Disponível",
+  "erro": null,
+  "modelo": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "dimensoes": 384,
+  "modelo_baixado": true,
+  "tempo_carregamento_ms": 5221.6,
+  "perfis_total": 4,
+  "perfis_com_texto_suficiente": 3,
+  "perfis_com_embedding": 3,
+  "perfis_sem_embedding_com_texto": 0,
+  "temas_cadastrados": 16,
+  "temas": [
+    {
+      "id": "culinaria",
+      "nome": "Culinária",
+      "perfis": 1
+    },
+    {
+      "id": "estudos",
+      "nome": "Estudos",
+      "perfis": 0
+    },
+    {
+      "id": "trabalho_remoto",
+      "nome": "Trabalho remoto",
+      "perfis": 2
+    }
+  ],
+  "tempo_medio_geracao_ms": 37.08,
+  "ultima_atualizacao": "2026-11-20T15:00:48.977342Z",
+  "calibracao": {
+    "peso": 0.1,
+    "cosseno_piso": 0.2,
+    "cosseno_teto": 0.65,
+    "limiar_tema": 0.45,
+    "margem_tema": 0.13,
+    "max_temas": 5,
+    "min_caracteres_texto": 20
+  }
+}
+```
+
+**Erros possíveis**
+
+| Status | Quando | Resposta real |
+|---|---|---|
+| `401` | Sem token | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
+| `401` | Token inválido ou expirado | `{"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}` |
+| `403` | Usuário comum | `{"detail": "Você não tem permissão para executar essa ação."}` |
+
+---
+
+### `POST /api/admin/ia/testar/` — Testar a IA com dois textos
+
+**Quem pode:** Somente administrador.  
+**Operação (OpenAPI):** `ia_testar`
+
+Compara dois textos (até 1000 caracteres cada) com o modelo local: similaridade bruta (cosseno), afinidade calibrada (0 a 1), temas detectados em cada texto, temas em comum e o tempo de processamento. Registra o log `IA_TESTE` só com o tamanho dos textos e o resultado (**os textos não são gravados**). Com a IA desligada ou o modelo indisponível → 503.
+
+**Corpo de entrada** (JSON)
+
+| Campo | Tipo | Obrigatório | Regras |
+|---|---|---|---|
+| `texto_a` | texto | sim | Primeiro texto (1 a 1000 caracteres; não pode ser só espaços). |
+| `texto_b` | texto | sim | Segundo texto (1 a 1000 caracteres; não pode ser só espaços). |
+
+**Resposta de sucesso:** `200` — Resultado da comparação.
+
+**Exemplo** — Mesmo interesse (culinária) escrito com palavras diferentes.
+
+```bash
+curl -X POST "<BASE>/api/admin/ia/testar/" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"texto_a": "Adoro cozinhar para os amigos e testar receitas novas.", "texto_b": "Faço jantares em casa no fim de semana e sempre sobra comida."}'
+```
+
+```json
+HTTP 200
+{
+  "similaridade": 0.4829,
+  "afinidade": 0.6287,
+  "temas_a": [
+    {
+      "id": "culinaria",
+      "nome": "Culinária"
+    }
+  ],
+  "temas_b": [
+    {
+      "id": "culinaria",
+      "nome": "Culinária"
+    },
+    {
+      "id": "trabalho_remoto",
+      "nome": "Trabalho remoto"
+    },
+    {
+      "id": "organizacao",
+      "nome": "Organização e limpeza"
+    }
+  ],
+  "temas_em_comum": [
+    {
+      "id": "culinaria",
+      "nome": "Culinária"
+    }
+  ],
+  "tempo_ms": 52.6,
+  "modelo": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+}
+```
+
+**Festas × silêncio**
+
+```bash
+curl -X POST "<BASE>/api/admin/ia/testar/" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"texto_a": "Adoro festas e baladas, minha casa vive cheia de gente com música alta.", "texto_b": "Preciso de silêncio e de uma casa tranquila; durmo cedo e evito barulho."}'
+```
+
+```json
+HTTP 200
+{
+  "similaridade": 0.2848,
+  "afinidade": 0.1884,
+  "temas_a": [
+    {
+      "id": "musica",
+      "nome": "Música"
+    },
+    {
+      "id": "festas",
+      "nome": "Festas e vida social"
+    }
+  ],
+  "temas_b": [
+    {
+      "id": "silencio",
+      "nome": "Silêncio e tranquilidade"
+    }
+  ],
+  "temas_em_comum": [],
+  "tempo_ms": 65.9,
+  "modelo": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+}
+```
+
+**Erros possíveis**
+
+| Status | Quando | Resposta real |
+|---|---|---|
+| `400` | Texto vazio ou com mais de 1000 caracteres | `{"texto_a": ["Este campo não pode ficar em branco."], "texto_b": ["Certifique-se de que este campo não tenha mais de 1000 caracteres."]}` |
+| `401` | Sem token | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
+| `401` | Token inválido ou expirado | `{"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}` |
+| `403` | Usuário comum | `{"detail": "Você não tem permissão para executar essa ação."}` |
+| `503` | IA desligada ou modelo indisponível | `{"detail": "A Afinidade por IA está desligada neste servidor (IA_HABILITADA=False)."}` |
+
+---
+
+## Processamento em lote
+
+### `GET /api/admin/processamento/benchmark/` — Resultado do benchmark de paralelismo
+
+**Quem pode:** Somente administrador.  
+**Operação (OpenAPI):** `processamento_benchmark`
+
+Conteúdo de `docs/benchmark/paralelismo.json`, gravado por `python manage.py benchmark_paralelismo`: tempo, speedup e eficiência do recálculo das compatibilidades por N × modo (sequencial, threads, processos) × workers, a fração paralelizável estimada pela Lei de Amdahl, o ponto a partir do qual o paralelo compensa, os embeddings com 1 e 2 workers e o ambiente (CPU, núcleos, RAM, versões). Só lê o arquivo; não executa nada. Sem o arquivo → 404.
+
+**Resposta de sucesso:** `200` — Resultado do benchmark (listas abreviadas no exemplo).
+
+**Exemplo** — Resultado de python manage.py benchmark_paralelismo (listas abreviadas em 3 itens).
+
+```bash
+curl -X GET "<BASE>/api/admin/processamento/benchmark/" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+```json
+HTTP 200
+{
+  "gerado_em": "2026-11-20T19:29:58-03:00",
+  "ambiente": {
+    "cpu": "Intel(R) Core(TM) i3-6006U CPU @ 2.00GHz",
+    "nucleos_fisicos": 2,
+    "nucleos_logicos": 4,
+    "ram_total_mb": 16384.0,
+    "ram_livre_mb": 3870.4,
+    "carga_cpu_inicio_pct": 100,
+    "sistema": "Windows 10 (10.0.19045)",
+    "python": "3.14.7",
+    "numpy": "2.5.4",
+    "django": "6.1.1",
+    "threadpoolctl": "3.8.0",
+    "fastembed": "0.9.1",
+    "onnxruntime": "1.32.0",
+    "blas": "openblas 0.3.34.106.0 (4 threads)"
+  },
+  "parametros": {
+    "tamanhos": [
+      1000,
+      2000,
+      5000
+    ],
+    "workers": [
+      1,
+      2,
+      4
+    ],
+    "repeticoes": 3,
+    "bloco": "256 × 256 pares",
+    "perfis_com_embedding": "4 em cada 5",
+    "dados": "sintéticos em memória (metade buscando, metade oferecendo)",
+    "blas_por_worker": 1
+  },
+  "recalculo": [
+    {
+      "N": 1000,
+      "buscando": 500,
+      "oferecendo": 500,
+      "pares": 250000,
+      "modo": "sequencial",
+      "workers": 1,
+      "tempo_mediana_s": 0.2167,
+      "tempo_min_s": 0.2052,
+      "tempos_s": [
+        0.2167,
+        0.2242,
+        0.2052
+      ],
+      "ns_por_par": 866.7,
+      "speedup": 1.0,
+      "eficiencia": 1.0,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fe4337e028c891cc",
+      "memoria_principal_pico_mb": 101.4,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 1000,
+      "buscando": 500,
+      "oferecendo": 500,
+      "pares": 250000,
+      "modo": "threads",
+      "workers": 1,
+      "tempo_mediana_s": 0.2091,
+      "tempo_min_s": 0.1672,
+      "tempos_s": [
+        0.2091,
+        0.2256,
+        0.1672
+      ],
+      "ns_por_par": 836.5,
+      "speedup": 1.036,
+      "eficiencia": 1.036,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fe4337e028c891cc",
+      "memoria_principal_pico_mb": 101.5,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    },
+    {
+      "N": 1000,
+      "buscando": 500,
+      "oferecendo": 500,
+      "pares": 250000,
+      "modo": "threads",
+      "workers": 2,
+      "tempo_mediana_s": 0.0986,
+      "tempo_min_s": 0.0893,
+      "tempos_s": [
+        0.1222,
+        0.0986,
+        0.0893
+      ],
+      "ns_por_par": 394.4,
+      "speedup": 2.197,
+      "eficiencia": 1.099,
+      "identico_ao_sequencial": true,
+      "hash_resultado": "fe4337e028c891cc",
+      "memoria_principal_pico_mb": 107.2,
+      "memoria_por_worker_mb": null,
+      "aviso": null
+    }
+  ],
+  "tamanhos_pulados": [],
+  "amdahl": [
+    {
+      "N": 1000,
+      "modo": "threads",
+      "fracao_paralelizavel": 0.7971,
+      "speedup_maximo_teorico": 4.93,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 1.036
+        },
+        {
+          "workers": 2,
+          "speedup": 2.197
+        },
+        {
+          "workers": 4,
+          "speedup": 2.001
+        }
+      ]
+    },
+    {
+      "N": 1000,
+      "modo": "processos",
+      "fracao_paralelizavel": 0.0,
+      "speedup_maximo_teorico": 1.0,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 0.072
+        },
+        {
+          "workers": 2,
+          "speedup": 0.086
+        },
+        {
+          "workers": 4,
+          "speedup": 0.117
+        }
+      ]
+    },
+    {
+      "N": 2000,
+      "modo": "threads",
+      "fracao_paralelizavel": 0.4064,
+      "speedup_maximo_teorico": 1.68,
+      "pontos": [
+        {
+          "workers": 1,
+          "speedup": 0.603
+        },
+        {
+          "workers": 2,
+          "speedup": 1.192
+        },
+        {
+          "workers": 4,
+          "speedup": 1.499
+        }
+      ]
+    }
+  ],
+  "ponto_de_equilibrio": {
+    "threads": {
+      "N_minimo": null,
+      "pares_minimo": null,
+      "ganhou_em_N": [
+        1000,
+        2000,
+        5000
+      ],
+      "perdeu_ou_empatou_em_N": [
+        20000
+      ],
+      "melhor_por_N": {
+        "1000": {
+          "workers": 2,
+          "speedup": 2.197
+        },
+        "2000": {
+          "workers": 4,
+          "speedup": 1.499
+        },
+        "5000": {
+          "workers": 4,
+          "speedup": 2.217
+        },
+        "10000": {
+          "workers": 4,
+          "speedup": 2.442
+        },
+        "20000": {
+          "workers": 4,
+          "speedup": 1.021
+        }
+      }
+    },
+    "processos": {
+      "N_minimo": null,
+      "pares_minimo": null,
+      "ganhou_em_N": [
+        10000
+      ],
+      "perdeu_ou_empatou_em_N": [
+        1000,
+        2000,
+        5000
+      ],
+      "melhor_por_N": {
+        "1000": {
+          "workers": 4,
+          "speedup": 0.117
+        },
+        "2000": {
+          "workers": 2,
+          "speedup": 0.135
+        },
+        "5000": {
+          "workers": 2,
+          "speedup": 0.621
+        },
+        "10000": {
+          "workers": 2,
+          "speedup": 1.37
+        },
+        "20000": {
+          "workers": 4,
+          "speedup": 0.79
+        }
+      }
+    }
+  },
+  "embeddings": [
+    {
+      "bios": 50,
+      "workers": 1,
+      "tempo_mediana_s": 2.694,
+      "tempos_s": [
+        2.584,
+        3.059,
+        2.694
+      ],
+      "ms_por_bio": 53.9,
+      "speedup": 1.0,
+      "eficiencia": 1.0,
+      "identico_ao_sequencial": true
+    },
+    {
+      "bios": 50,
+      "workers": 2,
+      "tempo_mediana_s": 10.475,
+      "tempos_s": [
+        11.287,
+        10.475,
+        10.443
+      ],
+      "ms_por_bio": 209.5,
+      "speedup": 0.257,
+      "eficiencia": 0.129,
+      "identico_ao_sequencial": true
+    },
+    {
+      "bios": 400,
+      "workers": 1,
+      "tempo_mediana_s": 19.897,
+      "tempos_s": [
+        20.271,
+        19.897,
+        19.762
+      ],
+      "ms_por_bio": 49.7,
+      "speedup": 1.0,
+      "eficiencia": 1.0,
+      "identico_ao_sequencial": true
+    }
+  ],
+  "ponta_a_ponta": [
+    {
+      "N": 1000,
+      "pares": 250000,
+      "modo": "sequencial",
+      "workers": 1,
+      "tempo_carregar_s": 0.069,
+      "tempo_calcular_s": 0.082,
+      "tempo_gravar_s": 39.946,
+      "tempo_total_s": 40.096,
+      "fracao_sequencial_banco": 0.998,
+      "speedup_total": 1.0
+    },
+    {
+      "N": 1000,
+      "pares": 250000,
+      "modo": "threads",
+      "workers": 2,
+      "tempo_carregar_s": 0.082,
+      "tempo_calcular_s": 0.056,
+      "tempo_gravar_s": 41.567,
+      "tempo_total_s": 41.705,
+      "fracao_sequencial_banco": 0.999,
+      "speedup_total": 0.961
+    },
+    {
+      "N": 1000,
+      "pares": 250000,
+      "modo": "processos",
+      "workers": 2,
+      "tempo_carregar_s": 0.055,
+      "tempo_calcular_s": 1.261,
+      "tempo_gravar_s": 45.603,
+      "tempo_total_s": 46.919,
+      "fracao_sequencial_banco": 0.973,
+      "speedup_total": 0.855
+    }
+  ],
+  "observacoes": [
+    "A CPU já tinha 100% de uso de outros programas no início: o ganho medido é menor que o de uma máquina ociosa e os tempos variam entre repetições.",
+    "Threads: ganhou em N = 1.000, 2.000, 5.000, 10.000 e não em N = 20.000. Melhor speedup por tamanho: N = 1.000: 2.20 (2 workers), N = 2.000: 1.50 (4 workers), N = 5.000: 2.22 (4 workers), N = 10.000: 2.44 (4 workers), N = 20.000: 1.02 (4 workers).",
+    "Processos: ganhou em N = 10.000 e não em N = 1.000, 2.000, 5.000, 20.000. Melhor speedup por tamanho: N = 1.000: 0.12 (4 workers), N = 2.000: 0.14 (2 workers), N = 5.000: 0.62 (2 workers), N = 10.000: 1.37 (2 workers), N = 20.000: 0.79 (4 workers)."
+  ],
+  "duracao_total_s": 1393.2
+}
+```
+
+**Erros possíveis**
+
+| Status | Quando | Resposta real |
+|---|---|---|
+| `401` | Sem token | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
+| `401` | Token inválido ou expirado | `{"detail": "O token informado não é válido para qualquer tipo de token", "code": "token_not_valid", "messages": [{"token_class": "AccessToken", "token_type": "access", "message": "O token é inválido"}]}` |
+| `403` | Usuário comum | `{"detail": "Você não tem permissão para executar essa ação."}` |
+| `404` | Benchmark ainda não executado | `{"detail": "O benchmark de paralelismo ainda não foi executado. No servidor, rode \"python manage.py benchmark_paralelismo\"."}` |
+
+---
+
 ## Logs
 
 ### `GET /api/admin/logs/` — Listar logs de operações
@@ -2661,7 +3264,13 @@ HTTP 201
   "titulo_anuncio": "",
   "descricao_imovel": "",
   "fotos_imovel": [],
-  "foto_perfil_url": ""
+  "foto_perfil_url": "",
+  "analise_ia": {
+    "situacao": "analisada",
+    "temas": [],
+    "caracteres_uteis": 36,
+    "minimo_caracteres": 20
+  }
 }
 ```
 

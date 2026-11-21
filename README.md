@@ -7,7 +7,7 @@ Plataforma web que conecta pessoas compatíveis para dividir moradia, usando um 
 | **Instituição** | UNINASSAU — Ciência da Computação, turma 8 NA |
 | **Disciplinas** | Fábrica de Software e Tópicos Avançados (2026.2) |
 | **Equipe** | Grupo 07 (integrantes e papéis em [Equipe](#equipe)) |
-| **Versão** | v1.0.0-rc2 (Release Candidate) |
+| **Versão** | v1.0.0 (versão final) |
 | **Documentação** | Índice completo em [`docs/README.md`](./docs/README.md) |
 
 ## Objetivo da solução
@@ -233,7 +233,7 @@ npx tsc --noEmit                                         # use também --noUnuse
 npm run build
 ```
 
-**Navegação (e2e, Playwright)** — 14 roteiros em desktop e mobile, com **banco descartável** próprio (container `placematch_e2e_db`, porta 5433); não toca no banco de desenvolvimento. Detalhes em [`frontend/e2e/README.md`](./frontend/e2e/README.md).
+**Navegação (e2e, Playwright)** — 15 roteiros em desktop e mobile, com **banco descartável** próprio (container `placematch_e2e_db`, porta 5433); não toca no banco de desenvolvimento. Detalhes em [`frontend/e2e/README.md`](./frontend/e2e/README.md).
 
 ```powershell
 cd frontend
@@ -254,7 +254,7 @@ npm run e2e:db                                 # banco descartável do e2e (recr
 npm run e2e:tour
 ```
 
-O `e2e:tour` roda `seed_demo --remover-outros` **no banco descartável do e2e**, percorre o sistema em desktop (1366×768) e celular (375×812) e grava `frontend/e2e/evidencias-rc/` (`RC-01` a `RC-42` + `INDICE.md`). Depois gera `frontend/evidencias-rc.zip` com essa pasta e com `docs/execucoes-rc/` (saídas das verificações finais: testes do backend, `verificar_banco`, matriz de permissões, validação do OpenAPI, build e e2e).
+O `e2e:tour` roda `seed_demo --remover-outros` **no banco descartável do e2e**, percorre o sistema em desktop (1366×768) e celular (375×812) e grava `frontend/e2e/evidencias-rc/` (`RC-01` a `RC-50` + `INDICE.md`; RC-43 a RC-50 mostram a IA e o processamento paralelo, com o modelo real). Depois gera `frontend/evidencias-rc.zip` com essa pasta e com `docs/execucoes-rc/` (saídas das verificações finais: testes do backend, `verificar_banco`, matriz de permissões, validação do OpenAPI, build e e2e).
 
 ## Afinidade por IA
 
@@ -366,7 +366,7 @@ PlaceMatch/
 
 ## Versão
 
-**Release Candidate v1.0.0-rc2** (inclui a recuperação de senha por e-mail; as evidências estão em [`docs/execucoes-rc/`](./docs/execucoes-rc/) e em `frontend/evidencias-rc.zip`)
+**v1.0.0 (versão final)**: inclui a Afinidade por IA visível na interface (painel "Por que vocês combinam", selo de interesses em comum, temas no Meu Perfil e a aba IA do painel com status, laboratório e processamento paralelo). Versões anteriores: v1.0.0-rc1 e v1.0.0-rc2 (recuperação de senha por e-mail). As evidências estão em [`docs/execucoes-rc/`](./docs/execucoes-rc/) e em `frontend/evidencias-rc.zip`.
 
 ## EQUIPE
 

@@ -1,5 +1,5 @@
-# 18/11/2026 09:57:16 -0300 | diretório: backend | v1.0.0-rc2 | comando: python manage.py spectacular --validate --fail-on-warn --file ../docs/openapi.yaml --settings=placematch.test_settings
+# 20/11/2026 23:06:57 -0300 | diretório: backend | v1.0.0 | comando: python manage.py spectacular --validate --fail-on-warn --file ../docs/openapi.yaml --settings=placematch.test_settings
 
 # código de saída: 0
 
-# 18/11/2026 09:57:29 -0300 | versão do schema:   version: 1.0.0-rc2 | operações (método + rota): 31
+# 20/11/2026 23:07:10 -0300 | versão do schema: 1.0.0 | operações (método + rota): 35

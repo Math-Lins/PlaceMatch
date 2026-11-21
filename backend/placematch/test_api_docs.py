@@ -40,7 +40,7 @@ class SchemaValidoTest(APITestCase):
         schema = _schema()
         self.assertTrue(schema['openapi'].startswith('3.'))
         self.assertEqual(schema['info']['title'], 'API do PlaceMatch')
-        self.assertEqual(schema['info']['version'], '1.0.0-rc2')
+        self.assertEqual(schema['info']['version'], '1.0.0')
 
     def test_autenticacao_bearer_jwt_para_o_botao_authorize(self):
         esquemas = _schema()['components']['securitySchemes']
@@ -89,6 +89,16 @@ class CoberturaDasRotasTest(APITestCase):
         nomes = [t['name'] for t in _schema()['tags']]
         self.assertEqual(nomes, ['Autenticação', 'Perfis', 'Descoberta e Matches', 'Chat', 'Moderação',
                                  'Painel administrativo', 'Afinidade por IA', 'Processamento em lote', 'Logs'])
+
+    def test_docs_api_md_tem_secao_para_todos_os_grupos(self):
+        # docs/api.md é gerado por grupo: um grupo fora da lista do gerador sumiria do documento.
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'scripts'))
+        from gerar_docs_markdown import GRUPOS
+        nomes = [t['name'] for t in _schema()['tags']]
+        self.assertEqual(GRUPOS, nomes)
+        self.assertTrue({o['tag'] for o in OPERACOES.values()} <= set(GRUPOS))
 
     def test_rotas_publicas_nao_pedem_token(self):
         paths = _schema()['paths']

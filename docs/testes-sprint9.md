@@ -146,6 +146,9 @@ Esta seção só acrescenta os números por etapa; os registros acima ficam como
 | Auditoria da RC, 1ª rodada | **616** (+27 em `placematch/test_auditoria_rc.py`; 9 asserções de permissões/chat tornadas exatas) | 13 roteiros | Detalhes em [`auditoria-rc.md`](./auditoria-rc.md) |
 | Auditoria da RC, 2ª rodada | **651** (+35 em `placematch/test_auditoria_rc2.py`) | 13 roteiros (passos novos em N01, N02, N06, N08, N10, N11 e N12) | Limite de login, logout/blacklist, período máximo etc. |
 | v1.0.0-rc2 (recuperação de senha por e-mail) | **685** (+34 em `usuarios/test_recuperacao_senha.py`) | **14 roteiros, 30 testes** (novo `n14`; N13c no mobile; passos em N01 e N08) | Evidências em [`execucoes-rc/`](./execucoes-rc/) |
+| Afinidade por IA (7º critério) | **772** (+87 em `ia/tests/`) | 14 roteiros | Embedder falso nos testes; 1 teste com o modelo real |
+| Processamento em lote em paralelo | **815** (+43 em `matches/test_paralelismo.py` e `ia/tests/test_aquecimento_e_workers.py`) | 14 roteiros | Igualdade exata sequencial × threads × processos |
+| v1.0.0 (IA e paralelismo visíveis na interface) | **824** (+8 em `ia/tests/test_analise_perfil.py`, +1 em `placematch/test_api_docs.py`) | **15 roteiros, 31 testes** (novo `n15`) | Evidências em [`execucoes-rc/`](./execucoes-rc/); prints RC-43 a RC-50 |
 
 Verificações da etapa 3: `tsc --noEmit` e `npm run build` sem erros; `spectacular --validate` sem avisos; `matriz_permissoes` sem divergências; `verificar_banco --falhar` sobre os dados de demonstração: 13 verificações OK, 1 aviso esperado (matches de uma conta suspensa) e 0 erros.
 

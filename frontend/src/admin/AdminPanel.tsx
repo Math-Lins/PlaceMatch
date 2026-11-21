@@ -5,6 +5,7 @@ import UsuariosTab from './UsuariosTab';
 import PainelTab from './PainelTab';
 import RelatoriosTab from './RelatoriosTab';
 import ModeracaoTab from './ModeracaoTab';
+import IATab from './IATab';
 import { listarDenuncias } from '../api';
 import { C, FONTE_TITULO, FONTE_TEXTO, RAIO, Botao, EstadoErro } from '../ui';
 
@@ -37,7 +38,7 @@ class AdminErrorBoundary extends Component<{ children: ReactNode }, EBState> {
   }
 }
 
-type AdminTab = 'painel' | 'relatorios' | 'logs' | 'usuarios' | 'moderacao';
+type AdminTab = 'painel' | 'relatorios' | 'logs' | 'usuarios' | 'moderacao' | 'ia';
 
 const TAB_LABELS: Record<AdminTab, string> = {
   painel: 'Painel',
@@ -45,6 +46,7 @@ const TAB_LABELS: Record<AdminTab, string> = {
   logs: 'Logs',
   usuarios: 'Usuários',
   moderacao: 'Moderação',
+  ia: 'IA',
 };
 
 export default function AdminPanel({ nav, onLogout }: { nav: (s: 'welcome') => void; onLogout?: () => void }) {
@@ -74,7 +76,7 @@ export default function AdminPanel({ nav, onLogout }: { nav: (s: 'welcome') => v
         </div>
         {/* Abas */}
         <nav aria-label="Seções do painel" style={{ display: 'flex', marginTop: '8px', overflowX: 'auto' }}>
-          {(['painel', 'relatorios', 'logs', 'usuarios', 'moderacao'] as const).map((t) => {
+          {(['painel', 'relatorios', 'logs', 'usuarios', 'moderacao', 'ia'] as const).map((t) => {
             const ativa = activeTab === t;
             return (
               <button
@@ -116,6 +118,7 @@ export default function AdminPanel({ nav, onLogout }: { nav: (s: 'welcome') => v
           {activeTab === 'logs' && <LogsTab />}
           {activeTab === 'usuarios' && <UsuariosTab />}
           {activeTab === 'moderacao' && <ModeracaoTab />}
+          {activeTab === 'ia' && <IATab />}
         </AdminErrorBoundary>
       </div>
     </div>
