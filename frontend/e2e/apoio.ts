@@ -31,7 +31,8 @@ export const test = base.extend({
 });
 export { expect };
 
-export const PASTA_EVIDENCIAS = path.join(aqui, 'evidencias');
+export const PASTA_EVIDENCIAS = process.env.E2E_EVIDENCIAS_DIR
+  || path.join(aqui, process.env.CI ? 'resultados/evidencias' : 'evidencias');
 
 function lerEnv(): Record<string, string> {
   const out: Record<string, string> = {};

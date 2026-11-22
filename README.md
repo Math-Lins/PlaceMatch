@@ -225,10 +225,11 @@ pip install -r requirements-dev.txt            # requirements.txt + ruff (só de
 ruff check .                                   # "All checks passed!"
 ```
 
-**Frontend** (tipos e build; o projeto não tem script de lint):
+**Frontend** (testes dos gráficos, tipos e build; o projeto não tem script de lint):
 
 ```powershell
 cd frontend
+npm test
 npx tsc --noEmit                                         # use também --noUnusedLocals --noUnusedParameters
 npm run build
 ```
@@ -245,6 +246,9 @@ npm run e2e:db:parar
 ```
 
 Pare o frontend de desenvolvimento antes: o Playwright sobe a API (8001) e o frontend (5173). A campanha de testes está em [`docs/testes-sprint9.md`](./docs/testes-sprint9.md).
+
+**CI no GitHub Actions:** backend, frontend e E2E isolados. Escopo, comandos e
+limitações (modelo real de IA e deploy) em [`docs/ci.md`](./docs/ci.md).
 
 **Prints da interface final** (`evidencias-rc`, fora do `npm run e2e`):
 

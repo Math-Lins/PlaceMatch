@@ -61,6 +61,7 @@ export default defineConfig({
   // Os roteiros compartilham o mesmo banco e criam usuários próprios: rodar em série evita ruído.
   fullyParallel: false,
   workers: 1,
+  forbidOnly: !!process.env.CI,
   retries: 0,
   timeout: 180_000,
   expect: { timeout: 15_000 },
@@ -96,7 +97,7 @@ export default defineConfig({
       url: `http://127.0.0.1:${API}/api/auth/me/`,
       // /api/auth/me/ responde 401 sem token: basta o servidor responder.
       ignoreHTTPSErrors: true,
-      reuseExistingServer: true,
+      reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: envBackend,
     },
@@ -104,7 +105,7 @@ export default defineConfig({
       command: `npm run dev -- --host 127.0.0.1 --port ${WEB} --strictPort`,
       cwd: path.join(aqui, '..'),
       url: `http://127.0.0.1:${WEB}`,
-      reuseExistingServer: true,
+      reuseExistingServer: !process.env.CI,
       timeout: 60_000,
       env: { VITE_API_URL: `http://127.0.0.1:${API}` },
     },
