@@ -65,7 +65,8 @@ docker compose up --build
 | Parar | `docker compose down` |
 | Reiniciar um serviço | `docker compose restart backend` |
 | Ver logs | `docker compose logs -f backend` |
-| Rebuild após mudar dependências | `docker compose up --build` |
+| Rebuild de dependências do backend | `docker compose up -d --build` |
+| Rebuild de dependências do frontend (na pasta `frontend`) | `docker compose up -d --build --renew-anon-volumes frontend` |
 | Status dos containers | `docker compose ps` |
 
 ## Comandos úteis do Django (dentro do container)
@@ -73,8 +74,8 @@ docker compose up --build
 ```bash
 cd backend
 
-# Criar superusuário (admin)
-docker compose exec backend python manage.py createsuperuser
+# Criar administrador da aplicação (ADMIN_EMAIL e ADMIN_SENHA)
+docker compose exec backend python manage.py criar_admin
 
 # Rodar migrações manualmente
 docker compose exec backend python manage.py migrate
@@ -85,6 +86,10 @@ docker compose exec backend python manage.py makemigrations
 # Shell do Django
 docker compose exec backend python manage.py shell
 ```
+
+> `criar_admin` também redefine a senha de uma conta existente com o mesmo e-mail.
+> Confira `ADMIN_EMAIL` antes de executar. Sem `ADMIN_SENHA`, gera e exibe uma senha.
+> `createsuperuser` sozinho não define o tipo `administrador` exigido pelo painel da aplicação.
 
 ## Variáveis de ambiente
 
@@ -111,7 +116,9 @@ docker compose exec backend python manage.py shell
 |---|---|---|
 | `VITE_API_URL` | URL da API consumida pelo frontend | `http://localhost:8000` |
 
-> Após alterar variáveis `VITE_*`, reinicie o frontend: `docker compose restart`.
+> Após alterar variáveis `VITE_*`, recrie o serviço na pasta `frontend`:
+> `docker compose up -d --force-recreate frontend`. Apenas `restart` não atualiza
+> as variáveis injetadas pelo `env_file`.
 
 ## Problemas comuns
 
@@ -162,11 +169,21 @@ CHOKIDAR_USEPOLLING=true
 
 ### Mudou `package.json` ou `requirements.txt`
 
-Rebuild obrigatório:
+Para `requirements.txt`, execute na pasta `backend`:
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
+
+Para `package.json` / `package-lock.json`, execute na pasta `frontend`:
+
+```bash
+docker compose up -d --build --renew-anon-volumes frontend
+```
+
+O frontend usa um volume anônimo em `/app/node_modules`: apenas reconstruir a imagem
+pode manter dependências antigas nesse volume. Não é necessário apagar o volume do
+PostgreSQL nem executar `down -v` no backend.
 
 ## Verificação rápida de saúde
 
