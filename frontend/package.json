@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "format": "oxfmt",
+    "test": "node --test tests/*.test.cjs",
     "e2e": "playwright test -c e2e/playwright.config.ts",
     "e2e:tour": "playwright test -c e2e/playwright.tour.config.ts",
     "e2e:db": "docker compose -f e2e/docker-compose.e2e.yml --env-file e2e/.env.e2e up -d --wait",

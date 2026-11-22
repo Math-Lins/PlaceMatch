@@ -12,7 +12,7 @@ function niceMax(val: number): number {
 
 function yTicks(max: number, n = 5): number[] {
   const step = max / (n - 1);
-  return Array.from({ length: n }, (_, i) => Math.round(step * i));
+  return [...new Set(Array.from({ length: n }, (_, i) => Math.round(step * i)))];
 }
 
 // ─── Line/Area Chart ──────────────────────────────────────────────────────────
@@ -144,8 +144,8 @@ export function HorizontalBars({ data, title }: { data: TopRegiao[]; title: stri
 
       {data.map((r, i) => {
         const y = MT + i * ROW_H;
-        const pw = Math.max((r.perfis / maxVal) * CW, 2);
-        const mw = Math.max((r.matches / maxVal) * CW, 2);
+        const pw = r.perfis > 0 ? Math.max((r.perfis / maxVal) * CW, 2) : 0;
+        const mw = r.matches > 0 ? Math.max((r.matches / maxVal) * CW, 2) : 0;
         const label = r.regiao.length > 13 ? r.regiao.slice(0, 12) + '…' : r.regiao;
         return (
           <g key={r.regiao}>
@@ -224,7 +224,7 @@ export function ScoreDistChart({ data, title }: { data: DistribuicaoScore[]; tit
       <line x1={ML} y1={MT + CH} x2={ML + CW} y2={MT + CH} stroke={C.border} strokeWidth="1.5" />
 
       {data.map((d, i) => {
-        const bh = Math.max((d.total / maxVal) * CH, 2);
+        const bh = d.total > 0 ? Math.max((d.total / maxVal) * CH, 2) : 0;
         const x = ML + gap + i * (barW + gap);
         const y = MT + CH - bh;
         return (
