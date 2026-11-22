@@ -8,6 +8,7 @@ test('N03 Cadastro oferecendo vaga → etapas + anúncio com foto → Descoberta
   await test.step('1. cadastro como oferecendo vaga: o perfil tem 5 etapas', async () => {
     await cadastrar(page, p);
     await expect(page.getByText('Etapa 1 de 5')).toBeVisible();
+    await expect(page.getByPlaceholder('Seu nome completo')).toHaveValue(p.nome);
     await print(page, 'N03', 1, 'etapa1-de-5');
   });
 

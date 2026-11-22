@@ -18,6 +18,8 @@ test('N13 Mobile (375 px): cadastro resumido, Descoberta, menu e chat sem estour
     await print(page, 'N13', 1, 'inicio-mobile');
     await cadastrar(page, p);
     await semEstouro(page, 'cadastro/etapa 1');
+    await expect(page.getByPlaceholder('Seu nome completo')).toHaveValue(p.nome);
+    await page.getByPlaceholder('Seu nome completo').fill('');
     await proxima(page);
     await expect(page.getByText('Nome deve ter pelo menos 2 caracteres.')).toBeVisible();
     await semEstouro(page, 'etapa 1 com erros');

@@ -96,7 +96,7 @@ const PERFIL_VAZIO: Profile = {
 };
 
 const HORARIO_LABEL: Record<string, string> = {
-  madrugador: 'Madrugador(a)',
+  madrugador: 'Matutino(a)',
   noturno: 'Noturno(a)',
   flexivel: 'Horário flexível',
 };
@@ -1473,7 +1473,7 @@ function EtapaConvivencia({ form, setForm, errors }: PropsEtapa) {
         onChange={v => setForm({ horario: v })}
         error={errors.perfil_horario}
         options={[
-          { value: 'madrugador', label: 'Madrugador(a)' },
+          { value: 'madrugador', label: 'Matutino(a)' },
           { value: 'noturno', label: 'Noturno(a)' },
           { value: 'flexivel', label: 'Flexível' },
         ]}
@@ -1546,11 +1546,11 @@ function EtapaAnuncio({ form, setForm, errors }: PropsEtapa) {
 
 // ─── Screen: Profile Create ───────────────────────────────────────────────────
 
-function ProfileCreateScreen({ nav, onPerfilCriado, tipo }: { nav: (s: Screen) => void; onPerfilCriado: (p: PerfilAPI) => void; tipo: string }) {
+function ProfileCreateScreen({ nav, onPerfilCriado, tipo, nomeInicial }: { nav: (s: Screen) => void; onPerfilCriado: (p: PerfilAPI) => void; tipo: string; nomeInicial: string }) {
   const anuncio = tipo === 'oferecendo_vaga';
   const TOTAL_STEPS = anuncio ? 5 : 4;
   const [step, setStep] = useState(1);
-  const [form, setFormState] = useState<PerfilForm>(FORM_VAZIO);
+  const [form, setFormState] = useState<PerfilForm>(() => ({ ...FORM_VAZIO, nome: nomeInicial }));
   const setForm = (p: Partial<PerfilForm>) => setFormState(f => ({ ...f, ...p }));
 
   const [loading, setLoading] = useState(false);
@@ -3425,6 +3425,7 @@ export default function App() {
   const [showReport, setShowReport] = useState(false);
   const [meuPerfil, setMeuPerfil] = useState<PerfilAPI | null>(null);
   const [meuTipo, setMeuTipo] = useState('');
+  const [meuNome, setMeuNome] = useState('');
   const [matchesKey, setMatchesKey] = useState(0);
   const [notifsKey, setNotifsKey] = useState(0);
   const [notifsCount, setNotifsCount] = useState(0);
@@ -3453,6 +3454,7 @@ export default function App() {
     sairDaConta();
     setMeuPerfil(null);
     setMeuTipo('');
+    setMeuNome('');
     setNotifsCount(0);
     setActiveChatMatchId(0);
     setCurrentChat(PERFIL_VAZIO);
@@ -3465,6 +3467,7 @@ export default function App() {
     setOn401(() => {
       setMeuPerfil(null);
       setMeuTipo('');
+      setMeuNome('');
       setNotifsCount(0);
       setActiveChatMatchId(0);
       setCurrentChat(PERFIL_VAZIO);
@@ -3518,6 +3521,7 @@ export default function App() {
         const usuario = await buscarMeuUsuario();
         if (!ativo) return;
         setMeuTipo(usuario.tipo);
+        setMeuNome(usuario.nome ?? usuario.username);
         if (usuario.tipo === 'administrador') {
           setScreen(s => (TELAS_PUBLICAS.includes(s) ? s : 'admin'));
         } else {
@@ -3574,6 +3578,7 @@ export default function App() {
     try {
       const usuario = await buscarMeuUsuario();
       setMeuTipo(usuario.tipo);
+      setMeuNome(usuario.nome ?? usuario.username);
       if (usuario.tipo === 'administrador') {
         nav('admin');
         return;
@@ -3620,14 +3625,14 @@ export default function App() {
           onSenhaRedefinida={() => {
             // A API encerrou todas as sessões da conta: limpa a sessão desta aba (se havia uma) e o estado em memória.
             sairDaConta();
-            setMeuPerfil(null); setMeuTipo(''); setNotifsCount(0); setActiveChatMatchId(0);
+            setMeuPerfil(null); setMeuTipo(''); setMeuNome(''); setNotifsCount(0); setActiveChatMatchId(0);
             setCurrentChat(PERFIL_VAZIO); setSelectedProfile(PERFIL_VAZIO); setSessionExpiredMsg('');
           }}
         />
       )}
       {telaAtual === 'register' && <RegisterScreen nav={nav} onLoginSuccess={handleLoginSuccess} onContaCriadaSemLogin={(aviso) => { setSessionExpiredMsg(aviso); nav('login'); }} />}
       {telaAtual === 'profile-create' && (
-        <ProfileCreateScreen nav={nav} tipo={meuTipo} onPerfilCriado={(p) => setMeuPerfil(p)} />
+        <ProfileCreateScreen nav={nav} tipo={meuTipo} nomeInicial={meuNome} onPerfilCriado={(p) => setMeuPerfil(p)} />
       )}
       {telaAtual === 'discovery' && (
         <DiscoveryScreen

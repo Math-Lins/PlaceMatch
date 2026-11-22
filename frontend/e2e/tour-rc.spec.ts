@@ -227,7 +227,7 @@ test('tour da Release Candidate (desktop 1366×768 e celular 375×812)', async (
       await grupo('Você fuma?').getByRole('button', { name: 'Não', exact: true }).click();
       await grupo('Aceita pets?').getByRole('button', { name: 'Sim', exact: true }).click();
       await p.getByRole('button', { name: 'Às vezes', exact: true }).click();
-      await p.getByRole('button', { name: /Madrugador/ }).click();
+      await p.getByRole('button', { name: /Matutino/ }).click();
       await print(p, 6, 'perfil-etapa3-convivencia', 'Criação de perfil — etapa 3 (convivência)', 'Oferece vaga (nova conta)');
       await proxima();
       for (const [rotulo, nota] of [['Organização', 5], ['Tolerância à bagunça', 2], ['Tolerância a barulho', 2], ['Perfil social', 3]] as const) {

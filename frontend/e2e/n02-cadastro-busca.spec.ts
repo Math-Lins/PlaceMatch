@@ -9,6 +9,9 @@ test('N02 Cadastro "Maria José da Silva" (buscando vaga) → perfil em etapas �
     await cadastrar(page, p);
     await expect(page.getByText('Etapa 1 de 4')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Sobre você' })).toBeVisible();
+    await expect(page.getByPlaceholder('Seu nome completo')).toHaveValue(p.nome);
+    await page.reload();
+    await expect(page.getByPlaceholder('Seu nome completo')).toHaveValue(p.nome);
     await print(page, 'N02', 1, 'cadastro-concluido-etapa1');
   });
 
@@ -23,6 +26,8 @@ test('N02 Cadastro "Maria José da Silva" (buscando vaga) → perfil em etapas �
   });
 
   await test.step('3. etapa 1 vazia mostra os erros e não avança', async () => {
+    // O nome já vem do cadastro; limpar explicitamente para testar a validação.
+    await page.getByPlaceholder('Seu nome completo').fill('');
     await proxima(page);
     await expect(page.getByText('Nome deve ter pelo menos 2 caracteres.')).toBeVisible();
     await expect(page.getByText('Idade deve estar entre 18 e 100 anos.')).toBeVisible();
@@ -74,6 +79,8 @@ test('N02 Cadastro "Maria José da Silva" (buscando vaga) → perfil em etapas �
     await preencherEtapa2(page, p);
     await proxima(page);
     await expect(page.getByText('Etapa 3 de 4')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Matutino(a)', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Madrugador/ })).toHaveCount(0);
     await proxima(page);
     await expect(page.getByText('Responda se você fuma.')).toBeVisible();
     await expect(page.getByText('Responda sobre pets.')).toBeVisible();
