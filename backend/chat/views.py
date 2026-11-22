@@ -146,9 +146,6 @@ class MensagensView(APIView):
         if match is None:
             return meu_perfil_ou_erro
 
-        # Marca como lidas as mensagens do outro participante
-        match.mensagens.filter(remetente_id=outro_id, lida=False).update(lida=True)
-
         qs = match.mensagens.all()
 
         apos = request.query_params.get('apos')
@@ -160,6 +157,8 @@ class MensagensView(APIView):
                     f'{e} Informe o número da última mensagem já recebida.'
                 )
 
+        # Só uma consulta válida marca as mensagens do outro participante como lidas.
+        match.mensagens.filter(remetente_id=outro_id, lida=False).update(lida=True)
         return Response(MensagemSerializer(qs, many=True).data)
 
     @extend_schema(**doc('chat_mensagens_enviar'))

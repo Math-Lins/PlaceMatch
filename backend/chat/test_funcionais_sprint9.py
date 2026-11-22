@@ -87,9 +87,12 @@ class ValidacaoMensagemTest(_BaseChat):
         res = self._post('CT-V85', {'conteudo': 'oi'}, usuario=sem)
         self.assertEqual(res.status_code, 400, corpo_texto(res))
     def test_ctv86_apos_invalido(self):
+        mensagem = Mensagem.objects.create(match=self.match, remetente=self.po, conteudo='Ainda não lida')
         res = self.como(self.ub).get(_msgs(self.match.id), {'apos': 'abc'})
         reg('CT-V86', res)
         self._400(res)
+        mensagem.refresh_from_db()
+        self.assertFalse(mensagem.lida)
     def test_ctv87_enviar_para_match_com_usuario_suspenso(self):
         self.uo.is_active = False
         self.uo.save()
